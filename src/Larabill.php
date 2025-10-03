@@ -6,7 +6,7 @@ namespace AichaDigital\Larabill;
 
 /**
  * Larabill Main Class
- * 
+ *
  * Professional billing and invoicing module for Laravel.
  */
 class Larabill
@@ -18,7 +18,7 @@ class Larabill
     {
         return '1.0.0';
     }
-    
+
     /**
      * Get package description.
      */
