@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * UserTaxInfo Model
- * 
+ *
  * Represents fiscal information for a user.
  */
 class UserTaxInfo extends Model
@@ -65,6 +65,7 @@ class UserTaxInfo extends Model
     public function user(): BelongsTo
     {
         $userModel = config('larabill.models.user');
+
         return $this->belongsTo($userModel);
     }
 }

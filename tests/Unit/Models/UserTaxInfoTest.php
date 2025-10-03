@@ -17,7 +17,7 @@ it('can create a user tax info record', function () {
         'state' => 'Madrid',
         'phone' => '+34 600 000 000',
     ]);
-    
+
     expect($taxInfo->user_id)->toBe(1);
     expect($taxInfo->is_current)->toBeTrue();
     expect($taxInfo->tax_id)->toBe('ESB12345678');
@@ -43,9 +43,9 @@ it('can make a tax info current', function () {
         'state' => 'Madrid',
         'phone' => '+34 600 000 000',
     ]);
-    
+
     $taxInfo->makeCurrent();
-    
+
     expect($taxInfo->is_current)->toBeTrue();
 });
 
@@ -78,7 +78,7 @@ it('can scope current tax info', function () {
     ]);
 
     $currentRecords = UserTaxInfo::current()->get();
-    
+
     expect($currentRecords)->toHaveCount(1);
     expect($currentRecords->first()->id)->toBe($currentTaxInfo->id);
 });

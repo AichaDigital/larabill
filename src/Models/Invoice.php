@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * Invoice Model
@@ -86,6 +86,7 @@ class Invoice extends Model
     public function user(): BelongsTo
     {
         $userModel = config('larabill.models.user');
+
         return $this->belongsTo($userModel);
     }
 }
