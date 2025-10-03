@@ -89,7 +89,18 @@ class VatApiIntegrationService
      */
     private function processAbstractApiResponse(Response $response, string $vatNumber, string $countryCode): array
     {
+        // Check for HTTP errors
+        if (!$response->successful()) {
+            throw new \Exception("AbstractAPI HTTP error: {$response->status()} - {$response->body()}");
+        }
+
         $data = $response->json();
+        
+        // Check for API errors
+        if (isset($data['error'])) {
+            $errorMessage = $data['error']['message'] ?? 'Unknown error';
+            throw new \Exception("AbstractAPI error: {$errorMessage}");
+        }
 
         return [
             'is_valid' => $data['valid'] ?? false,
@@ -107,7 +118,24 @@ class VatApiIntegrationService
      */
     private function processApiLayerResponse(Response $response, string $vatNumber, string $countryCode): array
     {
+        // Check for HTTP errors
+        if (!$response->successful()) {
+            throw new \Exception("API Layer HTTP error: {$response->status()} - {$response->body()}");
+        }
+
         $data = $response->json();
+        
+        // Check for API errors
+        if (isset($data['error'])) {
+            $errorMessage = $data['error']['info'] ?? 'Unknown error';
+            throw new \Exception("API Layer error: {$errorMessage}");
+        }
+        
+        // Check for invalid API key
+        if (isset($data['success']) && $data['success'] === false) {
+            $errorMessage = $data['error']['info'] ?? 'Invalid API key or request';
+            throw new \Exception("API Layer failed: {$errorMessage}");
+        }
 
         return [
             'is_valid' => $data['valid'] ?? false,
