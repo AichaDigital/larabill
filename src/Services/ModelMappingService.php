@@ -96,12 +96,12 @@ class ModelMappingService
      */
     public static function validateModelMapping(string $modelType, string $modelClass): bool
     {
-        if (!class_exists($modelClass)) {
+        if (! class_exists($modelClass)) {
             return false;
         }
 
         // Check if the class extends Model
-        if (!is_subclass_of($modelClass, \Illuminate\Database\Eloquent\Model::class)) {
+        if (! is_subclass_of($modelClass, \Illuminate\Database\Eloquent\Model::class)) {
             return false;
         }
 

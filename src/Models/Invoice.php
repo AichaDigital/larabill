@@ -78,6 +78,7 @@ class Invoice extends Model
     public function items(): HasMany
     {
         $invoiceItemModel = \AichaDigital\Larabill\Services\ModelMappingService::getModelClass('invoice_item');
+
         return $this->hasMany($invoiceItemModel);
     }
 

@@ -67,7 +67,7 @@ it('can configure custom field mappings for user tax info', function () {
             'country' => 'country_code',
             'state' => 'region',
             'phone' => 'contact_phone',
-        ]
+        ],
     ]);
 
     // Test the mapping service directly

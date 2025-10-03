@@ -47,7 +47,7 @@ class UserTaxInfo extends Model
         static::creating(function ($model) {
             // Apply field mapping when creating
             $fieldMapping = \AichaDigital\Larabill\Services\ModelMappingService::getFieldMapping('user_tax_info');
-            if (!empty($fieldMapping)) {
+            if (! empty($fieldMapping)) {
                 $attributes = $model->getAttributes();
                 $mappedAttributes = \AichaDigital\Larabill\Services\ModelMappingService::reverseMapFields($attributes, 'user_tax_info');
                 $model->setRawAttributes($mappedAttributes);
@@ -57,7 +57,7 @@ class UserTaxInfo extends Model
         static::retrieved(function ($model) {
             // Apply field mapping when retrieving
             $fieldMapping = \AichaDigital\Larabill\Services\ModelMappingService::getFieldMapping('user_tax_info');
-            if (!empty($fieldMapping)) {
+            if (! empty($fieldMapping)) {
                 $attributes = $model->getAttributes();
                 $mappedAttributes = \AichaDigital\Larabill\Services\ModelMappingService::mapFields($attributes, 'user_tax_info');
                 $model->setRawAttributes($mappedAttributes);
