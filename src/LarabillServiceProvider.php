@@ -23,6 +23,8 @@ class LarabillServiceProvider extends PackageServiceProvider
                 'create_invoices_table',
                 'create_invoice_items_table',
                 'create_user_tax_infos_table',
+                'create_tax_rates_table',
+                'create_vat_verifications_table',
             ])
             ->runsMigrations()
             ->hasCommand(LarabillCommand::class);

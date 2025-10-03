@@ -35,12 +35,13 @@
         "phpstan/phpstan-deprecation-rules": "^2.0",
         "phpstan/phpstan-phpunit": "^2.0"
     },
-    "autoload": {
-        "psr-4": {
-            "AichaDigital\\Larabill\\": "src/",
-            "AichaDigital\\Larabill\\Database\\Factories\\": "database/factories/"
-        }
-    },
+        "autoload": {
+            "psr-4": {
+                "AichaDigital\\Larabill\\": "src/",
+                "AichaDigital\\Larabill\\Database\\Factories\\": "database/factories/",
+                "AichaDigital\\Larabill\\Database\\Seeders\\": "database/seeders/"
+            }
+        },
     "autoload-dev": {
         "psr-4": {
             "AichaDigital\\Larabill\\Tests\\": "tests/",
