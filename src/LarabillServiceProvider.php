@@ -19,7 +19,12 @@ class LarabillServiceProvider extends PackageServiceProvider
             ->name('larabill')
             ->hasConfigFile()
             ->hasViews()
-            ->hasMigration('create_larabill_table')
+            ->hasMigrations([
+                'create_invoices_table',
+                'create_invoice_items_table',
+                'create_user_tax_infos_table',
+            ])
+            ->runsMigrations()
             ->hasCommand(LarabillCommand::class);
     }
 }
