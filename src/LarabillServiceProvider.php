@@ -3,6 +3,7 @@
 namespace AichaDigital\Larabill;
 
 use AichaDigital\Larabill\Commands\LarabillCommand;
+use AichaDigital\Larabill\Commands\TestVatApisCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
@@ -27,6 +28,9 @@ class LarabillServiceProvider extends PackageServiceProvider
                 'create_vat_verifications_table',
             ])
             ->runsMigrations()
-            ->hasCommand(LarabillCommand::class);
+            ->hasCommands([
+                LarabillCommand::class,
+                TestVatApisCommand::class,
+            ]);
     }
 }

@@ -21,9 +21,8 @@ class VatVerification extends Model
         'country_code',
         'is_valid',
         'company_name',
-        'address',
-        'verification_date',
-        'api_used',
+        'company_address',
+        'api_source',
         'response_data',
     ];
 
@@ -32,7 +31,6 @@ class VatVerification extends Model
      */
     protected $casts = [
         'is_valid' => 'boolean',
-        'verification_date' => 'datetime',
         'response_data' => 'array',
     ];
 
@@ -44,6 +42,14 @@ class VatVerification extends Model
         return static::where('vat_number', $vatNumber)
             ->where('country_code', $countryCode)
             ->first();
+    }
+
+    /**
+     * Find verification by VAT number and country code (alias).
+     */
+    public static function findByVatNumberAndCountry(string $vatNumber, string $countryCode): ?self
+    {
+        return static::findByVatNumber($vatNumber, $countryCode);
     }
 
     /**

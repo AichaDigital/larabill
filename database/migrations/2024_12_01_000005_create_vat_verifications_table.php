@@ -19,16 +19,13 @@ return new class extends Migration
             $table->string('country_code', 2);
             $table->boolean('is_valid');
             $table->string('company_name')->nullable();
-            $table->text('address')->nullable();
-            $table->timestamp('verification_date');
-            $table->string('api_used');
-            $table->json('response_data');
+            $table->string('company_address')->nullable();
+            $table->string('api_source')->nullable();
+            $table->json('response_data')->nullable();
             $table->timestamps();
 
             // Indexes
-            $table->index(['vat_number', 'country_code']);
-            $table->index(['verification_date']);
-            $table->index(['is_valid']);
+            $table->index(['vat_number', 'is_valid']);
             $table->unique(['vat_number', 'country_code']);
         });
     }

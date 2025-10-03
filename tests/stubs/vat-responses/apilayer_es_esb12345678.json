@@ -1,0 +1,32 @@
+{
+    "api": "apilayer",
+    "vat_number": "ESB12345678",
+    "country_code": "ES",
+    "response": {
+        "valid": true,
+        "vat_number": "ESB12345678",
+        "country_code": "ES",
+        "company": "AichaDigital S.L.",
+        "address": "Calle Test 123, 41001 Sevilla, Espa\u00f1a",
+        "format_valid": true,
+        "query": "ESB12345678"
+    },
+    "processed": {
+        "is_valid": true,
+        "vat_number": "ESB12345678",
+        "country_code": "ES",
+        "company_name": "AichaDigital S.L.",
+        "company_address": "Calle Test 123, 41001 Sevilla, Espa\u00f1a",
+        "response_data": {
+            "valid": true,
+            "vat_number": "ESB12345678",
+            "country_code": "ES",
+            "company": "AichaDigital S.L.",
+            "address": "Calle Test 123, 41001 Sevilla, Espa\u00f1a",
+            "format_valid": true,
+            "query": "ESB12345678"
+        },
+        "api_source": "apilayer"
+    },
+    "timestamp": "2025-10-03 11:45:42"
+}

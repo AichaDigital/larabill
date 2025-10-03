@@ -10,9 +10,8 @@ it('can create a VAT verification record', function () {
         'country_code' => 'ES',
         'is_valid' => true,
         'company_name' => 'Test Company S.L.',
-        'address' => 'Calle Test 123, Madrid',
-        'verification_date' => now(),
-        'api_used' => 'abstractapi',
+        'company_address' => 'Calle Test 123, Madrid',
+        'api_source' => 'abstractapi',
         'response_data' => [
             'valid' => true,
             'company_name' => 'Test Company S.L.',
@@ -24,8 +23,8 @@ it('can create a VAT verification record', function () {
     expect($verification->country_code)->toBe('ES');
     expect($verification->is_valid)->toBeTrue();
     expect($verification->company_name)->toBe('Test Company S.L.');
-    expect($verification->address)->toBe('Calle Test 123, Madrid');
-    expect($verification->api_used)->toBe('abstractapi');
+    expect($verification->company_address)->toBe('Calle Test 123, Madrid');
+    expect($verification->api_source)->toBe('abstractapi');
     expect($verification->response_data)->toBeArray();
     expect($verification->response_data['valid'])->toBeTrue();
 });
@@ -36,9 +35,8 @@ it('can scope valid VAT verifications', function () {
         'country_code' => 'ES',
         'is_valid' => true,
         'company_name' => 'Valid Company',
-        'address' => 'Valid Address',
-        'verification_date' => now(),
-        'api_used' => 'abstractapi',
+        'company_address' => 'Valid Address',
+        'api_source' => 'abstractapi',
         'response_data' => ['valid' => true],
     ]);
 
@@ -47,9 +45,8 @@ it('can scope valid VAT verifications', function () {
         'country_code' => 'ES',
         'is_valid' => false,
         'company_name' => null,
-        'address' => null,
-        'verification_date' => now(),
-        'api_used' => 'abstractapi',
+        'company_address' => null,
+        'api_source' => 'abstractapi',
         'response_data' => ['valid' => false],
     ]);
 
@@ -65,9 +62,8 @@ it('can find verification by VAT number and country', function () {
         'country_code' => 'ES',
         'is_valid' => true,
         'company_name' => 'Test Company S.L.',
-        'address' => 'Calle Test 123, Madrid',
-        'verification_date' => now(),
-        'api_used' => 'abstractapi',
+        'company_address' => 'Calle Test 123, Madrid',
+        'api_source' => 'abstractapi',
         'response_data' => ['valid' => true],
     ]);
 
