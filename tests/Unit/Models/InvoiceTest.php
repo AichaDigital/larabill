@@ -51,6 +51,6 @@ it('cannot update an immutable invoice', function () {
         'immutable_at' => now(),
     ]);
 
-    expect(fn() => $invoice->update(['status' => 'paid']))
+    expect(fn () => $invoice->update(['status' => 'paid']))
         ->toThrow(Exception::class);
 });

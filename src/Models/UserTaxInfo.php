@@ -65,6 +65,7 @@ class UserTaxInfo extends Model
     public function user(): BelongsTo
     {
         $userModel = config('larabill.models.user');
+
         return $this->belongsTo($userModel);
     }
 }
