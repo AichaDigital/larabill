@@ -33,3 +33,4 @@ testbench.yaml
 
 .env
 .env.testing
+.env.local

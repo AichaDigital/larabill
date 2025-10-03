@@ -76,12 +76,16 @@ return [
     'vat_apis' => [
         'abstractapi' => [
             'key' => env('LARABILL_ABSTRACTAPI_KEY'),
-            'url' => 'https://vat.abstractapi.com/v1/validate/',
+            'url' => env('LARABILL_ABSTRACTAPI_URL', 'https://vat.abstractapi.com/v1/validate/'),
+            'timeout' => env('LARABILL_ABSTRACTAPI_TIMEOUT', 10),
         ],
         'apilayer' => [
             'key' => env('LARABILL_APILAYER_KEY'),
-            'url' => 'http://apilayer.net/api/validate',
+            'url' => env('LARABILL_APILAYER_URL', 'http://apilayer.net/api/validate'),
+            'timeout' => env('LARABILL_APILAYER_TIMEOUT', 10),
         ],
+        'preferred_api' => env('LARABILL_VAT_PREFERRED_API', 'abstractapi'),
+        'cache_duration_days' => env('LARABILL_VAT_CACHE_DAYS', 30),
     ],
 ];
 ```
@@ -148,9 +152,15 @@ LARABILL_COMPANY_IS_ROI=true
 
 # VAT Verification APIs
 LARABILL_ABSTRACTAPI_KEY="your_abstractapi_key"
+LARABILL_ABSTRACTAPI_URL="https://vat.abstractapi.com/v1/validate/"
+LARABILL_ABSTRACTAPI_TIMEOUT=10
+
 LARABILL_APILAYER_KEY="your_apilayer_key"
-LARABILL_PREFERRED_API="abstractapi"
-LARABILL_CACHE_DURATION_DAYS=30
+LARABILL_APILAYER_URL="http://apilayer.net/api/validate"
+LARABILL_APILAYER_TIMEOUT=10
+
+LARABILL_VAT_PREFERRED_API="abstractapi"
+LARABILL_VAT_CACHE_DAYS=30
 
 # Invoice Settings
 LARABILL_INVOICE_PREFIX="FAC"

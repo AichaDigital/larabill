@@ -7,16 +7,16 @@ return [
     'vat_apis' => [
         'abstractapi' => [
             'key' => env('LARABILL_ABSTRACTAPI_KEY'),
-            'url' => 'https://vat.abstractapi.com/v1/validate/',
-            'timeout' => 10,
+            'url' => env('LARABILL_ABSTRACTAPI_URL', 'https://vat.abstractapi.com/v1/validate/'),
+            'timeout' => env('LARABILL_ABSTRACTAPI_TIMEOUT', 10),
         ],
         'apilayer' => [
             'key' => env('LARABILL_APILAYER_KEY'),
-            'url' => 'http://apilayer.net/api/validate',
-            'timeout' => 10,
+            'url' => env('LARABILL_APILAYER_URL', 'http://apilayer.net/api/validate'),
+            'timeout' => env('LARABILL_APILAYER_TIMEOUT', 10),
         ],
-        'preferred_api' => 'abstractapi', // 'abstractapi' | 'apilayer'
-        'cache_duration_days' => 30, // How long to cache VAT verification results
+        'preferred_api' => env('LARABILL_VAT_PREFERRED_API', 'abstractapi'), // 'abstractapi' | 'apilayer'
+        'cache_duration_days' => env('LARABILL_VAT_CACHE_DAYS', 30), // How long to cache VAT verification results
     ],
 
     // Company fiscal data
