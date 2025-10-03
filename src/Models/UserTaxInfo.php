@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * UserTaxInfo Model
- * 
+ *
  * Represents fiscal information for a user.
  */
 class UserTaxInfo extends Model
