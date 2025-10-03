@@ -1,10 +1,10 @@
 <?php
 
-namespace VendorName\Skeleton\Tests;
+namespace AichaDigital\Larabill\Tests;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Orchestra\Testbench\TestCase as Orchestra;
-use VendorName\Skeleton\SkeletonServiceProvider;
+use AichaDigital\Larabill\LarabillServiceProvider;
 
 class TestCase extends Orchestra
 {
@@ -13,14 +13,14 @@ class TestCase extends Orchestra
         parent::setUp();
 
         Factory::guessFactoryNamesUsing(
-            fn (string $modelName) => 'VendorName\\Skeleton\\Database\\Factories\\'.class_basename($modelName).'Factory'
+            fn (string $modelName) => 'AichaDigital\\Larabill\\Database\\Factories\\'.class_basename($modelName).'Factory'
         );
     }
 
     protected function getPackageProviders($app)
     {
         return [
-            SkeletonServiceProvider::class,
+            LarabillServiceProvider::class,
         ];
     }
 

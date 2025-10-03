@@ -1,12 +1,12 @@
 <?php
 
-namespace VendorName\Skeleton;
+namespace AichaDigital\Larabill;
 
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use VendorName\Skeleton\Commands\SkeletonCommand;
+use AichaDigital\Larabill\Commands\LarabillCommand;
 
-class SkeletonServiceProvider extends PackageServiceProvider
+class LarabillServiceProvider extends PackageServiceProvider
 {
     public function configurePackage(Package $package): void
     {
@@ -16,10 +16,10 @@ class SkeletonServiceProvider extends PackageServiceProvider
          * More info: https://github.com/spatie/laravel-package-tools
          */
         $package
-            ->name('skeleton')
+            ->name('larabill')
             ->hasConfigFile()
             ->hasViews()
-            ->hasMigration('create_migration_table_name_table')
-            ->hasCommand(SkeletonCommand::class);
+            ->hasMigration('create_larabill_table')
+            ->hasCommand(LarabillCommand::class);
     }
 }

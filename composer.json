@@ -1,24 +1,27 @@
 {
-    "name": ":vendor_slug/:package_slug",
-    "description": ":package_description",
+    "name": "aichadigital/larabill",
+    "description": "Agnostic Billing Package for Laravel",
     "keywords": [
-        ":vendor_name",
+        "AichaDigital",
         "laravel",
-        ":package_slug"
+        "larabill"
     ],
-    "homepage": "https://github.com/:vendor_slug/:package_slug",
+    "homepage": "https://github.com/aichadigital/larabill",
     "license": "MIT",
     "authors": [
         {
-            "name": ":author_name",
-            "email": "author@domain.com",
+            "name": "Abdelkarim Mateos Sanchez",
+            "email": "abdelkarim.mateos@castris.com",
             "role": "Developer"
         }
     ],
     "require": {
         "php": "^8.4",
         "spatie/laravel-package-tools": "^1.16",
-        "illuminate/contracts": "^11.0||^12.0"
+        "illuminate/contracts": "^11.0||^12.0",
+        "illuminate/database": "^11.0||^12.0",
+        "illuminate/http": "^11.0||^12.0",
+        "dompdf/dompdf": "^2.0"
     },
     "require-dev": {
         "laravel/pint": "^1.14",
@@ -30,18 +33,17 @@
         "pestphp/pest-plugin-laravel": "^4.0",
         "phpstan/extension-installer": "^1.4",
         "phpstan/phpstan-deprecation-rules": "^2.0",
-        "phpstan/phpstan-phpunit": "^2.0",
-        "spatie/laravel-ray": "^1.35"
+        "phpstan/phpstan-phpunit": "^2.0"
     },
     "autoload": {
         "psr-4": {
-            "VendorName\\Skeleton\\": "src/",
-            "VendorName\\Skeleton\\Database\\Factories\\": "database/factories/"
+            "AichaDigital\\Larabill\\": "src/",
+            "AichaDigital\\Larabill\\Database\\Factories\\": "database/factories/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "VendorName\\Skeleton\\Tests\\": "tests/",
+            "AichaDigital\\Larabill\\Tests\\": "tests/",
             "Workbench\\App\\": "workbench/app/"
         }
     },
@@ -63,10 +65,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "VendorName\\Skeleton\\SkeletonServiceProvider"
+                "AichaDigital\\Larabill\\LarabillServiceProvider"
             ],
             "aliases": {
-                "Skeleton": "VendorName\\Skeleton\\Facades\\Skeleton"
+                "Larabill": "AichaDigital\\Larabill\\Facades\\Larabill"
             }
         }
     },

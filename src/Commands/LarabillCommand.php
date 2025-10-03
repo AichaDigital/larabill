@@ -1,12 +1,12 @@
 <?php
 
-namespace VendorName\Skeleton\Commands;
+namespace AichaDigital\Larabill\Commands;
 
 use Illuminate\Console\Command;
 
-class SkeletonCommand extends Command
+class LarabillCommand extends Command
 {
-    public $signature = 'skeleton';
+    public $signature = 'larabill';
 
     public $description = 'My command';
 
