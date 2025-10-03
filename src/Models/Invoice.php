@@ -77,7 +77,8 @@ class Invoice extends Model
      */
     public function items(): HasMany
     {
-        return $this->hasMany(InvoiceItem::class);
+        $invoiceItemModel = \AichaDigital\Larabill\Services\ModelMappingService::getModelClass('invoice_item');
+        return $this->hasMany($invoiceItemModel);
     }
 
     /**
@@ -85,7 +86,7 @@ class Invoice extends Model
      */
     public function user(): BelongsTo
     {
-        $userModel = config('larabill.models.user');
+        $userModel = \AichaDigital\Larabill\Services\ModelMappingService::getModelClass('user');
 
         return $this->belongsTo($userModel);
     }

@@ -35,5 +35,8 @@ class TestCase extends Orchestra
             'database' => ':memory:',
             'prefix' => '',
         ]);
+
+        // Load package configuration
+        $app['config']->set('larabill', require __DIR__.'/../config/larabill.php');
     }
 }

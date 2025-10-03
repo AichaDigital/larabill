@@ -45,6 +45,7 @@ class InvoiceItem extends Model
      */
     public function invoice(): BelongsTo
     {
-        return $this->belongsTo(Invoice::class);
+        $invoiceModel = \AichaDigital\Larabill\Services\ModelMappingService::getModelClass('invoice');
+        return $this->belongsTo($invoiceModel);
     }
 }

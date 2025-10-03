@@ -42,12 +42,13 @@
                 "AichaDigital\\Larabill\\Database\\Seeders\\": "database/seeders/"
             }
         },
-    "autoload-dev": {
-        "psr-4": {
-            "AichaDigital\\Larabill\\Tests\\": "tests/",
-            "Workbench\\App\\": "workbench/app/"
-        }
-    },
+        "autoload-dev": {
+            "psr-4": {
+                "AichaDigital\\Larabill\\Tests\\": "tests/",
+                "Workbench\\App\\": "workbench/app/",
+                "App\\": "tests/Models/"
+            }
+        },
     "scripts": {
         "post-autoload-dump": "@composer run prepare",
         "prepare": "@php vendor/bin/testbench package:discover --ansi",
