@@ -29,7 +29,7 @@ class VatApiIntegrationService
     {
         $apiKey = $this->config['abstractapi']['key'] ?? null;
 
-        if (!$apiKey || $apiKey === 'your_abstractapi_key_here') {
+        if (! $apiKey || $apiKey === 'your_abstractapi_key_here') {
             return $this->getMockResponse('abstractapi', $vatNumber, $countryCode);
         }
 
@@ -60,7 +60,7 @@ class VatApiIntegrationService
     {
         $apiKey = $this->config['apilayer']['key'] ?? null;
 
-        if (!$apiKey || $apiKey === 'your_apilayer_key_here') {
+        if (! $apiKey || $apiKey === 'your_apilayer_key_here') {
             return $this->getMockResponse('apilayer', $vatNumber, $countryCode);
         }
 
@@ -126,7 +126,7 @@ class VatApiIntegrationService
     private function getMockResponse(string $apiSource, string $vatNumber, string $countryCode): array
     {
         $mockResponses = $this->getMockResponses();
-        $key = strtolower($countryCode . '_' . $vatNumber);
+        $key = strtolower($countryCode.'_'.$vatNumber);
 
         if (isset($mockResponses[$key])) {
             return array_merge($mockResponses[$key], ['api_source' => $apiSource]);

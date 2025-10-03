@@ -5,7 +5,7 @@ declare(strict_types=1);
 use AichaDigital\Larabill\Services\VatApiIntegrationService;
 
 it('can verify VAT with AbstractAPI mock response', function () {
-    $service = new VatApiIntegrationService();
+    $service = new VatApiIntegrationService;
 
     $result = $service->verifyWithAbstractApi('ESB12345678', 'ES');
 
@@ -21,7 +21,7 @@ it('can verify VAT with AbstractAPI mock response', function () {
 });
 
 it('can verify VAT with API Layer mock response', function () {
-    $service = new VatApiIntegrationService();
+    $service = new VatApiIntegrationService;
 
     $result = $service->verifyWithApiLayer('DE123456789', 'DE');
 
@@ -37,7 +37,7 @@ it('can verify VAT with API Layer mock response', function () {
 });
 
 it('returns valid response for known VAT numbers', function () {
-    $service = new VatApiIntegrationService();
+    $service = new VatApiIntegrationService;
 
     $result = $service->verifyWithAbstractApi('ESB12345678', 'ES');
 
@@ -47,7 +47,7 @@ it('returns valid response for known VAT numbers', function () {
 });
 
 it('returns invalid response for invalid VAT numbers', function () {
-    $service = new VatApiIntegrationService();
+    $service = new VatApiIntegrationService;
 
     $result = $service->verifyWithAbstractApi('INVALID', 'ES');
 
@@ -57,7 +57,7 @@ it('returns invalid response for invalid VAT numbers', function () {
 });
 
 it('includes response data in result', function () {
-    $service = new VatApiIntegrationService();
+    $service = new VatApiIntegrationService;
 
     $result = $service->verifyWithAbstractApi('ESB12345678', 'ES');
 
@@ -68,7 +68,7 @@ it('includes response data in result', function () {
 });
 
 it('handles different country VAT numbers', function () {
-    $service = new VatApiIntegrationService();
+    $service = new VatApiIntegrationService;
 
     $testCases = [
         ['DE123456789', 'DE', 'German Company GmbH'],
@@ -91,7 +91,7 @@ it('uses mock responses when API keys are not configured', function () {
     config(['larabill.vat_apis.abstractapi.key' => 'your_abstractapi_key_here']);
     config(['larabill.vat_apis.apilayer.key' => 'your_apilayer_key_here']);
 
-    $service = new VatApiIntegrationService();
+    $service = new VatApiIntegrationService;
 
     $result = $service->verifyWithAbstractApi('ESB12345678', 'ES');
 
@@ -101,7 +101,7 @@ it('uses mock responses when API keys are not configured', function () {
 });
 
 it('falls back to default mock when VAT number not in stubs', function () {
-    $service = new VatApiIntegrationService();
+    $service = new VatApiIntegrationService;
 
     $result = $service->verifyWithAbstractApi('UNKNOWN123', 'ES');
 
@@ -111,7 +111,7 @@ it('falls back to default mock when VAT number not in stubs', function () {
 });
 
 it('returns invalid for INVALID VAT number in default mock', function () {
-    $service = new VatApiIntegrationService();
+    $service = new VatApiIntegrationService;
 
     $result = $service->verifyWithAbstractApi('INVALID', 'ES');
 

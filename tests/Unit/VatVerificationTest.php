@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Services\VatVerificationService;
-use AichaDigital\Larabill\Services\VatApiIntegrationService;
 use AichaDigital\Larabill\Models\VatVerification;
+use AichaDigital\Larabill\Services\VatApiIntegrationService;
+use AichaDigital\Larabill\Services\VatVerificationService;
 
 it('can verify a valid Spanish VAT number', function () {
-    $apiIntegration = new VatApiIntegrationService();
+    $apiIntegration = new VatApiIntegrationService;
     $service = new VatVerificationService($apiIntegration);
 
     $result = $service->verifyVatNumber('ESB12345678', 'ES');
@@ -24,7 +24,7 @@ it('can verify a valid Spanish VAT number', function () {
 });
 
 it('can verify an invalid VAT number', function () {
-    $apiIntegration = new VatApiIntegrationService();
+    $apiIntegration = new VatApiIntegrationService;
     $service = new VatVerificationService($apiIntegration);
 
     $result = $service->verifyVatNumber('INVALID', 'ES');
@@ -37,7 +37,7 @@ it('can verify an invalid VAT number', function () {
 });
 
 it('caches verification results', function () {
-    $apiIntegration = new VatApiIntegrationService();
+    $apiIntegration = new VatApiIntegrationService;
     $service = new VatVerificationService($apiIntegration);
 
     // First call should create cache
@@ -52,7 +52,7 @@ it('caches verification results', function () {
 });
 
 it('saves verification to database', function () {
-    $apiIntegration = new VatApiIntegrationService();
+    $apiIntegration = new VatApiIntegrationService;
     $service = new VatVerificationService($apiIntegration);
 
     $result = $service->verifyVatNumber('ESB12345678', 'ES');
@@ -69,8 +69,8 @@ it('saves verification to database', function () {
 it('uses preferred API from configuration', function () {
     // Set preferred API to apilayer
     config(['larabill.vat_apis.preferred_api' => 'apilayer']);
-    
-    $apiIntegration = new VatApiIntegrationService();
+
+    $apiIntegration = new VatApiIntegrationService;
     $service = new VatVerificationService($apiIntegration);
 
     $result = $service->verifyVatNumber('DE123456789', 'DE');

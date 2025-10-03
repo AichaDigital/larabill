@@ -27,7 +27,7 @@ class VatVerificationService
     {
         // Check if we already have a cached verification
         $cachedVerification = VatVerification::findByVatNumberAndCountry($vatNumber, $countryCode);
-        
+
         if ($cachedVerification) {
             return [
                 'is_valid' => $cachedVerification->is_valid,
@@ -42,7 +42,7 @@ class VatVerificationService
 
         // Use preferred API or fallback
         $preferredApi = config('larabill.vat_apis.preferred_api', 'abstractapi');
-        
+
         if ($preferredApi === 'abstractapi') {
             $result = $this->apiIntegration->verifyWithAbstractApi($vatNumber, $countryCode);
         } else {

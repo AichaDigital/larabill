@@ -25,7 +25,7 @@ class TestVatApisCommand extends Command
         $countryCode = $this->option('country');
         $saveStubs = $this->option('save-stubs');
 
-        $service = new VatApiIntegrationService();
+        $service = new VatApiIntegrationService;
 
         // Test AbstractAPI
         $this->info("Testing AbstractAPI with VAT: {$vatNumber} ({$countryCode})");
@@ -50,13 +50,13 @@ class TestVatApisCommand extends Command
     private function displayResult(string $apiName, array $result): void
     {
         $this->line("  {$apiName} Result:");
-        $this->line("    Valid: " . ($result['is_valid'] ? 'Yes' : 'No'));
-        $this->line("    Company: " . ($result['company_name'] ?? 'N/A'));
-        $this->line("    Address: " . ($result['company_address'] ?? 'N/A'));
-        $this->line("    API Source: " . $result['api_source']);
+        $this->line('    Valid: '.($result['is_valid'] ? 'Yes' : 'No'));
+        $this->line('    Company: '.($result['company_name'] ?? 'N/A'));
+        $this->line('    Address: '.($result['company_address'] ?? 'N/A'));
+        $this->line('    API Source: '.$result['api_source']);
 
         if (isset($result['response_data'])) {
-            $this->line("    Raw Response: " . json_encode($result['response_data'], JSON_PRETTY_PRINT));
+            $this->line('    Raw Response: '.json_encode($result['response_data'], JSON_PRETTY_PRINT));
         }
 
         $this->line('');
@@ -64,13 +64,13 @@ class TestVatApisCommand extends Command
 
     private function saveStubs(string $vatNumber, string $countryCode, array $abstractApiResult, array $apiLayerResult): void
     {
-        $stubsDir = __DIR__ . '/../../tests/stubs/vat-responses';
+        $stubsDir = __DIR__.'/../../tests/stubs/vat-responses';
 
-        if (!File::exists($stubsDir)) {
+        if (! File::exists($stubsDir)) {
             File::makeDirectory($stubsDir, 0755, true);
         }
 
-        $key = strtolower($countryCode . '_' . $vatNumber);
+        $key = strtolower($countryCode.'_'.$vatNumber);
 
         // Save AbstractAPI stub
         $abstractApiStub = [
@@ -83,7 +83,7 @@ class TestVatApisCommand extends Command
         ];
 
         File::put(
-            $stubsDir . "/abstractapi_{$key}.json",
+            $stubsDir."/abstractapi_{$key}.json",
             json_encode($abstractApiStub, JSON_PRETTY_PRINT)
         );
 
@@ -98,7 +98,7 @@ class TestVatApisCommand extends Command
         ];
 
         File::put(
-            $stubsDir . "/apilayer_{$key}.json",
+            $stubsDir."/apilayer_{$key}.json",
             json_encode($apiLayerStub, JSON_PRETTY_PRINT)
         );
 
