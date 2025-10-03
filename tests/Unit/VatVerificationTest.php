@@ -5,7 +5,7 @@ declare(strict_types=1);
 use AichaDigital\Larabill\Services\VatVerificationService;
 
 it('can verify a valid Spanish VAT number', function () {
-    $service = new VatVerificationService();
+    $service = new VatVerificationService;
 
     $result = $service->verifyVatNumber('ESB12345678', 'ES');
 
@@ -15,7 +15,7 @@ it('can verify a valid Spanish VAT number', function () {
 });
 
 it('can verify an invalid VAT number', function () {
-    $service = new VatVerificationService();
+    $service = new VatVerificationService;
 
     $result = $service->verifyVatNumber('INVALID', 'ES');
 

@@ -5,7 +5,7 @@ declare(strict_types=1);
 use AichaDigital\Larabill\Services\BillingService;
 
 it('can create a basic invoice', function () {
-    $service = new BillingService();
+    $service = new BillingService;
 
     $invoiceData = [
         'user_id' => 1,
@@ -15,8 +15,8 @@ it('can create a basic invoice', function () {
                 'quantity' => 1,
                 'unit_price' => 100.0,
                 'tax_rate' => 21.0,
-            ]
-        ]
+            ],
+        ],
     ];
 
     $result = $service->createInvoice($invoiceData);
@@ -28,7 +28,7 @@ it('can create a basic invoice', function () {
 });
 
 it('can generate sequential invoice numbers', function () {
-    $service = new BillingService();
+    $service = new BillingService;
 
     $invoiceData = [
         'user_id' => 1,
@@ -38,8 +38,8 @@ it('can generate sequential invoice numbers', function () {
                 'quantity' => 1,
                 'unit_price' => 100.0,
                 'tax_rate' => 21.0,
-            ]
-        ]
+            ],
+        ],
     ];
 
     $invoice1 = $service->createInvoice($invoiceData);

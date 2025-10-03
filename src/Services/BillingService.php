@@ -16,7 +16,7 @@ class BillingService
     /**
      * Create a new invoice.
      *
-     * @param array $invoiceData Invoice data
+     * @param  array  $invoiceData  Invoice data
      * @return array Created invoice data
      */
     public function createInvoice(array $invoiceData): array
@@ -53,6 +53,7 @@ class BillingService
     private function generateInvoiceNumber(): string
     {
         $number = sprintf('FAC-%04d', $this->invoiceCounter++);
+
         return $number;
     }
 }

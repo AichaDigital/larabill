@@ -5,7 +5,7 @@ declare(strict_types=1);
 use AichaDigital\Larabill\Services\TaxCalculationService;
 
 it('can calculate Spanish VAT for domestic transactions', function () {
-    $service = new TaxCalculationService();
+    $service = new TaxCalculationService;
 
     $result = $service->calculateTax(100.0, 'ES', 'ES', false);
 
@@ -17,7 +17,7 @@ it('can calculate Spanish VAT for domestic transactions', function () {
 });
 
 it('can calculate reverse charge for EU B2B transactions', function () {
-    $service = new TaxCalculationService();
+    $service = new TaxCalculationService;
 
     $result = $service->calculateTax(100.0, 'ES', 'DE', true);
 

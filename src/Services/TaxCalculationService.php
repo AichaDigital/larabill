@@ -14,10 +14,10 @@ class TaxCalculationService
     /**
      * Calculate tax for a transaction.
      *
-     * @param float $amount The amount to calculate tax for
-     * @param string $sellerCountry Seller's country code
-     * @param string $buyerCountry Buyer's country code
-     * @param bool $isB2B Whether this is a B2B transaction
+     * @param  float  $amount  The amount to calculate tax for
+     * @param  string  $sellerCountry  Seller's country code
+     * @param  string  $buyerCountry  Buyer's country code
+     * @param  bool  $isB2B  Whether this is a B2B transaction
      * @return array Tax calculation result
      */
     public function calculateTax(float $amount, string $sellerCountry, string $buyerCountry, bool $isB2B): array

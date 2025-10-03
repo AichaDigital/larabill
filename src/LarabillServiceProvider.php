@@ -2,9 +2,9 @@
 
 namespace AichaDigital\Larabill;
 
+use AichaDigital\Larabill\Commands\LarabillCommand;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use AichaDigital\Larabill\Commands\LarabillCommand;
 
 class LarabillServiceProvider extends PackageServiceProvider
 {
