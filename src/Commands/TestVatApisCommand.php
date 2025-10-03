@@ -20,16 +20,16 @@ class TestVatApisCommand extends Command
     public function handle(): int
     {
         $this->info('Testing VAT verification APIs...');
-        
+
         // Load .env.local if it exists
         $this->loadLocalEnv();
-        
+
         $vatNumber = $this->option('vat-number');
         $countryCode = $this->option('country');
         $saveStubs = $this->option('save-stubs');
 
-        $service = new VatApiIntegrationService();
-        
+        $service = new VatApiIntegrationService;
+
         // Check if API keys are configured
         $this->checkApiConfiguration();
 
@@ -58,16 +58,16 @@ class TestVatApisCommand extends Command
      */
     private function loadLocalEnv(): void
     {
-        $envLocalPath = __DIR__ . '/../../.env.local';
-        
+        $envLocalPath = __DIR__.'/../../.env.local';
+
         if (File::exists($envLocalPath)) {
             $this->info('Loading .env.local configuration...');
-            
+
             $lines = File::lines($envLocalPath);
             foreach ($lines as $line) {
-                if (strpos($line, '=') !== false && !str_starts_with($line, '#')) {
+                if (strpos($line, '=') !== false && ! str_starts_with($line, '#')) {
                     [$key, $value] = explode('=', $line, 2);
-                    if (!array_key_exists($key, $_ENV)) {
+                    if (! array_key_exists($key, $_ENV)) {
                         $_ENV[$key] = $value;
                         putenv("{$key}={$value}");
                     }
@@ -83,19 +83,19 @@ class TestVatApisCommand extends Command
     {
         $abstractApiKey = env('LARABILL_ABSTRACTAPI_KEY');
         $apiLayerKey = env('LARABILL_APILAYER_KEY');
-        
-        if (!$abstractApiKey || $abstractApiKey === 'your_abstractapi_key_here') {
+
+        if (! $abstractApiKey || $abstractApiKey === 'your_abstractapi_key_here') {
             $this->warn('⚠️  LARABILL_ABSTRACTAPI_KEY not configured - using mock responses');
         } else {
             $this->info('✅ LARABILL_ABSTRACTAPI_KEY configured');
         }
-        
-        if (!$apiLayerKey || $apiLayerKey === 'your_apilayer_key_here') {
+
+        if (! $apiLayerKey || $apiLayerKey === 'your_apilayer_key_here') {
             $this->warn('⚠️  LARABILL_APILAYER_KEY not configured - using mock responses');
         } else {
             $this->info('✅ LARABILL_APILAYER_KEY configured');
         }
-        
+
         $this->line('');
     }
 
