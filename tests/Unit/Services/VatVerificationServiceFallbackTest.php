@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Services\VatVerificationService;
-use AichaDigital\Larabill\Services\VatApiIntegrationService;
 use AichaDigital\Larabill\Models\VatVerification;
+use AichaDigital\Larabill\Services\VatApiIntegrationService;
+use AichaDigital\Larabill\Services\VatVerificationService;
 
 it('uses primary API when it works correctly', function () {
     // Mock the API integration service

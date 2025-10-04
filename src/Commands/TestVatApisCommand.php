@@ -49,7 +49,7 @@ class TestVatApisCommand extends Command
      */
     private function testIndividualApis(string $vatNumber, string $countryCode, bool $saveStubs): void
     {
-        $service = new VatApiIntegrationService();
+        $service = new VatApiIntegrationService;
 
         // Test AbstractAPI
         $this->info("Testing AbstractAPI with VAT: {$vatNumber} ({$countryCode})");
@@ -78,11 +78,11 @@ class TestVatApisCommand extends Command
 
         // Use the main service that has fallback logic
         $vatVerificationService = app(\AichaDigital\Larabill\Services\VatVerificationService::class);
-        
+
         $result = $vatVerificationService->verifyVatNumber($vatNumber, $countryCode);
-        
+
         $this->displayResult('VatVerificationService (with fallback)', $result);
-        
+
         // Save stub if requested
         if ($saveStubs) {
             $this->saveFallbackStub($vatNumber, $countryCode, $result);
@@ -173,18 +173,18 @@ class TestVatApisCommand extends Command
         $this->line('    Company: '.($result['company_name'] ?? 'N/A'));
         $this->line('    Address: '.($result['company_address'] ?? 'N/A'));
         $this->line('    API Source: '.$result['api_source']);
-        
+
         // Show fallback information
         if (isset($result['fallback_used']) && $result['fallback_used']) {
             $this->warn("    ⚠️  FALLBACK USED - Primary API ({$result['primary_api_failed']}) failed");
         }
-        
+
         if (isset($result['mock_fallback']) && $result['mock_fallback']) {
-            $this->error("    ❌ MOCK FALLBACK - All APIs failed");
+            $this->error('    ❌ MOCK FALLBACK - All APIs failed');
         }
-        
+
         if (isset($result['all_apis_failed']) && $result['all_apis_failed']) {
-            $this->error("    ❌ ALL APIS FAILED - Using mock response");
+            $this->error('    ❌ ALL APIS FAILED - Using mock response');
         }
 
         if (isset($result['response_data'])) {

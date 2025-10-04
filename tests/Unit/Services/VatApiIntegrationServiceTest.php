@@ -3,119 +3,239 @@
 declare(strict_types=1);
 
 use AichaDigital\Larabill\Services\VatApiIntegrationService;
+use Illuminate\Support\Facades\Http;
 
-it('can verify VAT with AbstractAPI mock response', function () {
-    $service = new VatApiIntegrationService;
+describe('VatApiIntegrationService', function () {
+    beforeEach(function () {
+        // Configure API keys for testing
+        config(['larabill.vat_apis.abstractapi.key' => 'test_abstractapi_key']);
+        config(['larabill.vat_apis.apilayer.key' => 'test_apilayer_key']);
+        config(['larabill.vat_apis.abstractapi.url' => 'https://vat.abstractapi.com/v1/validate/']);
+        config(['larabill.vat_apis.apilayer.url' => 'http://apilayer.net/api/validate']);
+    });
 
-    $result = $service->verifyWithAbstractApi('ESB12345678', 'ES');
+    describe('AbstractAPI Integration', function () {
+        it('can verify valid VAT number with AbstractAPI', function () {
+            $service = new VatApiIntegrationService;
 
-    expect($result)->toBeArray();
-    expect($result)->toHaveKey('is_valid');
-    expect($result)->toHaveKey('vat_number');
-    expect($result)->toHaveKey('country_code');
-    expect($result)->toHaveKey('company_name');
-    expect($result)->toHaveKey('api_source');
-    expect($result['api_source'])->toBe('abstractapi');
-    expect($result['vat_number'])->toBe('ESB12345678');
-    expect($result['country_code'])->toBe('ES');
-});
+            Http::fake([
+                'https://vat.abstractapi.com/v1/validate/*' => Http::response([
+                    'valid' => true,
+                    'vat_number' => 'ESB12345678',
+                    'country' => [
+                        'code' => 'ES',
+                        'name' => 'Spain',
+                    ],
+                    'company' => [
+                        'name' => 'Test Company S.L.',
+                        'address' => 'Calle Test 123, 41001 Sevilla, España',
+                    ],
+                    'format_valid' => true,
+                    'query' => 'ESB12345678',
+                ], 200),
+            ]);
 
-it('can verify VAT with API Layer mock response', function () {
-    $service = new VatApiIntegrationService;
+            $result = $service->verifyWithAbstractApi('ESB12345678', 'ES');
 
-    $result = $service->verifyWithApiLayer('DE123456789', 'DE');
+            expect($result)->toBeArray();
+            expect($result['is_valid'])->toBeTrue();
+            expect($result['vat_number'])->toBe('ESB12345678');
+            expect($result['country_code'])->toBe('ES');
+            expect($result['company_name'])->toBe('Test Company S.L.');
+            expect($result['company_address'])->toBe('Calle Test 123, 41001 Sevilla, España');
+            expect($result['api_source'])->toBe('abstractapi');
+            expect($result['all_apis_failed'])->toBeFalse();
 
-    expect($result)->toBeArray();
-    expect($result)->toHaveKey('is_valid');
-    expect($result)->toHaveKey('vat_number');
-    expect($result)->toHaveKey('country_code');
-    expect($result)->toHaveKey('company_name');
-    expect($result)->toHaveKey('api_source');
-    expect($result['api_source'])->toBe('apilayer');
-    expect($result['vat_number'])->toBe('DE123456789');
-    expect($result['country_code'])->toBe('DE');
-});
+            Http::assertSent(function ($request) {
+                return str_starts_with($request->url(), 'https://vat.abstractapi.com/v1/validate/') &&
+                       $request['api_key'] === 'test_abstractapi_key' &&
+                       $request['vat_number'] === 'ESB12345678' &&
+                       $request['country_code'] === 'ES';
+            });
+        });
 
-it('returns valid response for known VAT numbers', function () {
-    $service = new VatApiIntegrationService;
+        it('can handle invalid VAT number with AbstractAPI', function () {
+            $service = new VatApiIntegrationService;
 
-    $result = $service->verifyWithAbstractApi('ESB12345678', 'ES');
+            Http::fake([
+                'https://vat.abstractapi.com/v1/validate/*' => Http::response([
+                    'valid' => false,
+                    'vat_number' => 'INVALID123',
+                    'country' => [
+                        'code' => 'ES',
+                        'name' => 'Spain',
+                    ],
+                    'company' => null,
+                    'format_valid' => false,
+                    'query' => 'INVALID123',
+                ], 200),
+            ]);
 
-    expect($result['is_valid'])->toBeTrue();
-    expect($result['company_name'])->toBe('AichaDigital S.L.');
-    expect($result['company_address'])->toBe('Calle Test 123, 41001 Sevilla, España');
-});
+            $result = $service->verifyWithAbstractApi('INVALID123', 'ES');
 
-it('returns invalid response for invalid VAT numbers', function () {
-    $service = new VatApiIntegrationService;
+            expect($result)->toBeArray();
+            expect($result['is_valid'])->toBeFalse();
+            expect($result['vat_number'])->toBe('INVALID123');
+            expect($result['country_code'])->toBe('ES');
+            expect($result['company_name'])->toBeNull();
+            expect($result['company_address'])->toBeNull();
+            expect($result['api_source'])->toBe('abstractapi');
+            expect($result['all_apis_failed'])->toBeFalse();
+        });
 
-    $result = $service->verifyWithAbstractApi('INVALID', 'ES');
+        it('can handle AbstractAPI HTTP errors', function () {
+            $service = new VatApiIntegrationService;
 
-    expect($result['is_valid'])->toBeFalse();
-    expect($result['company_name'])->toBeNull();
-    expect($result['company_address'])->toBeNull();
-});
+            Http::fake([
+                'https://vat.abstractapi.com/v1/validate/*' => Http::response([], 500),
+            ]);
 
-it('includes response data in result', function () {
-    $service = new VatApiIntegrationService;
+            $result = $service->verifyWithAbstractApi('ESB12345678', 'ES');
 
-    $result = $service->verifyWithAbstractApi('ESB12345678', 'ES');
+            expect($result)->toBeArray();
+            expect($result['is_valid'])->toBeFalse();
+            expect($result['error'])->toContain('HTTP error');
+            expect($result['api_source'])->toBe('abstractapi');
+            expect($result['all_apis_failed'])->toBeTrue();
+        });
 
-    expect($result)->toHaveKey('response_data');
-    expect($result['response_data'])->toBeArray();
-    expect($result['response_data']['valid'])->toBeTrue();
-    expect($result['response_data']['vat_number'])->toBe('ESB12345678');
-});
+        it('can handle AbstractAPI network timeouts', function () {
+            $service = new VatApiIntegrationService;
 
-it('handles different country VAT numbers', function () {
-    $service = new VatApiIntegrationService;
+            Http::fake([
+                'https://vat.abstractapi.com/v1/validate/*' => Http::response([], 408),
+            ]);
 
-    $testCases = [
-        ['DE123456789', 'DE', 'German Company GmbH'],
-        ['FR12345678901', 'FR', 'Société Française S.A.S.'],
-        ['GB123456789', 'GB', 'British Company Ltd.'],
-    ];
+            $result = $service->verifyWithAbstractApi('ESB12345678', 'ES');
 
-    foreach ($testCases as [$vatNumber, $countryCode, $expectedCompany]) {
-        $result = $service->verifyWithAbstractApi($vatNumber, $countryCode);
+            expect($result)->toBeArray();
+            expect($result['is_valid'])->toBeFalse();
+            expect($result['error'])->toContain('HTTP error');
+            expect($result['api_source'])->toBe('abstractapi');
+            expect($result['all_apis_failed'])->toBeTrue();
+        });
+    });
 
-        expect($result['is_valid'])->toBeTrue();
-        expect($result['vat_number'])->toBe($vatNumber);
-        expect($result['country_code'])->toBe($countryCode);
-        expect($result['company_name'])->toBe($expectedCompany);
-    }
-});
+    describe('APILayer Integration', function () {
+        it('can verify valid VAT number with APILayer', function () {
+            $service = new VatApiIntegrationService;
 
-it('uses mock responses when API keys are not configured', function () {
-    // Set invalid API keys
-    config(['larabill.vat_apis.abstractapi.key' => 'your_abstractapi_key_here']);
-    config(['larabill.vat_apis.apilayer.key' => 'your_apilayer_key_here']);
+            Http::fake([
+                'http://apilayer.net/api/validate*' => Http::response([
+                    'valid' => true,
+                    'vat_number' => 'FRB87654321',
+                    'country_code' => 'FR',
+                    'company_name' => 'French Company SARL',
+                    'company_address' => '123 Rue de la Paix, 75001 Paris, France',
+                ], 200),
+            ]);
 
-    $service = new VatApiIntegrationService;
+            $result = $service->verifyWithApiLayer('FRB87654321', 'FR');
 
-    $result = $service->verifyWithAbstractApi('ESB12345678', 'ES');
+            expect($result)->toBeArray();
+            expect($result['is_valid'])->toBeTrue();
+            expect($result['vat_number'])->toBe('FRB87654321');
+            expect($result['country_code'])->toBe('FR');
+            expect($result['company_name'])->toBe('French Company SARL');
+            expect($result['company_address'])->toBe('123 Rue de la Paix, 75001 Paris, France');
+            expect($result['api_source'])->toBe('apilayer');
+            expect($result['all_apis_failed'])->toBeFalse();
 
-    expect($result['is_valid'])->toBeTrue();
-    expect($result['company_name'])->toBe('AichaDigital S.L.');
-    expect($result['api_source'])->toBe('abstractapi');
-});
+            Http::assertSent(function ($request) {
+                return str_starts_with($request->url(), 'http://apilayer.net/api/validate') &&
+                       $request['access_key'] === 'test_apilayer_key' &&
+                       $request['vat_number'] === 'FRB87654321' &&
+                       $request['country_code'] === 'FR';
+            });
+        });
 
-it('falls back to default mock when VAT number not in stubs', function () {
-    $service = new VatApiIntegrationService;
+        it('can handle invalid VAT number with APILayer', function () {
+            $service = new VatApiIntegrationService;
 
-    $result = $service->verifyWithAbstractApi('UNKNOWN123', 'ES');
+            Http::fake([
+                'http://apilayer.net/api/validate*' => Http::response([
+                    'valid' => false,
+                    'vat_number' => 'INVALID456',
+                    'country_code' => 'FR',
+                    'company_name' => null,
+                    'company_address' => null,
+                ], 200),
+            ]);
 
-    expect($result['is_valid'])->toBeTrue(); // Default is valid for non-INVALID
-    expect($result['company_name'])->toBe('Test Company S.L.');
-    expect($result['company_address'])->toBe('Test Address 123');
-});
+            $result = $service->verifyWithApiLayer('INVALID456', 'FR');
 
-it('returns invalid for INVALID VAT number in default mock', function () {
-    $service = new VatApiIntegrationService;
+            expect($result)->toBeArray();
+            expect($result['is_valid'])->toBeFalse();
+            expect($result['vat_number'])->toBe('INVALID456');
+            expect($result['country_code'])->toBe('FR');
+            expect($result['company_name'])->toBeNull();
+            expect($result['company_address'])->toBeNull();
+            expect($result['api_source'])->toBe('apilayer');
+            expect($result['all_apis_failed'])->toBeFalse();
+        });
 
-    $result = $service->verifyWithAbstractApi('INVALID', 'ES');
+        it('can handle APILayer HTTP errors', function () {
+            $service = new VatApiIntegrationService;
 
-    expect($result['is_valid'])->toBeFalse();
-    expect($result['company_name'])->toBeNull();
-    expect($result['company_address'])->toBeNull();
+            Http::fake([
+                'http://apilayer.net/api/validate*' => Http::response([], 503),
+            ]);
+
+            $result = $service->verifyWithApiLayer('FRB87654321', 'FR');
+
+            expect($result)->toBeArray();
+            expect($result['is_valid'])->toBeFalse();
+            expect($result['error'])->toContain('HTTP error');
+            expect($result['api_source'])->toBe('apilayer');
+            expect($result['all_apis_failed'])->toBeTrue();
+        });
+
+        it('can handle APILayer network timeouts', function () {
+            $service = new VatApiIntegrationService;
+
+            Http::fake([
+                'http://apilayer.net/api/validate*' => Http::response([], 408),
+            ]);
+
+            $result = $service->verifyWithApiLayer('FRB87654321', 'FR');
+
+            expect($result)->toBeArray();
+            expect($result['is_valid'])->toBeFalse();
+            expect($result['error'])->toContain('HTTP error');
+            expect($result['api_source'])->toBe('apilayer');
+            expect($result['all_apis_failed'])->toBeTrue();
+        });
+    });
+
+    describe('Mock Responses', function () {
+        it('returns mock response when no API key configured for AbstractAPI', function () {
+            config(['larabill.vat_apis.abstractapi.key' => null]);
+
+            $service = new VatApiIntegrationService;
+            $result = $service->verifyWithAbstractApi('ESB12345678', 'ES');
+
+            expect($result)->toBeArray();
+            expect($result['is_valid'])->toBeTrue();
+            expect($result['vat_number'])->toBe('ESB12345678');
+            expect($result['country_code'])->toBe('ES');
+            expect($result['company_name'])->toBe('Test Company S.L.');
+            expect($result['api_source'])->toBe('abstractapi');
+            expect($result['all_apis_failed'])->toBeTrue();
+        });
+
+        it('returns mock response when no API key configured for APILayer', function () {
+            config(['larabill.vat_apis.apilayer.key' => null]);
+
+            $service = new VatApiIntegrationService;
+            $result = $service->verifyWithApiLayer('FRB87654321', 'FR');
+
+            expect($result)->toBeArray();
+            expect($result['is_valid'])->toBeTrue();
+            expect($result['vat_number'])->toBe('FRB87654321');
+            expect($result['country_code'])->toBe('FR');
+            expect($result['company_name'])->toBe('Updated Company S.L.');
+            expect($result['api_source'])->toBe('apilayer');
+            expect($result['all_apis_failed'])->toBeTrue();
+        });
+    });
 });

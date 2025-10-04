@@ -1,0 +1,39 @@
+{
+    "eu_vat_rates_2025": {
+      "metadata": {
+        "date": "2025-10-03",
+        "average_rate": 21.8,
+        "minimum_required": 15,
+        "currency": "percentage"
+      },
+      "countries": {
+        "AT": {"name": "Austria", "standard_rate": 20},
+        "BE": {"name": "Belgium", "standard_rate": 21},
+        "BG": {"name": "Bulgaria", "standard_rate": 20},
+        "HR": {"name": "Croatia", "standard_rate": 25},
+        "CY": {"name": "Cyprus", "standard_rate": 19},
+        "CZ": {"name": "Czech Republic", "standard_rate": 21},
+        "DK": {"name": "Denmark", "standard_rate": 25},
+        "EE": {"name": "Estonia", "standard_rate": 24, "note": "Will increase to 24% in July 2025"},
+        "FI": {"name": "Finland", "standard_rate": 25.5},
+        "FR": {"name": "France", "standard_rate": 20},
+        "DE": {"name": "Germany", "standard_rate": 19},
+        "GR": {"name": "Greece", "standard_rate": 24},
+        "HU": {"name": "Hungary", "standard_rate": 27},
+        "IE": {"name": "Ireland", "standard_rate": 23},
+        "IT": {"name": "Italy", "standard_rate": 22},
+        "LV": {"name": "Latvia", "standard_rate": 21},
+        "LT": {"name": "Lithuania", "standard_rate": 21},
+        "LU": {"name": "Luxembourg", "standard_rate": 17},
+        "MT": {"name": "Malta", "standard_rate": 18},
+        "NL": {"name": "Netherlands", "standard_rate": 21},
+        "PL": {"name": "Poland", "standard_rate": 23},
+        "PT": {"name": "Portugal", "standard_rate": 23},
+        "RO": {"name": "Romania", "standard_rate": 19},
+        "SK": {"name": "Slovakia", "standard_rate": 23},
+        "SI": {"name": "Slovenia", "standard_rate": 22},
+        "ES": {"name": "Spain", "standard_rate": 21},
+        "SE": {"name": "Sweden", "standard_rate": 25}
+      }
+    }
+  }

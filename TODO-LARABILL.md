@@ -42,7 +42,7 @@
   - [x] Relaciones: items(), user() (configurable via config)
 - [x] **InvoiceItem.php**
   - [x] Campos: invoice_id, description, quantity, unit_price, subtotal
-  - [x] Campos: tax_rate, tax_amount, total
+  - [x] Campos: tax_rate, tax_amount, total, vat_category
   - [x] Relación belongsTo Invoice
   - [ ] Mutators para calcular totales automáticamente
 - [x] **UserTaxInfo.php**
@@ -57,22 +57,83 @@
   - [ ] Método estático getSpanishRates()
   - [ ] Método estático getEURates()
   - [ ] Scope para países activos
-- [ ] **VatVerification.php**
-  - [ ] Campos: vat_number, country_code, is_valid, company_name
-  - [ ] Campos: address, verification_date, api_used, response_data
-  - [ ] Cast response_data como array
-  - [ ] Scope para verificaciones válidas
+- [x] **VatVerification.php**
+  - [x] Campos: vat_number, country_code, is_valid, company_name
+  - [x] Campos: address, verification_date, api_used, response_data
+  - [x] Cast response_data como array
+  - [x] Scope para verificaciones válidas
+
+### 1.2.1 Modelos ROI (Reverse Charge Operator) - NUEVO
+- [ ] **UserRoiVerification.php**
+  - [ ] Campos: user_id, vat_number, country_code, is_roi
+  - [ ] Campos: company_name, company_address, last_check, expired_at
+  - [ ] Campos: api_source, response_data, cache_hit
+  - [ ] Método isExpired() - verificar si el cache expiró
+  - [ ] Método isValid() - verificar si es ROI válido
+  - [ ] Scope valid(), expired(), byCountry()
+  - [ ] Relación belongsTo User (configurable)
+- [ ] **RoiQuery.php**
+  - [ ] Campos: user_id, vat_number, country_code, query_type
+  - [ ] Campos: api_source, response_data, queried_at, cache_used
+  - [ ] Campos: legal_retention_until (7 años)
+  - [ ] Scope byDateRange(), byQueryType(), legalRetention()
+  - [ ] Relación belongsTo User (configurable)
+
+### 1.2.2 Modelos IVA de Destino - NUEVO
+- [ ] **CompanyFiscalConfig.php**
+  - [ ] Campos: company_id, apply_destination_iva, eu_sales_threshold
+  - [ ] Campos: current_eu_sales_amount, threshold_exceeded_at
+  - [ ] Campos: fiscal_year, auto_apply_destination, notification_sent
+  - [ ] Método checkThreshold() - verificar si se supera umbral
+  - [ ] Método updateEuSales() - actualizar ventas intracomunitarias
+  - [ ] Scope byFiscalYear(), thresholdExceeded()
+- [ ] **VatCategory.php**
+  - [ ] Campos: name, description, country_code, vat_rate
+  - [ ] Campos: category_type, is_active, applies_to_products
+  - [ ] Campos: special_conditions, last_updated
+  - [ ] Método estático getByCountry()
+  - [ ] Método estático getByCategoryType()
+  - [ ] Scope active(), byCountry(), byCategoryType()
+- [ ] **EuSalesThreshold.php**
+  - [ ] Campos: company_id, fiscal_year, total_amount
+  - [ ] Campos: threshold_exceeded, exceeded_at, notification_sent
+  - [ ] Campos: breakdown_by_country (JSON)
+  - [ ] Método calculateTotal() - calcular total de ventas
+  - [ ] Método checkThreshold() - verificar umbral
+  - [ ] Scope byFiscalYear(), exceeded(), byCompany()
+- [ ] **CountryVatRate.php**
+  - [ ] Campos: country_code, country_name, standard_rate
+  - [ ] Campos: reduced_rates (JSON), exempt_categories (JSON)
+  - [ ] Campos: last_updated, data_source, is_active
+  - [ ] Método getRateForCategory() - obtener tasa por categoría
+  - [ ] Método getReducedRates() - obtener tasas reducidas
+  - [ ] Scope active(), byCountry(), byRate()
 
 ### 1.3 Configuración Agnóstica
-- [ ] **config/larabill.php**
-  - [ ] Configuración de modelos (User, UserTaxInfo, Invoice, etc.)
-  - [ ] Mapeo de campos fiscales configurables
-  - [ ] Configuración de APIs (VAT verification)
-  - [ ] Configuración de numeración
-  - [ ] Configuración de inmutabilidad
-  - [ ] Configuración de PDF
-  - [ ] Configuración de emails
-  - [ ] Configuración de impuestos por defecto
+- [x] **config/larabill.php**
+  - [x] Configuración de modelos (User, UserTaxInfo, Invoice, etc.)
+  - [x] Mapeo de campos fiscales configurables
+  - [x] Configuración de APIs (VAT verification)
+  - [x] Configuración de numeración
+  - [x] Configuración de inmutabilidad
+  - [x] Configuración de PDF
+  - [x] Configuración de emails
+  - [x] Configuración de impuestos por defecto
+  - [ ] **NUEVO: Configuración ROI**
+    - [ ] Cache duration (15 días por defecto)
+    - [ ] Force API check (false por defecto)
+    - [ ] Legal retention (7 años)
+    - [ ] API rate limits
+  - [ ] **NUEVO: Configuración IVA de Destino**
+    - [ ] Default threshold (€10,000)
+    - [ ] Fiscal year start (01-01)
+    - [ ] Auto apply destination VAT
+    - [ ] Notification settings
+  - [ ] **NUEVO: Configuración Cache Agnóstico**
+    - [ ] Cache driver (file/redis)
+    - [ ] Cache prefix
+    - [ ] Cache TTL
+    - [ ] Cache tags
 
 ### 1.4 Migraciones
 - [x] **create_user_tax_infos_table.php**
@@ -86,13 +147,41 @@
 - [ ] **create_tax_rates_table.php**
   - [ ] Índice único para country_code + tax_type
   - [ ] Índice para is_active
-- [ ] **create_vat_verifications_table.php**
-  - [ ] Índice único para vat_number + country_code
-  - [ ] Índice para verification_date
+- [x] **create_vat_verifications_table.php**
+  - [x] Índice único para vat_number + country_code
+  - [x] Índice para verification_date
+- [ ] **NUEVO: create_user_roi_verifications_table.php**
+  - [ ] Índice único para user_id + vat_number + country_code
+  - [ ] Índice para expired_at
+  - [ ] Índice para last_check
+  - [ ] Constraint para expired_at > last_check
+- [ ] **NUEVO: create_roi_queries_table.php**
+  - [ ] Índice para user_id + queried_at
+  - [ ] Índice para query_type
+  - [ ] Índice para legal_retention_until
+  - [ ] Constraint para legal_retention_until > queried_at
+- [ ] **NUEVO: create_company_fiscal_configs_table.php**
+  - [ ] Índice único para company_id + fiscal_year
+  - [ ] Índice para threshold_exceeded_at
+  - [ ] Índice para apply_destination_iva
+- [ ] **NUEVO: create_vat_categories_table.php**
+  - [ ] Índice único para country_code + name
+  - [ ] Índice para category_type
+  - [ ] Índice para is_active
+- [ ] **NUEVO: create_eu_sales_thresholds_table.php**
+  - [ ] Índice único para company_id + fiscal_year
+  - [ ] Índice para threshold_exceeded
+  - [ ] Índice para exceeded_at
+- [ ] **NUEVO: create_country_vat_rates_table.php**
+  - [ ] Índice único para country_code
+  - [ ] Índice para is_active
+  - [ ] Índice para last_updated
 - [ ] **Seeders**
   - [ ] TaxRatesSeeder con datos españoles
   - [ ] TaxRatesSeeder con datos europeos
   - [ ] TaxRatesSeeder con datos mundiales básicos
+  - [ ] **NUEVO: CountryVatRatesSeeder** con datos de rate_list_eu.json
+  - [ ] **NUEVO: VatCategoriesSeeder** con categorías estándar
 
 ---
 
@@ -104,19 +193,41 @@
   - [x] APILayer (fallback) - http://apilayer.net
   - [ ] Round-robin para testing (100 calls límite)
 - [x] **Método verifyVatNumber()** (básico)
-  - [ ] Cache de verificaciones (30 días)
-  - [ ] Fallback entre APIs
-  - [ ] Logging de errores
+  - [x] Cache de verificaciones (30 días)
+  - [x] Fallback entre APIs
+  - [x] Logging de errores
   - [ ] Rate limiting
-- [ ] **Métodos privados**
-  - [ ] tryAbstractApi()
-  - [ ] tryApiLayer()
-  - [ ] parseApiResponse()
+- [x] **Métodos privados**
+  - [x] tryAbstractApi()
+  - [x] tryApiLayer()
+  - [x] parseApiResponse()
 - [x] **Configuración en billing.php**
   - [x] API keys
   - [x] API preferida
   - [ ] Límites de rate
   - [ ] Timeout configurables
+
+### 2.1.1 RoiVerificationService - NUEVO
+- [ ] **Configuración de Cache Agnóstico**
+  - [ ] Driver configurable (file/redis)
+  - [ ] TTL configurable (15 días por defecto)
+  - [ ] Prefix para cache keys
+  - [ ] Tags para invalidación
+- [ ] **Método verifyRoiStatus()**
+  - [ ] Verificar cache primero
+  - [ ] Consultar API si cache expirado
+  - [ ] Guardar en UserRoiVerification
+  - [ ] Registrar en RoiQuery
+  - [ ] Retornar resultado con metadata
+- [ ] **Método isRoiValid()**
+  - [ ] Verificar si es ROI válido
+  - [ ] Considerar expiración de cache
+  - [ ] Forzar verificación si es necesario
+- [ ] **Métodos privados**
+  - [ ] getCachedRoiVerification()
+  - [ ] cacheRoiVerification()
+  - [ ] logRoiQuery()
+  - [ ] isCacheExpired()
 
 ### 2.2 TaxCalculationService
 - [x] **Método calculateTax()** (básico)
@@ -127,20 +238,43 @@
   - [ ] calculateSpecialSpanishTax() - Canarias (IGIC), Ceuta/Melilla (IPSI)
   - [x] calculateEUTax() - Intracomunitario con reverse charge
   - [ ] calculateWorldwideTax() - Resto del mundo (sin IVA)
-- [x] **Lógica de reverse charge** (básico)
+- [ ] **NUEVO: Lógica de ROI y IVA de Destino**
   - [ ] Verificación de ROI (Registro de Operadores Intracomunitarios)
-  - [ ] Aplicación de IVA de destino
+  - [ ] Aplicación de IVA de destino según umbrales
   - [ ] Notas fiscales específicas
+  - [ ] Cálculo de umbrales intracomunitarios
 - [x] **Casos especiales** (básico)
   - [ ] Canarias: IGIC 7%, exento de IVA español
   - [ ] Ceuta/Melilla: IPSI 0%, exento de IVA español
   - [x] UE B2B: Reverse charge (IVA 0% + nota)
-  - [ ] UE B2C: IVA de destino
+  - [ ] **NUEVO: UE B2C: IVA de destino** con umbrales
   - [ ] EEUU: Sales Tax (configurable por estado)
+
+### 2.2.1 DestinationVatService - NUEVO
+- [ ] **Gestión de Umbrales**
+  - [ ] Verificar umbral actual de ventas intracomunitarias
+  - [ ] Calcular total de ventas por año fiscal
+  - [ ] Detectar superación de umbral (€10,000)
+  - [ ] Notificar cambio de régimen fiscal
+- [ ] **Aplicación de IVA de Destino**
+  - [ ] Determinar si aplicar IVA de destino
+  - [ ] Obtener tasa VAT del país de destino
+  - [ ] Calcular IVA según categoría de producto
+  - [ ] Generar notas fiscales específicas
+- [ ] **Configuración por Empresa**
+  - [ ] Permitir configuración flexible por empresa
+  - [ ] Soporte para diferentes umbrales por empresa
+  - [ ] Configuración de año fiscal personalizado
+  - [ ] Notificaciones configurables
+- [ ] **Métodos privados**
+  - [ ] calculateEuSalesTotal()
+  - [ ] checkThresholdExceeded()
+  - [ ] getDestinationVatRate()
+  - [ ] generateFiscalNotes()
 
 ### 2.3 BillingService
 - [x] **Método createInvoice()** (básico)
-  - [ ] Verificación VAT si es necesario
+  - [ ] **NUEVO: Verificación ROI si es necesario**
   - [x] Cálculo de impuestos
   - [x] Creación de factura
   - [x] Creación de items
@@ -159,6 +293,23 @@
   - [x] Numeración secuencial
   - [ ] Reset anual opcional
   - [ ] Formato configurable (YYYYMMDDHHMMNN)
+
+### 2.3.1 CompanyConfigService - NUEVO
+- [ ] **Gestión de Configuración Fiscal**
+  - [ ] Crear/actualizar configuración fiscal por empresa
+  - [ ] Gestionar umbrales personalizados
+  - [ ] Configurar año fiscal personalizado
+  - [ ] Activar/desactivar IVA de destino
+- [ ] **Flexibilidad de Modelos**
+  - [ ] Permitir modelos de empresa personalizados
+  - [ ] Mapeo de campos configurables
+  - [ ] Soporte para diferentes estructuras de datos
+  - [ ] Validaciones configurables
+- [ ] **Métodos privados**
+  - [ ] getCompanyModel()
+  - [ ] mapCompanyFields()
+  - [ ] validateCompanyConfig()
+  - [ ] updateFiscalSettings()
 
 ---
 
@@ -332,6 +483,24 @@
   - [ ] Numeración automática
   - [ ] Inmutabilidad
   - [ ] Encriptación de datos
+- [ ] **NUEVO: RoiVerificationServiceTest**
+  - [ ] Verificación ROI exitosa
+  - [ ] Cache con expiración
+  - [ ] Fallback entre APIs
+  - [ ] Registro de consultas legales
+  - [ ] Manejo de errores
+- [ ] **NUEVO: DestinationVatServiceTest**
+  - [ ] Cálculo de umbrales intracomunitarios
+  - [ ] Aplicación de IVA de destino
+  - [ ] Notificaciones de umbral
+  - [ ] Configuración por empresa
+  - [ ] Categorización de productos
+- [ ] **NUEVO: CompanyConfigServiceTest**
+  - [ ] Configuración fiscal flexible
+  - [ ] Mapeo de modelos personalizados
+  - [ ] Validaciones configurables
+  - [ ] Gestión de umbrales
+  - [ ] Soporte multi-empresa
 
 ### 7.2 Tests de Integración
 - [ ] **InvoiceTest**
@@ -345,6 +514,24 @@
   - [ ] Sincronización
   - [ ] Generación automática
   - [ ] Manejo de errores
+- [ ] **NUEVO: RoiVerificationIntegrationTest**
+  - [ ] Flujo completo de verificación ROI
+  - [ ] Cache con expiración
+  - [ ] Registro de consultas legales
+  - [ ] Integración con APIs externas
+  - [ ] Manejo de errores y fallbacks
+- [ ] **NUEVO: DestinationVatIntegrationTest**
+  - [ ] Flujo completo de IVA de destino
+  - [ ] Cálculo de umbrales
+  - [ ] Aplicación automática de IVA
+  - [ ] Notificaciones de umbral
+  - [ ] Configuración por empresa
+- [ ] **NUEVO: CompanyConfigIntegrationTest**
+  - [ ] Configuración fiscal completa
+  - [ ] Mapeo de modelos personalizados
+  - [ ] Validaciones configurables
+  - [ ] Soporte multi-empresa
+  - [ ] Integración con servicios
 
 ### 7.3 Tests de Feature
 - [ ] **InvoiceManagementTest**
@@ -358,6 +545,24 @@
   - [ ] Importación masiva
   - [ ] Configuración por país
   - [ ] Validaciones
+- [ ] **NUEVO: RoiVerificationFeatureTest**
+  - [ ] Verificación ROI desde interfaz
+  - [ ] Cache y expiración
+  - [ ] Registro de consultas
+  - [ ] Manejo de errores
+  - [ ] Notificaciones de estado
+- [ ] **NUEVO: DestinationVatFeatureTest**
+  - [ ] Gestión de umbrales desde interfaz
+  - [ ] Aplicación de IVA de destino
+  - [ ] Notificaciones de umbral
+  - [ ] Configuración por empresa
+  - [ ] Categorización de productos
+- [ ] **NUEVO: CompanyConfigFeatureTest**
+  - [ ] Configuración fiscal desde interfaz
+  - [ ] Mapeo de modelos personalizados
+  - [ ] Validaciones configurables
+  - [ ] Soporte multi-empresa
+  - [ ] Gestión de umbrales
 
 ---
 
@@ -438,7 +643,7 @@
 - **Canarias**: IGIC 7%, exento de IVA
 - **Ceuta/Melilla**: IPSI 0%, exento de IVA
 - **UE B2B**: Reverse charge (IVA 0% + nota)
-- **UE B2C**: IVA de destino
+- **UE B2C**: IVA de destino con umbrales
 - **Resto del mundo**: Sin IVA
 
 ### **APIs de Verificación VAT**
@@ -458,8 +663,36 @@
 - **Configurable**: Prefijos, formato, reset anual
 - **Dashboard**: Gestión de numeración
 
+### **NUEVO: Sistema ROI (Reverse Charge Operator)**
+- **Cache configurable**: 15 días por defecto, 0 días para forzar API
+- **Registro legal**: Todas las consultas guardadas por 7 años
+- **APIs externas**: Verificación de operadores intracomunitarios
+- **Fallback automático**: Entre diferentes APIs de verificación
+- **Protección legal**: Registro completo de consultas para auditoría
+
+### **NUEVO: Sistema IVA de Destino**
+- **Umbral configurable**: €10,000 por defecto (año fiscal 01-01)
+- **Aplicación automática**: Cuando se supera el umbral
+- **Configuración por empresa**: Flexibilidad total
+- **Notificaciones**: Alertas cuando se supera umbral
+- **Categorización**: Productos/servicios con VAT específico
+
+### **NUEVO: Cache Agnóstico**
+- **Driver configurable**: File o Redis
+- **TTL configurable**: Por tipo de cache
+- **Tags para invalidación**: Cache inteligente
+- **Prefix configurable**: Para evitar conflictos
+- **Fallback automático**: Si Redis no disponible
+
+### **NUEVO: Flexibilidad de Modelos**
+- **Modelos personalizables**: Soporte para diferentes estructuras
+- **Mapeo de campos**: Configurable por proyecto
+- **Validaciones configurables**: Adaptables a cada caso
+- **Soporte multi-empresa**: Configuración independiente
+- **Integración simple**: Mínimo acoplamiento
+
 ---
 
-**Última actualización:** 2024-12-01  
-**Versión:** 1.0.0  
-**Estado:** En desarrollo
+**Última actualización:** 2025-01-03  
+**Versión:** 1.1.0  
+**Estado:** En desarrollo - Refactorizado con sistema ROI e IVA de destino
