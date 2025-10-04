@@ -19,7 +19,7 @@ it('can create a VAT category', function () {
     expect($category)->toBeInstanceOf(VatCategory::class);
     expect($category->name)->toBe('Standard Goods');
     expect($category->country_code)->toBe('ES');
-    expect($category->vat_rate)->toBe(21.00);
+    expect($category->vat_rate)->toBe(2100); // 21% in base 100
     expect($category->is_active)->toBeTrue();
 });
 
@@ -187,6 +187,9 @@ it('can find VAT category by rate', function () {
 });
 
 it('can use scopes correctly', function () {
+    // Clean up any existing data
+    VatCategory::query()->delete();
+
     VatCategory::create([
         'name' => 'Standard ES',
         'country_code' => 'ES',
@@ -202,7 +205,8 @@ it('can use scopes correctly', function () {
         'vat_rate' => 5.50,
         'category_type' => VatCategory::CATEGORY_TYPE_REDUCED,
         'is_active' => false,
-        'applies_to_services' => true,
+        'applies_to_products' => false,
+        'applies_to_services' => false,
     ]);
 
     // Test by country scope
@@ -234,7 +238,7 @@ it('can get VAT rate for category', function () {
         'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
     ]);
 
-    expect($category->getVatRate())->toBe(21.00);
+    expect($category->getRate())->toBe(2100); // 21% in base 100
 });
 
 it('can check if category applies to products', function () {
@@ -379,16 +383,16 @@ it('automatically sets last_updated on creation and update', function () {
 
     $afterCreation = now();
 
-    expect($category->last_updated)->toBeGreaterThanOrEqualTo($beforeCreation);
-    expect($category->last_updated)->toBeLessThanOrEqualTo($afterCreation);
+    expect($category->last_updated->timestamp)->toBeGreaterThanOrEqualTo($beforeCreation->timestamp);
+    expect($category->last_updated->timestamp)->toBeLessThanOrEqualTo($afterCreation->timestamp);
 
     // Update and check last_updated changes
     $beforeUpdate = now();
     $category->update(['vat_rate' => 20.00]);
     $afterUpdate = now();
 
-    expect($category->fresh()->last_updated)->toBeGreaterThanOrEqualTo($beforeUpdate);
-    expect($category->fresh()->last_updated)->toBeLessThanOrEqualTo($afterUpdate);
+    expect($category->fresh()->last_updated->timestamp)->toBeGreaterThanOrEqualTo($beforeUpdate->timestamp);
+    expect($category->fresh()->last_updated->timestamp)->toBeLessThanOrEqualTo($afterUpdate->timestamp);
 });
 
 it('can get category statistics', function () {

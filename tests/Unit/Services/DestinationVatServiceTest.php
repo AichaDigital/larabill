@@ -171,7 +171,7 @@ it('can update EU sales amount', function () {
 
     $updated = $service->updateEuSalesAmount('company-123', 2024, 'ES', 2000.00);
 
-    expect($updated->current_eu_sales_amount)->toBe(7000.00);
+    expect($updated->current_eu_sales_amount)->toBe(7000);
     expect($updated->checkThreshold())->toBeFalse();
 });
 
@@ -188,7 +188,7 @@ it('can update EU sales amount and exceed threshold', function () {
 
     $updated = $service->updateEuSalesAmount('company-123', 2024, 'ES', 6000.00);
 
-    expect($updated->current_eu_sales_amount)->toBe(11000.00);
+    expect($updated->current_eu_sales_amount)->toBe(11000);
     expect($updated->checkThreshold())->toBeTrue();
     expect($updated->apply_destination_iva)->toBeTrue();
 });
@@ -336,7 +336,7 @@ it('can reset EU sales for new fiscal year', function () {
     expect($reset)->toBeTrue();
 
     $newConfig = CompanyFiscalConfig::findByCompanyAndYear('company-123', 2025);
-    expect($newConfig->current_eu_sales_amount)->toBe(0.00);
+    expect($newConfig->current_eu_sales_amount)->toBe(0);
     expect($newConfig->threshold_exceeded)->toBeFalse();
     expect($newConfig->notification_sent)->toBeFalse();
 

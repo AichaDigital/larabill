@@ -18,9 +18,9 @@ return new class extends Migration
             $table->string('company_id');
             $table->integer('fiscal_year');
 
-            // Sales amounts
-            $table->decimal('total_amount', 12, 2)->default(0.00);
-            $table->decimal('threshold_amount', 10, 2)->default(10000.00);
+            // Sales amounts (using base 100 format: €12.34 = 1234)
+            $table->integer('total_amount')->default(0); // Base 100: €0.00 = 0
+            $table->integer('threshold_amount')->default(1000000); // Base 100: €10,000.00 = 1000000
             $table->string('currency', 3)->default('EUR');
 
             // Threshold status

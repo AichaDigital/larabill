@@ -59,8 +59,8 @@ describe('CountryVatRate Debug', function () {
             'country_code' => 'DE',
             'country_name' => 'Germany',
             'standard_rate' => 1900, // 19% in base 100
-            'reduced_rates' => json_encode([]),
-            'exempt_categories' => json_encode([]),
+            'reduced_rates' => [],
+            'exempt_categories' => [],
             'is_active' => true,
             'data_source' => 'manual',
             'last_updated' => now(),

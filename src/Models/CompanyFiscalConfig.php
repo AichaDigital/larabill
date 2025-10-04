@@ -5,13 +5,31 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Models;
 
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Model;
+use DateTimeInterface;
+use Illuminate\Database\Eloquent\{Builder, Model};
+use Illuminate\Support\Carbon as LaravelCarbon;
 
 /**
  * CompanyFiscalConfig Model
  *
- * Represents fiscal configuration for companies, including
- * destination VAT settings and EU sales thresholds.
+ * Represents fiscal configuration for companies, including destination VAT settings and EU sales thresholds.
+ * All monetary amounts are stored as base-100 integers (e.g., €12.34 => 1234).
+ *
+ * @property string $company_id
+ * @property bool $is_oss
+ * @property bool $is_roi
+ * @property bool $apply_destination_iva
+ * @property float $eu_sales_threshold Monetary amount (e.g., 10000.00 => €10,000.00)
+ * @property float $current_eu_sales_amount Monetary amount (e.g., 12.34 => €12.34)
+ * @property Carbon|null $threshold_exceeded_at
+ * @property bool $threshold_exceeded
+ * @property int $fiscal_year
+ * @property bool $auto_apply_destination
+ * @property bool $notification_sent
+ * @property string $fiscal_year_start
+ * @property string $currency
+ * @property string|null $threshold_notification_email
+ * @property array|null $custom_threshold_rules
  */
 class CompanyFiscalConfig extends Model
 {
@@ -20,6 +38,8 @@ class CompanyFiscalConfig extends Model
      */
     protected $fillable = [
         'company_id',
+        'is_oss',
+        'is_roi',
         'apply_destination_iva',
         'eu_sales_threshold',
         'current_eu_sales_amount',
@@ -35,18 +55,76 @@ class CompanyFiscalConfig extends Model
     ];
 
     /**
-     * The attributes that should be cast.
+     * Casts for attributes.
+     *
+     * Uses integers in base 100 for monetary values (amounts, thresholds)
+     * Example: €12.34 is stored as 1234, €10,000.00 as 1000000
      */
-    protected $casts = [
-        'apply_destination_iva' => 'boolean',
-        'auto_apply_destination' => 'boolean',
-        'notification_sent' => 'boolean',
-        'threshold_exceeded' => 'boolean',
-        'eu_sales_threshold' => 'float',
-        'current_eu_sales_amount' => 'float',
-        'threshold_exceeded_at' => 'datetime',
-        'custom_threshold_rules' => 'array',
-    ];
+    public function casts(): array
+    {
+        return [
+            'is_oss' => 'boolean',
+            'is_roi' => 'boolean',
+            'apply_destination_iva' => 'boolean',
+            'auto_apply_destination' => 'boolean',
+            'notification_sent' => 'boolean',
+            'threshold_exceeded' => 'boolean',
+            'eu_sales_threshold' => 'float', // Monetary amount: €10000.00
+            'current_eu_sales_amount' => 'float', // Monetary amount: €12.34
+            'threshold_exceeded_at' => 'datetime',
+            'custom_threshold_rules' => 'array',
+        ];
+    }
+
+    /**
+     * Convert monetary amount to base 100 integer.
+     */
+    public static function amountToBase100(float $amount): int
+    {
+        return (int) ($amount * 100);
+    }
+
+    /**
+     * Convert base 100 integer to monetary amount.
+     */
+    public static function base100ToAmount(int|float $base100): float
+    {
+        return (float) $base100 / 100.0;
+    }
+
+    /**
+     * Get EU sales threshold as monetary amount.
+     */
+    public function getEuSalesThresholdAsAmount(): float
+    {
+        return static::base100ToAmount($this->eu_sales_threshold);
+    }
+
+    /**
+     * Get current EU sales amount as monetary amount.
+     */
+    public function getCurrentEuSalesAmountAsAmount(): float
+    {
+        return static::base100ToAmount($this->current_eu_sales_amount);
+    }
+
+    /**
+     * Set EU sales threshold from monetary amount.
+     */
+    public function setEuSalesThresholdFromAmount(float $amount): self
+    {
+        $this->update(['eu_sales_threshold' => static::amountToBase100($amount)]);
+        return $this;
+    }
+
+    /**
+     * Set current EU sales amount from monetary amount.
+     */
+    public function setCurrentEuSalesAmountFromAmount(float $amount): self
+    {
+        $this->update(['current_eu_sales_amount' => static::amountToBase100($amount)]);
+        return $this;
+    }
 
     /**
      * Boot the model.
@@ -63,7 +141,7 @@ class CompanyFiscalConfig extends Model
 
             // Set default threshold if not provided
             if (! $model->eu_sales_threshold) {
-                $model->eu_sales_threshold = config('larabill.destination_vat.default_threshold', 10000);
+                $model->eu_sales_threshold = config('larabill.destination_vat.default_threshold', 1000000); // Base 100 integer
             }
 
             // Set default currency if not provided
@@ -74,6 +152,23 @@ class CompanyFiscalConfig extends Model
             // Set fiscal year start if not provided
             if (! $model->fiscal_year_start) {
                 $model->fiscal_year_start = config('larabill.destination_vat.fiscal_year_start', '01-01');
+            }
+
+            // Set default boolean values if not provided
+            if ($model->auto_apply_destination === null) {
+                $model->auto_apply_destination = config('larabill.destination_vat.auto_apply_destination', true);
+            }
+
+            if ($model->apply_destination_iva === null) {
+                $model->apply_destination_iva = false;
+            }
+
+            if ($model->notification_sent === null) {
+                $model->notification_sent = false;
+            }
+
+            if ($model->current_eu_sales_amount === null) {
+                $model->current_eu_sales_amount = 0;
             }
 
             // Apply field mapping when creating
@@ -111,9 +206,9 @@ class CompanyFiscalConfig extends Model
     }
 
     /**
-     * Get or create fiscal config for company and year.
+     * Get or create fiscal config for the company (singleton pattern).
      */
-    public static function getOrCreateForCompany(string $companyId, ?int $fiscalYear = null): self
+    public static function getOrCreateForCompany(string $companyId = 'default', ?int $fiscalYear = null): self
     {
         if (! $fiscalYear) {
             $fiscalYear = now()->year;
@@ -125,14 +220,25 @@ class CompanyFiscalConfig extends Model
                 'fiscal_year' => $fiscalYear,
             ],
             [
-                'eu_sales_threshold' => config('larabill.destination_vat.default_threshold', 10000),
+                'is_oss' => false,
+                'is_roi' => false,
+                'eu_sales_threshold' => config('larabill.destination_vat.default_threshold', 1000000), // Base 100 integer
                 'currency' => config('larabill.destination_vat.currency', 'EUR'),
                 'fiscal_year_start' => config('larabill.destination_vat.fiscal_year_start', '01-01'),
                 'auto_apply_destination' => config('larabill.destination_vat.auto_apply_destination', true),
                 'apply_destination_iva' => false,
                 'current_eu_sales_amount' => 0,
+                'threshold_exceeded' => false,
             ]
         );
+    }
+
+    /**
+     * Get current company configuration (singleton pattern).
+     */
+    public static function current(): self
+    {
+        return static::getOrCreateForCompany('default');
     }
 
     /**
@@ -142,7 +248,10 @@ class CompanyFiscalConfig extends Model
     {
         if ($this->current_eu_sales_amount >= $this->eu_sales_threshold) {
             if (! $this->threshold_exceeded_at) {
-                $this->update(['threshold_exceeded_at' => now()]);
+                $this->update([
+                    'threshold_exceeded_at' => now(),
+                    'threshold_exceeded' => true
+                ]);
             }
 
             return true;
@@ -156,7 +265,8 @@ class CompanyFiscalConfig extends Model
      */
     public function updateEuSales(float $amount): self
     {
-        $this->current_eu_sales_amount += $amount;
+        $amountInBase100 = static::amountToBase100($amount);
+        $this->current_eu_sales_amount += $amountInBase100;
         $this->save();
 
         $this->checkThreshold();
@@ -183,6 +293,11 @@ class CompanyFiscalConfig extends Model
      */
     public function shouldApplyDestinationVat(): bool
     {
+        // If already registered in OSS, always apply destination VAT
+        if ($this->is_oss) {
+            return true;
+        }
+
         return $this->apply_destination_iva ||
                ($this->auto_apply_destination && $this->checkThreshold());
     }
@@ -194,7 +309,6 @@ class CompanyFiscalConfig extends Model
     {
         $this->update([
             'apply_destination_iva' => true,
-            'threshold_exceeded_at' => $this->threshold_exceeded_at ?: now(),
         ]);
 
         return $this;
@@ -235,7 +349,7 @@ class CompanyFiscalConfig extends Model
      */
     public function scopeThresholdExceeded($query)
     {
-        return $query->where('threshold_exceeded_at', '!=', null);
+        return $query->whereColumn('current_eu_sales_amount', '>=', 'eu_sales_threshold');
     }
 
     /**
@@ -267,7 +381,7 @@ class CompanyFiscalConfig extends Model
      */
     public function scopeNeedsNotification($query)
     {
-        return $query->where('threshold_exceeded_at', '!=', null)
+        return $query->whereColumn('current_eu_sales_amount', '>=', 'eu_sales_threshold')
             ->where('notification_sent', false);
     }
 
@@ -308,10 +422,10 @@ class CompanyFiscalConfig extends Model
     public function getThresholdPercentage(): float
     {
         if ($this->eu_sales_threshold <= 0) {
-            return 0;
+            return 0.0;
         }
 
-        return min(100, ($this->current_eu_sales_amount / $this->eu_sales_threshold) * 100);
+        return min(100.0, ($this->current_eu_sales_amount / $this->eu_sales_threshold) * 100.0);
     }
 
     /**
@@ -319,7 +433,8 @@ class CompanyFiscalConfig extends Model
      */
     public function getRemainingThresholdAmount(): float
     {
-        return max(0, $this->eu_sales_threshold - $this->current_eu_sales_amount);
+        $remaining = max(0, $this->eu_sales_threshold - $this->current_eu_sales_amount);
+        return static::base100ToAmount($remaining);
     }
 
     /**
@@ -345,9 +460,9 @@ class CompanyFiscalConfig extends Model
     /**
      * Get default threshold from config.
      */
-    public static function getDefaultThreshold(): float
+    public static function getDefaultThreshold(): int
     {
-        return config('larabill.destination_vat.default_threshold', 10000);
+        return config('larabill.destination_vat.default_threshold', 1000000); // Base 100 integer
     }
 
     /**
@@ -365,4 +480,97 @@ class CompanyFiscalConfig extends Model
     {
         return config('larabill.destination_vat.fiscal_year_start', '01-01');
     }
+
+    /**
+     * Accessor for eu_sales_threshold to return as integer.
+     */
+    public function getEuSalesThresholdAttribute($value): int
+    {
+        return $value === null ? 0 : (int) $value;
+    }
+
+    /**
+     * Accessor for current_eu_sales_amount to return as integer.
+     */
+    public function getCurrentEuSalesAmountAttribute($value): int
+    {
+        return $value === null ? 0 : (int) $value;
+    }
+
+    /**
+     * Mutator for eu_sales_threshold to store as monetary amount.
+     */
+    public function setEuSalesThresholdAttribute($value): void
+    {
+        $this->attributes['eu_sales_threshold'] = $value === null ? 0.0 : (float) $value;
+    }
+
+    /**
+     * Mutator for current_eu_sales_amount to store as monetary amount.
+     */
+    public function setCurrentEuSalesAmountAttribute($value): void
+    {
+        $this->attributes['current_eu_sales_amount'] = $value === null ? 0.0 : (float) $value;
+    }
+
+    /**
+     * Enable OSS registration.
+     */
+    public function enableOSS(): self
+    {
+        $this->update(['is_oss' => true]);
+        return $this;
+    }
+
+    /**
+     * Disable OSS registration.
+     */
+    public function disableOSS(): self
+    {
+        $this->update(['is_oss' => false]);
+        return $this;
+    }
+
+    /**
+     * Enable ROI status.
+     */
+    public function enableROI(): self
+    {
+        $this->update(['is_roi' => true]);
+        return $this;
+    }
+
+    /**
+     * Disable ROI status.
+     */
+    public function disableROI(): self
+    {
+        $this->update(['is_roi' => false]);
+        return $this;
+    }
+
+    /**
+     * Reset configuration for new fiscal year.
+     */
+    public function resetForNewYear(int $newYear): self
+    {
+        $this->update([
+            'fiscal_year' => $newYear,
+            'current_eu_sales_amount' => 0.0,
+            'threshold_exceeded' => false,
+            'threshold_exceeded_at' => null,
+            'notification_sent' => false,
+        ]);
+
+        return $this;
+    }
+
+    /**
+     * Check if notification is needed.
+     */
+    public function shouldSendNotification(): bool
+    {
+        return $this->threshold_exceeded && !$this->notification_sent;
+    }
+
 }

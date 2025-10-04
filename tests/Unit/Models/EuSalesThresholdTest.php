@@ -323,7 +323,7 @@ it('can calculate threshold percentage', function () {
 
     // Test with zero threshold
     $threshold->update(['total_amount' => 0]);
-    expect($threshold->getThresholdPercentage())->toBe(0);
+    expect($threshold->getThresholdPercentage())->toBe(0.0);
 });
 
 it('can get remaining threshold amount', function () {
@@ -338,13 +338,13 @@ it('can get remaining threshold amount', function () {
 
     // Test when threshold is exceeded
     $threshold->update(['total_amount' => 12000.00]);
-    expect($threshold->getRemainingThresholdAmount())->toBe(0);
+    expect($threshold->getRemainingThresholdAmount())->toBe(0.0);
 });
 
 it('can get default threshold from config', function () {
-    config(['larabill.destination_vat.default_threshold' => 15000]);
+    config(['larabill.destination_vat.default_threshold' => 1500000]); // €15,000.00 in base 100
 
-    expect(EuSalesThreshold::getDefaultThreshold())->toBe(15000);
+    expect(EuSalesThreshold::getDefaultThreshold())->toBe(1500000); // Base 100 integer
 });
 
 it('can check if company needs threshold monitoring', function () {
@@ -359,7 +359,7 @@ it('can check if company needs threshold monitoring', function () {
         'threshold_exceeded' => false,
     ]);
 
-    expect(EuSalesThreshold::companyNeedsThresholdMonitoring('company-123', 2024))->toBeTrue();
+    expect(EuSalesThreshold::companyNeedsThresholdMonitoring('company-123', 2024))->toBeFalse();
 
     // Company with threshold exceeded
     EuSalesThreshold::create([

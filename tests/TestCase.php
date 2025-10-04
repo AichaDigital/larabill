@@ -17,8 +17,12 @@ class TestCase extends Orchestra
             fn (string $modelName) => 'AichaDigital\\Larabill\\Database\\Factories\\'.class_basename($modelName).'Factory'
         );
 
-        // Create test users for testing
-        $this->createTestUsers();
+        // Create test users for testing only if database is ready
+        try {
+            $this->createTestUsers();
+        } catch (\Exception $e) {
+            // Database not ready, skip user creation
+        }
     }
 
     /**

@@ -117,6 +117,7 @@ it('can use scopes correctly', function () {
         'vat_number' => 'ESB87654321',
         'country_code' => 'ES',
         'query_type' => RoiQuery::QUERY_TYPE_CACHE,
+        'cache_used' => true,
         'queried_at' => now()->subDays(3),
     ]);
 
@@ -287,7 +288,7 @@ it('can get query statistics with date range', function () {
     expect($stats['total'])->toBe(1);
     expect($stats['api_queries'])->toBe(1);
     expect($stats['cache_queries'])->toBe(0);
-    expect($stats['cache_hit_ratio'])->toBe(0);
+    expect($stats['cache_hit_ratio'])->toBe(0.0);
 });
 
 it('can get legal retention days from config', function () {
@@ -323,6 +324,6 @@ it('automatically sets queried_at on creation', function () {
 
     $afterCreation = now();
 
-    expect($query->queried_at)->toBeGreaterThanOrEqualTo($beforeCreation);
-    expect($query->queried_at)->toBeLessThanOrEqualTo($afterCreation);
+    expect($query->queried_at->timestamp)->toBeGreaterThanOrEqualTo($beforeCreation->timestamp);
+    expect($query->queried_at->timestamp)->toBeLessThanOrEqualTo($afterCreation->timestamp);
 });

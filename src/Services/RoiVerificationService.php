@@ -87,6 +87,7 @@ class RoiVerificationService
         // Try to get from cache first
         $cachedVerification = $this->getCachedRoiVerification($userId, $vatNumber, $countryCode);
 
+
         if ($cachedVerification && $cachedVerification->isCacheValid()) {
             // Log cache hit
             $this->logRoiQuery($userId, $vatNumber, $countryCode, RoiQuery::QUERY_TYPE_CACHE, 'cache', [
@@ -186,7 +187,7 @@ class RoiVerificationService
                 'vat_number' => $vatNumber,
                 'country_code' => $countryCode,
                 'is_roi' => $isRoi,
-                'company_name' => $vatResult['company_name'] ?? null,
+                'company_name' => $vatResult['company_name'] ?? '',
                 'company_address' => $vatResult['company_address'] ?? null,
                 'api_source' => $vatResult['api_source'] ?? 'unknown',
                 'response_data' => $vatResult,
@@ -203,7 +204,7 @@ class RoiVerificationService
                 'is_roi' => $isRoi,
                 'vat_number' => $vatNumber,
                 'country_code' => $countryCode,
-                'company_name' => $vatResult['company_name'] ?? null,
+                'company_name' => $vatResult['company_name'] ?? '',
                 'company_address' => $vatResult['company_address'] ?? null,
                 'cache_hit' => false,
                 'expired_at' => $roiVerification->expired_at,
@@ -264,21 +265,22 @@ class RoiVerificationService
      */
     private function cacheRoiVerification(UserRoiVerification $verification): void
     {
-        $cacheKey = $this->buildCacheKey(
-            $verification->user_id,
-            $verification->vat_number,
-            $verification->country_code
-        );
-
         $cacheData = [
             'is_roi' => $verification->is_roi,
+            'vat_number' => $verification->vat_number,
+            'country_code' => $verification->country_code,
             'company_name' => $verification->company_name,
             'company_address' => $verification->company_address,
             'expired_at' => $verification->expired_at,
             'last_check' => $verification->last_check,
         ];
 
-        $this->cacheService->put($cacheKey, $cacheData);
+        $this->cacheService->storeRoiVerification(
+            $verification->user_id,
+            $verification->vat_number,
+            $verification->country_code,
+            $cacheData
+        );
     }
 
     /**

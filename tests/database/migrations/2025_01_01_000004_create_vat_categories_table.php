@@ -19,8 +19,8 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->string('country_code', 2);
 
-            // VAT rate information
-            $table->decimal('vat_rate', 5, 2);
+            // VAT rate information (using base 100 format: 21.50% = 2150)
+            $table->integer('vat_rate'); // Base 100: 21.50% = 2150
             $table->enum('category_type', ['standard', 'reduced', 'super_reduced', 'exempt']);
 
             // Category scope

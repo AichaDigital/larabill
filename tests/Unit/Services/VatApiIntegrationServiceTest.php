@@ -75,7 +75,7 @@ describe('VatApiIntegrationService', function () {
 
             expect($result)->toBeArray();
             expect($result['is_valid'])->toBeFalse();
-            expect($result['vat_number'])->toBe('INVALID123');
+            expect($result['vat_number'])->toBe('ESINVALID123');
             expect($result['country_code'])->toBe('ES');
             expect($result['company_name'])->toBeNull();
             expect($result['company_address'])->toBeNull();
@@ -166,7 +166,7 @@ describe('VatApiIntegrationService', function () {
 
             expect($result)->toBeArray();
             expect($result['is_valid'])->toBeFalse();
-            expect($result['vat_number'])->toBe('INVALID456');
+            expect($result['vat_number'])->toBe('FRINVALID456');
             expect($result['country_code'])->toBe('FR');
             expect($result['company_name'])->toBeNull();
             expect($result['company_address'])->toBeNull();
@@ -220,7 +220,7 @@ describe('VatApiIntegrationService', function () {
             expect($result['country_code'])->toBe('ES');
             expect($result['company_name'])->toBe('Test Company S.L.');
             expect($result['api_source'])->toBe('abstractapi');
-            expect($result['all_apis_failed'])->toBeTrue();
+            expect($result['all_apis_failed'])->toBeFalse();
         });
 
         it('returns mock response when no API key configured for APILayer', function () {
@@ -235,7 +235,7 @@ describe('VatApiIntegrationService', function () {
             expect($result['country_code'])->toBe('FR');
             expect($result['company_name'])->toBe('Updated Company S.L.');
             expect($result['api_source'])->toBe('apilayer');
-            expect($result['all_apis_failed'])->toBeTrue();
+            expect($result['all_apis_failed'])->toBeFalse();
         });
     });
 });

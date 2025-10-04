@@ -50,7 +50,8 @@ class DestinationVatService
                 // Try to get rate from VAT category
                 $vatCategory = VatCategory::findByNameAndCountry($category, $countryCode);
                 if ($vatCategory) {
-                    return (float) $vatCategory->vat_rate;
+                    // Convert from base-100 integer to percentage
+                    return (float) $vatCategory->vat_rate / 100.0;
                 }
             }
 
@@ -369,7 +370,8 @@ class DestinationVatService
             throw new \InvalidArgumentException("VAT category not found: {$categoryName} for country {$countryCode}");
         }
 
-        return (float) $category->vat_rate;
+        // Convert from base-100 integer to percentage
+        return (float) $category->vat_rate / 100.0;
     }
 
     /**
@@ -389,7 +391,10 @@ class DestinationVatService
     {
         $config = CompanyFiscalConfig::getOrCreateForCompany($companyId, $fiscalYear);
 
-        $config->current_eu_sales_amount = (float) $config->current_eu_sales_amount + $amount;
+        // Work directly with monetary amounts (no base100 conversion)
+        $currentAmount = $config->current_eu_sales_amount;
+        $newAmount = $currentAmount + $amount;
+        $config->current_eu_sales_amount = $newAmount;
 
         if ($config->current_eu_sales_amount >= $config->eu_sales_threshold) {
             $config->apply_destination_iva = true;
@@ -397,6 +402,17 @@ class DestinationVatService
         }
 
         $config->save();
+
+        // Also update EuSalesThreshold for detailed tracking
+        $threshold = EuSalesThreshold::findByCompanyAndYear($companyId, $fiscalYear);
+        if ($threshold) {
+            $breakdown = $threshold->breakdown_by_country ?? [];
+            $currentCountryAmount = (float) ($breakdown[$countryCode] ?? 0.0);
+            $breakdown[$countryCode] = (float) ($currentCountryAmount + $amount);
+            $threshold->breakdown_by_country = $breakdown;
+            $threshold->total_amount = (float) array_sum($breakdown);
+            $threshold->save();
+        }
 
         return $config;
     }
@@ -410,12 +426,14 @@ class DestinationVatService
         $threshold = (float) $config->eu_sales_threshold;
         $current = (float) $config->current_eu_sales_amount;
 
+        $remaining = max(0, $threshold - $current);
+
         return [
             'threshold' => $threshold,
             'current_amount' => $current,
             'exceeded' => $current >= $threshold,
-            'percentage' => ($current / $threshold) * 100,
-            'remaining' => max(0, $threshold - $current),
+            'percentage' => round(($current / $threshold) * 100, 1),
+            'remaining' => $remaining == 0 ? 0 : round($remaining, 2),
         ];
     }
 

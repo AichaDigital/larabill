@@ -29,7 +29,7 @@ it('can create company fiscal configuration', function () {
     expect($config->company_id)->toBe('company-123');
     expect($config->fiscal_year)->toBe(2024);
     expect($config->apply_destination_iva)->toBeTrue();
-    expect($config->eu_sales_threshold)->toBe(15000.00);
+    expect($config->eu_sales_threshold)->toBe(15000);
     expect($config->currency)->toBe('USD');
     expect($config->fiscal_year_start)->toBe('04-01');
 });
@@ -85,7 +85,7 @@ it('can update company fiscal configuration', function () {
     ]);
 
     expect($updated->apply_destination_iva)->toBeTrue();
-    expect($updated->eu_sales_threshold)->toBe(15000.00);
+    expect($updated->eu_sales_threshold)->toBe(15000);
     expect($updated->currency)->toBe('USD');
 });
 
@@ -289,7 +289,7 @@ it('can update EU sales threshold for company', function () {
 
     $updated = $service->updateEuSalesThreshold('company-123', 2024, 15000.00);
 
-    expect($updated->eu_sales_threshold)->toBe(15000.00);
+    expect($updated->eu_sales_threshold)->toBe(15000);
 });
 
 it('can update EU sales amount for company', function () {
@@ -303,7 +303,7 @@ it('can update EU sales amount for company', function () {
 
     $updated = $service->updateEuSalesAmount('company-123', 2024, 2000.00);
 
-    expect($updated->current_eu_sales_amount)->toBe(7000.00);
+    expect($updated->current_eu_sales_amount)->toBe(7000);
 });
 
 it('can reset EU sales for company', function () {
@@ -319,7 +319,7 @@ it('can reset EU sales for company', function () {
 
     $reset = $service->resetEuSales('company-123', 2024);
 
-    expect($reset->current_eu_sales_amount)->toBe(0.00);
+    expect($reset->current_eu_sales_amount)->toBe(0);
     expect($reset->threshold_exceeded)->toBeFalse();
     expect($reset->notification_sent)->toBeFalse();
 });
@@ -365,7 +365,7 @@ it('can get company configuration statistics', function () {
     expect($stats['total_companies'])->toBe(2);
     expect($stats['companies_using_destination_vat'])->toBe(1);
     expect($stats['companies_exceeding_threshold'])->toBe(1);
-    expect($stats['total_eu_sales'])->toBe(17000.00);
+    expect($stats['total_eu_sales'])->toBe(17000);
     expect($stats['average_threshold_percentage'])->toBe(85.0);
 });
 
@@ -397,11 +397,11 @@ it('can get default company configuration', function () {
 
     expect($defaults)->toBeArray();
     expect($defaults['apply_destination_iva'])->toBeFalse();
-    expect($defaults['eu_sales_threshold'])->toBe(10000.00);
+    expect($defaults['eu_sales_threshold'])->toBe(10000);
     expect($defaults['currency'])->toBe('EUR');
     expect($defaults['fiscal_year_start'])->toBe('01-01');
     expect($defaults['auto_apply_destination'])->toBeTrue();
-    expect($defaults['current_eu_sales_amount'])->toBe(0.00);
+    expect($defaults['current_eu_sales_amount'])->toBe(0);
 });
 
 it('can merge company configuration with defaults', function () {
@@ -416,7 +416,7 @@ it('can merge company configuration with defaults', function () {
 
     expect($merged)->toBeArray();
     expect($merged['apply_destination_iva'])->toBeTrue();
-    expect($merged['eu_sales_threshold'])->toBe(15000.00);
+    expect($merged['eu_sales_threshold'])->toBe(15000);
     expect($merged['currency'])->toBe('EUR'); // From defaults
     expect($merged['fiscal_year_start'])->toBe('01-01'); // From defaults
     expect($merged['auto_apply_destination'])->toBeTrue(); // From defaults
@@ -465,7 +465,7 @@ it('can create company configuration with custom field mapping', function () {
     expect($config->company_id)->toBe('company-456');
     expect($config->fiscal_year)->toBe(2024);
     expect($config->apply_destination_iva)->toBeTrue();
-    expect($config->eu_sales_threshold)->toBe(15000.00);
+    expect($config->eu_sales_threshold)->toBe(15000);
 });
 
 it('can get service configuration', function () {

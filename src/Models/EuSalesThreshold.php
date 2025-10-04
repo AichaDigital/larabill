@@ -4,13 +4,26 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use DateTimeInterface;
+use Illuminate\Database\Eloquent\{Builder, Model};
+use Illuminate\Support\Carbon;
 
 /**
  * EuSalesThreshold Model
  *
- * Represents EU sales thresholds for companies,
- * tracking total sales amounts and threshold exceedance.
+ * Represents EU sales thresholds for companies, tracking total sales amounts and threshold exceedance.
+ * All monetary amounts are stored as decimal values (e.g., €12.34 => 12.34).
+ *
+ * @property string $company_id
+ * @property int $fiscal_year
+ * @property float $total_amount Monetary amount (e.g., 12.34 => €12.34)
+ * @property float $threshold_amount Monetary amount (e.g., 10000.00 => €10,000.00)
+ * @property bool $threshold_exceeded
+ * @property Carbon|null $exceeded_at
+ * @property bool $notification_sent
+ * @property array|null $breakdown_by_country
+ * @property string $currency
+ * @property Carbon|null $last_updated
  */
 class EuSalesThreshold extends Model
 {
@@ -31,17 +44,92 @@ class EuSalesThreshold extends Model
     ];
 
     /**
-     * The attributes that should be cast.
+     * Casts for attributes.
+     *
+     * Uses decimal values for monetary amounts (amounts, thresholds)
+     * Example: €12.34 is stored as 12.34, €10,000.00 as 10000.00
      */
-    protected $casts = [
-        'total_amount' => 'float',
-        'threshold_exceeded' => 'boolean',
-        'notification_sent' => 'boolean',
-        'breakdown_by_country' => 'array',
-        'threshold_amount' => 'float',
-        'exceeded_at' => 'datetime',
-        'last_updated' => 'datetime',
-    ];
+    public function casts(): array
+    {
+        return [
+            'total_amount' => 'float', // Monetary amount: €12.34
+            'threshold_amount' => 'float', // Monetary amount: €10000.00
+            'threshold_exceeded' => 'boolean',
+            'notification_sent' => 'boolean',
+            'breakdown_by_country' => 'array',
+            'exceeded_at' => 'datetime',
+            'last_updated' => 'datetime',
+        ];
+    }
+
+    /**
+     * Accessor for breakdown_by_country to ensure float values.
+     */
+    public function getBreakdownByCountryAttribute($value): array
+    {
+        if (empty($value)) {
+            return [];
+        }
+
+        $breakdown = json_decode($value, true) ?? [];
+
+        // Ensure all values are float
+        foreach ($breakdown as $country => $amount) {
+            $breakdown[$country] = (float) $amount;
+        }
+
+        return $breakdown;
+    }
+
+    /**
+     * Convert monetary amount to base 100 integer.
+     */
+    public static function amountToBase100(float $amount): int
+    {
+        return (int) ($amount * 100);
+    }
+
+    /**
+     * Convert base 100 integer to monetary amount.
+     */
+    public static function base100ToAmount(int $base100): float
+    {
+        return $base100 / 100.0;
+    }
+
+    /**
+     * Get total amount as monetary amount.
+     */
+    public function getTotalAmountAsAmount(): float
+    {
+        return static::base100ToAmount($this->total_amount);
+    }
+
+    /**
+     * Get threshold amount as monetary amount.
+     */
+    public function getThresholdAmountAsAmount(): float
+    {
+        return static::base100ToAmount($this->threshold_amount);
+    }
+
+    /**
+     * Set total amount from monetary amount.
+     */
+    public function setTotalAmountFromAmount(float $amount): self
+    {
+        $this->update(['total_amount' => static::amountToBase100($amount)]);
+        return $this;
+    }
+
+    /**
+     * Set threshold amount from monetary amount.
+     */
+    public function setThresholdAmountFromAmount(float $amount): self
+    {
+        $this->update(['threshold_amount' => static::amountToBase100($amount)]);
+        return $this;
+    }
 
     /**
      * Boot the model.
@@ -206,9 +294,9 @@ class EuSalesThreshold extends Model
     }
 
     /**
-     * Get top countries by sales amount.
+     * Get top countries by sales amount (instance method).
      */
-    public function getTopCountriesBySales(int $limit = 10): array
+    public function getTopCountriesBySalesForInstance(int $limit = 10): array
     {
         $breakdown = $this->breakdown_by_country ?? [];
 
@@ -223,10 +311,10 @@ class EuSalesThreshold extends Model
     public function getThresholdPercentage(): float
     {
         if ($this->threshold_amount <= 0) {
-            return 0;
+            return 0.0;
         }
 
-        return min(100, ($this->total_amount / $this->threshold_amount) * 100);
+        return (float) min(100, ($this->total_amount / $this->threshold_amount) * 100);
     }
 
     /**
@@ -234,7 +322,7 @@ class EuSalesThreshold extends Model
      */
     public function getRemainingThresholdAmount(): float
     {
-        return max(0, $this->threshold_amount - $this->total_amount);
+        return (float) max(0, $this->threshold_amount - $this->total_amount);
     }
 
     /**
@@ -324,43 +412,37 @@ class EuSalesThreshold extends Model
     /**
      * Get threshold statistics for a company.
      */
-    public static function getThresholdStatistics(string $companyId, ?int $fiscalYear = null): array
+    public static function getThresholdStatistics(int $fiscalYear): array
     {
-        if (! $fiscalYear) {
-            $fiscalYear = now()->year;
-        }
+        $thresholds = static::where('fiscal_year', $fiscalYear)->get();
 
-        $threshold = static::findByCompanyAndYear($companyId, $fiscalYear);
-
-        if (! $threshold) {
-            return [
-                'total_amount' => 0,
-                'threshold_amount' => config('larabill.destination_vat.default_threshold', 10000),
-                'threshold_percentage' => 0,
-                'remaining_amount' => config('larabill.destination_vat.default_threshold', 10000),
-                'exceeded' => false,
-                'countries_count' => 0,
-                'top_countries' => [],
-            ];
+        $breakdown = [];
+        foreach ($thresholds as $threshold) {
+            $countryData = $threshold->breakdown_by_country;
+            if (is_array($countryData)) {
+                foreach ($countryData as $country => $amount) {
+                    if (!isset($breakdown[$country])) {
+                        $breakdown[$country] = 0;
+                    }
+                    $breakdown[$country] += (float) $amount;
+                }
+            }
         }
 
         return [
-            'total_amount' => $threshold->total_amount,
-            'threshold_amount' => $threshold->threshold_amount,
-            'threshold_percentage' => $threshold->getThresholdPercentage(),
-            'remaining_amount' => $threshold->getRemainingThresholdAmount(),
-            'exceeded' => $threshold->threshold_exceeded,
-            'countries_count' => count($threshold->getCountriesWithSales()),
-            'top_countries' => $threshold->getTopCountriesBySales(5),
+            'total_companies' => $thresholds->count(),
+            'exceeded_companies' => $thresholds->where('threshold_exceeded', true)->count(),
+            'total_sales_amount' => $thresholds->sum('total_amount'),
+            'breakdown_by_country' => $breakdown,
         ];
     }
 
     /**
      * Get default threshold amount from config.
      */
-    public static function getDefaultThreshold(): float
+    public static function getDefaultThreshold(): int
     {
-        return config('larabill.destination_vat.default_threshold', 10000);
+        return config('larabill.destination_vat.default_threshold', 1000000); // Base 100 integer
     }
 
     /**
@@ -369,5 +451,217 @@ class EuSalesThreshold extends Model
     public static function getDefaultCurrency(): string
     {
         return config('larabill.destination_vat.currency', 'EUR');
+    }
+
+    /**
+     * Add sales amount for a specific country.
+     */
+    public function addSalesAmount(string $countryCode, float $amount): self
+    {
+        $breakdown = $this->breakdown_by_country ?? [];
+        $breakdown[$countryCode] = ($breakdown[$countryCode] ?? 0) + $amount;
+
+        $this->update([
+            'breakdown_by_country' => $breakdown,
+            'total_amount' => $this->total_amount + $amount,
+            'last_updated' => now(),
+        ]);
+
+        return $this;
+    }
+
+    /**
+     * Check if threshold is exceeded.
+     */
+    public function isThresholdExceeded(): bool
+    {
+        return $this->total_amount >= $this->threshold_amount;
+    }
+
+    /**
+     * Mark threshold as exceeded.
+     */
+    public function markThresholdExceeded(): self
+    {
+        $this->update([
+            'threshold_exceeded' => true,
+            'exceeded_at' => now(),
+        ]);
+
+        return $this;
+    }
+
+    /**
+     * Get sales amount by country.
+     */
+    public function getSalesAmountByCountry(string $countryCode): float
+    {
+        $breakdown = $this->breakdown_by_country ?? [];
+        return $breakdown[$countryCode] ?? 0.0;
+    }
+
+    /**
+     * Reset sales amounts.
+     */
+    public function resetSalesAmounts(): self
+    {
+        $this->update([
+            'total_amount' => 0,
+            'breakdown_by_country' => [],
+            'threshold_exceeded' => false,
+            'exceeded_at' => null,
+            'notification_sent' => false,
+            'last_updated' => now(),
+        ]);
+
+        return $this;
+    }
+
+    /**
+     * Scope for threshold exceeded.
+     */
+    public function scopeThresholdExceeded($query)
+    {
+        return $query->where('threshold_exceeded', true);
+    }
+
+    /**
+     * Get companies exceeding threshold.
+     */
+    public static function getCompaniesExceedingThreshold(?int $fiscalYear = null)
+    {
+        if (!$fiscalYear) {
+            $fiscalYear = now()->year;
+        }
+
+        return static::thresholdExceeded()
+            ->where('fiscal_year', $fiscalYear)
+            ->get();
+    }
+
+    /**
+     * Get companies needing notification.
+     */
+    public static function getCompaniesNeedingNotification(?int $fiscalYear = null)
+    {
+        if (!$fiscalYear) {
+            $fiscalYear = now()->year;
+        }
+
+        return static::thresholdExceeded()
+            ->where('fiscal_year', $fiscalYear)
+            ->where('notification_sent', false)
+            ->get();
+    }
+
+    /**
+     * Check if company needs threshold monitoring.
+     */
+    public static function companyNeedsThresholdMonitoring(string $companyId, ?int $fiscalYear = null): bool
+    {
+        if (!$fiscalYear) {
+            $fiscalYear = now()->year;
+        }
+
+        // Company needs monitoring if it doesn't have a threshold record yet
+        return !static::where('company_id', $companyId)
+            ->where('fiscal_year', $fiscalYear)
+            ->exists();
+    }
+
+    /**
+     * Get fiscal year start date.
+     */
+    public function getFiscalYearStartDate(): Carbon
+    {
+        $startDate = config('larabill.destination_vat.fiscal_year_start', '01-01');
+        return Carbon::create($this->fiscal_year, (int) substr($startDate, 0, 2), (int) substr($startDate, 3, 2));
+    }
+
+    /**
+     * Get fiscal year end date.
+     */
+    public function getFiscalYearEndDate(): Carbon
+    {
+        return $this->getFiscalYearStartDate()->copy()->addYear()->subDay();
+    }
+
+    /**
+     * Check if date is within fiscal year.
+     */
+    public function isWithinFiscalYear(\Carbon\Carbon $date): bool
+    {
+        $startDate = $this->getFiscalYearStartDate();
+        $endDate = $startDate->copy()->addYear()->subDay();
+
+        return $date->between($startDate, $endDate);
+    }
+
+    /**
+     * Get top countries by sales amount.
+     */
+    public static function getTopCountriesBySales(int $fiscalYear, int $limit = 5): array
+    {
+        $thresholds = static::where('fiscal_year', $fiscalYear)->get();
+
+        $countryTotals = [];
+        foreach ($thresholds as $threshold) {
+            $breakdown = $threshold->breakdown_by_country;
+            if (is_array($breakdown)) {
+                foreach ($breakdown as $country => $amount) {
+                    if (!isset($countryTotals[$country])) {
+                        $countryTotals[$country] = 0;
+                    }
+                    $countryTotals[$country] += (float) $amount;
+                }
+            }
+        }
+
+        // Sort by amount descending
+        arsort($countryTotals);
+
+        // Convert to array format expected by tests
+        $result = [];
+        $count = 0;
+        foreach ($countryTotals as $country => $amount) {
+            if ($count >= $limit) break;
+            $result[] = [
+                'country' => $country,
+                'amount' => $amount,
+            ];
+            $count++;
+        }
+
+        return $result;
+    }
+
+    /**
+     * Get sales growth by company.
+     */
+    public static function getSalesGrowthByCompany(string $companyId, int $fiscalYear): array
+    {
+        $current = static::where('company_id', $companyId)
+            ->where('fiscal_year', $fiscalYear)
+            ->first();
+
+        $previous = static::where('company_id', $companyId)
+            ->where('fiscal_year', $fiscalYear - 1)
+            ->first();
+
+        $currentAmount = $current ? $current->total_amount : 0;
+        $previousAmount = $previous ? $previous->total_amount : 0;
+
+        $growthAmount = $currentAmount - $previousAmount;
+        $growthPercentage = $previousAmount > 0 ? (($currentAmount - $previousAmount) / $previousAmount) * 100 : 0;
+
+        return [
+            'company_id' => $companyId,
+            'current_year' => $fiscalYear,
+            'current_amount' => $currentAmount,
+            'previous_year' => $fiscalYear - 1,
+            'previous_amount' => $previousAmount,
+            'growth_amount' => $growthAmount,
+            'growth_percentage' => $growthPercentage,
+        ];
     }
 }

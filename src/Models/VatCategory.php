@@ -4,13 +4,28 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use DateTimeInterface;
+use Illuminate\Database\Eloquent\{Builder, Model};
+use Illuminate\Support\Carbon;
 
 /**
  * VatCategory Model
  *
- * Represents VAT categories for products and services
- * with specific tax rates by country.
+ * Represents VAT categories for products and services with specific tax rates by country.
+ * VAT rates are stored as base-100 integers (e.g., 21.50% => 2150).
+ *
+ * @property string $name
+ * @property string|null $description
+ * @property string $country_code
+ * @property int $vat_rate Base-100 integer (e.g., 2150 => 21.50%)
+ * @property string $category_type
+ * @property bool $is_active
+ * @property bool $applies_to_products
+ * @property bool $applies_to_services
+ * @property array|null $special_conditions
+ * @property Carbon|null $last_updated
+ * @property int|null $parent_category_id
+ * @property int $sort_order
  */
 class VatCategory extends Model
 {
@@ -53,17 +68,77 @@ class VatCategory extends Model
     ];
 
     /**
-     * The attributes that should be cast.
+     * Casts for attributes.
+     *
+     * Uses integers in base 100 for VAT rates (percentages)
+     * Example: 21.50% is stored as 2150, 12.34% as 1234
      */
-    protected $casts = [
-        'vat_rate' => 'decimal:2',
-        'is_active' => 'boolean',
-        'applies_to_products' => 'boolean',
-        'applies_to_services' => 'boolean',
-        'special_conditions' => 'array',
-        'last_updated' => 'datetime',
-        'sort_order' => 'integer',
-    ];
+    public function casts(): array
+    {
+        return [
+            'vat_rate' => 'integer', // Base 100: 21.50% = 2150
+            'is_active' => 'boolean',
+            'applies_to_products' => 'boolean',
+            'applies_to_services' => 'boolean',
+            'special_conditions' => 'array',
+            'last_updated' => 'datetime',
+            'sort_order' => 'integer',
+        ];
+    }
+
+    /**
+     * Get VAT rate as base-100 integer.
+     */
+    public function getVatRateAttribute($value): int
+    {
+        return $value === null ? 0 : (int) $value;
+    }
+
+    /**
+     * Mutator for vat_rate to convert percentage to base 100.
+     */
+    public function setVatRateAttribute($value): void
+    {
+        // If the value is a float (like 21.00), convert to base 100 integer
+        if (is_float($value)) {
+            $this->attributes['vat_rate'] = static::percentageToBase100($value);
+        } else {
+            $this->attributes['vat_rate'] = $value;
+        }
+    }
+
+    /**
+     * Convert percentage to base 100 integer.
+     */
+    public static function percentageToBase100(float $percentage): int
+    {
+        return (int) ($percentage * 100);
+    }
+
+    /**
+     * Convert base 100 integer to percentage.
+     */
+    public static function base100ToPercentage(int $base100): float
+    {
+        return $base100 / 100.0;
+    }
+
+    /**
+     * Get VAT rate as percentage.
+     */
+    public function getVatRateAsPercentage(): float
+    {
+        return static::base100ToPercentage($this->vat_rate);
+    }
+
+    /**
+     * Set VAT rate from percentage.
+     */
+    public function setVatRateFromPercentage(float $percentage): self
+    {
+        $this->update(['vat_rate' => static::percentageToBase100($percentage)]);
+        return $this;
+    }
 
     /**
      * Boot the model.
@@ -161,6 +236,14 @@ class VatCategory extends Model
         $category = static::findByNameAndCountry($categoryName, $countryCode);
 
         return $category ? $category->vat_rate : null;
+    }
+
+    /**
+     * Get VAT rate for this category instance.
+     */
+    public function getRate(): int
+    {
+        return (int) $this->vat_rate;
     }
 
     /**
@@ -415,5 +498,162 @@ class VatCategory extends Model
         }
 
         return number_format($this->vat_rate, 2).'%';
+    }
+
+    /**
+     * Find VAT category by country and name.
+     */
+    public static function findByCountryAndName(string $countryCode, string $name): ?self
+    {
+        return static::where('country_code', $countryCode)
+            ->where('name', $name)
+            ->where('is_active', true)
+            ->first();
+    }
+
+    /**
+     * Find VAT categories by country.
+     */
+    public static function findByCountry(string $countryCode): Builder
+    {
+        return static::where('country_code', $countryCode)
+            ->where('is_active', true);
+    }
+
+    /**
+     * Find VAT categories by type.
+     */
+    public static function findByType(string $categoryType): Builder
+    {
+        return static::where('category_type', $categoryType)
+            ->where('is_active', true);
+    }
+
+    /**
+     * Scope for inactive categories.
+     */
+    public function scopeInactive($query)
+    {
+        return $query->where('is_active', false);
+    }
+
+    /**
+     * Scope for categories that apply to both products and services.
+     */
+    public function scopeForBoth($query)
+    {
+        return $query->where('applies_to_products', true)
+            ->where('applies_to_services', true);
+    }
+
+    /**
+     * Find VAT categories by rate.
+     */
+    public static function findByRate(string $countryCode, int|string|float $vatRate): ?self
+    {
+        // Convert percentage to base 100 if needed
+        if (is_float($vatRate)) {
+            $rate = static::percentageToBase100($vatRate);
+        } else {
+            $rate = (int) $vatRate;
+        }
+
+        return static::where('country_code', $countryCode)
+            ->where('vat_rate', $rate)
+            ->where('is_active', true)
+            ->first();
+    }
+
+    /**
+     * Scope to get categories by type.
+     */
+    public function scopeByType($query, string $categoryType)
+    {
+        return $query->where('category_type', $categoryType);
+    }
+
+    /**
+     * Check if category is active.
+     */
+    public function isActive(): bool
+    {
+        return $this->is_active;
+    }
+
+    /**
+     * Activate category.
+     */
+    public function activate(): self
+    {
+        $this->update(['is_active' => true]);
+        return $this;
+    }
+
+    /**
+     * Deactivate category.
+     */
+    public function deactivate(): self
+    {
+        $this->update(['is_active' => false]);
+        return $this;
+    }
+
+    /**
+     * Set special conditions.
+     */
+    public function setSpecialConditions(array $conditions): self
+    {
+        $this->update(['special_conditions' => $conditions]);
+        return $this;
+    }
+
+    /**
+     * Get category type name.
+     */
+    public function getCategoryTypeName(): string
+    {
+        return match ($this->category_type) {
+            self::TYPE_STANDARD => 'Standard',
+            self::TYPE_REDUCED => 'Reduced',
+            self::TYPE_SUPER_REDUCED => 'Super Reduced',
+            self::TYPE_EXEMPT => 'Exempt',
+            default => 'Unknown',
+        };
+    }
+
+    /**
+     * Get available category types.
+     */
+    public static function getAvailableCategoryTypes(): array
+    {
+        return static::getCategoryTypes();
+    }
+
+    /**
+     * Get category statistics.
+     */
+    public static function getCategoryStatistics(): array
+    {
+        $total = static::count();
+        $active = static::where('is_active', true)->count();
+        $inactive = static::where('is_active', false)->count();
+
+        $byType = static::selectRaw('category_type, COUNT(*) as count')
+            ->groupBy('category_type')
+            ->pluck('count', 'category_type')
+            ->toArray();
+
+        $byCountry = static::selectRaw('country_code, COUNT(*) as count')
+            ->groupBy('country_code')
+            ->pluck('count', 'country_code')
+            ->toArray();
+
+        return [
+            'total' => $total,
+            'active' => $active,
+            'inactive' => $inactive,
+            'by_type' => $byType,
+            'by_country' => $byCountry,
+        ];
     }
 }

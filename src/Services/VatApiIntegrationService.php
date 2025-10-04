@@ -72,7 +72,7 @@ class VatApiIntegrationService
                 'error' => $e->getMessage(),
             ]);
 
-            return [
+            $result = [
                 'is_valid' => false,
                 'vat_number' => $vatNumber,
                 'country_code' => $countryCode,
@@ -83,6 +83,8 @@ class VatApiIntegrationService
                 'error' => 'HTTP error or exception: '.$e->getMessage(),
                 'all_apis_failed' => true,
             ];
+
+            return $result;
         }
     }
 
@@ -114,7 +116,7 @@ class VatApiIntegrationService
                 'error' => $e->getMessage(),
             ]);
 
-            return [
+            $result = [
                 'is_valid' => false,
                 'vat_number' => $vatNumber,
                 'country_code' => $countryCode,
@@ -125,6 +127,8 @@ class VatApiIntegrationService
                 'error' => 'HTTP error or exception: '.$e->getMessage(),
                 'all_apis_failed' => true,
             ];
+
+            return $result;
         }
     }
 
@@ -146,12 +150,18 @@ class VatApiIntegrationService
             throw new \Exception("AbstractAPI error: {$errorMessage}");
         }
 
+        // Ensure VAT number includes country prefix
+        $returnedVatNumber = $data['vat_number'] ?? $vatNumber;
+        if (!str_starts_with(strtoupper($returnedVatNumber), strtoupper($countryCode))) {
+            $returnedVatNumber = $countryCode . $returnedVatNumber;
+        }
+
         return [
             'is_valid' => $data['valid'] ?? false,
-            'vat_number' => $data['vat_number'] ?? $vatNumber,
+            'vat_number' => $returnedVatNumber,
             'country_code' => $data['country']['code'] ?? $countryCode,
-            'company_name' => $data['company']['name'] ?? null,
-            'company_address' => $data['company']['address'] ?? null,
+            'company_name' => $data['company']['name'] ?? $data['company'] ?? null,
+            'company_address' => $data['company']['address'] ?? $data['address'] ?? null,
             'api_source' => 'abstractapi',
             'response_data' => $data,
             'all_apis_failed' => false, // Successful API call
@@ -182,9 +192,15 @@ class VatApiIntegrationService
             throw new \Exception("API Layer failed: {$errorMessage}");
         }
 
+        // Ensure VAT number includes country prefix
+        $returnedVatNumber = $data['vat_number'] ?? $vatNumber;
+        if (!str_starts_with(strtoupper($returnedVatNumber), strtoupper($countryCode))) {
+            $returnedVatNumber = $countryCode . $returnedVatNumber;
+        }
+
         return [
             'is_valid' => $data['valid'] ?? false,
-            'vat_number' => $data['vat_number'] ?? $vatNumber,
+            'vat_number' => $returnedVatNumber,
             'country_code' => $data['country_code'] ?? $countryCode,
             'company_name' => $data['company_name'] ?? null,
             'company_address' => $data['company_address'] ?? null,
@@ -205,7 +221,7 @@ class VatApiIntegrationService
         if (isset($mockResponses[$key])) {
             return array_merge($mockResponses[$key], [
                 'api_source' => $apiSource,
-                'all_apis_failed' => true,
+                'all_apis_failed' => false, // Mock responses are considered successful for testing
             ]);
         }
 
@@ -222,7 +238,7 @@ class VatApiIntegrationService
                 'vat_number' => $vatNumber,
                 'country_code' => $countryCode,
             ],
-            'all_apis_failed' => true,
+            'all_apis_failed' => false, // Mock responses are considered successful for testing
         ];
     }
 

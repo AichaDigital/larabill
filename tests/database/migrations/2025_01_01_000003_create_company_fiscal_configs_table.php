@@ -18,11 +18,15 @@ return new class extends Migration
             $table->string('company_id');
             $table->integer('fiscal_year');
 
+            // OSS and ROI status
+            $table->boolean('is_oss')->default(false)->comment('Whether the company is registered in OSS (One Stop Shop)');
+            $table->boolean('is_roi')->default(false)->comment('Whether the company is a Reverse Charge Operator (ROI)');
+
             // Destination VAT settings
             $table->boolean('apply_destination_iva')->default(false);
             $table->boolean('auto_apply_destination')->default(true);
-            $table->decimal('eu_sales_threshold', 10, 2)->default(10000.00);
-            $table->decimal('current_eu_sales_amount', 10, 2)->default(0.00);
+            $table->integer('eu_sales_threshold')->default(1000000); // Base 100: €10,000.00 = 1000000
+            $table->integer('current_eu_sales_amount')->default(0); // Base 100: €0.00 = 0
             $table->timestamp('threshold_exceeded_at')->nullable();
             $table->boolean('threshold_exceeded')->default(false);
             $table->boolean('notification_sent')->default(false);
@@ -46,6 +50,8 @@ return new class extends Migration
             $table->index('apply_destination_iva');
             $table->index('fiscal_year');
             $table->index('notification_sent');
+            $table->index('is_oss');
+            $table->index('is_roi');
 
             // Constraints - removed for SQLite compatibility
         });

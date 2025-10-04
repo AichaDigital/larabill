@@ -7,6 +7,16 @@ use AichaDigital\Larabill\Services\VatApiIntegrationService;
 use AichaDigital\Larabill\Services\VatVerificationService;
 
 it('can verify a valid Spanish VAT number', function () {
+    // Mock successful API response
+    Http::fake([
+        'https://vat.abstractapi.com/v1/validate/*' => Http::response([
+            'valid' => true,
+            'company' => 'Test Company S.L.',
+            'address' => 'Test Address 123, Madrid, 28001, ES',
+            'vat_number' => 'ESB12345678',
+        ], 200),
+    ]);
+
     $apiIntegration = new VatApiIntegrationService;
     $service = new VatVerificationService($apiIntegration);
 
@@ -37,12 +47,23 @@ it('can verify an invalid VAT number', function () {
 });
 
 it('caches verification results', function () {
+    // Mock successful API response
+    Http::fake([
+        'https://vat.abstractapi.com/v1/validate/*' => Http::response([
+            'valid' => true,
+            'company' => 'Test Company S.L.',
+            'address' => 'Test Address 123, Madrid, 28001, ES',
+            'vat_number' => 'ESB12345678',
+        ], 200),
+    ]);
+
     $apiIntegration = new VatApiIntegrationService;
     $service = new VatVerificationService($apiIntegration);
 
     // First call should create cache
     $result1 = $service->verifyVatNumber('ESB12345678', 'ES');
-    expect($result1)->not->toHaveKey('cached');
+    expect($result1)->toHaveKey('cached');
+    expect($result1['cached'])->toBeFalse();
 
     // Second call should use cache
     $result2 = $service->verifyVatNumber('ESB12345678', 'ES');
@@ -52,6 +73,16 @@ it('caches verification results', function () {
 });
 
 it('saves verification to database', function () {
+    // Mock successful API response
+    Http::fake([
+        'https://vat.abstractapi.com/v1/validate/*' => Http::response([
+            'valid' => true,
+            'company' => 'Test Company S.L.',
+            'address' => 'Test Address 123, Madrid, 28001, ES',
+            'vat_number' => 'ESB12345678',
+        ], 200),
+    ]);
+
     $apiIntegration = new VatApiIntegrationService;
     $service = new VatVerificationService($apiIntegration);
 
@@ -63,12 +94,22 @@ it('saves verification to database', function () {
     expect($verification->is_valid)->toBeTrue();
     expect($verification->vat_number)->toBe('ESB12345678');
     expect($verification->country_code)->toBe('ES');
-    expect($verification->company_name)->toBe('AichaDigital S.L.');
+    expect($verification->company_name)->toBe('Test Company S.L.');
 });
 
 it('uses preferred API from configuration', function () {
     // Set preferred API to apilayer
     config(['larabill.vat_apis.preferred_api' => 'apilayer']);
+
+    // Mock successful API response
+    Http::fake([
+        'http://apilayer.net/api/validate*' => Http::response([
+            'valid' => true,
+            'company_name' => 'German Company GmbH',
+            'company_address' => 'Test Address 123, Berlin, 10115, DE',
+            'vat_number' => 'DE123456789',
+        ], 200),
+    ]);
 
     $apiIntegration = new VatApiIntegrationService;
     $service = new VatVerificationService($apiIntegration);

@@ -4,14 +4,26 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
+use DateTimeInterface;
+use Illuminate\Database\Eloquent\{Builder, Model};
 use Illuminate\Database\Eloquent\Casts\Attribute;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 /**
  * CountryVatRate Model
  *
- * Represents VAT rates for different countries,
- * including standard rates and reduced rates.
+ * Represents VAT rates for different countries, including standard and reduced rates.
+ * Values for rates are stored in base-100 integers (e.g., 21.50% => 2150).
+ *
+ * @property string $country_code
+ * @property string $country_name
+ * @property int $standard_rate Base-100 integer (e.g., 2150 => 21.50%)
+ * @property array<string,int>|null $reduced_rates Map of category => base-100 integer
+ * @property array<int,string>|null $exempt_categories List of exempt category slugs
+ * @property Carbon|null $last_updated
+ * @property string $data_source
+ * @property bool $is_active
+ * @property string|null $notes
  */
 class CountryVatRate extends Model
 {
@@ -121,7 +133,9 @@ class CountryVatRate extends Model
      */
     public static function percentageToBase100(float $percentage): int
     {
-        return (int) round($percentage * 100);
+        // Multiply by 100 and cast to int to avoid floating point precision issues
+        // For exact percentages like 21.50, this gives us 2150 without rounding errors
+        return (int) ($percentage * 100);
     }
 
     /**
@@ -393,7 +407,7 @@ class CountryVatRate extends Model
      */
     public function getFormattedStandardRate(): string
     {
-        return number_format($this->standard_rate, 2).'%';
+        return number_format(static::base100ToPercentage((int) $this->standard_rate), 2).'%';
     }
 
     /**
@@ -405,7 +419,7 @@ class CountryVatRate extends Model
         $reducedRates = $this->reduced_rates ?? [];
 
         foreach ($reducedRates as $category => $rate) {
-            $formatted[$category] = number_format($rate, 2).'%';
+            $formatted[$category] = number_format(static::base100ToPercentage((int) $rate), 2).'%';
         }
 
         return $formatted;
@@ -414,7 +428,7 @@ class CountryVatRate extends Model
     /**
      * Scope to get only active VAT rates.
      */
-    public function scopeActive($query)
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
     }
@@ -422,7 +436,7 @@ class CountryVatRate extends Model
     /**
      * Scope to get VAT rates by country.
      */
-    public function scopeByCountry($query, string $countryCode)
+    public function scopeByCountry(Builder $query, string $countryCode): Builder
     {
         return $query->where('country_code', $countryCode);
     }
@@ -430,14 +444,14 @@ class CountryVatRate extends Model
     /**
      * Scope to get VAT rates by rate range.
      */
-    public function scopeByRate($query, ?float $minRate = null, ?float $maxRate = null)
+    public function scopeByRate(Builder $query, ?float $minRate = null, ?float $maxRate = null): Builder
     {
         if ($minRate !== null) {
-            $query->where('standard_rate', '>=', $minRate);
+            $query->where('standard_rate', '>=', static::percentageToBase100($minRate));
         }
 
         if ($maxRate !== null) {
-            $query->where('standard_rate', '<=', $maxRate);
+            $query->where('standard_rate', '<=', static::percentageToBase100($maxRate));
         }
 
         return $query;
@@ -446,7 +460,7 @@ class CountryVatRate extends Model
     /**
      * Scope to get VAT rates updated after a specific date.
      */
-    public function scopeUpdatedAfter($query, $date)
+    public function scopeUpdatedAfter(Builder $query, DateTimeInterface|Carbon|string $date): Builder
     {
         return $query->where('last_updated', '>', $date);
     }
@@ -454,7 +468,7 @@ class CountryVatRate extends Model
     /**
      * Scope to get VAT rates by data source.
      */
-    public function scopeByDataSource($query, string $dataSource)
+    public function scopeByDataSource(Builder $query, string $dataSource): Builder
     {
         return $query->where('data_source', $dataSource);
     }
@@ -540,7 +554,7 @@ class CountryVatRate extends Model
             'GR' => 24.0,
         ];
 
-        return $defaultRates[$countryCode] ?? 20.0; // Default to 20% if not found
+        return $defaultRates[$countryCode] ?? 0.0; // Default to 0% for unknown countries
     }
 
     /**
@@ -583,10 +597,10 @@ class CountryVatRate extends Model
     /**
      * Finder: similar rates within a tolerance around a target.
      */
-    public static function findSimilarRates(float $targetRate, float $tolerance)
+    public static function findSimilarRates(float $targetRate, float $tolerance): Builder
     {
-        $min = $targetRate - $tolerance;
-        $max = $targetRate + $tolerance;
+        $min = static::percentageToBase100($targetRate - $tolerance);
+        $max = static::percentageToBase100($targetRate + $tolerance);
 
         return static::query()
             ->where('standard_rate', '>', $min)
@@ -597,7 +611,7 @@ class CountryVatRate extends Model
     /**
      * Scope: inactive rates.
      */
-    public function scopeInactive($query)
+    public function scopeInactive(Builder $query): Builder
     {
         return $query->where('is_active', false);
     }
@@ -746,19 +760,82 @@ class CountryVatRate extends Model
         $active = $all->where('is_active', true);
         $inactive = $all->where('is_active', false);
 
-        $standardRates = $all->pluck('standard_rate')->filter(fn ($v) => $v !== null)->map(fn ($v) => (float) $v)->values();
+        $standardRates = static::extractStandardRatesAsPercentages($all);
 
         return [
             'total' => $all->count(),
             'active' => $active->count(),
             'inactive' => $inactive->count(),
-            'average_standard_rate' => $standardRates->count() ? round($standardRates->avg(), 2) : 0.0,
-            'highest_standard_rate' => $standardRates->count() ? (float) $standardRates->max() : 0.0,
-            'lowest_standard_rate' => $standardRates->count() ? (float) $standardRates->min() : 0.0,
+            'average_standard_rate' => static::calculateSafeAverage($standardRates),
+            'highest_standard_rate' => static::calculateSafeMax($standardRates),
+            'lowest_standard_rate' => static::calculateSafeMin($standardRates),
         ];
     }
 
-    // Keep original method name but return adjusted keys used in tests
+    /**
+     * Extrae y convierte las tasas estándar de base 100 a porcentajes.
+     *
+     * @param  \Illuminate\Database\Eloquent\Collection  $collection
+     */
+    private static function extractStandardRatesAsPercentages($collection): \Illuminate\Support\Collection
+    {
+        return $collection->pluck('standard_rate')
+            ->filter(fn ($rate) => $rate !== null)
+            ->map(fn ($rate) => static::base100ToPercentage((int) $rate))
+            ->values();
+    }
+
+    /**
+     * Calcula el promedio de forma segura, manejando colecciones vacías.
+     */
+    private static function calculateSafeAverage(\Illuminate\Support\Collection $rates): float
+    {
+        if ($rates->isEmpty()) {
+            return 0.0;
+        }
+
+        $sum = $rates->sum();
+        $count = $rates->count();
+
+        if ($count === 0 || ! is_numeric($sum)) {
+            return 0.0;
+        }
+
+        $average = (float) $sum / (float) $count;
+
+        // Redondeo manual a 2 decimales para evitar problemas con round()
+        return floor($average * 100 + 0.5) / 100;
+    }
+
+    /**
+     * Calcula el máximo de forma segura, manejando colecciones vacías.
+     */
+    private static function calculateSafeMax(\Illuminate\Support\Collection $rates): float
+    {
+        if ($rates->isEmpty()) {
+            return 0.0;
+        }
+
+        $max = $rates->max();
+
+        return is_numeric($max) ? (float) $max : 0.0;
+    }
+
+    /**
+     * Calcula el mínimo de forma segura, manejando colecciones vacías.
+     */
+    private static function calculateSafeMin(\Illuminate\Support\Collection $rates): float
+    {
+        if ($rates->isEmpty()) {
+            return 0.0;
+        }
+
+        $min = $rates->min();
+
+        return is_numeric($min) ? (float) $min : 0.0;
+    }
+
+    // Keep the original method name but return adjusted keys used in tests
     public static function getVatRateStatistics(): array
     {
         return static::getVatRateStatisticsAdjusted();

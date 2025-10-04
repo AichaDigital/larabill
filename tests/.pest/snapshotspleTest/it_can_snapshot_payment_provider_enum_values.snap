@@ -1,0 +1,27 @@
+{
+    "FAKE": {
+        "value": 1,
+        "label": "Fake Payment (Development)",
+        "is_fake": true
+    },
+    "STRIPE": {
+        "value": 2,
+        "label": "Stripe",
+        "is_fake": false
+    },
+    "REDSYS": {
+        "value": 3,
+        "label": "Redsys (Spanish Banks)",
+        "is_fake": false
+    },
+    "LEMON": {
+        "value": 4,
+        "label": "Lemon Squeezy",
+        "is_fake": false
+    },
+    "PAYPAL": {
+        "value": 5,
+        "label": "PayPal",
+        "is_fake": false
+    }
+}

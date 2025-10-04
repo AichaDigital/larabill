@@ -2,16 +2,16 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Models\Invoice;
-use AichaDigital\Larabill\Models\UserTaxInfo;
+use AichaDigital\Larabill\Tests\Models\CustomUser;
+use AichaDigital\Larabill\Models\{Invoice, UserTaxInfo};
 
 it('can configure custom user model mapping', function () {
-    // Set custom user model in config
-    config(['larabill.models.user' => \AichaDigital\Larabill\Tests\Models\CustomUser::class]);
+    // Set a custom user model in config
+    config(['larabill.models.user' => CustomUser::class]);
 
     // Test the model mapping service
     $userModel = \AichaDigital\Larabill\Services\ModelMappingService::getModelClass('user');
-    expect($userModel)->toBe(\AichaDigital\Larabill\Tests\Models\CustomUser::class);
+    expect($userModel)->toBe(CustomUser::class);
 
     // Create an invoice
     $invoice = Invoice::create([
@@ -131,12 +131,12 @@ it('can configure custom VAT verification model mapping', function () {
 });
 
 it('can validate model mapping configuration', function () {
-    // Test with invalid model class
+    // Test with an invalid model class
     config(['larabill.models.user' => 'InvalidModelClass']);
 
     // Test the validation method directly
-    expect(\AichaDigital\Larabill\Services\ModelMappingService::validateModelMapping('user', 'InvalidModelClass'))->toBeFalse();
-    expect(\AichaDigital\Larabill\Services\ModelMappingService::validateModelMapping('user', \AichaDigital\Larabill\Tests\Models\User::class))->toBeTrue();
+    expect(\AichaDigital\Larabill\Services\ModelMappingService::validateModelMapping('user', 'InvalidModelClass'))->toBeFalse()
+        ->and(\AichaDigital\Larabill\Services\ModelMappingService::validateModelMapping('user', \AichaDigital\Larabill\Tests\Models\User::class))->toBeTrue();
 });
 
 it('can handle missing model mapping configuration gracefully', function () {

@@ -237,7 +237,7 @@ class RoiQuery extends Model
      */
     public static function getExpiredLegalRetention()
     {
-        return static::where('legal_retention_until', '<=', now());
+        return static::where('legal_retention_until', '<=', now())->get();
     }
 
     /**

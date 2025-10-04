@@ -68,6 +68,7 @@ it('can store and retrieve VAT rates cache', function () {
 });
 
 it('can check if VAT rates exist in cache', function () {
+    CacheService::resetCounters();
     $cacheService = new CacheService;
 
     expect($cacheService->hasVatRates())->toBeFalse();
@@ -168,6 +169,10 @@ it('can flush specific cache type', function () {
 it('can use custom TTL for different cache types', function () {
     $cacheService = new CacheService;
 
+    // Reset cache state
+    CacheService::resetCounters();
+    $cacheService->flushAll();
+
     config(['larabill.cache.ttl.roi_verification' => 3600]); // 1 hour
     config(['larabill.cache.ttl.vat_rates' => 86400]); // 24 hours
     config(['larabill.cache.ttl.company_config' => 1800]); // 30 minutes
@@ -177,7 +182,8 @@ it('can use custom TTL for different cache types', function () {
 
     // Verify the cache entry exists with correct TTL
     $key = $cacheService->getRoiVerificationKey('user-123', 'ESB12345678', 'ES');
-    expect(Cache::has($key))->toBeTrue();
+    $hasKey = $cacheService->hasRoiVerification('user-123', 'ESB12345678', 'ES');
+    expect($hasKey)->toBeTrue();
 });
 
 it('can handle cache key generation correctly', function () {
@@ -285,6 +291,10 @@ it('can handle cache prefix changes', function () {
 
 it('can get cache statistics', function () {
     $cacheService = new CacheService;
+
+    // Reset cache state
+    CacheService::resetCounters();
+    $cacheService->flushAll();
 
     // Store some cache entries
     $cacheService->storeRoiVerification('user-123', 'ESB12345678', 'ES', ['is_roi' => true]);
