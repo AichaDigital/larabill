@@ -1,0 +1,19 @@
+{
+  "project_name": "baytamin",
+  "project_path": "/Users/abkrim/SitesLR12/baytamin",
+  "client_type": "claude",
+  "features": {
+    "livewire": false,
+    "inertia": false,
+    "api": false
+  },
+  "database": {
+    "connection": "mysql",
+    "host": "127.0.0.1",
+    "database": "baytamin",
+    "mcp_server_included": true
+  },
+  "laravel_version": "12",
+  "created_at": "2025-07-06T07:13:37+02:00",
+  "mcp_isolated": true
+}

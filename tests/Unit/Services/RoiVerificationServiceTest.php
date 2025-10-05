@@ -130,14 +130,15 @@ it('can handle invalid VAT number', function () {
 });
 
 it('can handle API failures gracefully', function () {
-    $service = new RoiVerificationService;
-
     // Clear all VAT verification cache
     VatVerification::truncate();
 
     // Configure API keys to force HTTP calls
-    config(['larabill.vat_apis.abstractapi.key' => 'test_key']);
-    config(['larabill.vat_apis.apilayer.key' => 'test_key']);
+    config(['larabill.vat_apis.abstractapi.key' => 'real_api_key_123']);
+    config(['larabill.vat_apis.apilayer.key' => 'real_api_key_456']);
+
+    // Create service after configuration
+    $service = new RoiVerificationService;
 
     // Mock API failure for both APIs
     Http::fake([
@@ -162,9 +163,10 @@ it('can handle API failures gracefully', function () {
 });
 
 it('can force API check even with valid cache', function () {
-    $service = new RoiVerificationService;
-
     config(['larabill.roi_verification.force_api_check' => true]);
+
+    // Clear all VAT verification cache
+    VatVerification::truncate();
 
     // Create existing verification in cache
     UserRoiVerification::create([
@@ -176,6 +178,13 @@ it('can force API check even with valid cache', function () {
         'expired_at' => now()->addDays(15),
         'api_source' => 'cache',
     ]);
+
+    // Configure API keys to force HTTP calls
+    config(['larabill.vat_apis.abstractapi.key' => 'real_api_key_123']);
+    config(['larabill.vat_apis.apilayer.key' => 'real_api_key_456']);
+
+    // Create service after configuration
+    $service = new RoiVerificationService;
 
     // Mock API response
     Http::fake([

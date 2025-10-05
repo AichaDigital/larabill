@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use Illuminate\Database\Eloquent\{Builder, Model};
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -108,68 +108,74 @@ class InvoiceItem extends Model
     // Getters for monetary amounts
     public function getQuantityAsFloat(): float
     {
-        return static::base100ToQuantity($this->quantity);
+        return static::base100ToQuantity($this->getRawOriginal('quantity'));
     }
 
     public function getUnitPriceAsAmount(): float
     {
-        return static::base100ToAmount($this->unit_price);
+        return static::base100ToAmount($this->getRawOriginal('unit_price'));
     }
 
     public function getSubtotalAsAmount(): float
     {
-        return static::base100ToAmount($this->subtotal);
+        return static::base100ToAmount($this->getRawOriginal('subtotal'));
     }
 
     public function getTaxRateAsPercentage(): float
     {
-        return static::base100ToPercentage($this->tax_rate);
+        return static::base100ToPercentage($this->getRawOriginal('tax_rate'));
     }
 
     public function getTaxAmountAsAmount(): float
     {
-        return static::base100ToAmount($this->tax_amount);
+        return static::base100ToAmount($this->getRawOriginal('tax_amount'));
     }
 
     public function getTotalAsAmount(): float
     {
-        return static::base100ToAmount($this->total);
+        return static::base100ToAmount($this->getRawOriginal('total'));
     }
 
     // Setters from monetary amounts
     public function setQuantityFromFloat(float $quantity): self
     {
         $this->update(['quantity' => static::quantityToBase100($quantity)]);
+
         return $this;
     }
 
     public function setUnitPriceFromAmount(float $amount): self
     {
         $this->update(['unit_price' => static::amountToBase100($amount)]);
+
         return $this;
     }
 
     public function setSubtotalFromAmount(float $amount): self
     {
         $this->update(['subtotal' => static::amountToBase100($amount)]);
+
         return $this;
     }
 
     public function setTaxRateFromPercentage(float $percentage): self
     {
         $this->update(['tax_rate' => static::percentageToBase100($percentage)]);
+
         return $this;
     }
 
     public function setTaxAmountFromAmount(float $amount): self
     {
         $this->update(['tax_amount' => static::amountToBase100($amount)]);
+
         return $this;
     }
 
     public function setTotalFromAmount(float $amount): self
     {
         $this->update(['total' => static::amountToBase100($amount)]);
+
         return $this;
     }
 
@@ -212,7 +218,7 @@ class InvoiceItem extends Model
      */
     public function getQuantityAttribute($value): string
     {
-        return number_format((float) $value, 2, '.', '');
+        return number_format(static::base100ToQuantity((int) $value), 2, '.', '');
     }
 
     /**
@@ -220,7 +226,7 @@ class InvoiceItem extends Model
      */
     public function getUnitPriceAttribute($value): string
     {
-        return number_format((float) $value, 2, '.', '');
+        return number_format(static::base100ToAmount((int) $value), 2, '.', '');
     }
 
     /**
@@ -228,7 +234,7 @@ class InvoiceItem extends Model
      */
     public function getSubtotalAttribute($value): string
     {
-        return number_format((float) $value, 2, '.', '');
+        return number_format(static::base100ToAmount((int) $value), 2, '.', '');
     }
 
     /**
@@ -236,7 +242,7 @@ class InvoiceItem extends Model
      */
     public function getTaxRateAttribute($value): string
     {
-        return number_format((float) $value, 4, '.', '');
+        return number_format(static::base100ToPercentage((int) $value), 4, '.', '');
     }
 
     /**
@@ -244,7 +250,7 @@ class InvoiceItem extends Model
      */
     public function getTaxAmountAttribute($value): string
     {
-        return number_format((float) $value, 2, '.', '');
+        return number_format(static::base100ToAmount((int) $value), 2, '.', '');
     }
 
     /**
@@ -252,6 +258,6 @@ class InvoiceItem extends Model
      */
     public function getTotalAttribute($value): string
     {
-        return number_format((float) $value, 2, '.', '');
+        return number_format(static::base100ToAmount((int) $value), 2, '.', '');
     }
 }

@@ -1,0 +1,46 @@
+---
+description: "Environment files management"
+alwaysApply: false
+---
+# Environment Files Management
+
+## Overview
+These rules define how environment files should be handled in the workspace.
+
+## File Patterns
+- `.env`: Main environment file
+- `.env.testing`: Testing environment configuration
+- `.env.example`: Example configuration template
+- `.env.backup`: Backup files
+- `.env.*`: Any other environment-specific files
+
+## Editing Rules
+1. All environment files should be directly editable
+2. GitIgnore patterns should not affect editability
+3. Changes should be logged for tracking
+4. Sensitive values should be handled securely
+
+## Allowed Files
+- All `.env*` files are explicitly allowed and should be editable
+- This includes:
+  - .env
+  - .env.testing
+  - .env.example
+  - .env.backup
+
+## Security Guidelines
+- Do not commit sensitive credentials
+- Use placeholder values in examples
+- Document required variables
+- Keep backup copies of critical configurations
+
+## Usage
+Environment files are critical for:
+- Local development configuration
+- Testing environment setup
+- CI/CD pipeline configuration
+- Production deployment settings
+
+## Purpose
+Environment files are critical for local development and testing.
+They should be editable by the AI assistant to help with configuration and debugging.

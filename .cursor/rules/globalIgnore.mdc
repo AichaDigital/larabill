@@ -1,0 +1,43 @@
+---
+description: patterns,ignores patterns,rules, preferences
+alwaysApply: false
+---
+# Global Ignore Rules
+
+## Overview
+These rules define the global file access patterns for Cursor.
+
+## Allow Patterns
+Files and patterns that should always be editable:
+- `.env*`: All environment files
+- `*.config.*`: Configuration files
+- `*.test.*`: Test files
+- `*.spec.*`: Specification files
+- `*.json`: JSON configuration files
+- `*.yml`, `*.yaml`: YAML configuration files
+
+## Ignore Patterns
+Files and patterns that should be restricted:
+- `vendor/*`: Third-party dependencies
+- `node_modules/*`: NPM packages
+- `*.lock`: Lock files
+- `*.cache`: Cache files
+- `*.log`: Log files
+
+## Priority Rules
+1. Explicit allow patterns take precedence over ignore patterns
+2. Project-specific rules override global rules
+3. Security-related restrictions cannot be overridden
+
+## Usage Guidelines
+- Use specific patterns over broad matches
+- Document any custom ignore patterns
+- Review ignore patterns periodically
+- Consider security implications
+
+---
+description: "Environment files management"
+globs: [".env*"]
+alwaysApply: true
+ignoreGitIgnore: true
+---

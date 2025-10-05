@@ -28,13 +28,12 @@ class VatVerificationService
         // Check if we already have a cached verification
         $cachedVerification = VatVerification::findByVatNumberAndCountry($vatNumber, $countryCode);
 
-        if ($cachedVerification) {
+        if ($cachedVerification && $this->isCacheValid($cachedVerification)) {
             \Log::info('VatVerificationService: Using cached result', [
                 'vat_number' => $vatNumber,
                 'country_code' => $countryCode,
                 'cached_id' => $cachedVerification->id,
             ]);
-
 
             $responseData = $cachedVerification->response_data ?? [];
 
@@ -46,6 +45,7 @@ class VatVerificationService
                 'company_address' => $cachedVerification->company_address,
                 'api_source' => $cachedVerification->api_source,
                 'all_apis_failed' => $responseData['all_apis_failed'] ?? false,
+                'rate_limit_hit' => $responseData['rate_limit_hit'] ?? false,
                 'cached' => true,
             ];
         }
@@ -55,10 +55,8 @@ class VatVerificationService
             'country_code' => $countryCode,
         ]);
 
-
         // Try primary API first, then fallback
         $result = $this->tryApisWithFallback($vatNumber, $countryCode);
-
 
         \Log::info('VatVerificationService: API result', [
             'vat_number' => $vatNumber,
@@ -71,6 +69,7 @@ class VatVerificationService
 
         // Add cached flag for fresh results
         $result['cached'] = false;
+
         return $result;
     }
 
@@ -82,22 +81,23 @@ class VatVerificationService
         $primaryApi = config('larabill.vat_apis.preferred_api', 'abstractapi');
         $fallbackApi = $primaryApi === 'abstractapi' ? 'apilayer' : 'abstractapi';
 
-
         // Try primary API first
+        $primaryResult = null;
         try {
-            $result = $this->callApi($primaryApi, $vatNumber, $countryCode);
+            $primaryResult = $this->callApi($primaryApi, $vatNumber, $countryCode);
 
             // Check if the result is valid (not a mock fallback)
-            if ($this->isValidApiResponse($result, $primaryApi)) {
-                return $result;
+            if ($this->isValidApiResponse($primaryResult, $primaryApi)) {
+                return $primaryResult;
             }
 
-            // If primary API failed with all_apis_failed, still try fallback
-            // Only return early if we've already tried the fallback
-            if (($result['all_apis_failed'] ?? false) && !($result['fallback_used'] ?? false)) {
+            // If primary API failed with rate limiting, try fallback
+            if (($primaryResult['rate_limit_hit'] ?? false) && ! ($primaryResult['fallback_used'] ?? false)) {
+                // Continue to fallback
+            } elseif (($primaryResult['all_apis_failed'] ?? false) && ! ($primaryResult['fallback_used'] ?? false)) {
                 // Continue to fallback
             } else {
-                return $result;
+                return $primaryResult;
             }
         } catch (\Exception $e) {
             \Log::warning("Primary VAT API ({$primaryApi}) failed, trying fallback", [
@@ -114,6 +114,11 @@ class VatVerificationService
             // Add fallback indicator
             $result['fallback_used'] = true;
             $result['primary_api_failed'] = $primaryApi;
+
+            // Preserve rate limiting information from primary API
+            if ($primaryResult && ($primaryResult['rate_limit_hit'] ?? false)) {
+                $result['rate_limit_hit'] = true;
+            }
 
             \Log::info("Using fallback VAT API ({$fallbackApi}) for verification", [
                 'vat_number' => $vatNumber,
@@ -143,6 +148,7 @@ class VatVerificationService
                 'cached' => false,
                 'api_source' => 'abstractapi', // Use primary API as source
                 'mock_fallback' => true,
+                'rate_limit_hit' => true, // Assume rate limiting when both APIs fail
             ];
         }
     }
@@ -235,7 +241,23 @@ class VatVerificationService
                 'company_address' => $result['company_address'],
                 'api_source' => $result['api_source'],
                 'response_data' => $result['response_data'] ?? null,
+                'checked_at' => now(),
+                'expires_at' => now()->addDays(30), // Cache for 30 days
             ]
         );
+    }
+
+    /**
+     * Check if cached verification is still valid (not expired).
+     */
+    private function isCacheValid(VatVerification $verification): bool
+    {
+        // If no expires_at field, consider cache as valid (backward compatibility)
+        if (! isset($verification->expires_at)) {
+            return true;
+        }
+
+        // Check if cache has expired
+        return $verification->expires_at && $verification->expires_at->isFuture();
     }
 }

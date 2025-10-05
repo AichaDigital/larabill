@@ -22,6 +22,8 @@ return new class extends Migration
             $table->string('company_address')->nullable();
             $table->string('api_source')->nullable();
             $table->json('response_data')->nullable();
+            $table->timestamp('checked_at')->nullable();
+            $table->timestamp('expires_at')->nullable();
             $table->timestamps();
 
             // Indexes

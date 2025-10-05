@@ -139,6 +139,24 @@ class VatApiIntegrationService
     {
         // Check for HTTP errors
         if (! $response->successful()) {
+            // Check for rate limiting
+            if ($response->status() === 429) {
+                $result = [
+                    'is_valid' => false,
+                    'vat_number' => $vatNumber,
+                    'country_code' => $countryCode,
+                    'company_name' => null,
+                    'company_address' => null,
+                    'api_source' => 'abstractapi',
+                    'response_data' => $response->json(),
+                    'error' => 'Rate limit exceeded',
+                    'rate_limit_hit' => true,
+                    'all_apis_failed' => false,
+                ];
+
+                return $result;
+            }
+
             throw new \Exception("AbstractAPI HTTP error: {$response->status()} - {$response->body()}");
         }
 
@@ -152,8 +170,8 @@ class VatApiIntegrationService
 
         // Ensure VAT number includes country prefix
         $returnedVatNumber = $data['vat_number'] ?? $vatNumber;
-        if (!str_starts_with(strtoupper($returnedVatNumber), strtoupper($countryCode))) {
-            $returnedVatNumber = $countryCode . $returnedVatNumber;
+        if (! str_starts_with(strtoupper($returnedVatNumber), strtoupper($countryCode))) {
+            $returnedVatNumber = $countryCode.$returnedVatNumber;
         }
 
         return [
@@ -175,6 +193,24 @@ class VatApiIntegrationService
     {
         // Check for HTTP errors
         if (! $response->successful()) {
+            // Check for rate limiting
+            if ($response->status() === 429) {
+                $result = [
+                    'is_valid' => false,
+                    'vat_number' => $vatNumber,
+                    'country_code' => $countryCode,
+                    'company_name' => null,
+                    'company_address' => null,
+                    'api_source' => 'apilayer',
+                    'response_data' => $response->json(),
+                    'error' => 'Rate limit exceeded',
+                    'rate_limit_hit' => true,
+                    'all_apis_failed' => false,
+                ];
+
+                return $result;
+            }
+
             throw new \Exception("API Layer HTTP error: {$response->status()} - {$response->body()}");
         }
 
@@ -194,8 +230,8 @@ class VatApiIntegrationService
 
         // Ensure VAT number includes country prefix
         $returnedVatNumber = $data['vat_number'] ?? $vatNumber;
-        if (!str_starts_with(strtoupper($returnedVatNumber), strtoupper($countryCode))) {
-            $returnedVatNumber = $countryCode . $returnedVatNumber;
+        if (! str_starts_with(strtoupper($returnedVatNumber), strtoupper($countryCode))) {
+            $returnedVatNumber = $countryCode.$returnedVatNumber;
         }
 
         return [

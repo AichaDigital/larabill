@@ -1,0 +1,106 @@
+---
+description: "MCP Tools Available - ALWAYS use these before falling back to internal knowledge"
+globs: ["**/*"]
+alwaysApply: true
+priority: 100
+---
+
+# MCP Tools Available in Baytamin Project
+
+## 🚨 **CRITICAL: Always Use MCPs First**
+
+Before using internal knowledge or making assumptions, **ALWAYS** check if there's an MCP tool available for the task.
+
+## 📋 **Available MCP Servers**
+
+### 1. **baytamin-files** - File System Access
+**Use for**: Reading, writing, editing any file in the project
+```
+mcp_baytamin-files_read_file
+mcp_baytamin-files_write_file
+mcp_baytamin-files_edit_file
+mcp_baytamin-files_list_directory
+mcp_baytamin-files_search_files
+```
+
+**When to use**:
+- ✅ Reading ANY file (especially .env, config files)
+- ✅ Writing new files
+- ✅ Editing existing files
+- ✅ Directory exploration
+- ✅ File searching
+
+### 2. **baytamin-git** - Git Operations ⚠️ **DISABLED**
+**⛔ DO NOT USE**: Git operations are handled EXCLUSIVELY by the user
+```
+❌ mcp_baytamin-git_* (ALL GIT MCPs DISABLED)
+```
+
+**When to use**:
+- ❌ NEVER - User manages all git operations
+- ❌ NO git status, diffs, commits, or staging
+- ❌ Git MCPs are disabled due to previous incidents
+
+### 3. **context7-remote** - Updated Documentation
+**Use for**: Current, up-to-date library documentation
+```
+mcp_context7_resolve-library-id
+mcp_context7_get-library-docs
+```
+
+**When to use**:
+- ✅ Laravel questions (get latest docs)
+- ✅ PHP library questions
+- ✅ Framework-specific implementations
+- ✅ API documentation needs
+- ✅ When internal knowledge might be outdated
+
+## 🎯 **Usage Priority**
+
+1. **FIRST**: Use appropriate MCP tool (EXCEPT Git - see below)
+2. **SECOND**: Use internal knowledge only if MCP doesn't cover it
+3. **NEVER**: Assume or invent when Context7 could have real docs
+4. **🚨 CRITICAL**: NEVER use Git MCPs - user handles all Git operations
+
+## 📚 **Context7 Usage Examples**
+
+For Laravel questions:
+```
+// Get latest Laravel documentation
+mcp_context7_resolve-library-id: "Laravel"
+mcp_context7_get-library-docs: "/laravel/docs" topic: "migrations"
+```
+
+For PHP libraries:
+```
+// Get current library docs
+mcp_context7_resolve-library-id: "Pest"
+mcp_context7_get-library-docs: "/pestphp/pest" topic: "testing"
+```
+
+## 🚨 **Git Operations - USER ONLY**
+
+- **ALL git operations**: User handles exclusively
+- **NO git commands**: Never execute git add, commit, push, status, etc.
+- **NO git MCPs**: baytamin-git is permanently disabled
+- **Reason**: Previous incidents damaged Git internal files
+
+## ⚠️ **Red Flags - When to Use Context7**
+
+- Answering "How to do X in Laravel?"
+- Providing code examples for libraries
+- Explaining framework features
+- API usage patterns
+- Best practices for tools
+
+## 🚀 **Session Reminder**
+
+At the start of coding sessions, remember:
+1. **Files**: Use `baytamin-files` for ALL file operations
+2. **Git**: ⛔ USER ONLY - Never touch Git operations
+3. **Docs**: Use `context7` for ANY library/framework questions
+4. **Never guess** when you can get current documentation
+
+---
+
+**Remember: MCPs provide CURRENT, ACCURATE information. Your internal knowledge may be outdated.**

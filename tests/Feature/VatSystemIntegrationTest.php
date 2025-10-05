@@ -14,7 +14,6 @@ use AichaDigital\Larabill\Services\CacheService;
 use AichaDigital\Larabill\Services\CompanyConfigService;
 use AichaDigital\Larabill\Services\DestinationVatService;
 use AichaDigital\Larabill\Services\RoiVerificationService;
-use AichaDigital\Larabill\Tests\TestCase;
 use Illuminate\Support\Facades\Http;
 
 beforeEach(function () {
@@ -367,6 +366,11 @@ it('can perform complete multi-company workflow', function () {
 });
 
 it('can handle error scenarios gracefully', function () {
+    // Configure API keys to force HTTP calls
+    config(['larabill.vat_apis.abstractapi.key' => 'real_api_key_123']);
+    config(['larabill.vat_apis.apilayer.key' => 'real_api_key_456']);
+
+    // Create services after configuration
     $roiService = new RoiVerificationService;
     $destinationVatService = new DestinationVatService;
     $companyConfigService = new CompanyConfigService;
@@ -374,7 +378,11 @@ it('can handle error scenarios gracefully', function () {
     // Step 1: Test ROI verification with API failure
     Http::fake([
         'https://vat.abstractapi.com/v1/validate/*' => Http::response([], 500),
-        'https://vat.abstractapi.com/v1/validate/*' => Http::response([], 500),
+        'http://apilayer.net/api/validate*' => Http::response([
+            'valid' => false,
+            'vat_number' => 'ESINVALID1',
+            'company_name' => null,
+        ], 200),
     ]);
 
     $result = $roiService->verifyRoiStatus('user-123', 'ESINVALID1', 'ES');

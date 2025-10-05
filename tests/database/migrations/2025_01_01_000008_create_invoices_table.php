@@ -23,8 +23,11 @@ return new class extends Migration
             // User tax information (encrypted)
             $table->text('user_tax_info_encrypted')->nullable();
 
+            // Customer data
+            $table->json('customer_data')->nullable();
+
             // Immutability
-            $table->boolean('is_immutable')->default(false);
+            $table->boolean('is_immutable')->default(false)->nullable(false);
             $table->timestamp('immutable_at')->nullable();
 
             // Monetary amounts (using base 100 format: €12.34 = 1234)
@@ -35,8 +38,12 @@ return new class extends Migration
             // Additional data
             $table->json('fiscal_data')->nullable();
             $table->json('vat_verification')->nullable();
+            $table->boolean('is_roi_taxed')->default(false);
             $table->date('due_date')->nullable();
             $table->timestamp('paid_at')->nullable();
+            $table->text('notes')->nullable();
+            $table->string('payment_terms')->nullable();
+            $table->string('template_name')->nullable();
 
             // Timestamps
             $table->timestamps();

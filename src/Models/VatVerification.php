@@ -24,6 +24,8 @@ class VatVerification extends Model
         'company_address',
         'api_source',
         'response_data',
+        'checked_at',
+        'expires_at',
     ];
 
     /**
@@ -32,6 +34,8 @@ class VatVerification extends Model
     protected $casts = [
         'is_valid' => 'boolean',
         'response_data' => 'array',
+        'checked_at' => 'datetime',
+        'expires_at' => 'datetime',
     ];
 
     /**

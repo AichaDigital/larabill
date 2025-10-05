@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use DateTimeInterface;
-use Illuminate\Database\Eloquent\{Builder, Model};
-use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -45,6 +45,7 @@ class Invoice extends Model
         'status',
         'user_id',
         'user_tax_info_encrypted',
+        'customer_data',
         'is_immutable',
         'immutable_at',
         'subtotal',
@@ -78,6 +79,7 @@ class Invoice extends Model
             'total' => 'integer', // Base 100: €12.34 = 1234
             'fiscal_data' => 'array',
             'vat_verification' => 'array',
+            'customer_data' => 'array',
             'is_roi_taxed' => 'boolean',
         ];
     }
@@ -134,6 +136,7 @@ class Invoice extends Model
     public function setSubtotalFromAmount(float $amount): self
     {
         $this->update(['subtotal' => static::amountToBase100($amount)]);
+
         return $this;
     }
 
@@ -143,6 +146,7 @@ class Invoice extends Model
     public function setTaxAmountFromAmount(float $amount): self
     {
         $this->update(['tax_amount' => static::amountToBase100($amount)]);
+
         return $this;
     }
 
@@ -152,6 +156,7 @@ class Invoice extends Model
     public function setTotalFromAmount(float $amount): self
     {
         $this->update(['total' => static::amountToBase100($amount)]);
+
         return $this;
     }
 
@@ -198,30 +203,6 @@ class Invoice extends Model
     }
 
     /**
-     * Accessor for subtotal to return as formatted string.
-     */
-    public function getSubtotalAttribute($value): string
-    {
-        return number_format((float) $value, 2, '.', '');
-    }
-
-    /**
-     * Accessor for tax_amount to return as formatted string.
-     */
-    public function getTaxAmountAttribute($value): string
-    {
-        return number_format((float) $value, 2, '.', '');
-    }
-
-    /**
-     * Accessor for total to return as formatted string.
-     */
-    public function getTotalAttribute($value): string
-    {
-        return number_format((float) $value, 2, '.', '');
-    }
-
-    /**
      * Generate PDF for this invoice
      *
      * @return array PDF generation result
@@ -229,6 +210,7 @@ class Invoice extends Model
     public function generatePDF(): array
     {
         $pdfService = app(\AichaDigital\Larabill\Services\PDF\PDFService::class);
+
         return $pdfService->generatePDF($this);
     }
 
@@ -265,8 +247,8 @@ class Invoice extends Model
      */
     public function getPDFPath(): ?string
     {
-        $filename = 'invoice_' . $this->id . '_' . $this->getInvoiceType() . '.pdf';
-        $pdfPath = storage_path('app/invoices/' . $filename);
+        $filename = 'invoice_'.$this->id.'_'.$this->getInvoiceType().'.pdf';
+        $pdfPath = storage_path('app/invoices/'.$filename);
 
         return file_exists($pdfPath) ? $pdfPath : null;
     }
@@ -279,11 +261,12 @@ class Invoice extends Model
     public function getPDFUrl(): ?string
     {
         $path = $this->getPDFPath();
-        if (!$path) {
+        if (! $path) {
             return null;
         }
 
-        $filename = 'invoice_' . $this->id . '_' . $this->getInvoiceType() . '.pdf';
-        return url('storage/invoices/' . $filename);
+        $filename = 'invoice_'.$this->id.'_'.$this->getInvoiceType().'.pdf';
+
+        return url('storage/invoices/'.$filename);
     }
 }

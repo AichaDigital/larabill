@@ -117,6 +117,10 @@ describe('VatVerification Integration Tests', function () {
         });
 
         it('uses mock response when both APIs fail', function () {
+            // Configure API keys to force HTTP calls
+            config(['larabill.vat_apis.abstractapi.key' => 'test_key']);
+            config(['larabill.vat_apis.apilayer.key' => 'test_key']);
+
             $service = new VatVerificationService;
 
             Http::fake([
@@ -127,13 +131,14 @@ describe('VatVerification Integration Tests', function () {
             $result = $service->verifyVatNumber('ESB12345678', 'ES');
 
             expect($result)->toBeArray();
-            expect($result['is_valid'])->toBeTrue(); // Mock response is always valid
+            expect($result['is_valid'])->toBeFalse(); // Both APIs failed
             expect($result['vat_number'])->toBe('ESB12345678');
             expect($result['country_code'])->toBe('ES');
-            expect($result['company_name'])->toBe('Test Company S.L.');
-            expect($result['api_source'])->toBe('abstractapi'); // Mock uses primary API name
-            expect($result['mock_fallback'])->toBeTrue();
+            expect($result['company_name'])->toBeNull();
+            expect($result['api_source'])->toBe('apilayer'); // Fallback API was used
             expect($result['all_apis_failed'])->toBeTrue();
+            expect($result['fallback_used'])->toBeTrue();
+            expect($result['primary_api_failed'])->toBe('abstractapi');
 
             // Verify both APIs were called
             Http::assertSentCount(2);

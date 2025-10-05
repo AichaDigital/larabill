@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use DateTimeInterface;
-use Illuminate\Database\Eloquent\{Builder, Model};
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Support\Carbon;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * TaxRate Model
@@ -78,7 +76,7 @@ class TaxRate extends Model
      */
     public function getRateAsPercentage(): float
     {
-        return static::base100ToPercentage($this->rate);
+        return static::base100ToPercentage($this->getRawOriginal('rate'));
     }
 
     /**
@@ -87,6 +85,7 @@ class TaxRate extends Model
     public function setRateFromPercentage(float $percentage): self
     {
         $this->update(['rate' => static::percentageToBase100($percentage)]);
+
         return $this;
     }
 
@@ -106,6 +105,7 @@ class TaxRate extends Model
 
         // Convert from base-100 integer to decimal format
         $decimal = ((int) $value) / 10000.0;
+
         return number_format($decimal, 4, '.', '');
     }
 
