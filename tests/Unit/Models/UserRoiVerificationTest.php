@@ -7,17 +7,17 @@ use Carbon\Carbon;
 
 it('can create a user ROI verification', function () {
     $verification = UserRoiVerification::create([
-        'user_id' => '1',
-        'vat_number' => 'ESB12345678',
-        'country_code' => 'ES',
-        'is_roi' => true,
-        'company_name' => 'Test Company S.L.',
+        'user_id'         => '1',
+        'vat_number'      => 'ESB12345678',
+        'country_code'    => 'ES',
+        'is_roi'          => true,
+        'company_name'    => 'Test Company S.L.',
         'company_address' => 'Test Address 123',
-        'last_check' => now(),
-        'expired_at' => now()->addDays(15),
-        'api_source' => 'abstractapi',
-        'response_data' => ['valid' => true],
-        'cache_hit' => false,
+        'last_check'      => now(),
+        'expired_at'      => now()->addDays(15),
+        'api_source'      => 'abstractapi',
+        'response_data'   => ['valid' => true],
+        'cache_hit'       => false,
     ]);
 
     expect($verification)->toBeInstanceOf(UserRoiVerification::class);
@@ -28,12 +28,12 @@ it('can create a user ROI verification', function () {
 
 it('can check if cache is expired', function () {
     $verification = UserRoiVerification::create([
-        'user_id' => '1',
-        'vat_number' => 'ESB12345678',
+        'user_id'      => '1',
+        'vat_number'   => 'ESB12345678',
         'country_code' => 'ES',
-        'is_roi' => true,
-        'last_check' => now()->subDays(20),
-        'expired_at' => now()->subDays(5), // Expired 5 days ago
+        'is_roi'       => true,
+        'last_check'   => now()->subDays(20),
+        'expired_at'   => now()->subDays(5), // Expired 5 days ago
     ]);
 
     expect($verification->isExpired())->toBeTrue();
@@ -42,12 +42,12 @@ it('can check if cache is expired', function () {
 
 it('can check if cache is valid', function () {
     $verification = UserRoiVerification::create([
-        'user_id' => '1',
-        'vat_number' => 'ESB12345678',
+        'user_id'      => '1',
+        'vat_number'   => 'ESB12345678',
         'country_code' => 'ES',
-        'is_roi' => true,
-        'last_check' => now(),
-        'expired_at' => now()->addDays(10), // Valid for 10 more days
+        'is_roi'       => true,
+        'last_check'   => now(),
+        'expired_at'   => now()->addDays(10), // Valid for 10 more days
     ]);
 
     expect($verification->isExpired())->toBeFalse();
@@ -57,12 +57,12 @@ it('can check if cache is valid', function () {
 
 it('can find ROI verification by user and VAT', function () {
     UserRoiVerification::create([
-        'user_id' => '1',
-        'vat_number' => 'ESB12345678',
+        'user_id'      => '1',
+        'vat_number'   => 'ESB12345678',
         'country_code' => 'ES',
-        'is_roi' => true,
-        'last_check' => now(),
-        'expired_at' => now()->addDays(15),
+        'is_roi'       => true,
+        'last_check'   => now(),
+        'expired_at'   => now()->addDays(15),
     ]);
 
     $found = UserRoiVerification::findByUserAndVat('1', 'ESB12345678', 'ES');
@@ -74,24 +74,24 @@ it('can find ROI verification by user and VAT', function () {
 
 it('can find valid ROI verification', function () {
     UserRoiVerification::create([
-        'user_id' => '1',
-        'vat_number' => 'ESB12345678',
+        'user_id'      => '1',
+        'vat_number'   => 'ESB12345678',
         'country_code' => 'ES',
-        'is_roi' => true,
-        'last_check' => now(),
-        'expired_at' => now()->addDays(15), // Valid
+        'is_roi'       => true,
+        'last_check'   => now(),
+        'expired_at'   => now()->addDays(15), // Valid
     ]);
 
     UserRoiVerification::create([
-        'user_id' => '1',
-        'vat_number' => 'ESB87654321',
+        'user_id'      => '1',
+        'vat_number'   => 'ESB87654321',
         'country_code' => 'ES',
-        'is_roi' => true,
-        'last_check' => now()->subDays(20),
-        'expired_at' => now()->subDays(5), // Expired
+        'is_roi'       => true,
+        'last_check'   => now()->subDays(20),
+        'expired_at'   => now()->subDays(5), // Expired
     ]);
 
-    $valid = UserRoiVerification::findValidByUserAndVat('1', 'ESB12345678', 'ES');
+    $valid   = UserRoiVerification::findValidByUserAndVat('1', 'ESB12345678', 'ES');
     $expired = UserRoiVerification::findValidByUserAndVat('1', 'ESB87654321', 'ES');
 
     expect($valid)->not->toBeNull();
@@ -100,14 +100,14 @@ it('can find valid ROI verification', function () {
 
 it('can create or update ROI verification', function () {
     $data = [
-        'user_id' => '1',
-        'vat_number' => 'ESB12345678',
-        'country_code' => 'ES',
-        'is_roi' => true,
-        'company_name' => 'Test Company S.L.',
+        'user_id'         => '1',
+        'vat_number'      => 'ESB12345678',
+        'country_code'    => 'ES',
+        'is_roi'          => true,
+        'company_name'    => 'Test Company S.L.',
         'company_address' => 'Test Address 123',
-        'api_source' => 'abstractapi',
-        'response_data' => ['valid' => true],
+        'api_source'      => 'abstractapi',
+        'response_data'   => ['valid' => true],
     ];
 
     $verification = UserRoiVerification::createOrUpdateRoiVerification($data);
@@ -126,13 +126,13 @@ it('can create or update ROI verification', function () {
 
 it('can mark as cache hit', function () {
     $verification = UserRoiVerification::create([
-        'user_id' => '1',
-        'vat_number' => 'ESB12345678',
+        'user_id'      => '1',
+        'vat_number'   => 'ESB12345678',
         'country_code' => 'ES',
-        'is_roi' => true,
-        'last_check' => now(),
-        'expired_at' => now()->addDays(15),
-        'cache_hit' => false,
+        'is_roi'       => true,
+        'last_check'   => now(),
+        'expired_at'   => now()->addDays(15),
+        'cache_hit'    => false,
     ]);
 
     $verification->markAsCacheHit();
@@ -142,30 +142,30 @@ it('can mark as cache hit', function () {
 
 it('can use scopes correctly', function () {
     UserRoiVerification::create([
-        'user_id' => '1',
-        'vat_number' => 'ESB12345678',
+        'user_id'      => '1',
+        'vat_number'   => 'ESB12345678',
         'country_code' => 'ES',
-        'is_roi' => true,
-        'last_check' => now(),
-        'expired_at' => now()->addDays(15), // Valid
+        'is_roi'       => true,
+        'last_check'   => now(),
+        'expired_at'   => now()->addDays(15), // Valid
     ]);
 
     UserRoiVerification::create([
-        'user_id' => '2',
-        'vat_number' => 'ESB87654321',
+        'user_id'      => '2',
+        'vat_number'   => 'ESB87654321',
         'country_code' => 'ES',
-        'is_roi' => false,
-        'last_check' => now()->subDays(20),
-        'expired_at' => now()->subDays(5), // Expired
+        'is_roi'       => false,
+        'last_check'   => now()->subDays(20),
+        'expired_at'   => now()->subDays(5), // Expired
     ]);
 
     UserRoiVerification::create([
-        'user_id' => '3',
-        'vat_number' => 'FRB12345678',
+        'user_id'      => '3',
+        'vat_number'   => 'FRB12345678',
         'country_code' => 'FR',
-        'is_roi' => true,
-        'last_check' => now(),
-        'expired_at' => now()->addDays(15), // Valid
+        'is_roi'       => true,
+        'last_check'   => now(),
+        'expired_at'   => now()->addDays(15), // Valid
     ]);
 
     // Test valid scope

@@ -29,7 +29,7 @@ class LarabillServiceProvider extends PackageServiceProvider
                 'add_is_roi_taxed_to_invoices_table',
             ])
             ->runsMigrations();
-            // Commands removed as they don't exist yet
+        // Commands removed as they don't exist yet
     }
 
     /**
@@ -41,7 +41,7 @@ class LarabillServiceProvider extends PackageServiceProvider
 
         // Register the main Larabill class as a singleton
         $this->app->singleton(Larabill::class, function ($app) {
-            return new Larabill();
+            return new Larabill;
         });
 
         // Register the facade alias

@@ -36,10 +36,10 @@ class UserRoiVerification extends Model
      * The attributes that should be cast.
      */
     protected $casts = [
-        'is_roi' => 'boolean',
-        'cache_hit' => 'boolean',
-        'last_check' => 'datetime',
-        'expired_at' => 'datetime',
+        'is_roi'        => 'boolean',
+        'cache_hit'     => 'boolean',
+        'last_check'    => 'datetime',
+        'expired_at'    => 'datetime',
         'response_data' => 'array',
     ];
 
@@ -54,7 +54,7 @@ class UserRoiVerification extends Model
             // Apply field mapping when creating
             $fieldMapping = \AichaDigital\Larabill\Services\ModelMappingService::getFieldMapping('user_roi_verification');
             if (! empty($fieldMapping)) {
-                $attributes = $model->getAttributes();
+                $attributes       = $model->getAttributes();
                 $mappedAttributes = \AichaDigital\Larabill\Services\ModelMappingService::reverseMapFields($attributes, 'user_roi_verification');
                 $model->setRawAttributes($mappedAttributes);
             }
@@ -64,7 +64,7 @@ class UserRoiVerification extends Model
             // Apply field mapping when retrieving
             $fieldMapping = \AichaDigital\Larabill\Services\ModelMappingService::getFieldMapping('user_roi_verification');
             if (! empty($fieldMapping)) {
-                $attributes = $model->getAttributes();
+                $attributes       = $model->getAttributes();
                 $mappedAttributes = \AichaDigital\Larabill\Services\ModelMappingService::mapFields($attributes, 'user_roi_verification');
                 $model->setRawAttributes($mappedAttributes);
             }
@@ -174,12 +174,12 @@ class UserRoiVerification extends Model
     public static function createOrUpdateRoiVerification(array $data): self
     {
         $cacheDuration = config('larabill.roi_verification.cache_duration_days', 15);
-        $expiredAt = now()->addDays($cacheDuration);
+        $expiredAt     = now()->addDays($cacheDuration);
 
         return static::updateOrCreate(
             [
-                'user_id' => $data['user_id'],
-                'vat_number' => $data['vat_number'],
+                'user_id'      => $data['user_id'],
+                'vat_number'   => $data['vat_number'],
                 'country_code' => $data['country_code'],
             ],
             array_merge($data, [

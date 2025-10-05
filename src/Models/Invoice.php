@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
 use Illuminate\Support\Carbon;
 
 /**
@@ -70,17 +69,17 @@ class Invoice extends Model
     public function casts(): array
     {
         return [
-            'is_immutable' => 'boolean',
-            'immutable_at' => 'datetime',
-            'paid_at' => 'datetime',
-            'due_date' => 'date',
-            'subtotal' => 'integer', // Base 100: €12.34 = 1234
-            'tax_amount' => 'integer', // Base 100: €12.34 = 1234
-            'total' => 'integer', // Base 100: €12.34 = 1234
-            'fiscal_data' => 'array',
+            'is_immutable'     => 'boolean',
+            'immutable_at'     => 'datetime',
+            'paid_at'          => 'datetime',
+            'due_date'         => 'date',
+            'subtotal'         => 'integer', // Base 100: €12.34 = 1234
+            'tax_amount'       => 'integer', // Base 100: €12.34 = 1234
+            'total'            => 'integer', // Base 100: €12.34 = 1234
+            'fiscal_data'      => 'array',
             'vat_verification' => 'array',
-            'customer_data' => 'array',
-            'is_roi_taxed' => 'boolean',
+            'customer_data'    => 'array',
+            'is_roi_taxed'     => 'boolean',
         ];
     }
 
@@ -248,7 +247,7 @@ class Invoice extends Model
     public function getPDFPath(): ?string
     {
         $filename = 'invoice_'.$this->id.'_'.$this->getInvoiceType().'.pdf';
-        $pdfPath = storage_path('app/invoices/'.$filename);
+        $pdfPath  = storage_path('app/invoices/'.$filename);
 
         return file_exists($pdfPath) ? $pdfPath : null;
     }

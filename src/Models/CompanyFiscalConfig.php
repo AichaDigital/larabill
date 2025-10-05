@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Models;
 
 use Carbon\Carbon;
-use DateTimeInterface;
-use Illuminate\Database\Eloquent\{Builder, Model};
-use Illuminate\Support\Carbon as LaravelCarbon;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * CompanyFiscalConfig Model
@@ -63,16 +61,16 @@ class CompanyFiscalConfig extends Model
     public function casts(): array
     {
         return [
-            'is_oss' => 'boolean',
-            'is_roi' => 'boolean',
-            'apply_destination_iva' => 'boolean',
-            'auto_apply_destination' => 'boolean',
-            'notification_sent' => 'boolean',
-            'threshold_exceeded' => 'boolean',
-            'eu_sales_threshold' => 'float', // Monetary amount: €10000.00
+            'is_oss'                  => 'boolean',
+            'is_roi'                  => 'boolean',
+            'apply_destination_iva'   => 'boolean',
+            'auto_apply_destination'  => 'boolean',
+            'notification_sent'       => 'boolean',
+            'threshold_exceeded'      => 'boolean',
+            'eu_sales_threshold'      => 'float', // Monetary amount: €10000.00
             'current_eu_sales_amount' => 'float', // Monetary amount: €12.34
-            'threshold_exceeded_at' => 'datetime',
-            'custom_threshold_rules' => 'array',
+            'threshold_exceeded_at'   => 'datetime',
+            'custom_threshold_rules'  => 'array',
         ];
     }
 
@@ -114,6 +112,7 @@ class CompanyFiscalConfig extends Model
     public function setEuSalesThresholdFromAmount(float $amount): self
     {
         $this->update(['eu_sales_threshold' => static::amountToBase100($amount)]);
+
         return $this;
     }
 
@@ -123,6 +122,7 @@ class CompanyFiscalConfig extends Model
     public function setCurrentEuSalesAmountFromAmount(float $amount): self
     {
         $this->update(['current_eu_sales_amount' => static::amountToBase100($amount)]);
+
         return $this;
     }
 
@@ -174,7 +174,7 @@ class CompanyFiscalConfig extends Model
             // Apply field mapping when creating
             $fieldMapping = \AichaDigital\Larabill\Services\ModelMappingService::getFieldMapping('company_fiscal_config');
             if (! empty($fieldMapping)) {
-                $attributes = $model->getAttributes();
+                $attributes       = $model->getAttributes();
                 $mappedAttributes = \AichaDigital\Larabill\Services\ModelMappingService::reverseMapFields($attributes, 'company_fiscal_config');
                 $model->setRawAttributes($mappedAttributes);
             }
@@ -184,7 +184,7 @@ class CompanyFiscalConfig extends Model
             // Apply field mapping when retrieving
             $fieldMapping = \AichaDigital\Larabill\Services\ModelMappingService::getFieldMapping('company_fiscal_config');
             if (! empty($fieldMapping)) {
-                $attributes = $model->getAttributes();
+                $attributes       = $model->getAttributes();
                 $mappedAttributes = \AichaDigital\Larabill\Services\ModelMappingService::mapFields($attributes, 'company_fiscal_config');
                 $model->setRawAttributes($mappedAttributes);
             }
@@ -216,19 +216,19 @@ class CompanyFiscalConfig extends Model
 
         return static::firstOrCreate(
             [
-                'company_id' => $companyId,
+                'company_id'  => $companyId,
                 'fiscal_year' => $fiscalYear,
             ],
             [
-                'is_oss' => false,
-                'is_roi' => false,
-                'eu_sales_threshold' => config('larabill.destination_vat.default_threshold', 1000000), // Base 100 integer
-                'currency' => config('larabill.destination_vat.currency', 'EUR'),
-                'fiscal_year_start' => config('larabill.destination_vat.fiscal_year_start', '01-01'),
-                'auto_apply_destination' => config('larabill.destination_vat.auto_apply_destination', true),
-                'apply_destination_iva' => false,
+                'is_oss'                  => false,
+                'is_roi'                  => false,
+                'eu_sales_threshold'      => config('larabill.destination_vat.default_threshold', 1000000), // Base 100 integer
+                'currency'                => config('larabill.destination_vat.currency', 'EUR'),
+                'fiscal_year_start'       => config('larabill.destination_vat.fiscal_year_start', '01-01'),
+                'auto_apply_destination'  => config('larabill.destination_vat.auto_apply_destination', true),
+                'apply_destination_iva'   => false,
                 'current_eu_sales_amount' => 0,
-                'threshold_exceeded' => false,
+                'threshold_exceeded'      => false,
             ]
         );
     }
@@ -250,7 +250,7 @@ class CompanyFiscalConfig extends Model
             if (! $this->threshold_exceeded_at) {
                 $this->update([
                     'threshold_exceeded_at' => now(),
-                    'threshold_exceeded' => true
+                    'threshold_exceeded'    => true,
                 ]);
             }
 
@@ -281,8 +281,8 @@ class CompanyFiscalConfig extends Model
     {
         $this->update([
             'current_eu_sales_amount' => 0,
-            'threshold_exceeded_at' => null,
-            'notification_sent' => false,
+            'threshold_exceeded_at'   => null,
+            'notification_sent'       => false,
         ]);
 
         return $this;
@@ -411,7 +411,7 @@ class CompanyFiscalConfig extends Model
         }
 
         $startDate = $this->getFiscalYearStartDate();
-        $endDate = $this->getFiscalYearEndDate();
+        $endDate   = $this->getFiscalYearEndDate();
 
         return $date->between($startDate, $endDate);
     }
@@ -434,6 +434,7 @@ class CompanyFiscalConfig extends Model
     public function getRemainingThresholdAmount(): float
     {
         $remaining = max(0, $this->eu_sales_threshold - $this->current_eu_sales_amount);
+
         return static::base100ToAmount($remaining);
     }
 
@@ -450,7 +451,7 @@ class CompanyFiscalConfig extends Model
      */
     public function setCustomThresholdRule(string $key, array $rule): self
     {
-        $rules = $this->custom_threshold_rules ?? [];
+        $rules       = $this->custom_threshold_rules ?? [];
         $rules[$key] = $rule;
         $this->update(['custom_threshold_rules' => $rules]);
 
@@ -519,6 +520,7 @@ class CompanyFiscalConfig extends Model
     public function enableOSS(): self
     {
         $this->update(['is_oss' => true]);
+
         return $this;
     }
 
@@ -528,6 +530,7 @@ class CompanyFiscalConfig extends Model
     public function disableOSS(): self
     {
         $this->update(['is_oss' => false]);
+
         return $this;
     }
 
@@ -537,6 +540,7 @@ class CompanyFiscalConfig extends Model
     public function enableROI(): self
     {
         $this->update(['is_roi' => true]);
+
         return $this;
     }
 
@@ -546,6 +550,7 @@ class CompanyFiscalConfig extends Model
     public function disableROI(): self
     {
         $this->update(['is_roi' => false]);
+
         return $this;
     }
 
@@ -555,11 +560,11 @@ class CompanyFiscalConfig extends Model
     public function resetForNewYear(int $newYear): self
     {
         $this->update([
-            'fiscal_year' => $newYear,
+            'fiscal_year'             => $newYear,
             'current_eu_sales_amount' => 0.0,
-            'threshold_exceeded' => false,
-            'threshold_exceeded_at' => null,
-            'notification_sent' => false,
+            'threshold_exceeded'      => false,
+            'threshold_exceeded_at'   => null,
+            'notification_sent'       => false,
         ]);
 
         return $this;
@@ -570,7 +575,6 @@ class CompanyFiscalConfig extends Model
      */
     public function shouldSendNotification(): bool
     {
-        return $this->threshold_exceeded && !$this->notification_sent;
+        return $this->threshold_exceeded && ! $this->notification_sent;
     }
-
 }

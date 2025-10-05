@@ -2,29 +2,28 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Models\Invoice;
-use AichaDigital\Larabill\Models\InvoiceItem;
+use AichaDigital\Larabill\Models\{Invoice, InvoiceItem};
 
 it('can create an invoice item', function () {
     $invoice = Invoice::create([
-        'number' => 'FAC-0001',
-        'type' => 'invoice',
-        'status' => 'draft',
-        'user_id' => 1,
-        'subtotal' => Invoice::amountToBase100(100.0),
+        'number'     => 'FAC-0001',
+        'type'       => 'invoice',
+        'status'     => 'draft',
+        'user_id'    => 1,
+        'subtotal'   => Invoice::amountToBase100(100.0),
         'tax_amount' => Invoice::amountToBase100(21.0),
-        'total' => Invoice::amountToBase100(121.0),
+        'total'      => Invoice::amountToBase100(121.0),
     ]);
 
     $item = InvoiceItem::create([
-        'invoice_id' => $invoice->id,
+        'invoice_id'  => $invoice->id,
         'description' => 'Test Service',
-        'quantity' => Invoice::amountToBase100(1.0),
-        'unit_price' => Invoice::amountToBase100(100.0),
-        'subtotal' => Invoice::amountToBase100(100.0),
-        'tax_rate' => Invoice::amountToBase100(21.0), // 21% in base-100
-        'tax_amount' => Invoice::amountToBase100(21.0),
-        'total' => Invoice::amountToBase100(121.0),
+        'quantity'    => Invoice::amountToBase100(1.0),
+        'unit_price'  => Invoice::amountToBase100(100.0),
+        'subtotal'    => Invoice::amountToBase100(100.0),
+        'tax_rate'    => Invoice::amountToBase100(21.0), // 21% in base-100
+        'tax_amount'  => Invoice::amountToBase100(21.0),
+        'total'       => Invoice::amountToBase100(121.0),
     ]);
 
     expect($item->description)->toBe('Test Service');
@@ -38,24 +37,24 @@ it('can create an invoice item', function () {
 
 it('belongs to an invoice', function () {
     $invoice = Invoice::create([
-        'number' => 'FAC-0001',
-        'type' => 'invoice',
-        'status' => 'draft',
-        'user_id' => 1,
-        'subtotal' => Invoice::amountToBase100(100.0),
+        'number'     => 'FAC-0001',
+        'type'       => 'invoice',
+        'status'     => 'draft',
+        'user_id'    => 1,
+        'subtotal'   => Invoice::amountToBase100(100.0),
         'tax_amount' => Invoice::amountToBase100(21.0),
-        'total' => Invoice::amountToBase100(121.0),
+        'total'      => Invoice::amountToBase100(121.0),
     ]);
 
     $item = InvoiceItem::create([
-        'invoice_id' => $invoice->id,
+        'invoice_id'  => $invoice->id,
         'description' => 'Test Service',
-        'quantity' => Invoice::amountToBase100(1.0),
-        'unit_price' => Invoice::amountToBase100(100.0),
-        'subtotal' => Invoice::amountToBase100(100.0),
-        'tax_rate' => Invoice::amountToBase100(21.0),
-        'tax_amount' => Invoice::amountToBase100(21.0),
-        'total' => Invoice::amountToBase100(121.0),
+        'quantity'    => Invoice::amountToBase100(1.0),
+        'unit_price'  => Invoice::amountToBase100(100.0),
+        'subtotal'    => Invoice::amountToBase100(100.0),
+        'tax_rate'    => Invoice::amountToBase100(21.0),
+        'tax_amount'  => Invoice::amountToBase100(21.0),
+        'total'       => Invoice::amountToBase100(121.0),
     ]);
 
     expect($item->invoice)->toBeInstanceOf(Invoice::class);

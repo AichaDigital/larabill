@@ -30,7 +30,7 @@ describe('CountryVatRate Model', function () {
         expect($vatRate->country_name)->toBe('Spain');
         expect($vatRate->standard_rate)->toBe(2100); // 21% in base 100
         expect($vatRate->reduced_rates)->toBe([
-            'general' => 1000, // 10% in base 100
+            'general'       => 1000, // 10% in base 100
             'super_reduced' => 400, // 4% in base 100
         ]);
         expect($vatRate->exempt_categories)->toContain('medical_services');
@@ -102,7 +102,7 @@ describe('CountryVatRate Model', function () {
         $reducedRates = $vatRate->getReducedRates();
 
         expect($reducedRates)->toBe([
-            'general' => 1000, // 10% in base 100
+            'general'       => 1000, // 10% in base 100
             'super_reduced' => 400, // 4% in base 100
         ]);
 
@@ -118,7 +118,7 @@ describe('CountryVatRate Model', function () {
         $reducedRates = $vatRate->getReducedRatesAsPercentages();
 
         expect($reducedRates)->toBe([
-            'general' => 10.0,
+            'general'       => 10.0,
             'super_reduced' => 4.0,
         ]);
     });
@@ -199,7 +199,7 @@ describe('CountryVatRate Model', function () {
         CountryVatRateFactory::new()->french()->create();
 
         $spanishRate = CountryVatRate::findByCountry('ES');
-        $frenchRate = CountryVatRate::findByCountry('FR');
+        $frenchRate  = CountryVatRate::findByCountry('FR');
         $nonExistent = CountryVatRate::findByCountry('XX');
 
         expect($spanishRate)->not->toBeNull();

@@ -27,5 +27,19 @@
         <include>
             <directory suffix=".php">./src</directory>
         </include>
+        <exclude>
+            <!-- Exclude database migrations, seeders, and factories -->
+            <directory>./src/database</directory>
+            <!-- Exclude Blade templates -->
+            <directory>./resources</directory>
+            <!-- Exclude configuration files -->
+            <directory>./src/config</directory>
+            <!-- Exclude service provider (mostly boilerplate) -->
+            <file>./src/LarabillServiceProvider.php</file>
+            <!-- Exclude facade (mostly boilerplate) -->
+            <file>./src/Facades/Larabill.php</file>
+            <!-- Exclude main Larabill class (mostly boilerplate) -->
+            <file>./src/Larabill.php</file>
+        </exclude>
     </source>
 </phpunit>

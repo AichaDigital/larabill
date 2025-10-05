@@ -3,22 +3,21 @@
 declare(strict_types=1);
 
 use AichaDigital\Larabill\Models\VatVerification;
-use AichaDigital\Larabill\Services\VatApiIntegrationService;
-use AichaDigital\Larabill\Services\VatVerificationService;
+use AichaDigital\Larabill\Services\{VatApiIntegrationService, VatVerificationService};
 
 it('can verify a valid Spanish VAT number', function () {
     // Mock successful API response
     Http::fake([
         'https://vat.abstractapi.com/v1/validate/*' => Http::response([
-            'valid' => true,
-            'company' => 'Test Company S.L.',
-            'address' => 'Test Address 123, Madrid, 28001, ES',
+            'valid'      => true,
+            'company'    => 'Test Company S.L.',
+            'address'    => 'Test Address 123, Madrid, 28001, ES',
             'vat_number' => 'ESB12345678',
         ], 200),
     ]);
 
     $apiIntegration = new VatApiIntegrationService;
-    $service = new VatVerificationService($apiIntegration);
+    $service        = new VatVerificationService($apiIntegration);
 
     $result = $service->verifyVatNumber('ESB12345678', 'ES');
 
@@ -35,7 +34,7 @@ it('can verify a valid Spanish VAT number', function () {
 
 it('can verify an invalid VAT number', function () {
     $apiIntegration = new VatApiIntegrationService;
-    $service = new VatVerificationService($apiIntegration);
+    $service        = new VatVerificationService($apiIntegration);
 
     $result = $service->verifyVatNumber('INVALID', 'ES');
 
@@ -50,15 +49,15 @@ it('caches verification results', function () {
     // Mock successful API response
     Http::fake([
         'https://vat.abstractapi.com/v1/validate/*' => Http::response([
-            'valid' => true,
-            'company' => 'Test Company S.L.',
-            'address' => 'Test Address 123, Madrid, 28001, ES',
+            'valid'      => true,
+            'company'    => 'Test Company S.L.',
+            'address'    => 'Test Address 123, Madrid, 28001, ES',
             'vat_number' => 'ESB12345678',
         ], 200),
     ]);
 
     $apiIntegration = new VatApiIntegrationService;
-    $service = new VatVerificationService($apiIntegration);
+    $service        = new VatVerificationService($apiIntegration);
 
     // First call should create cache
     $result1 = $service->verifyVatNumber('ESB12345678', 'ES');
@@ -76,15 +75,15 @@ it('saves verification to database', function () {
     // Mock successful API response
     Http::fake([
         'https://vat.abstractapi.com/v1/validate/*' => Http::response([
-            'valid' => true,
-            'company' => 'Test Company S.L.',
-            'address' => 'Test Address 123, Madrid, 28001, ES',
+            'valid'      => true,
+            'company'    => 'Test Company S.L.',
+            'address'    => 'Test Address 123, Madrid, 28001, ES',
             'vat_number' => 'ESB12345678',
         ], 200),
     ]);
 
     $apiIntegration = new VatApiIntegrationService;
-    $service = new VatVerificationService($apiIntegration);
+    $service        = new VatVerificationService($apiIntegration);
 
     $result = $service->verifyVatNumber('ESB12345678', 'ES');
 
@@ -104,15 +103,15 @@ it('uses preferred API from configuration', function () {
     // Mock successful API response
     Http::fake([
         'http://apilayer.net/api/validate*' => Http::response([
-            'valid' => true,
-            'company_name' => 'German Company GmbH',
+            'valid'           => true,
+            'company_name'    => 'German Company GmbH',
             'company_address' => 'Test Address 123, Berlin, 10115, DE',
-            'vat_number' => 'DE123456789',
+            'vat_number'      => 'DE123456789',
         ], 200),
     ]);
 
     $apiIntegration = new VatApiIntegrationService;
-    $service = new VatVerificationService($apiIntegration);
+    $service        = new VatVerificationService($apiIntegration);
 
     $result = $service->verifyVatNumber('DE123456789', 'DE');
 

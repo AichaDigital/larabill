@@ -659,6 +659,44 @@
 
 ---
 
-**Última actualización:** 2025-01-04  
-**Versión:** 1.3.1  
-**Estado:** ✅ COMPLETADO - FASE 1, 2, 3 y 5 + TESTS CORREGIDOS + SIGUIENTE: FASE 4 (STRIPE)
+## 📋 **FASE 6: CALIDAD DE CÓDIGO** [1 día]
+
+### 6.1 PHPStan - Análisis Estático
+- [x] **Configuración nivel 5** (suave pero necesario)
+- [x] **Baseline generado** (278 errores ignorados)
+- [ ] **Subir a nivel 6** (estricto para producción)
+- [ ] **Resolver errores críticos** del baseline
+- [ ] **Configurar reglas adicionales** (deprecation, phpunit)
+
+### 6.2 Cobertura de Tests
+- [x] **Cobertura actual: 53.2%** (394 tests, 1519 assertions)
+- [ ] **Excluir directorios no relevantes** (database/, resources/)
+- [ ] **Mejorar cobertura de modelos** con 0% (CompanyConfig, InvoiceTemplate)
+- [ ] **Mejorar cobertura de servicios** con baja cobertura
+- [ ] **Objetivo: 80%+ cobertura** para producción
+
+### 6.3 Modelos con Baja Cobertura
+- [ ] **Models/CompanyConfig** (0.0%)
+- [ ] **Models/InvoiceTemplate** (10.0%)
+- [ ] **Models/CompanyTemplateSettings** (33.9%)
+- [ ] **Models/CountryVatRate** (53.0%)
+- [ ] **Models/VatCategory** (57.5%)
+
+### 6.4 Servicios con Baja Cobertura
+- [ ] **Services/EuSalesThresholdService** (0.0%)
+- [ ] **Services/CacheService** (56.6%)
+- [ ] **Services/DestinationVatService** (67.3%)
+- [ ] **Services/RoiVerificationService** (72.8%)
+- [ ] **Services/PDF/DomPDFService** (72.0%)
+
+### 6.5 Configuración de Cobertura
+- [ ] **Excluir database/** (migraciones, seeders, factories)
+- [ ] **Excluir resources/** (vistas Blade)
+- [ ] **Excluir config/** (archivos de configuración)
+- [ ] **Configurar umbral mínimo** (80% para CI/CD)
+
+---
+
+**Última actualización:** 2025-01-05  
+**Versión:** 1.4.0  
+**Estado:** ✅ COMPLETADO - FASE 1, 2, 3 y 5 + EN PROGRESO: FASE 6 (CALIDAD DE CÓDIGO)

@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use DateTimeInterface;
-use Illuminate\Database\Eloquent\{Builder, Model};
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
 /**
@@ -52,13 +51,13 @@ class EuSalesThreshold extends Model
     public function casts(): array
     {
         return [
-            'total_amount' => 'float', // Monetary amount: €12.34
-            'threshold_amount' => 'float', // Monetary amount: €10000.00
-            'threshold_exceeded' => 'boolean',
-            'notification_sent' => 'boolean',
+            'total_amount'         => 'float', // Monetary amount: €12.34
+            'threshold_amount'     => 'float', // Monetary amount: €10000.00
+            'threshold_exceeded'   => 'boolean',
+            'notification_sent'    => 'boolean',
             'breakdown_by_country' => 'array',
-            'exceeded_at' => 'datetime',
-            'last_updated' => 'datetime',
+            'exceeded_at'          => 'datetime',
+            'last_updated'         => 'datetime',
         ];
     }
 
@@ -119,6 +118,7 @@ class EuSalesThreshold extends Model
     public function setTotalAmountFromAmount(float $amount): self
     {
         $this->update(['total_amount' => static::amountToBase100($amount)]);
+
         return $this;
     }
 
@@ -128,6 +128,7 @@ class EuSalesThreshold extends Model
     public function setThresholdAmountFromAmount(float $amount): self
     {
         $this->update(['threshold_amount' => static::amountToBase100($amount)]);
+
         return $this;
     }
 
@@ -157,7 +158,7 @@ class EuSalesThreshold extends Model
             // Apply field mapping when creating
             $fieldMapping = \AichaDigital\Larabill\Services\ModelMappingService::getFieldMapping('eu_sales_threshold');
             if (! empty($fieldMapping)) {
-                $attributes = $model->getAttributes();
+                $attributes       = $model->getAttributes();
                 $mappedAttributes = \AichaDigital\Larabill\Services\ModelMappingService::reverseMapFields($attributes, 'eu_sales_threshold');
                 $model->setRawAttributes($mappedAttributes);
             }
@@ -172,7 +173,7 @@ class EuSalesThreshold extends Model
             // Apply field mapping when retrieving
             $fieldMapping = \AichaDigital\Larabill\Services\ModelMappingService::getFieldMapping('eu_sales_threshold');
             if (! empty($fieldMapping)) {
-                $attributes = $model->getAttributes();
+                $attributes       = $model->getAttributes();
                 $mappedAttributes = \AichaDigital\Larabill\Services\ModelMappingService::mapFields($attributes, 'eu_sales_threshold');
                 $model->setRawAttributes($mappedAttributes);
             }
@@ -204,16 +205,16 @@ class EuSalesThreshold extends Model
 
         return static::firstOrCreate(
             [
-                'company_id' => $companyId,
+                'company_id'  => $companyId,
                 'fiscal_year' => $fiscalYear,
             ],
             [
-                'total_amount' => 0,
-                'threshold_exceeded' => false,
-                'notification_sent' => false,
+                'total_amount'         => 0,
+                'threshold_exceeded'   => false,
+                'notification_sent'    => false,
                 'breakdown_by_country' => [],
-                'threshold_amount' => config('larabill.destination_vat.default_threshold', 10000),
-                'currency' => config('larabill.destination_vat.currency', 'EUR'),
+                'threshold_amount'     => config('larabill.destination_vat.default_threshold', 10000),
+                'currency'             => config('larabill.destination_vat.currency', 'EUR'),
             ]
         );
     }
@@ -224,7 +225,7 @@ class EuSalesThreshold extends Model
     public function calculateTotal(): float
     {
         $breakdown = $this->breakdown_by_country ?? [];
-        $total = 0;
+        $total     = 0;
 
         foreach ($breakdown as $country => $amount) {
             $total += (float) $amount;
@@ -245,7 +246,7 @@ class EuSalesThreshold extends Model
         if ($exceeded && ! $this->threshold_exceeded) {
             $this->update([
                 'threshold_exceeded' => true,
-                'exceeded_at' => now(),
+                'exceeded_at'        => now(),
             ]);
         }
 
@@ -257,13 +258,13 @@ class EuSalesThreshold extends Model
      */
     public function addSalesForCountry(string $countryCode, float $amount): self
     {
-        $breakdown = $this->breakdown_by_country ?? [];
-        $currentAmount = $breakdown[$countryCode] ?? 0;
+        $breakdown               = $this->breakdown_by_country ?? [];
+        $currentAmount           = $breakdown[$countryCode]    ?? 0;
         $breakdown[$countryCode] = $currentAmount + $amount;
 
         $this->update([
             'breakdown_by_country' => $breakdown,
-            'total_amount' => $this->total_amount + $amount,
+            'total_amount'         => $this->total_amount + $amount,
         ]);
 
         $this->checkThreshold();
@@ -349,11 +350,11 @@ class EuSalesThreshold extends Model
     public function resetForNewYear(int $newFiscalYear): self
     {
         $this->update([
-            'fiscal_year' => $newFiscalYear,
-            'total_amount' => 0,
-            'threshold_exceeded' => false,
-            'exceeded_at' => null,
-            'notification_sent' => false,
+            'fiscal_year'          => $newFiscalYear,
+            'total_amount'         => 0,
+            'threshold_exceeded'   => false,
+            'exceeded_at'          => null,
+            'notification_sent'    => false,
             'breakdown_by_country' => [],
         ]);
 
@@ -421,7 +422,7 @@ class EuSalesThreshold extends Model
             $countryData = $threshold->breakdown_by_country;
             if (is_array($countryData)) {
                 foreach ($countryData as $country => $amount) {
-                    if (!isset($breakdown[$country])) {
+                    if (! isset($breakdown[$country])) {
                         $breakdown[$country] = 0;
                     }
                     $breakdown[$country] += (float) $amount;
@@ -430,9 +431,9 @@ class EuSalesThreshold extends Model
         }
 
         return [
-            'total_companies' => $thresholds->count(),
-            'exceeded_companies' => $thresholds->where('threshold_exceeded', true)->count(),
-            'total_sales_amount' => $thresholds->sum('total_amount'),
+            'total_companies'      => $thresholds->count(),
+            'exceeded_companies'   => $thresholds->where('threshold_exceeded', true)->count(),
+            'total_sales_amount'   => $thresholds->sum('total_amount'),
             'breakdown_by_country' => $breakdown,
         ];
     }
@@ -458,13 +459,13 @@ class EuSalesThreshold extends Model
      */
     public function addSalesAmount(string $countryCode, float $amount): self
     {
-        $breakdown = $this->breakdown_by_country ?? [];
+        $breakdown               = $this->breakdown_by_country ?? [];
         $breakdown[$countryCode] = ($breakdown[$countryCode] ?? 0) + $amount;
 
         $this->update([
             'breakdown_by_country' => $breakdown,
-            'total_amount' => $this->total_amount + $amount,
-            'last_updated' => now(),
+            'total_amount'         => $this->total_amount + $amount,
+            'last_updated'         => now(),
         ]);
 
         return $this;
@@ -485,7 +486,7 @@ class EuSalesThreshold extends Model
     {
         $this->update([
             'threshold_exceeded' => true,
-            'exceeded_at' => now(),
+            'exceeded_at'        => now(),
         ]);
 
         return $this;
@@ -497,6 +498,7 @@ class EuSalesThreshold extends Model
     public function getSalesAmountByCountry(string $countryCode): float
     {
         $breakdown = $this->breakdown_by_country ?? [];
+
         return $breakdown[$countryCode] ?? 0.0;
     }
 
@@ -506,12 +508,12 @@ class EuSalesThreshold extends Model
     public function resetSalesAmounts(): self
     {
         $this->update([
-            'total_amount' => 0,
+            'total_amount'         => 0,
             'breakdown_by_country' => [],
-            'threshold_exceeded' => false,
-            'exceeded_at' => null,
-            'notification_sent' => false,
-            'last_updated' => now(),
+            'threshold_exceeded'   => false,
+            'exceeded_at'          => null,
+            'notification_sent'    => false,
+            'last_updated'         => now(),
         ]);
 
         return $this;
@@ -530,7 +532,7 @@ class EuSalesThreshold extends Model
      */
     public static function getCompaniesExceedingThreshold(?int $fiscalYear = null)
     {
-        if (!$fiscalYear) {
+        if (! $fiscalYear) {
             $fiscalYear = now()->year;
         }
 
@@ -544,7 +546,7 @@ class EuSalesThreshold extends Model
      */
     public static function getCompaniesNeedingNotification(?int $fiscalYear = null)
     {
-        if (!$fiscalYear) {
+        if (! $fiscalYear) {
             $fiscalYear = now()->year;
         }
 
@@ -559,12 +561,12 @@ class EuSalesThreshold extends Model
      */
     public static function companyNeedsThresholdMonitoring(string $companyId, ?int $fiscalYear = null): bool
     {
-        if (!$fiscalYear) {
+        if (! $fiscalYear) {
             $fiscalYear = now()->year;
         }
 
         // Company needs monitoring if it doesn't have a threshold record yet
-        return !static::where('company_id', $companyId)
+        return ! static::where('company_id', $companyId)
             ->where('fiscal_year', $fiscalYear)
             ->exists();
     }
@@ -575,6 +577,7 @@ class EuSalesThreshold extends Model
     public function getFiscalYearStartDate(): Carbon
     {
         $startDate = config('larabill.destination_vat.fiscal_year_start', '01-01');
+
         return Carbon::create($this->fiscal_year, (int) substr($startDate, 0, 2), (int) substr($startDate, 3, 2));
     }
 
@@ -592,7 +595,7 @@ class EuSalesThreshold extends Model
     public function isWithinFiscalYear(\Carbon\Carbon $date): bool
     {
         $startDate = $this->getFiscalYearStartDate();
-        $endDate = $startDate->copy()->addYear()->subDay();
+        $endDate   = $startDate->copy()->addYear()->subDay();
 
         return $date->between($startDate, $endDate);
     }
@@ -609,7 +612,7 @@ class EuSalesThreshold extends Model
             $breakdown = $threshold->breakdown_by_country;
             if (is_array($breakdown)) {
                 foreach ($breakdown as $country => $amount) {
-                    if (!isset($countryTotals[$country])) {
+                    if (! isset($countryTotals[$country])) {
                         $countryTotals[$country] = 0;
                     }
                     $countryTotals[$country] += (float) $amount;
@@ -622,12 +625,14 @@ class EuSalesThreshold extends Model
 
         // Convert to array format expected by tests
         $result = [];
-        $count = 0;
+        $count  = 0;
         foreach ($countryTotals as $country => $amount) {
-            if ($count >= $limit) break;
+            if ($count >= $limit) {
+                break;
+            }
             $result[] = [
                 'country' => $country,
-                'amount' => $amount,
+                'amount'  => $amount,
             ];
             $count++;
         }
@@ -648,19 +653,19 @@ class EuSalesThreshold extends Model
             ->where('fiscal_year', $fiscalYear - 1)
             ->first();
 
-        $currentAmount = $current ? $current->total_amount : 0;
+        $currentAmount  = $current ? $current->total_amount : 0;
         $previousAmount = $previous ? $previous->total_amount : 0;
 
-        $growthAmount = $currentAmount - $previousAmount;
+        $growthAmount     = $currentAmount - $previousAmount;
         $growthPercentage = $previousAmount > 0 ? (($currentAmount - $previousAmount) / $previousAmount) * 100 : 0;
 
         return [
-            'company_id' => $companyId,
-            'current_year' => $fiscalYear,
-            'current_amount' => $currentAmount,
-            'previous_year' => $fiscalYear - 1,
-            'previous_amount' => $previousAmount,
-            'growth_amount' => $growthAmount,
+            'company_id'        => $companyId,
+            'current_year'      => $fiscalYear,
+            'current_amount'    => $currentAmount,
+            'previous_year'     => $fiscalYear - 1,
+            'previous_amount'   => $previousAmount,
+            'growth_amount'     => $growthAmount,
             'growth_percentage' => $growthPercentage,
         ];
     }

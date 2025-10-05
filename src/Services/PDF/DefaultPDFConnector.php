@@ -6,6 +6,7 @@ namespace AichaDigital\Larabill\Services\PDF;
 
 use AichaDigital\Larabill\Contracts\PDFConnectorInterface;
 use AichaDigital\Larabill\Models\Invoice;
+
 // use Illuminate\Support\Facades\Log;
 
 /**
@@ -30,9 +31,9 @@ class DefaultPDFConnector implements PDFConnectorInterface
     public function __construct(array $config = [])
     {
         $this->config = array_merge([
-            'qr_base_url' => 'http://localhost',
+            'qr_base_url'             => 'http://localhost',
             'qr_include_invoice_data' => true,
-            'qr_include_tax_data' => true,
+            'qr_include_tax_data'     => true,
             'qr_include_company_data' => true,
             'enable_local_validation' => true,
         ], $config);
@@ -48,7 +49,7 @@ class DefaultPDFConnector implements PDFConnectorInterface
     {
         try {
             // Validate invoice first
-            if (!$this->validateInvoice($invoice)) {
+            if (! $this->validateInvoice($invoice)) {
                 throw new \InvalidArgumentException('Invoice validation failed: missing required fields');
             }
 
@@ -62,27 +63,27 @@ class DefaultPDFConnector implements PDFConnectorInterface
             $qrUrl = $this->createQRUrl($invoice, $qrCode);
 
             return [
-                'success' => true,
-                'qr_code' => $qrCode,
-                'qr_url' => $qrUrl,
-                'qr_data' => $qrData,
+                'success'        => true,
+                'qr_code'        => $qrCode,
+                'qr_url'         => $qrUrl,
+                'qr_data'        => $qrData,
                 'connector_type' => $this->getConnectorType(),
-                'generated_at' => now()->toISOString(),
-                'metadata' => [
-                    'invoice_id' => $invoice->id,
+                'generated_at'   => now()->toISOString(),
+                'metadata'       => [
+                    'invoice_id'     => $invoice->id,
                     'invoice_number' => $invoice->number,
-                    'total_amount' => $invoice->total,
-                    'currency' => 'EUR', // Default currency
+                    'total_amount'   => $invoice->total,
+                    'currency'       => 'EUR', // Default currency
                 ],
             ];
         } catch (\Exception $e) {
             // Error occurred during QR generation
 
             return [
-                'success' => false,
-                'error' => $e->getMessage(),
+                'success'        => false,
+                'error'          => $e->getMessage(),
                 'connector_type' => $this->getConnectorType(),
-                'generated_at' => now()->toISOString(),
+                'generated_at'   => now()->toISOString(),
             ];
         }
     }
@@ -194,13 +195,13 @@ class DefaultPDFConnector implements PDFConnectorInterface
     public function getMetadata(): array
     {
         return [
-            'name' => 'Default PDF Connector',
-            'version' => '1.0.0',
-            'description' => 'Local QR generation without external dependencies',
-            'type' => 'local',
+            'name'                         => 'Default PDF Connector',
+            'version'                      => '1.0.0',
+            'description'                  => 'Local QR generation without external dependencies',
+            'type'                         => 'local',
             'supports_external_validation' => false,
-            'supports_digital_signature' => false,
-            'requires_internet' => false,
+            'supports_digital_signature'   => false,
+            'requires_internet'            => false,
         ];
     }
 
@@ -213,26 +214,26 @@ class DefaultPDFConnector implements PDFConnectorInterface
     protected function prepareQRData(Invoice $invoice): array
     {
         $data = [
-            'invoice_id' => $invoice->id,
+            'invoice_id'     => $invoice->id,
             'invoice_number' => $invoice->number,
-            'total_amount' => $invoice->total,
-            'status' => $invoice->status,
-            'created_at' => $invoice->created_at?->toISOString(),
+            'total_amount'   => $invoice->total,
+            'status'         => $invoice->status,
+            'created_at'     => $invoice->created_at?->toISOString(),
         ];
 
         // Include invoice data if configured
         if ($this->config['qr_include_invoice_data']) {
             $data['invoice_data'] = [
-                'subtotal' => $invoice->subtotal,
+                'subtotal'   => $invoice->subtotal,
                 'tax_amount' => $invoice->tax_amount,
-                'due_date' => $invoice->due_date?->toISOString(),
+                'due_date'   => $invoice->due_date?->toISOString(),
             ];
         }
 
         // Include tax data if configured
         if ($this->config['qr_include_tax_data']) {
             $data['tax_data'] = [
-                'fiscal_data' => $invoice->fiscal_data,
+                'fiscal_data'      => $invoice->fiscal_data,
                 'vat_verification' => $invoice->vat_verification,
             ];
         }
@@ -240,7 +241,7 @@ class DefaultPDFConnector implements PDFConnectorInterface
         // Include company data if configured
         if ($this->config['qr_include_company_data']) {
             $data['company_data'] = [
-                'user_id' => $invoice->user_id,
+                'user_id'                 => $invoice->user_id,
                 'user_tax_info_encrypted' => $invoice->user_tax_info_encrypted,
             ];
         }
@@ -259,7 +260,7 @@ class DefaultPDFConnector implements PDFConnectorInterface
         // For now, generate a simple hash-based QR code
         // In a real implementation, you would use a QR library like SimpleSoftwareIO/simple-qrcode
         $jsonData = json_encode($data, JSON_UNESCAPED_UNICODE);
-        $hash = hash('sha256', $jsonData);
+        $hash     = hash('sha256', $jsonData);
 
         // Create a simple QR-like string (this is a placeholder)
         return 'QR:'.substr($hash, 0, 16).':'.base64_encode(substr($jsonData, 0, 100));

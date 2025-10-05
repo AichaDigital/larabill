@@ -20,19 +20,19 @@ class CountryVatRateFactory extends Factory
     public function definition(): array
     {
         return [
-            'country_code' => $this->faker->unique()->countryCode(),
-            'country_name' => $this->faker->country(),
+            'country_code'  => $this->faker->unique()->countryCode(),
+            'country_name'  => $this->faker->country(),
             'standard_rate' => $this->faker->numberBetween(1500, 2700), // 15% to 27% in base 100
             'reduced_rates' => [
-                'general' => $this->faker->numberBetween(500, 1500), // 5% to 15% in base 100
+                'general'       => $this->faker->numberBetween(500, 1500), // 5% to 15% in base 100
                 'super_reduced' => $this->faker->numberBetween(0, 500), // 0% to 5% in base 100
             ],
             'exempt_categories' => [
                 $this->faker->randomElement(['medical_services', 'education', 'books', 'food']),
                 $this->faker->randomElement(['transport', 'utilities', 'insurance']),
             ],
-            'is_active' => true,
-            'data_source' => 'factory',
+            'is_active'    => true,
+            'data_source'  => 'factory',
             'last_updated' => now(),
         ];
     }
@@ -44,11 +44,11 @@ class CountryVatRateFactory extends Factory
     {
         return $this->state(function (array $attributes) {
             return [
-                'country_code' => 'ES',
-                'country_name' => 'Spain',
+                'country_code'  => 'ES',
+                'country_name'  => 'Spain',
                 'standard_rate' => 2100, // 21% in base 100
                 'reduced_rates' => [
-                    'general' => 1000, // 10% in base 100
+                    'general'       => 1000, // 10% in base 100
                     'super_reduced' => 400, // 4% in base 100
                 ],
                 'exempt_categories' => [
@@ -68,11 +68,11 @@ class CountryVatRateFactory extends Factory
     {
         return $this->state(function (array $attributes) {
             return [
-                'country_code' => 'FR',
-                'country_name' => 'France',
+                'country_code'  => 'FR',
+                'country_name'  => 'France',
                 'standard_rate' => 2000, // 20% in base 100
                 'reduced_rates' => [
-                    'general' => 1000, // 10% in base 100
+                    'general'       => 1000, // 10% in base 100
                     'super_reduced' => 550, // 5.5% in base 100
                 ],
                 'exempt_categories' => [
@@ -91,8 +91,8 @@ class CountryVatRateFactory extends Factory
     {
         return $this->state(function (array $attributes) {
             return [
-                'country_code' => 'DE',
-                'country_name' => 'Germany',
+                'country_code'  => 'DE',
+                'country_name'  => 'Germany',
                 'standard_rate' => 1900, // 19% in base 100
                 'reduced_rates' => [
                     'general' => 700, // 7% in base 100

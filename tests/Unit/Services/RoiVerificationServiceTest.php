@@ -2,9 +2,7 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Models\RoiQuery;
-use AichaDigital\Larabill\Models\UserRoiVerification;
-use AichaDigital\Larabill\Models\VatVerification;
+use AichaDigital\Larabill\Models\{RoiQuery, UserRoiVerification, VatVerification};
 use AichaDigital\Larabill\Services\RoiVerificationService;
 use Illuminate\Support\Facades\Http;
 
@@ -25,15 +23,15 @@ it('can verify ROI status with cache hit', function () {
 
     // Create existing verification in cache
     UserRoiVerification::create([
-        'user_id' => 'user-123',
-        'vat_number' => 'ESB12345678',
+        'user_id'      => 'user-123',
+        'vat_number'   => 'ESB12345678',
         'country_code' => 'ES',
-        'is_roi' => true,
+        'is_roi'       => true,
         'company_name' => 'Test Company S.L.',
-        'last_check' => now(),
-        'expired_at' => now()->addDays(15),
-        'api_source' => 'cache',
-        'cache_hit' => false,
+        'last_check'   => now(),
+        'expired_at'   => now()->addDays(15),
+        'api_source'   => 'cache',
+        'cache_hit'    => false,
     ]);
 
     $result = $service->verifyRoiStatus('user-123', 'ESB12345678', 'ES');
@@ -51,9 +49,9 @@ it('can verify ROI status with API call', function () {
     // Mock successful API response
     Http::fake([
         'https://vat.abstractapi.com/v1/validate/*' => Http::response([
-            'valid' => true,
-            'company' => 'Test Company S.L.',
-            'address' => 'Test Address 123, Madrid, 28001, ES',
+            'valid'      => true,
+            'company'    => 'Test Company S.L.',
+            'address'    => 'Test Address 123, Madrid, 28001, ES',
             'vat_number' => 'ESB12345678',
         ], 200),
     ]);
@@ -89,8 +87,8 @@ it('can verify ROI status with API fallback', function () {
     Http::fake([
         'https://vat.abstractapi.com/v1/validate/*' => Http::response([], 500),
         'https://vat.abstractapi.com/v1/validate/*' => Http::response([
-            'valid' => true,
-            'company' => 'Test Company S.L.',
+            'valid'      => true,
+            'company'    => 'Test Company S.L.',
             'vat_number' => 'ESB12345678',
         ], 200),
     ]);
@@ -143,7 +141,7 @@ it('can handle API failures gracefully', function () {
     // Mock API failure for both APIs
     Http::fake([
         'https://vat.abstractapi.com/v1/validate/*' => Http::response([], 500),
-        'http://apilayer.net/api/validate*' => Http::response([], 500),
+        'http://apilayer.net/api/validate*'         => Http::response([], 500),
     ]);
 
     $result = $service->verifyRoiStatus('user-123', 'ESB12345678', 'ES');
@@ -170,13 +168,13 @@ it('can force API check even with valid cache', function () {
 
     // Create existing verification in cache
     UserRoiVerification::create([
-        'user_id' => 'user-123',
-        'vat_number' => 'ESB12345678',
+        'user_id'      => 'user-123',
+        'vat_number'   => 'ESB12345678',
         'country_code' => 'ES',
-        'is_roi' => true,
-        'last_check' => now(),
-        'expired_at' => now()->addDays(15),
-        'api_source' => 'cache',
+        'is_roi'       => true,
+        'last_check'   => now(),
+        'expired_at'   => now()->addDays(15),
+        'api_source'   => 'cache',
     ]);
 
     // Configure API keys to force HTTP calls
@@ -189,8 +187,8 @@ it('can force API check even with valid cache', function () {
     // Mock API response
     Http::fake([
         'https://vat.abstractapi.com/v1/validate/*' => Http::response([
-            'valid' => true,
-            'company' => 'Updated Company S.L.',
+            'valid'      => true,
+            'company'    => 'Updated Company S.L.',
             'vat_number' => 'ESB12345678',
         ], 200),
     ]);
@@ -216,20 +214,20 @@ it('can handle expired cache', function () {
 
     // Create expired verification
     UserRoiVerification::create([
-        'user_id' => 'user-123',
-        'vat_number' => 'ESB12345678',
+        'user_id'      => 'user-123',
+        'vat_number'   => 'ESB12345678',
         'country_code' => 'ES',
-        'is_roi' => true,
-        'last_check' => now()->subDays(20),
-        'expired_at' => now()->subDays(5), // Expired
-        'api_source' => 'cache',
+        'is_roi'       => true,
+        'last_check'   => now()->subDays(20),
+        'expired_at'   => now()->subDays(5), // Expired
+        'api_source'   => 'cache',
     ]);
 
     // Mock API response
     Http::fake([
         'https://vat.abstractapi.com/v1/validate/*' => Http::response([
-            'valid' => true,
-            'company' => 'Test Company S.L.',
+            'valid'      => true,
+            'company'    => 'Test Company S.L.',
             'vat_number' => 'ESB12345678',
         ], 200),
     ]);
@@ -247,21 +245,21 @@ it('can get ROI verification history', function () {
 
     // Create some verification history
     UserRoiVerification::create([
-        'user_id' => 'user-123',
-        'vat_number' => 'ESB12345678',
+        'user_id'      => 'user-123',
+        'vat_number'   => 'ESB12345678',
         'country_code' => 'ES',
-        'is_roi' => true,
-        'last_check' => now()->subDays(3), // More recent
-        'expired_at' => now()->addDays(10),
+        'is_roi'       => true,
+        'last_check'   => now()->subDays(3), // More recent
+        'expired_at'   => now()->addDays(10),
     ]);
 
     UserRoiVerification::create([
-        'user_id' => 'user-123',
-        'vat_number' => 'FRB87654321',
+        'user_id'      => 'user-123',
+        'vat_number'   => 'FRB87654321',
         'country_code' => 'FR',
-        'is_roi' => false,
-        'last_check' => now()->subDays(5), // Older
-        'expired_at' => now()->addDays(12),
+        'is_roi'       => false,
+        'last_check'   => now()->subDays(5), // Older
+        'expired_at'   => now()->addDays(12),
     ]);
 
     $history = $service->getRoiVerificationHistory('user-123');
@@ -276,23 +274,23 @@ it('can get ROI query statistics', function () {
 
     // Create some query history
     RoiQuery::create([
-        'user_id' => 'user-123',
-        'vat_number' => 'ESB12345678',
+        'user_id'      => 'user-123',
+        'vat_number'   => 'ESB12345678',
         'country_code' => 'ES',
-        'query_type' => RoiQuery::QUERY_TYPE_API,
-        'api_source' => 'abstractapi',
-        'queried_at' => now()->subDays(5),
-        'cache_used' => false,
+        'query_type'   => RoiQuery::QUERY_TYPE_API,
+        'api_source'   => 'abstractapi',
+        'queried_at'   => now()->subDays(5),
+        'cache_used'   => false,
     ]);
 
     RoiQuery::create([
-        'user_id' => 'user-123',
-        'vat_number' => 'FRB87654321',
+        'user_id'      => 'user-123',
+        'vat_number'   => 'FRB87654321',
         'country_code' => 'FR',
-        'query_type' => RoiQuery::QUERY_TYPE_CACHE,
-        'api_source' => 'cache',
-        'queried_at' => now()->subDays(3),
-        'cache_used' => true,
+        'query_type'   => RoiQuery::QUERY_TYPE_CACHE,
+        'api_source'   => 'cache',
+        'queried_at'   => now()->subDays(3),
+        'cache_used'   => true,
     ]);
 
     $stats = $service->getRoiQueryStatistics('user-123');
@@ -309,21 +307,21 @@ it('can cleanup expired legal retention queries', function () {
 
     // Create expired query
     RoiQuery::create([
-        'user_id' => 'user-123',
-        'vat_number' => 'ESB12345678',
-        'country_code' => 'ES',
-        'query_type' => RoiQuery::QUERY_TYPE_API,
-        'queried_at' => now()->subDays(3000), // 8+ years ago
+        'user_id'               => 'user-123',
+        'vat_number'            => 'ESB12345678',
+        'country_code'          => 'ES',
+        'query_type'            => RoiQuery::QUERY_TYPE_API,
+        'queried_at'            => now()->subDays(3000), // 8+ years ago
         'legal_retention_until' => now()->subDays(445), // Expired
     ]);
 
     // Create valid query
     RoiQuery::create([
-        'user_id' => 'user-456',
-        'vat_number' => 'FRB87654321',
-        'country_code' => 'FR',
-        'query_type' => RoiQuery::QUERY_TYPE_API,
-        'queried_at' => now(),
+        'user_id'               => 'user-456',
+        'vat_number'            => 'FRB87654321',
+        'country_code'          => 'FR',
+        'query_type'            => RoiQuery::QUERY_TYPE_API,
+        'queried_at'            => now(),
         'legal_retention_until' => now()->addDays(2555), // Valid
     ]);
 
@@ -397,8 +395,8 @@ it('can handle batch ROI verification', function () {
     // Mock API responses
     Http::fake([
         'https://vat.abstractapi.com/v1/validate/*' => Http::response([
-            'valid' => true,
-            'company' => 'Test Company S.L.',
+            'valid'      => true,
+            'company'    => 'Test Company S.L.',
             'vat_number' => 'ESB12345678',
         ], 200),
     ]);
@@ -426,8 +424,8 @@ it('can update service configuration', function () {
     $service = new RoiVerificationService;
 
     $newConfig = [
-        'cache_duration_days' => 30,
-        'force_api_check' => true,
+        'cache_duration_days'  => 30,
+        'force_api_check'      => true,
         'legal_retention_days' => 3650,
     ];
 
@@ -459,8 +457,8 @@ it('can log service operations', function () {
     // Mock API response
     Http::fake([
         'https://vat.abstractapi.com/v1/validate/*' => Http::response([
-            'valid' => true,
-            'company' => 'Test Company S.L.',
+            'valid'      => true,
+            'company'    => 'Test Company S.L.',
             'vat_number' => 'ESB12345678',
         ], 200),
     ]);

@@ -9,15 +9,15 @@ it('can create a basic invoice', function () {
     $service = new BillingService;
 
     $invoiceData = [
-        'user_id' => 1,
+        'user_id'          => 1,
         'customer_country' => 'ES',
-        'customer_type' => 'individual',
-        'items' => [
+        'customer_type'    => 'individual',
+        'items'            => [
             [
                 'description' => 'Test Item',
-                'quantity' => 1,
-                'unit_price' => 100.0,
-                'tax_rate' => 21.0,
+                'quantity'    => 1,
+                'unit_price'  => 100.0,
+                'tax_rate'    => 21.0,
             ],
         ],
     ];
@@ -34,15 +34,15 @@ it('can create an immutable invoice', function () {
     $service = new BillingService;
 
     $invoiceData = [
-        'user_id' => 1,
+        'user_id'          => 1,
         'customer_country' => 'ES',
-        'customer_type' => 'individual',
-        'items' => [
+        'customer_type'    => 'individual',
+        'items'            => [
             [
                 'description' => 'Test Item',
-                'quantity' => 1,
-                'unit_price' => 100.0,
-                'tax_rate' => 21.0,
+                'quantity'    => 1,
+                'unit_price'  => 100.0,
+                'tax_rate'    => 21.0,
             ],
         ],
     ];
@@ -58,15 +58,15 @@ it('can create a proforma invoice', function () {
     $service = new BillingService;
 
     $invoiceData = [
-        'user_id' => 1,
+        'user_id'          => 1,
         'customer_country' => 'ES',
-        'customer_type' => 'individual',
-        'items' => [
+        'customer_type'    => 'individual',
+        'items'            => [
             [
                 'description' => 'Test Item',
-                'quantity' => 1,
-                'unit_price' => 100.0,
-                'tax_rate' => 21.0,
+                'quantity'    => 1,
+                'unit_price'  => 100.0,
+                'tax_rate'    => 21.0,
             ],
         ],
     ];
@@ -83,21 +83,21 @@ it('can convert proforma to invoice', function () {
     $service = new BillingService;
 
     $invoiceData = [
-        'user_id' => 1,
+        'user_id'          => 1,
         'customer_country' => 'ES',
-        'customer_type' => 'individual',
-        'items' => [
+        'customer_type'    => 'individual',
+        'items'            => [
             [
                 'description' => 'Test Item',
-                'quantity' => 1,
-                'unit_price' => 100.0,
-                'tax_rate' => 21.0,
+                'quantity'    => 1,
+                'unit_price'  => 100.0,
+                'tax_rate'    => 21.0,
             ],
         ],
     ];
 
     $proforma = $service->createProforma($invoiceData);
-    $invoice = $service->convertToInvoice($proforma, ['make_immutable' => true]);
+    $invoice  = $service->convertToInvoice($proforma, ['make_immutable' => true]);
 
     expect($invoice)->toBeInstanceOf(Invoice::class);
     expect($invoice->type)->toBe('invoice');
@@ -110,15 +110,15 @@ it('can generate sequential invoice numbers', function () {
     $service = new BillingService;
 
     $invoiceData = [
-        'user_id' => 1,
+        'user_id'          => 1,
         'customer_country' => 'ES',
-        'customer_type' => 'individual',
-        'items' => [
+        'customer_type'    => 'individual',
+        'items'            => [
             [
                 'description' => 'Test Item',
-                'quantity' => 1,
-                'unit_price' => 100.0,
-                'tax_rate' => 21.0,
+                'quantity'    => 1,
+                'unit_price'  => 100.0,
+                'tax_rate'    => 21.0,
             ],
         ],
     ];
@@ -133,15 +133,15 @@ it('can generate invoice numbers with annual reset', function () {
     $service = new BillingService;
 
     $invoiceData = [
-        'user_id' => 1,
+        'user_id'          => 1,
         'customer_country' => 'ES',
-        'customer_type' => 'individual',
-        'items' => [
+        'customer_type'    => 'individual',
+        'items'            => [
             [
                 'description' => 'Test Item',
-                'quantity' => 1,
-                'unit_price' => 100.0,
-                'tax_rate' => 21.0,
+                'quantity'    => 1,
+                'unit_price'  => 100.0,
+                'tax_rate'    => 21.0,
             ],
         ],
     ];
@@ -160,15 +160,15 @@ it('can generate invoice numbers with detailed format', function () {
     $service = new BillingService;
 
     $invoiceData = [
-        'user_id' => 1,
+        'user_id'          => 1,
         'customer_country' => 'ES',
-        'customer_type' => 'individual',
-        'items' => [
+        'customer_type'    => 'individual',
+        'items'            => [
             [
                 'description' => 'Test Item',
-                'quantity' => 1,
-                'unit_price' => 100.0,
-                'tax_rate' => 21.0,
+                'quantity'    => 1,
+                'unit_price'  => 100.0,
+                'tax_rate'    => 21.0,
             ],
         ],
     ];
@@ -185,15 +185,15 @@ it('can generate proforma numbers with different prefix', function () {
     $service = new BillingService;
 
     $invoiceData = [
-        'user_id' => 1,
+        'user_id'          => 1,
         'customer_country' => 'ES',
-        'customer_type' => 'individual',
-        'items' => [
+        'customer_type'    => 'individual',
+        'items'            => [
             [
                 'description' => 'Test Item',
-                'quantity' => 1,
-                'unit_price' => 100.0,
-                'tax_rate' => 21.0,
+                'quantity'    => 1,
+                'unit_price'  => 100.0,
+                'tax_rate'    => 21.0,
             ],
         ],
     ];
@@ -207,21 +207,21 @@ it('can create invoice with encrypted customer data when immutable', function ()
     $service = new BillingService;
 
     $invoiceData = [
-        'user_id' => 1,
+        'user_id'          => 1,
         'customer_country' => 'ES',
-        'customer_type' => 'individual',
-        'customer_data' => [
-            'name' => 'John Doe',
-            'email' => 'john@example.com',
-            'address' => '123 Main St, Madrid',
+        'customer_type'    => 'individual',
+        'customer_data'    => [
+            'name'       => 'John Doe',
+            'email'      => 'john@example.com',
+            'address'    => '123 Main St, Madrid',
             'vat_number' => 'ESB12345678',
         ],
         'items' => [
             [
                 'description' => 'Test Item',
-                'quantity' => 1,
-                'unit_price' => 100.0,
-                'tax_rate' => 21.0,
+                'quantity'    => 1,
+                'unit_price'  => 100.0,
+                'tax_rate'    => 21.0,
             ],
         ],
     ];
@@ -242,19 +242,19 @@ it('can create invoice with ROI verification', function () {
     $service = new BillingService;
 
     $invoiceData = [
-        'user_id' => 1,
+        'user_id'          => 1,
         'customer_country' => 'DE',
-        'customer_type' => 'business',
+        'customer_type'    => 'business',
         'vat_verification' => [
-            'vat_number' => 'DE123456789',
+            'vat_number'   => 'DE123456789',
             'country_code' => 'DE',
         ],
         'items' => [
             [
                 'description' => 'Test Item',
-                'quantity' => 1,
-                'unit_price' => 100.0,
-                'tax_rate' => 21.0,
+                'quantity'    => 1,
+                'unit_price'  => 100.0,
+                'tax_rate'    => 21.0,
             ],
         ],
     ];
@@ -272,21 +272,21 @@ it('can create invoice with multiple items', function () {
     $service = new BillingService;
 
     $invoiceData = [
-        'user_id' => 1,
+        'user_id'          => 1,
         'customer_country' => 'ES',
-        'customer_type' => 'individual',
-        'items' => [
+        'customer_type'    => 'individual',
+        'items'            => [
             [
                 'description' => 'Item 1',
-                'quantity' => 2,
-                'unit_price' => 50.0,
-                'tax_rate' => 21.0,
+                'quantity'    => 2,
+                'unit_price'  => 50.0,
+                'tax_rate'    => 21.0,
             ],
             [
                 'description' => 'Item 2',
-                'quantity' => 1,
-                'unit_price' => 100.0,
-                'tax_rate' => 10.0,
+                'quantity'    => 1,
+                'unit_price'  => 100.0,
+                'tax_rate'    => 10.0,
             ],
         ],
     ];
@@ -313,16 +313,16 @@ it('can create invoice with custom template', function () {
     $service = new BillingService;
 
     $invoiceData = [
-        'user_id' => 1,
+        'user_id'          => 1,
         'customer_country' => 'ES',
-        'customer_type' => 'individual',
-        'template_name' => 'custom_template',
-        'items' => [
+        'customer_type'    => 'individual',
+        'template_name'    => 'custom_template',
+        'items'            => [
             [
                 'description' => 'Test Item',
-                'quantity' => 1,
-                'unit_price' => 100.0,
-                'tax_rate' => 21.0,
+                'quantity'    => 1,
+                'unit_price'  => 100.0,
+                'tax_rate'    => 21.0,
             ],
         ],
     ];
@@ -339,17 +339,17 @@ it('can create invoice with payment terms and due date', function () {
     $dueDate = now()->addDays(30);
 
     $invoiceData = [
-        'user_id' => 1,
+        'user_id'          => 1,
         'customer_country' => 'ES',
-        'customer_type' => 'individual',
-        'due_date' => $dueDate,
-        'payment_terms' => 'Net 30',
-        'items' => [
+        'customer_type'    => 'individual',
+        'due_date'         => $dueDate,
+        'payment_terms'    => 'Net 30',
+        'items'            => [
             [
                 'description' => 'Test Item',
-                'quantity' => 1,
-                'unit_price' => 100.0,
-                'tax_rate' => 21.0,
+                'quantity'    => 1,
+                'unit_price'  => 100.0,
+                'tax_rate'    => 21.0,
             ],
         ],
     ];

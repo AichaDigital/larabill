@@ -1,0 +1,11 @@
+{
+    "preset": "laravel",
+
+    "rules": {
+        "binary_operator_spaces": {
+            "default" : "align_single_space"
+        },
+        "single_import_per_statement": false,
+        "group_import": true
+    }
+}

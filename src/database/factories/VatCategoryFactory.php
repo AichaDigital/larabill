@@ -37,16 +37,16 @@ class VatCategoryFactory extends Factory
                 'Financial Services',
                 'Postal Services',
                 'Cultural Services',
-                'Sports Services'
+                'Sports Services',
             ]),
-            'description' => $this->faker->optional(0.8)->sentence(),
-            'country_code' => $this->faker->randomElement(['ES', 'FR', 'DE', 'IT', 'PT', 'NL', 'BE', 'AT']),
-            'vat_rate' => $this->getRateForCategoryType($categoryType),
-            'category_type' => $categoryType,
-            'is_active' => $this->faker->boolean(90), // 90% chance of being active
+            'description'         => $this->faker->optional(0.8)->sentence(),
+            'country_code'        => $this->faker->randomElement(['ES', 'FR', 'DE', 'IT', 'PT', 'NL', 'BE', 'AT']),
+            'vat_rate'            => $this->getRateForCategoryType($categoryType),
+            'category_type'       => $categoryType,
+            'is_active'           => $this->faker->boolean(90), // 90% chance of being active
             'applies_to_products' => $this->faker->boolean(80),
             'applies_to_services' => $this->faker->boolean(80),
-            'special_conditions' => $this->faker->optional(0.4)->randomElements([
+            'special_conditions'  => $this->faker->optional(0.4)->randomElements([
                 'medical_services',
                 'education',
                 'books',
@@ -54,11 +54,11 @@ class VatCategoryFactory extends Factory
                 'transport',
                 'utilities',
                 'insurance',
-                'financial_services'
+                'financial_services',
             ], $this->faker->numberBetween(1, 3)),
-            'sort_order' => $this->faker->numberBetween(1, 100),
+            'sort_order'         => $this->faker->numberBetween(1, 100),
             'parent_category_id' => null,
-            'last_updated' => $this->faker->dateTimeBetween('-1 year', 'now'),
+            'last_updated'       => $this->faker->dateTimeBetween('-1 year', 'now'),
         ];
     }
 
@@ -68,11 +68,11 @@ class VatCategoryFactory extends Factory
     private function getRateForCategoryType(string $categoryType): int
     {
         return match ($categoryType) {
-            'standard' => $this->faker->randomElement([2100, 2000, 1900]), // 21%, 20%, 19% in base 100
-            'reduced' => $this->faker->randomElement([1000, 800, 600]), // 10%, 8%, 6% in base 100
+            'standard'      => $this->faker->randomElement([2100, 2000, 1900]), // 21%, 20%, 19% in base 100
+            'reduced'       => $this->faker->randomElement([1000, 800, 600]), // 10%, 8%, 6% in base 100
             'super_reduced' => $this->faker->randomElement([400, 300, 200]), // 4%, 3%, 2% in base 100
-            'exempt' => 0, // 0% in base 100
-            default => 2100, // Default to 21% in base 100
+            'exempt'        => 0, // 0% in base 100
+            default         => 2100, // Default to 21% in base 100
         };
     }
 
@@ -83,13 +83,13 @@ class VatCategoryFactory extends Factory
     {
         return $this->state(function (array $attributes) {
             return [
-                'country_code' => 'ES',
-                'name' => 'IVA Estándar España',
-                'vat_rate' => 2100, // 21% in base 100
-                'category_type' => 'standard',
+                'country_code'        => 'ES',
+                'name'                => 'IVA Estándar España',
+                'vat_rate'            => 2100, // 21% in base 100
+                'category_type'       => 'standard',
                 'applies_to_products' => true,
                 'applies_to_services' => true,
-                'is_active' => true,
+                'is_active'           => true,
             ];
         });
     }
@@ -101,8 +101,8 @@ class VatCategoryFactory extends Factory
     {
         return $this->state(function (array $attributes) {
             return [
-                'category_type' => 'standard',
-                'vat_rate' => $this->faker->randomElement([2100, 2000, 1900]), // 21%, 20%, 19% in base 100
+                'category_type'       => 'standard',
+                'vat_rate'            => $this->faker->randomElement([2100, 2000, 1900]), // 21%, 20%, 19% in base 100
                 'applies_to_products' => true,
                 'applies_to_services' => true,
             ];
@@ -116,15 +116,15 @@ class VatCategoryFactory extends Factory
     {
         return $this->state(function (array $attributes) {
             return [
-                'category_type' => 'reduced',
-                'vat_rate' => $this->faker->randomElement([1000, 800, 600]), // 10%, 8%, 6% in base 100
+                'category_type'       => 'reduced',
+                'vat_rate'            => $this->faker->randomElement([1000, 800, 600]), // 10%, 8%, 6% in base 100
                 'applies_to_products' => $this->faker->boolean(80),
                 'applies_to_services' => $this->faker->boolean(60),
-                'special_conditions' => $this->faker->randomElements([
+                'special_conditions'  => $this->faker->randomElements([
                     'books',
                     'food_basic',
                     'medical_services',
-                    'education'
+                    'education',
                 ], $this->faker->numberBetween(1, 2)),
             ];
         });
@@ -137,15 +137,15 @@ class VatCategoryFactory extends Factory
     {
         return $this->state(function (array $attributes) {
             return [
-                'category_type' => 'super_reduced',
-                'vat_rate' => $this->faker->randomElement([400, 300, 200]), // 4%, 3%, 2% in base 100
+                'category_type'       => 'super_reduced',
+                'vat_rate'            => $this->faker->randomElement([400, 300, 200]), // 4%, 3%, 2% in base 100
                 'applies_to_products' => true,
                 'applies_to_services' => false,
-                'special_conditions' => $this->faker->randomElements([
+                'special_conditions'  => $this->faker->randomElements([
                     'food_basic',
                     'medical_products',
                     'books',
-                    'utilities'
+                    'utilities',
                 ], $this->faker->numberBetween(1, 2)),
             ];
         });
@@ -158,16 +158,16 @@ class VatCategoryFactory extends Factory
     {
         return $this->state(function (array $attributes) {
             return [
-                'category_type' => 'exempt',
-                'vat_rate' => 0, // 0% in base 100
+                'category_type'       => 'exempt',
+                'vat_rate'            => 0, // 0% in base 100
                 'applies_to_products' => $this->faker->boolean(60),
                 'applies_to_services' => $this->faker->boolean(80),
-                'special_conditions' => $this->faker->randomElements([
+                'special_conditions'  => $this->faker->randomElements([
                     'medical_services',
                     'education',
                     'insurance',
                     'financial_services',
-                    'postal_services'
+                    'postal_services',
                 ], $this->faker->numberBetween(1, 3)),
             ];
         });

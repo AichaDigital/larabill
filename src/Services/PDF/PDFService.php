@@ -6,10 +6,8 @@ namespace AichaDigital\Larabill\Services\PDF;
 
 use AichaDigital\Larabill\Contracts\PDFConnectorInterface;
 use AichaDigital\Larabill\Models\Invoice;
-use AichaDigital\Larabill\Services\PDF\DomPDFService;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
+use Illuminate\Support\Facades\{Cache, Log};
 
 /**
  * Main PDF service that manages PDF generation with QR codes
@@ -54,12 +52,12 @@ class PDFService
         $this->config = array_merge([
             'default_connector' => 'local',
             'fallback_to_local' => true,
-            'cache_pdfs' => true,
-            'cache_ttl' => 3600, // 1 hour
-            'enable_logging' => true,
+            'cache_pdfs'        => true,
+            'cache_ttl'         => 3600, // 1 hour
+            'enable_logging'    => true,
         ], $config);
 
-        $this->cache = $cache;
+        $this->cache         = $cache;
         $this->dompdfService = new DomPDFService($this->config);
         $this->initializeConnectors();
     }
@@ -115,12 +113,12 @@ class PDFService
             // }
 
             return [
-                'success' => true,
-                'pdf_path' => $pdfResult['pdf_path'],
-                'pdf_url' => $pdfResult['pdf_url'],
-                'qr_data' => $qrResult,
+                'success'        => true,
+                'pdf_path'       => $pdfResult['pdf_path'],
+                'pdf_url'        => $pdfResult['pdf_url'],
+                'qr_data'        => $qrResult,
                 'connector_used' => $connector->getConnectorType(),
-                'generated_at' => now()->toISOString(),
+                'generated_at'   => now()->toISOString(),
             ];
 
         } catch (\Exception $e) {
@@ -139,10 +137,10 @@ class PDFService
             }
 
             return [
-                'success' => false,
-                'error' => $e->getMessage(),
+                'success'        => false,
+                'error'          => $e->getMessage(),
                 'connector_used' => $connectorType,
-                'generated_at' => now()->toISOString(),
+                'generated_at'   => now()->toISOString(),
             ];
         }
     }
@@ -159,8 +157,8 @@ class PDFService
         foreach ($this->connectors as $type => $connector) {
             if ($connector->isAvailable()) {
                 $available[$type] = [
-                    'type' => $type,
-                    'metadata' => $connector->getMetadata(),
+                    'type'                => $type,
+                    'metadata'            => $connector->getMetadata(),
                     'supported_countries' => $connector->getSupportedCountries(),
                 ];
             }
@@ -223,7 +221,7 @@ class PDFService
     protected function initializeConnectors(): void
     {
         // Register default local connector
-        $this->defaultConnector = new DefaultPDFConnector;
+        $this->defaultConnector    = new DefaultPDFConnector;
         $this->connectors['local'] = $this->defaultConnector;
     }
 
@@ -236,14 +234,11 @@ class PDFService
      */
     /**
      * Get DomPDF service
-     *
-     * @return DomPDFService
      */
     public function getDomPDFService(): DomPDFService
     {
         return $this->dompdfService;
     }
-
 
     /**
      * Cache PDF result
@@ -267,7 +262,7 @@ class PDFService
      */
     public function getCachedPDFResult(Invoice $invoice): ?array
     {
-        if (! $this->config['cache_pdfs'] || !$this->cache) {
+        if (! $this->config['cache_pdfs'] || ! $this->cache) {
             return null;
         }
 

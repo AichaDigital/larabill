@@ -61,15 +61,15 @@ class CompanyConfig extends Model
     public function casts(): array
     {
         return [
-            'is_oss' => 'boolean',
-            'is_roi' => 'boolean',
-            'auto_apply_destination' => 'boolean',
-            'notification_sent' => 'boolean',
-            'threshold_exceeded' => 'boolean',
-            'eu_sales_threshold' => 'integer', // Base 100: €10,000.00 = 1000000
+            'is_oss'                  => 'boolean',
+            'is_roi'                  => 'boolean',
+            'auto_apply_destination'  => 'boolean',
+            'notification_sent'       => 'boolean',
+            'threshold_exceeded'      => 'boolean',
+            'eu_sales_threshold'      => 'integer', // Base 100: €10,000.00 = 1000000
             'current_eu_sales_amount' => 'integer', // Base 100: €12.34 = 1234
-            'threshold_exceeded_at' => 'datetime',
-            'custom_threshold_rules' => 'array',
+            'threshold_exceeded_at'   => 'datetime',
+            'custom_threshold_rules'  => 'array',
         ];
     }
 
@@ -79,11 +79,11 @@ class CompanyConfig extends Model
     public static function current(): self
     {
         $config = static::first();
-        
-        if (!$config) {
+
+        if (! $config) {
             $config = static::createDefault();
         }
-        
+
         return $config;
     }
 
@@ -93,16 +93,16 @@ class CompanyConfig extends Model
     public static function createDefault(): self
     {
         return static::create([
-            'is_oss' => false,
-            'is_roi' => false,
-            'eu_sales_threshold' => static::amountToBase100(10000.0), // €10,000 default
+            'is_oss'                  => false,
+            'is_roi'                  => false,
+            'eu_sales_threshold'      => static::amountToBase100(10000.0), // €10,000 default
             'current_eu_sales_amount' => 0,
-            'threshold_exceeded' => false,
-            'fiscal_year' => now()->year,
-            'auto_apply_destination' => true,
-            'notification_sent' => false,
-            'fiscal_year_start' => '01-01',
-            'currency' => 'EUR',
+            'threshold_exceeded'      => false,
+            'fiscal_year'             => now()->year,
+            'auto_apply_destination'  => true,
+            'notification_sent'       => false,
+            'fiscal_year_start'       => '01-01',
+            'currency'                => 'EUR',
         ]);
     }
 
@@ -159,12 +159,18 @@ class CompanyConfig extends Model
      */
     public function checkThreshold(): bool
     {
-        if ($this->current_eu_sales_amount >= $this->eu_sales_threshold) {
-            if (!$this->threshold_exceeded_at) {
-                $this->update(['threshold_exceeded_at' => now()]);
+        $currentAmount   = $this->getRawOriginal('current_eu_sales_amount');
+        $thresholdAmount = $this->getRawOriginal('eu_sales_threshold');
+
+        if ($currentAmount >= $thresholdAmount) {
+            if (! $this->threshold_exceeded_at) {
+                $this->attributes['threshold_exceeded_at'] = now();
+                $this->save();
             }
+
             return true;
         }
+
         return false;
     }
 
@@ -173,8 +179,9 @@ class CompanyConfig extends Model
      */
     public function updateEuSales(float $amount): self
     {
-        $amountInBase100 = static::amountToBase100($amount);
-        $this->current_eu_sales_amount = $this->current_eu_sales_amount + $amount;
+        $currentAmountInBase100                      = $this->getRawOriginal('current_eu_sales_amount');
+        $amountInBase100                             = static::amountToBase100($amount);
+        $this->attributes['current_eu_sales_amount'] = $currentAmountInBase100 + $amountInBase100;
         $this->save();
 
         $this->checkThreshold();
@@ -189,8 +196,8 @@ class CompanyConfig extends Model
     {
         $this->update([
             'current_eu_sales_amount' => 0,
-            'threshold_exceeded_at' => null,
-            'notification_sent' => false,
+            'threshold_exceeded_at'   => null,
+            'notification_sent'       => false,
         ]);
 
         return $this;
@@ -216,6 +223,7 @@ class CompanyConfig extends Model
     public function enableOSS(): self
     {
         $this->update(['is_oss' => true]);
+
         return $this;
     }
 
@@ -225,6 +233,7 @@ class CompanyConfig extends Model
     public function disableOSS(): self
     {
         $this->update(['is_oss' => false]);
+
         return $this;
     }
 
@@ -234,6 +243,7 @@ class CompanyConfig extends Model
     public function enableROI(): self
     {
         $this->update(['is_roi' => true]);
+
         return $this;
     }
 
@@ -243,6 +253,7 @@ class CompanyConfig extends Model
     public function disableROI(): self
     {
         $this->update(['is_roi' => false]);
+
         return $this;
     }
 
@@ -252,6 +263,7 @@ class CompanyConfig extends Model
     public function markNotificationSent(): self
     {
         $this->update(['notification_sent' => true]);
+
         return $this;
     }
 
@@ -260,7 +272,7 @@ class CompanyConfig extends Model
      */
     public function getFiscalYearStartDate(): Carbon
     {
-        return Carbon::createFromFormat('Y-m-d', $this->fiscal_year . '-' . $this->fiscal_year_start);
+        return Carbon::createFromFormat('Y-m-d', $this->fiscal_year.'-'.$this->fiscal_year_start);
     }
 
     /**
@@ -276,12 +288,12 @@ class CompanyConfig extends Model
      */
     public function isWithinFiscalYear(?Carbon $date = null): bool
     {
-        if (!$date) {
+        if (! $date) {
             $date = now();
         }
 
         $startDate = $this->getFiscalYearStartDate();
-        $endDate = $this->getFiscalYearEndDate();
+        $endDate   = $this->getFiscalYearEndDate();
 
         return $date->between($startDate, $endDate);
     }
@@ -303,7 +315,8 @@ class CompanyConfig extends Model
      */
     public function getRemainingThresholdAmount(): float
     {
-        $remaining = max(0, $this->eu_sales_threshold - $this->current_eu_sales_amount);
+        $remaining = max(0, $this->getRawOriginal('eu_sales_threshold') - $this->getRawOriginal('current_eu_sales_amount'));
+
         return static::base100ToAmount($remaining);
     }
 
@@ -312,7 +325,7 @@ class CompanyConfig extends Model
      */
     public function needsNotification(): bool
     {
-        return $this->threshold_exceeded && !$this->notification_sent;
+        return $this->threshold_exceeded && ! $this->notification_sent;
     }
 
     /**
@@ -328,7 +341,7 @@ class CompanyConfig extends Model
      */
     public function setCustomThresholdRule(string $key, array $rule): self
     {
-        $rules = $this->custom_threshold_rules ?? [];
+        $rules       = $this->custom_threshold_rules ?? [];
         $rules[$key] = $rule;
         $this->update(['custom_threshold_rules' => $rules]);
 
@@ -341,11 +354,11 @@ class CompanyConfig extends Model
     public function resetForNewYear(int $newYear): self
     {
         $this->update([
-            'fiscal_year' => $newYear,
+            'fiscal_year'             => $newYear,
             'current_eu_sales_amount' => 0,
-            'threshold_exceeded' => false,
-            'threshold_exceeded_at' => null,
-            'notification_sent' => false,
+            'threshold_exceeded'      => false,
+            'threshold_exceeded_at'   => null,
+            'notification_sent'       => false,
         ]);
 
         return $this;

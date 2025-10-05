@@ -20,9 +20,9 @@ it('can create company fiscal configuration', function () {
 
     $config = $service->createCompanyConfig('company-123', 2024, [
         'apply_destination_iva' => true,
-        'eu_sales_threshold' => 15000.00,
-        'currency' => 'USD',
-        'fiscal_year_start' => '04-01',
+        'eu_sales_threshold'    => 15000.00,
+        'currency'              => 'USD',
+        'fiscal_year_start'     => '04-01',
     ]);
 
     expect($config)->toBeInstanceOf(CompanyFiscalConfig::class);
@@ -38,10 +38,10 @@ it('can get company fiscal configuration', function () {
     $service = new CompanyConfigService;
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
+        'company_id'            => 'company-123',
+        'fiscal_year'           => 2024,
         'apply_destination_iva' => true,
-        'eu_sales_threshold' => 10000.00,
+        'eu_sales_threshold'    => 10000.00,
     ]);
 
     $config = $service->getCompanyConfig('company-123', 2024);
@@ -72,16 +72,16 @@ it('can update company fiscal configuration', function () {
     $service = new CompanyConfigService;
 
     $config = CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
+        'company_id'            => 'company-123',
+        'fiscal_year'           => 2024,
         'apply_destination_iva' => false,
-        'eu_sales_threshold' => 10000.00,
+        'eu_sales_threshold'    => 10000.00,
     ]);
 
     $updated = $service->updateCompanyConfig('company-123', 2024, [
         'apply_destination_iva' => true,
-        'eu_sales_threshold' => 15000.00,
-        'currency' => 'USD',
+        'eu_sales_threshold'    => 15000.00,
+        'currency'              => 'USD',
     ]);
 
     expect($updated->apply_destination_iva)->toBeTrue();
@@ -93,8 +93,8 @@ it('can delete company fiscal configuration', function () {
     $service = new CompanyConfigService;
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
+        'company_id'            => 'company-123',
+        'fiscal_year'           => 2024,
         'apply_destination_iva' => true,
     ]);
 
@@ -108,8 +108,8 @@ it('can check if company configuration exists', function () {
     $service = new CompanyConfigService;
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
+        'company_id'            => 'company-123',
+        'fiscal_year'           => 2024,
         'apply_destination_iva' => true,
     ]);
 
@@ -121,20 +121,20 @@ it('can get all company configurations', function () {
     $service = new CompanyConfigService;
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
+        'company_id'            => 'company-123',
+        'fiscal_year'           => 2024,
         'apply_destination_iva' => true,
     ]);
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-456',
-        'fiscal_year' => 2024,
+        'company_id'            => 'company-456',
+        'fiscal_year'           => 2024,
         'apply_destination_iva' => false,
     ]);
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2023,
+        'company_id'            => 'company-123',
+        'fiscal_year'           => 2023,
         'apply_destination_iva' => true,
     ]);
 
@@ -147,20 +147,20 @@ it('can get company configurations by fiscal year', function () {
     $service = new CompanyConfigService;
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
+        'company_id'            => 'company-123',
+        'fiscal_year'           => 2024,
         'apply_destination_iva' => true,
     ]);
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-456',
-        'fiscal_year' => 2024,
+        'company_id'            => 'company-456',
+        'fiscal_year'           => 2024,
         'apply_destination_iva' => false,
     ]);
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2023,
+        'company_id'            => 'company-123',
+        'fiscal_year'           => 2023,
         'apply_destination_iva' => true,
     ]);
 
@@ -175,18 +175,18 @@ it('can get company configurations by destination VAT status', function () {
     $service = new CompanyConfigService;
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
+        'company_id'            => 'company-123',
+        'fiscal_year'           => 2024,
         'apply_destination_iva' => true,
     ]);
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-456',
-        'fiscal_year' => 2024,
+        'company_id'            => 'company-456',
+        'fiscal_year'           => 2024,
         'apply_destination_iva' => false,
     ]);
 
-    $destinationVatConfigs = $service->getCompanyConfigsByDestinationVatStatus(true);
+    $destinationVatConfigs   = $service->getCompanyConfigsByDestinationVatStatus(true);
     $noDestinationVatConfigs = $service->getCompanyConfigsByDestinationVatStatus(false);
 
     expect($destinationVatConfigs)->toHaveCount(1);
@@ -199,22 +199,22 @@ it('can get company configurations by threshold status', function () {
     $service = new CompanyConfigService;
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
-        'eu_sales_threshold' => 10000.00,
+        'company_id'              => 'company-123',
+        'fiscal_year'             => 2024,
+        'eu_sales_threshold'      => 10000.00,
         'current_eu_sales_amount' => 12000.00,
-        'threshold_exceeded' => true,
+        'threshold_exceeded'      => true,
     ]);
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-456',
-        'fiscal_year' => 2024,
-        'eu_sales_threshold' => 10000.00,
+        'company_id'              => 'company-456',
+        'fiscal_year'             => 2024,
+        'eu_sales_threshold'      => 10000.00,
         'current_eu_sales_amount' => 5000.00,
-        'threshold_exceeded' => false,
+        'threshold_exceeded'      => false,
     ]);
 
-    $exceededConfigs = $service->getCompanyConfigsByThresholdStatus(true);
+    $exceededConfigs    = $service->getCompanyConfigsByThresholdStatus(true);
     $notExceededConfigs = $service->getCompanyConfigsByThresholdStatus(false);
 
     expect($exceededConfigs)->toHaveCount(1);
@@ -227,21 +227,21 @@ it('can get company configurations needing notification', function () {
     $service = new CompanyConfigService;
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
-        'eu_sales_threshold' => 10000.00,
+        'company_id'              => 'company-123',
+        'fiscal_year'             => 2024,
+        'eu_sales_threshold'      => 10000.00,
         'current_eu_sales_amount' => 12000.00,
-        'threshold_exceeded' => true,
-        'notification_sent' => false,
+        'threshold_exceeded'      => true,
+        'notification_sent'       => false,
     ]);
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-456',
-        'fiscal_year' => 2024,
-        'eu_sales_threshold' => 10000.00,
+        'company_id'              => 'company-456',
+        'fiscal_year'             => 2024,
+        'eu_sales_threshold'      => 10000.00,
         'current_eu_sales_amount' => 12000.00,
-        'threshold_exceeded' => true,
-        'notification_sent' => true,
+        'threshold_exceeded'      => true,
+        'notification_sent'       => true,
     ]);
 
     $needsNotification = $service->getCompanyConfigsNeedingNotification();
@@ -254,8 +254,8 @@ it('can enable destination VAT for company', function () {
     $service = new CompanyConfigService;
 
     $config = CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
+        'company_id'            => 'company-123',
+        'fiscal_year'           => 2024,
         'apply_destination_iva' => false,
     ]);
 
@@ -268,8 +268,8 @@ it('can disable destination VAT for company', function () {
     $service = new CompanyConfigService;
 
     $config = CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
+        'company_id'            => 'company-123',
+        'fiscal_year'           => 2024,
         'apply_destination_iva' => true,
     ]);
 
@@ -282,8 +282,8 @@ it('can update EU sales threshold for company', function () {
     $service = new CompanyConfigService;
 
     $config = CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
+        'company_id'         => 'company-123',
+        'fiscal_year'        => 2024,
         'eu_sales_threshold' => 10000.00,
     ]);
 
@@ -296,8 +296,8 @@ it('can update EU sales amount for company', function () {
     $service = new CompanyConfigService;
 
     $config = CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
+        'company_id'              => 'company-123',
+        'fiscal_year'             => 2024,
         'current_eu_sales_amount' => 5000.00,
     ]);
 
@@ -310,11 +310,11 @@ it('can reset EU sales for company', function () {
     $service = new CompanyConfigService;
 
     $config = CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
+        'company_id'              => 'company-123',
+        'fiscal_year'             => 2024,
         'current_eu_sales_amount' => 12000.00,
-        'threshold_exceeded' => true,
-        'notification_sent' => true,
+        'threshold_exceeded'      => true,
+        'notification_sent'       => true,
     ]);
 
     $reset = $service->resetEuSales('company-123', 2024);
@@ -328,8 +328,8 @@ it('can mark notification as sent for company', function () {
     $service = new CompanyConfigService;
 
     $config = CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
+        'company_id'        => 'company-123',
+        'fiscal_year'       => 2024,
         'notification_sent' => false,
     ]);
 
@@ -342,21 +342,21 @@ it('can get company configuration statistics', function () {
     $service = new CompanyConfigService;
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
-        'apply_destination_iva' => true,
-        'eu_sales_threshold' => 10000.00,
+        'company_id'              => 'company-123',
+        'fiscal_year'             => 2024,
+        'apply_destination_iva'   => true,
+        'eu_sales_threshold'      => 10000.00,
         'current_eu_sales_amount' => 12000.00,
-        'threshold_exceeded' => true,
+        'threshold_exceeded'      => true,
     ]);
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-456',
-        'fiscal_year' => 2024,
-        'apply_destination_iva' => false,
-        'eu_sales_threshold' => 10000.00,
+        'company_id'              => 'company-456',
+        'fiscal_year'             => 2024,
+        'apply_destination_iva'   => false,
+        'eu_sales_threshold'      => 10000.00,
         'current_eu_sales_amount' => 5000.00,
-        'threshold_exceeded' => false,
+        'threshold_exceeded'      => false,
     ]);
 
     $stats = $service->getCompanyConfigStatistics(2024);
@@ -374,16 +374,16 @@ it('can validate company configuration data', function () {
 
     $validData = [
         'apply_destination_iva' => true,
-        'eu_sales_threshold' => 10000.00,
-        'currency' => 'EUR',
-        'fiscal_year_start' => '01-01',
+        'eu_sales_threshold'    => 10000.00,
+        'currency'              => 'EUR',
+        'fiscal_year_start'     => '01-01',
     ];
 
     $invalidData = [
         'apply_destination_iva' => 'invalid',
-        'eu_sales_threshold' => -1000.00,
-        'currency' => 'INVALID',
-        'fiscal_year_start' => 'invalid-date',
+        'eu_sales_threshold'    => -1000.00,
+        'currency'              => 'INVALID',
+        'fiscal_year_start'     => 'invalid-date',
     ];
 
     expect($service->validateCompanyConfigData($validData))->toBeTrue();
@@ -409,7 +409,7 @@ it('can merge company configuration with defaults', function () {
 
     $userData = [
         'apply_destination_iva' => true,
-        'eu_sales_threshold' => 15000.00,
+        'eu_sales_threshold'    => 15000.00,
     ];
 
     $merged = $service->mergeWithDefaults($userData);
@@ -426,17 +426,17 @@ it('can get company configuration by custom field mapping', function () {
     $service = new CompanyConfigService;
 
     config(['larabill.models.company_fiscal_config.field_mapping' => [
-        'company_id' => 'company_id',
-        'fiscal_year' => 'fiscal_year',
+        'company_id'            => 'company_id',
+        'fiscal_year'           => 'fiscal_year',
         'apply_destination_iva' => 'apply_destination_iva',
-        'eu_sales_threshold' => 'eu_sales_threshold',
+        'eu_sales_threshold'    => 'eu_sales_threshold',
     ]]);
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
+        'company_id'            => 'company-123',
+        'fiscal_year'           => 2024,
         'apply_destination_iva' => true,
-        'eu_sales_threshold' => 10000.00,
+        'eu_sales_threshold'    => 10000.00,
     ]);
 
     $config = $service->getCompanyConfigByMapping('company-123', 2024);
@@ -450,15 +450,15 @@ it('can create company configuration with custom field mapping', function () {
     $service = new CompanyConfigService;
 
     config(['larabill.models.company_fiscal_config.field_mapping' => [
-        'company_id' => 'company_id',
-        'fiscal_year' => 'fiscal_year',
+        'company_id'            => 'company_id',
+        'fiscal_year'           => 'fiscal_year',
         'apply_destination_iva' => 'apply_destination_iva',
-        'eu_sales_threshold' => 'eu_sales_threshold',
+        'eu_sales_threshold'    => 'eu_sales_threshold',
     ]]);
 
     $config = $service->createCompanyConfigWithMapping('company-456', 2024, [
         'apply_destination_iva' => true,
-        'eu_sales_threshold' => 15000.00,
+        'eu_sales_threshold'    => 15000.00,
     ]);
 
     expect($config)->toBeInstanceOf(CompanyFiscalConfig::class);
@@ -484,9 +484,9 @@ it('can update service configuration', function () {
     $service = new CompanyConfigService;
 
     $newConfig = [
-        'default_threshold' => 15000,
-        'currency' => 'USD',
-        'fiscal_year_start' => '04-01',
+        'default_threshold'      => 15000,
+        'currency'               => 'USD',
+        'fiscal_year_start'      => '04-01',
         'auto_apply_destination' => false,
     ];
 
@@ -512,14 +512,14 @@ it('can bulk update company configurations', function () {
     $service = new CompanyConfigService;
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
+        'company_id'            => 'company-123',
+        'fiscal_year'           => 2024,
         'apply_destination_iva' => false,
     ]);
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-456',
-        'fiscal_year' => 2024,
+        'company_id'            => 'company-456',
+        'fiscal_year'           => 2024,
         'apply_destination_iva' => false,
     ]);
 
@@ -541,20 +541,20 @@ it('can get company configuration by fiscal year range', function () {
     $service = new CompanyConfigService;
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2022,
+        'company_id'            => 'company-123',
+        'fiscal_year'           => 2022,
         'apply_destination_iva' => true,
     ]);
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2023,
+        'company_id'            => 'company-123',
+        'fiscal_year'           => 2023,
         'apply_destination_iva' => true,
     ]);
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
+        'company_id'            => 'company-123',
+        'fiscal_year'           => 2024,
         'apply_destination_iva' => true,
     ]);
 

@@ -48,12 +48,12 @@ class InvoiceItem extends Model
     public function casts(): array
     {
         return [
-            'quantity' => 'integer', // Base 100: 1.5 => 150
+            'quantity'   => 'integer', // Base 100: 1.5 => 150
             'unit_price' => 'integer', // Base 100: €12.34 => 1234
-            'subtotal' => 'integer', // Base 100: €12.34 => 1234
-            'tax_rate' => 'integer', // Base 100: 21.50% => 2150
+            'subtotal'   => 'integer', // Base 100: €12.34 => 1234
+            'tax_rate'   => 'integer', // Base 100: 21.50% => 2150
             'tax_amount' => 'integer', // Base 100: €12.34 => 1234
-            'total' => 'integer', // Base 100: €12.34 => 1234
+            'total'      => 'integer', // Base 100: €12.34 => 1234
         ];
     }
 

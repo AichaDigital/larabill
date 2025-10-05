@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services;
 
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\{Cache, Log};
 
 /**
  * Cache Service
@@ -31,8 +30,8 @@ class CacheService
      */
     private static array $entryCounts = [
         'roi_verifications' => 0,
-        'vat_rates' => 0,
-        'company_configs' => 0,
+        'vat_rates'         => 0,
+        'company_configs'   => 0,
     ];
 
     /**
@@ -42,8 +41,8 @@ class CacheService
     {
         $this->driver = config('larabill.cache.driver', 'file');
         $this->prefix = config('larabill.cache.prefix', 'larabill');
-        $this->ttl = config('larabill.cache.ttl', []);
-        $this->tags = config('larabill.cache.tags', []);
+        $this->ttl    = config('larabill.cache.ttl', []);
+        $this->tags   = config('larabill.cache.tags', []);
     }
 
     /**
@@ -63,9 +62,9 @@ class CacheService
             return Cache::get($cacheKey, $default);
         } catch (\Exception $e) {
             Log::warning('Cache get failed, falling back to default', [
-                'key' => $cacheKey,
+                'key'    => $cacheKey,
                 'driver' => $this->driver,
-                'error' => $e->getMessage(),
+                'error'  => $e->getMessage(),
             ]);
 
             return $default;
@@ -78,7 +77,7 @@ class CacheService
     public function put(string $key, mixed $value, ?int $ttl = null): bool
     {
         $cacheKey = $this->buildCacheKey($key);
-        $ttl = $ttl ?? $this->getTtlForKey($key);
+        $ttl      = $ttl ?? $this->getTtlForKey($key);
 
         try {
             if ($this->supportsTags()) {
@@ -91,10 +90,10 @@ class CacheService
             return true;
         } catch (\Exception $e) {
             Log::warning('Cache put failed', [
-                'key' => $cacheKey,
+                'key'    => $cacheKey,
                 'driver' => $this->driver,
-                'ttl' => $ttl,
-                'error' => $e->getMessage(),
+                'ttl'    => $ttl,
+                'error'  => $e->getMessage(),
             ]);
 
             return false;
@@ -119,9 +118,9 @@ class CacheService
             return true;
         } catch (\Exception $e) {
             Log::warning('Cache forever failed', [
-                'key' => $cacheKey,
+                'key'    => $cacheKey,
                 'driver' => $this->driver,
-                'error' => $e->getMessage(),
+                'error'  => $e->getMessage(),
             ]);
 
             return false;
@@ -146,9 +145,9 @@ class CacheService
             return true;
         } catch (\Exception $e) {
             Log::warning('Cache forget failed', [
-                'key' => $cacheKey,
+                'key'    => $cacheKey,
                 'driver' => $this->driver,
-                'error' => $e->getMessage(),
+                'error'  => $e->getMessage(),
             ]);
 
             return false;
@@ -172,9 +171,9 @@ class CacheService
             return Cache::has($cacheKey);
         } catch (\Exception $e) {
             Log::warning('Cache has failed', [
-                'key' => $cacheKey,
+                'key'    => $cacheKey,
                 'driver' => $this->driver,
-                'error' => $e->getMessage(),
+                'error'  => $e->getMessage(),
             ]);
 
             return false;
@@ -187,7 +186,7 @@ class CacheService
     public function remember(string $key, callable $callback, ?int $ttl = null): mixed
     {
         $cacheKey = $this->buildCacheKey($key);
-        $ttl = $ttl ?? $this->getTtlForKey($key);
+        $ttl      = $ttl ?? $this->getTtlForKey($key);
 
         try {
             if ($this->supportsTags()) {
@@ -199,10 +198,10 @@ class CacheService
             return Cache::remember($cacheKey, $ttl, $callback);
         } catch (\Exception $e) {
             Log::warning('Cache remember failed, executing callback directly', [
-                'key' => $cacheKey,
+                'key'    => $cacheKey,
                 'driver' => $this->driver,
-                'ttl' => $ttl,
-                'error' => $e->getMessage(),
+                'ttl'    => $ttl,
+                'error'  => $e->getMessage(),
             ]);
 
             return $callback();
@@ -226,9 +225,9 @@ class CacheService
             return Cache::rememberForever($cacheKey, $callback);
         } catch (\Exception $e) {
             Log::warning('Cache rememberForever failed, executing callback directly', [
-                'key' => $cacheKey,
+                'key'    => $cacheKey,
                 'driver' => $this->driver,
-                'error' => $e->getMessage(),
+                'error'  => $e->getMessage(),
             ]);
 
             return $callback();
@@ -248,16 +247,16 @@ class CacheService
             }
 
             Log::info('Cache driver does not support tags, skipping tag-based clear', [
-                'tag' => $tag,
+                'tag'    => $tag,
                 'driver' => $this->driver,
             ]);
 
             return false;
         } catch (\Exception $e) {
             Log::warning('Cache clear by tag failed', [
-                'tag' => $tag,
+                'tag'    => $tag,
                 'driver' => $this->driver,
-                'error' => $e->getMessage(),
+                'error'  => $e->getMessage(),
             ]);
 
             return false;
@@ -276,7 +275,7 @@ class CacheService
         } catch (\Exception $e) {
             Log::warning('Cache clear failed', [
                 'driver' => $this->driver,
-                'error' => $e->getMessage(),
+                'error'  => $e->getMessage(),
             ]);
 
             return false;
@@ -289,11 +288,11 @@ class CacheService
     public function getStats(): array
     {
         return [
-            'driver' => $this->driver,
-            'prefix' => $this->prefix,
+            'driver'        => $this->driver,
+            'prefix'        => $this->prefix,
             'supports_tags' => $this->supportsTags(),
-            'ttl_config' => $this->ttl,
-            'tags_config' => $this->tags,
+            'ttl_config'    => $this->ttl,
+            'tags_config'   => $this->tags,
         ];
     }
 
@@ -312,12 +311,12 @@ class CacheService
     {
         // Extract key type from key (e.g., 'roi_verification:123' -> 'roi_verification')
         $keyParts = explode(':', $key);
-        $keyType = $keyParts[0] ?? 'default';
+        $keyType  = $keyParts[0] ?? 'default';
 
         // Remove prefix if present (e.g., 'larabill_test:roi_verification:123' -> 'roi_verification:123')
         if (str_starts_with($keyType, $this->prefix)) {
             $keyParts = explode(':', $key, 2);
-            $keyType = explode(':', $keyParts[1] ?? 'default')[0] ?? 'default';
+            $keyType  = explode(':', $keyParts[1] ?? 'default')[0] ?? 'default';
         }
 
         // Read TTL configuration dynamically
@@ -333,7 +332,7 @@ class CacheService
     {
         // Extract key type from key (e.g., 'roi_verification:123' -> 'roi_verification')
         $keyParts = explode(':', $key);
-        $keyType = $keyParts[0] ?? 'default';
+        $keyType  = $keyParts[0] ?? 'default';
 
         return $this->tags[$keyType] ?? 'default';
     }
@@ -486,11 +485,11 @@ class CacheService
     public function getDriverInfo(): array
     {
         return [
-            'driver' => $this->driver,
-            'prefix' => $this->prefix,
+            'driver'        => $this->driver,
+            'prefix'        => $this->prefix,
             'supports_tags' => $this->supportsTags(),
-            'ttl' => $this->ttl,
-            'tags_config' => $this->tags,
+            'ttl'           => $this->ttl,
+            'tags_config'   => $this->tags,
         ];
     }
 
@@ -506,7 +505,7 @@ class CacheService
         // Check if driver is supported
         $supportedDrivers = ['file', 'redis', 'memcached', 'array'];
 
-        if (!in_array($currentDriver, $supportedDrivers)) {
+        if (! in_array($currentDriver, $supportedDrivers)) {
             return false;
         }
 
@@ -534,7 +533,7 @@ class CacheService
         } catch (\Exception $e) {
             Log::warning('Cache availability check failed', [
                 'driver' => $this->driver,
-                'error' => $e->getMessage(),
+                'error'  => $e->getMessage(),
             ]);
 
             return false;
@@ -548,8 +547,8 @@ class CacheService
     {
         return [
             'roi_verification' => $this->prefix.':roi_verification:*',
-            'vat_rates' => $this->prefix.':vat_rates:*',
-            'company_config' => $this->prefix.':company_config:*',
+            'vat_rates'        => $this->prefix.':vat_rates:*',
+            'company_config'   => $this->prefix.':company_config:*',
         ];
     }
 
@@ -638,6 +637,7 @@ class CacheService
         }
 
         $key = $this->getCompanyConfigKey($companyId);
+
         return $this->has($key);
     }
 
@@ -646,7 +646,7 @@ class CacheService
      */
     public function removeCompanyConfig(string $companyId): bool
     {
-        $key = $this->getCompanyConfigKey($companyId);
+        $key    = $this->getCompanyConfigKey($companyId);
         $result = $this->forget($key);
 
         // Decrement counter for testing
@@ -664,31 +664,31 @@ class CacheService
     {
         $stats = [
             'total_entries' => 0,
-            'driver' => $this->driver,
-            'prefix' => $this->prefix,
+            'driver'        => $this->driver,
+            'prefix'        => $this->prefix,
             'supports_tags' => $this->supportsTags(),
         ];
 
         try {
             // For testing purposes, we'll count actual entries
             // In production, this would use Redis SCAN or similar
-            $roiCount = $this->countRoiVerifications();
-            $vatRatesCount = $this->hasVatRates() ? 1 : 0;
+            $roiCount           = $this->countRoiVerifications();
+            $vatRatesCount      = $this->hasVatRates() ? 1 : 0;
             $companyConfigCount = $this->countCompanyConfigs();
 
             $entryTypes = [
                 'roi_verifications' => $roiCount,
-                'vat_rates' => $vatRatesCount,
-                'company_configs' => $companyConfigCount,
+                'vat_rates'         => $vatRatesCount,
+                'company_configs'   => $companyConfigCount,
             ];
 
             $stats['total_entries'] = array_sum($entryTypes);
-            $stats['entry_types'] = $entryTypes;
+            $stats['entry_types']   = $entryTypes;
 
             // Add individual counts for easier access
             $stats['roi_verifications'] = $entryTypes['roi_verifications'];
-            $stats['vat_rates'] = $entryTypes['vat_rates'];
-            $stats['company_configs'] = $entryTypes['company_configs'];
+            $stats['vat_rates']         = $entryTypes['vat_rates'];
+            $stats['company_configs']   = $entryTypes['company_configs'];
         } catch (\Exception $e) {
             Log::warning('Failed to get cache statistics', [
                 'error' => $e->getMessage(),
@@ -712,8 +712,9 @@ class CacheService
         } catch (\Exception $e) {
             Log::warning('Failed to count cache entries', [
                 'pattern' => $pattern,
-                'error' => $e->getMessage(),
+                'error'   => $e->getMessage(),
             ]);
+
             return 0;
         }
     }
@@ -755,8 +756,8 @@ class CacheService
         // Reset all counters
         self::$entryCounts = [
             'roi_verifications' => 0,
-            'vat_rates' => 0,
-            'company_configs' => 0,
+            'vat_rates'         => 0,
+            'company_configs'   => 0,
         ];
 
         // Clear actual cache entries
@@ -772,8 +773,8 @@ class CacheService
     {
         self::$entryCounts = [
             'roi_verifications' => 0,
-            'vat_rates' => 0,
-            'company_configs' => 0,
+            'vat_rates'         => 0,
+            'company_configs'   => 0,
         ];
     }
 }

@@ -19,15 +19,15 @@ class InvoiceItemFactory extends Factory
 
     public function definition(): array
     {
-        $quantity = $this->faker->numberBetween(100, 5000); // 1.00 to 50.00 in base 100
+        $quantity  = $this->faker->numberBetween(100, 5000); // 1.00 to 50.00 in base 100
         $unitPrice = $this->faker->numberBetween(100, 10000); // €1.00 to €100.00 in base 100
-        $subtotal = (int) (($quantity * $unitPrice) / 100); // Calculate subtotal
-        $taxRate = $this->faker->randomElement([2100, 1000, 400]); // 21%, 10%, or 4% in base 100
+        $subtotal  = (int) (($quantity * $unitPrice) / 100); // Calculate subtotal
+        $taxRate   = $this->faker->randomElement([2100, 1000, 400]); // 21%, 10%, or 4% in base 100
         $taxAmount = (int) (($subtotal * $taxRate) / 10000); // Calculate tax amount
-        $total = $subtotal + $taxAmount;
+        $total     = $subtotal + $taxAmount;
 
         return [
-            'invoice_id' => $this->faker->numberBetween(1, 100),
+            'invoice_id'  => $this->faker->numberBetween(1, 100),
             'description' => $this->faker->randomElement([
                 'Web Development Services',
                 'Consulting Hours',
@@ -40,12 +40,12 @@ class InvoiceItemFactory extends Factory
                 'Security Audit',
                 'Performance Optimization',
             ]),
-            'quantity' => $quantity,
+            'quantity'   => $quantity,
             'unit_price' => $unitPrice,
-            'subtotal' => $subtotal,
-            'tax_rate' => $taxRate,
+            'subtotal'   => $subtotal,
+            'tax_rate'   => $taxRate,
             'tax_amount' => $taxAmount,
-            'total' => $total,
+            'total'      => $total,
         ];
     }
 
@@ -55,13 +55,13 @@ class InvoiceItemFactory extends Factory
     public function standardVat(): static
     {
         return $this->state(function (array $attributes) {
-            $taxRate = 2100; // 21% in base 100
+            $taxRate   = 2100; // 21% in base 100
             $taxAmount = (int) (($attributes['subtotal'] * $taxRate) / 10000);
 
             return [
-                'tax_rate' => $taxRate,
+                'tax_rate'   => $taxRate,
                 'tax_amount' => $taxAmount,
-                'total' => $attributes['subtotal'] + $taxAmount,
+                'total'      => $attributes['subtotal'] + $taxAmount,
             ];
         });
     }
@@ -72,13 +72,13 @@ class InvoiceItemFactory extends Factory
     public function reducedVat(): static
     {
         return $this->state(function (array $attributes) {
-            $taxRate = 1000; // 10% in base 100
+            $taxRate   = 1000; // 10% in base 100
             $taxAmount = (int) (($attributes['subtotal'] * $taxRate) / 10000);
 
             return [
-                'tax_rate' => $taxRate,
+                'tax_rate'   => $taxRate,
                 'tax_amount' => $taxAmount,
-                'total' => $attributes['subtotal'] + $taxAmount,
+                'total'      => $attributes['subtotal'] + $taxAmount,
             ];
         });
     }
@@ -89,13 +89,13 @@ class InvoiceItemFactory extends Factory
     public function superReducedVat(): static
     {
         return $this->state(function (array $attributes) {
-            $taxRate = 400; // 4% in base 100
+            $taxRate   = 400; // 4% in base 100
             $taxAmount = (int) (($attributes['subtotal'] * $taxRate) / 10000);
 
             return [
-                'tax_rate' => $taxRate,
+                'tax_rate'   => $taxRate,
                 'tax_amount' => $taxAmount,
-                'total' => $attributes['subtotal'] + $taxAmount,
+                'total'      => $attributes['subtotal'] + $taxAmount,
             ];
         });
     }
@@ -107,9 +107,9 @@ class InvoiceItemFactory extends Factory
     {
         return $this->state(function (array $attributes) {
             return [
-                'tax_rate' => 0, // 0% in base 100
+                'tax_rate'   => 0, // 0% in base 100
                 'tax_amount' => 0,
-                'total' => $attributes['subtotal'], // No tax added
+                'total'      => $attributes['subtotal'], // No tax added
             ];
         });
     }
@@ -121,14 +121,14 @@ class InvoiceItemFactory extends Factory
     {
         return $this->state(function (array $attributes) {
             $unitPrice = $this->faker->numberBetween(50000, 500000); // €500.00 to €5000.00 in base 100
-            $subtotal = (int) (($attributes['quantity'] * $unitPrice) / 100);
+            $subtotal  = (int) (($attributes['quantity'] * $unitPrice) / 100);
             $taxAmount = (int) (($subtotal * $attributes['tax_rate']) / 10000);
 
             return [
                 'unit_price' => $unitPrice,
-                'subtotal' => $subtotal,
+                'subtotal'   => $subtotal,
                 'tax_amount' => $taxAmount,
-                'total' => $subtotal + $taxAmount,
+                'total'      => $subtotal + $taxAmount,
             ];
         });
     }
@@ -139,15 +139,15 @@ class InvoiceItemFactory extends Factory
     public function fractionalQuantity(): static
     {
         return $this->state(function (array $attributes) {
-            $quantity = $this->faker->numberBetween(150, 250); // 1.50 to 2.50 in base 100
-            $subtotal = (int) (($quantity * $attributes['unit_price']) / 100);
+            $quantity  = $this->faker->numberBetween(150, 250); // 1.50 to 2.50 in base 100
+            $subtotal  = (int) (($quantity * $attributes['unit_price']) / 100);
             $taxAmount = (int) (($subtotal * $attributes['tax_rate']) / 10000);
 
             return [
-                'quantity' => $quantity,
-                'subtotal' => $subtotal,
+                'quantity'   => $quantity,
+                'subtotal'   => $subtotal,
                 'tax_amount' => $taxAmount,
-                'total' => $subtotal + $taxAmount,
+                'total'      => $subtotal + $taxAmount,
             ];
         });
     }

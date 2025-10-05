@@ -2,12 +2,11 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Services\PDF\PDFService;
-use AichaDigital\Larabill\Services\PDF\DefaultPDFConnector;
 use AichaDigital\Larabill\Models\Invoice;
+use AichaDigital\Larabill\Services\PDF\{DefaultPDFConnector, PDFService};
 
 beforeEach(function () {
-    $this->pdfService = new PDFService();
+    $this->pdfService = new PDFService;
 });
 
 it('can be instantiated', function () {
@@ -60,7 +59,7 @@ it('can update configuration', function () {
 });
 
 it('can register new connector', function () {
-    $mockConnector = new DefaultPDFConnector();
+    $mockConnector = new DefaultPDFConnector;
     $this->pdfService->registerConnector('test', $mockConnector);
 
     $connector = $this->pdfService->getConnector('test');
@@ -69,15 +68,15 @@ it('can register new connector', function () {
 
 it('can generate PDF for invoice', function () {
     // Create a test invoice
-    $invoice = new Invoice();
-    $invoice->id = 1;
-    $invoice->number = 'TEST-001';
-    $invoice->type = 'invoice';
-    $invoice->status = 'draft';
-    $invoice->user_id = 'test-user';
-    $invoice->subtotal = 10000;
+    $invoice             = new Invoice;
+    $invoice->id         = 1;
+    $invoice->number     = 'TEST-001';
+    $invoice->type       = 'invoice';
+    $invoice->status     = 'draft';
+    $invoice->user_id    = 'test-user';
+    $invoice->subtotal   = 10000;
     $invoice->tax_amount = 2100;
-    $invoice->total = 12100;
+    $invoice->total      = 12100;
 
     $result = $this->pdfService->generatePDF($invoice);
 
@@ -90,7 +89,7 @@ it('can generate PDF for invoice', function () {
 
 it('can handle PDF generation errors gracefully', function () {
     // Create an invalid invoice (missing required fields)
-    $invoice = new Invoice();
+    $invoice     = new Invoice;
     $invoice->id = 999;
     // Don't set required fields
 
@@ -103,15 +102,15 @@ it('can handle PDF generation errors gracefully', function () {
 });
 
 it('can cache PDF results', function () {
-    $invoice = new Invoice();
-    $invoice->id = 2;
-    $invoice->number = 'TEST-002';
-    $invoice->type = 'invoice';
-    $invoice->status = 'draft';
-    $invoice->user_id = 'test-user';
-    $invoice->subtotal = 10000;
+    $invoice             = new Invoice;
+    $invoice->id         = 2;
+    $invoice->number     = 'TEST-002';
+    $invoice->type       = 'invoice';
+    $invoice->status     = 'draft';
+    $invoice->user_id    = 'test-user';
+    $invoice->subtotal   = 10000;
     $invoice->tax_amount = 2100;
-    $invoice->total = 12100;
+    $invoice->total      = 12100;
 
     $result = $this->pdfService->generatePDF($invoice);
 
@@ -123,15 +122,15 @@ it('can cache PDF results', function () {
 });
 
 it('can clear PDF cache', function () {
-    $invoice = new Invoice();
-    $invoice->id = 3;
-    $invoice->number = 'TEST-003';
-    $invoice->type = 'invoice';
-    $invoice->status = 'draft';
-    $invoice->user_id = 'test-user';
-    $invoice->subtotal = 10000;
+    $invoice             = new Invoice;
+    $invoice->id         = 3;
+    $invoice->number     = 'TEST-003';
+    $invoice->type       = 'invoice';
+    $invoice->status     = 'draft';
+    $invoice->user_id    = 'test-user';
+    $invoice->subtotal   = 10000;
     $invoice->tax_amount = 2100;
-    $invoice->total = 12100;
+    $invoice->total      = 12100;
 
     $this->pdfService->generatePDF($invoice);
     $this->pdfService->clearPDFCache($invoice);

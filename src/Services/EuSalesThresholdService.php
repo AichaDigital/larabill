@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services;
 
-use AichaDigital\Larabill\Models\CompanyConfig;
 use AichaDigital\Larabill\Models\Invoice;
 use Illuminate\Support\Facades\Log;
 
@@ -36,14 +35,16 @@ class EuSalesThresholdService
             Log::info('Invoice is ROI taxed, skipping EU sales threshold update', [
                 'invoice_number' => $invoice->number,
             ]);
+
             return;
         }
 
         // Check if invoice is to EU customer (not domestic)
-        if (!$this->isEuSale($invoice)) {
+        if (! $this->isEuSale($invoice)) {
             Log::info('Invoice is not EU sale, skipping threshold update', [
                 'invoice_number' => $invoice->number,
             ]);
+
             return;
         }
 
@@ -55,6 +56,7 @@ class EuSalesThresholdService
             Log::info('Company is already OSS registered, skipping threshold update', [
                 'invoice_number' => $invoice->number,
             ]);
+
             return;
         }
 
@@ -64,8 +66,8 @@ class EuSalesThresholdService
 
         Log::info('EU sales threshold updated', [
             'invoice_number' => $invoice->number,
-            'amount' => $invoiceAmount,
-            'new_total' => $config->fresh()->current_eu_sales_amount,
+            'amount'         => $invoiceAmount,
+            'new_total'      => $config->fresh()->current_eu_sales_amount,
         ]);
     }
 
@@ -80,7 +82,7 @@ class EuSalesThresholdService
         }
 
         // Check if invoice is to EU customer
-        if (!$this->isEuSale($invoice)) {
+        if (! $this->isEuSale($invoice)) {
             return;
         }
 
@@ -98,8 +100,8 @@ class EuSalesThresholdService
 
         Log::info('EU sales threshold updated (refund)', [
             'invoice_number' => $invoice->number,
-            'amount' => -$invoiceAmount,
-            'new_total' => $config->fresh()->current_eu_sales_amount,
+            'amount'         => -$invoiceAmount,
+            'new_total'      => $config->fresh()->current_eu_sales_amount,
         ]);
     }
 
@@ -110,23 +112,23 @@ class EuSalesThresholdService
     {
         // This would need to be implemented based on your business logic
         // For now, we'll assume it's based on the user's tax info or invoice data
-        
+
         $userTaxInfo = $invoice->user_tax_info_encrypted;
-        if (!$userTaxInfo) {
+        if (! $userTaxInfo) {
             return false;
         }
 
         // Decrypt and check country code
         // This is a simplified version - you'd need to implement proper decryption
         $taxInfo = $userTaxInfo; // Assuming it's already decrypted or JSON
-        
+
         if (is_string($taxInfo)) {
             $taxInfo = json_decode($taxInfo, true);
         }
 
         $countryCode = $taxInfo['country_code'] ?? null;
-        
-        if (!$countryCode) {
+
+        if (! $countryCode) {
             return false;
         }
 
@@ -134,7 +136,7 @@ class EuSalesThresholdService
         $euCountries = [
             'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
             'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
-            'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE'
+            'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
         ];
 
         // Remove domestic country (assuming Spain for now)
@@ -149,7 +151,7 @@ class EuSalesThresholdService
     public function shouldSendNotification(): bool
     {
         $config = $this->companyConfigService->getCurrentConfig();
-        
+
         // Don't send notification if company is already OSS registered
         if ($config->is_oss) {
             return false;
@@ -169,19 +171,19 @@ class EuSalesThresholdService
      */
     public function sendThresholdNotification(): void
     {
-        if (!$this->shouldSendNotification()) {
+        if (! $this->shouldSendNotification()) {
             return;
         }
 
         $config = $this->companyConfigService->getCurrentConfig();
-        
+
         // Here you would implement your notification logic
         // For example: send email, create notification record, etc.
-        
+
         Log::warning('EU Sales Threshold Exceeded - OSS Registration Required', [
             'current_amount' => $config->current_eu_sales_amount,
-            'threshold' => $config->eu_sales_threshold,
-            'percentage' => $config->getThresholdPercentage(),
+            'threshold'      => $config->eu_sales_threshold,
+            'percentage'     => $config->getThresholdPercentage(),
         ]);
 
         // Mark notification as sent
@@ -194,7 +196,7 @@ class EuSalesThresholdService
     public function resetForNewFiscalYear(int $newYear): void
     {
         $this->companyConfigService->resetEuSalesForNewYear($newYear);
-        
+
         Log::info('EU sales threshold reset for new fiscal year', [
             'new_year' => $newYear,
         ]);
@@ -206,15 +208,15 @@ class EuSalesThresholdService
     public function getThresholdStatus(): array
     {
         $config = $this->companyConfigService->getCurrentConfig();
-        
+
         return [
-            'current_amount' => $config->current_eu_sales_amount,
-            'threshold' => $config->eu_sales_threshold,
-            'percentage' => $config->getThresholdPercentage(),
-            'exceeded' => $config->threshold_exceeded,
+            'current_amount'     => $config->current_eu_sales_amount,
+            'threshold'          => $config->eu_sales_threshold,
+            'percentage'         => $config->getThresholdPercentage(),
+            'exceeded'           => $config->threshold_exceeded,
             'needs_notification' => $this->shouldSendNotification(),
-            'is_oss_registered' => $config->is_oss,
-            'fiscal_year' => $config->fiscal_year,
+            'is_oss_registered'  => $config->is_oss,
+            'fiscal_year'        => $config->fiscal_year,
         ];
     }
 
@@ -245,17 +247,17 @@ class EuSalesThresholdService
     public function updateEuSalesFromDatabase(int $fiscalYear): void
     {
         $calculatedTotal = $this->recalculateEuSales($fiscalYear);
-        
+
         $config = $this->companyConfigService->getCurrentConfig();
-        
+
         // Only update if fiscal year matches
         if ($config->fiscal_year === $fiscalYear) {
             $config->update(['current_eu_sales_amount' => $calculatedTotal]);
             $config->checkThreshold();
-            
+
             Log::info('EU sales updated from database calculation', [
-                'fiscal_year' => $fiscalYear,
-                'calculated_total' => $calculatedTotal,
+                'fiscal_year'        => $fiscalYear,
+                'calculated_total'   => $calculatedTotal,
                 'threshold_exceeded' => $config->threshold_exceeded,
             ]);
         }

@@ -2,8 +2,8 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Tests\Models\CustomUser;
 use AichaDigital\Larabill\Models\{Invoice, UserTaxInfo};
+use AichaDigital\Larabill\Tests\Models\CustomUser;
 
 it('can configure custom user model mapping', function () {
     // Set a custom user model in config
@@ -15,13 +15,13 @@ it('can configure custom user model mapping', function () {
 
     // Create an invoice
     $invoice = Invoice::create([
-        'number' => 'FAC-0001',
-        'type' => 'invoice',
-        'status' => 'draft',
-        'user_id' => 1,
-        'subtotal' => 100.0,
+        'number'     => 'FAC-0001',
+        'type'       => 'invoice',
+        'status'     => 'draft',
+        'user_id'    => 1,
+        'subtotal'   => 100.0,
         'tax_amount' => 21.0,
-        'total' => 121.0,
+        'total'      => 121.0,
     ]);
 
     // The relationship should use the configured model
@@ -38,16 +38,16 @@ it('can configure custom user tax info model mapping', function () {
 
     // Create a user tax info
     $taxInfo = UserTaxInfo::create([
-        'user_id' => 1,
-        'is_current' => true,
-        'tax_id' => 'ESB12345678',
+        'user_id'      => 1,
+        'is_current'   => true,
+        'tax_id'       => 'ESB12345678',
         'company_name' => 'Test Company S.L.',
-        'address' => 'Calle Test 123',
-        'city' => 'Madrid',
-        'postal_code' => '28001',
-        'country' => 'ES',
-        'state' => 'Madrid',
-        'phone' => '+34 600 000 000',
+        'address'      => 'Calle Test 123',
+        'city'         => 'Madrid',
+        'postal_code'  => '28001',
+        'country'      => 'ES',
+        'state'        => 'Madrid',
+        'phone'        => '+34 600 000 000',
     ]);
 
     // The relationship should use the configured model
@@ -58,29 +58,29 @@ it('can configure custom field mappings for user tax info', function () {
     // Set custom field mappings in config
     config([
         'larabill.field_mappings.user_tax_info' => [
-            'user_id' => 'customer_id',
-            'tax_id' => 'fiscal_id',
+            'user_id'      => 'customer_id',
+            'tax_id'       => 'fiscal_id',
             'company_name' => 'business_name',
-            'address' => 'street_address',
-            'city' => 'municipality',
-            'postal_code' => 'zip_code',
-            'country' => 'country_code',
-            'state' => 'region',
-            'phone' => 'contact_phone',
+            'address'      => 'street_address',
+            'city'         => 'municipality',
+            'postal_code'  => 'zip_code',
+            'country'      => 'country_code',
+            'state'        => 'region',
+            'phone'        => 'contact_phone',
         ],
     ]);
 
     // Test the mapping service directly
     $mappedData = \AichaDigital\Larabill\Services\ModelMappingService::mapFields([
-        'customer_id' => 1,
-        'fiscal_id' => 'ESB12345678',
-        'business_name' => 'Test Company S.L.',
+        'customer_id'    => 1,
+        'fiscal_id'      => 'ESB12345678',
+        'business_name'  => 'Test Company S.L.',
         'street_address' => 'Calle Test 123',
-        'municipality' => 'Madrid',
-        'zip_code' => '28001',
-        'country_code' => 'ES',
-        'region' => 'Madrid',
-        'contact_phone' => '+34 600 000 000',
+        'municipality'   => 'Madrid',
+        'zip_code'       => '28001',
+        'country_code'   => 'ES',
+        'region'         => 'Madrid',
+        'contact_phone'  => '+34 600 000 000',
     ], 'user_tax_info');
 
     expect($mappedData['user_id'])->toBe(1);

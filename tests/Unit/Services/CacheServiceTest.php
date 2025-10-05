@@ -15,9 +15,9 @@ it('can store and retrieve ROI verification cache', function () {
     $cacheService = new CacheService;
 
     $data = [
-        'user_id' => 'user-123',
-        'vat_number' => 'ESB12345678',
-        'is_roi' => true,
+        'user_id'      => 'user-123',
+        'vat_number'   => 'ESB12345678',
+        'is_roi'       => true,
         'company_name' => 'Test Company',
     ];
 
@@ -94,9 +94,9 @@ it('can store and retrieve company configuration cache', function () {
     $cacheService = new CacheService;
 
     $config = [
-        'company_id' => 'company-123',
+        'company_id'            => 'company-123',
         'apply_destination_iva' => true,
-        'eu_sales_threshold' => 10000.00,
+        'eu_sales_threshold'    => 10000.00,
     ];
 
     $cacheService->storeCompanyConfig('company-123', $config);
@@ -181,7 +181,7 @@ it('can use custom TTL for different cache types', function () {
     $cacheService->storeRoiVerification('user-123', 'ESB12345678', 'ES', $data);
 
     // Verify the cache entry exists with correct TTL
-    $key = $cacheService->getRoiVerificationKey('user-123', 'ESB12345678', 'ES');
+    $key    = $cacheService->getRoiVerificationKey('user-123', 'ESB12345678', 'ES');
     $hasKey = $cacheService->hasRoiVerification('user-123', 'ESB12345678', 'ES');
     expect($hasKey)->toBeTrue();
 });
@@ -189,8 +189,8 @@ it('can use custom TTL for different cache types', function () {
 it('can handle cache key generation correctly', function () {
     $cacheService = new CacheService;
 
-    $roiKey = $cacheService->getRoiVerificationKey('user-123', 'ESB12345678', 'ES');
-    $vatKey = $cacheService->getVatRatesKey();
+    $roiKey    = $cacheService->getRoiVerificationKey('user-123', 'ESB12345678', 'ES');
+    $vatKey    = $cacheService->getVatRatesKey();
     $configKey = $cacheService->getCompanyConfigKey('company-123');
 
     expect($roiKey)->toContain('larabill_test');
@@ -238,26 +238,26 @@ it('can store and retrieve complex data structures', function () {
     $cacheService = new CacheService;
 
     $complexData = [
-        'user_id' => 'user-123',
-        'vat_number' => 'ESB12345678',
-        'is_roi' => true,
-        'company_name' => 'Test Company S.L.',
+        'user_id'         => 'user-123',
+        'vat_number'      => 'ESB12345678',
+        'is_roi'          => true,
+        'company_name'    => 'Test Company S.L.',
         'company_address' => [
-            'street' => 'Test Street 123',
-            'city' => 'Madrid',
+            'street'      => 'Test Street 123',
+            'city'        => 'Madrid',
             'postal_code' => '28001',
-            'country' => 'ES',
+            'country'     => 'ES',
         ],
         'response_data' => [
-            'valid' => true,
-            'company' => 'Test Company S.L.',
-            'address' => 'Test Street 123, Madrid, 28001, ES',
+            'valid'      => true,
+            'company'    => 'Test Company S.L.',
+            'address'    => 'Test Street 123, Madrid, 28001, ES',
             'vat_number' => 'ESB12345678',
         ],
         'metadata' => [
             'api_source' => 'abstractapi',
             'queried_at' => now()->toISOString(),
-            'cache_hit' => false,
+            'cache_hit'  => false,
         ],
     ];
 
@@ -366,7 +366,7 @@ it('can handle concurrent cache access', function () {
     $data = ['is_roi' => true];
 
     // Simulate concurrent access
-    $results = [];
+    $results  = [];
     $promises = [];
 
     for ($i = 0; $i < 10; $i++) {

@@ -38,26 +38,26 @@ class TaxRatesSeeder extends Seeder
             [
                 'country_code' => 'ES',
                 'country_name' => 'Spain',
-                'tax_name' => 'IVA General',
-                'tax_type' => 'VAT',
-                'rate' => 0.21,
-                'applies_to' => 'all',
+                'tax_name'     => 'IVA General',
+                'tax_type'     => 'VAT',
+                'rate'         => 0.21,
+                'applies_to'   => 'all',
             ],
             [
                 'country_code' => 'ES',
                 'country_name' => 'Spain',
-                'tax_name' => 'IVA Reducido',
-                'tax_type' => 'VAT',
-                'rate' => 0.10,
-                'applies_to' => 'food_medicine',
+                'tax_name'     => 'IVA Reducido',
+                'tax_type'     => 'VAT',
+                'rate'         => 0.10,
+                'applies_to'   => 'food_medicine',
             ],
             [
                 'country_code' => 'ES',
                 'country_name' => 'Spain',
-                'tax_name' => 'IVA Superreducido',
-                'tax_type' => 'VAT',
-                'rate' => 0.04,
-                'applies_to' => 'basic_food',
+                'tax_name'     => 'IVA Superreducido',
+                'tax_type'     => 'VAT',
+                'rate'         => 0.04,
+                'applies_to'   => 'basic_food',
             ],
         ];
 
@@ -88,10 +88,10 @@ class TaxRatesSeeder extends Seeder
             TaxRate::create([
                 'country_code' => $rate['country_code'],
                 'country_name' => $rate['country_name'],
-                'tax_name' => $rate['tax_name'],
-                'tax_type' => 'VAT',
-                'rate' => $rate['rate'],
-                'applies_to' => 'all',
+                'tax_name'     => $rate['tax_name'],
+                'tax_type'     => 'VAT',
+                'rate'         => $rate['rate'],
+                'applies_to'   => 'all',
             ]);
         }
     }
@@ -103,39 +103,39 @@ class TaxRatesSeeder extends Seeder
     {
         $specialRates = [
             [
-                'country_code' => 'IC', // Canary Islands
-                'country_name' => 'Canary Islands',
-                'tax_name' => 'IGIC',
-                'tax_type' => 'IGIC',
-                'rate' => 0.07,
-                'applies_to' => 'all',
+                'country_code'       => 'IC', // Canary Islands
+                'country_name'       => 'Canary Islands',
+                'tax_name'           => 'IGIC',
+                'tax_type'           => 'IGIC',
+                'rate'               => 0.07,
+                'applies_to'         => 'all',
                 'special_conditions' => [
                     'exempt_from_spanish_vat' => true,
-                    'note' => 'Inversión del sujeto pasivo - Art. 69 Ley IVA',
+                    'note'                    => 'Inversión del sujeto pasivo - Art. 69 Ley IVA',
                 ],
             ],
             [
-                'country_code' => 'CE', // Ceuta
-                'country_name' => 'Ceuta',
-                'tax_name' => 'IPSI',
-                'tax_type' => 'IPSI',
-                'rate' => 0.00,
-                'applies_to' => 'all',
+                'country_code'       => 'CE', // Ceuta
+                'country_name'       => 'Ceuta',
+                'tax_name'           => 'IPSI',
+                'tax_type'           => 'IPSI',
+                'rate'               => 0.00,
+                'applies_to'         => 'all',
                 'special_conditions' => [
                     'exempt_from_spanish_vat' => true,
-                    'note' => 'Operación exenta - Prestación de servicios en Ceuta',
+                    'note'                    => 'Operación exenta - Prestación de servicios en Ceuta',
                 ],
             ],
             [
-                'country_code' => 'ML', // Melilla
-                'country_name' => 'Melilla',
-                'tax_name' => 'IPSI',
-                'tax_type' => 'IPSI',
-                'rate' => 0.00,
-                'applies_to' => 'all',
+                'country_code'       => 'ML', // Melilla
+                'country_name'       => 'Melilla',
+                'tax_name'           => 'IPSI',
+                'tax_type'           => 'IPSI',
+                'rate'               => 0.00,
+                'applies_to'         => 'all',
                 'special_conditions' => [
                     'exempt_from_spanish_vat' => true,
-                    'note' => 'Operación exenta - Prestación de servicios en Melilla',
+                    'note'                    => 'Operación exenta - Prestación de servicios en Melilla',
                 ],
             ],
         ];

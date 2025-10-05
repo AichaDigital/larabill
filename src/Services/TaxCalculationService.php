@@ -22,7 +22,7 @@ class TaxCalculationService
      */
     public function __construct(?DestinationVatService $destinationVatService = null, ?RoiVerificationService $roiVerificationService = null)
     {
-        $this->destinationVatService = $destinationVatService;
+        $this->destinationVatService  = $destinationVatService;
         $this->roiVerificationService = $roiVerificationService;
     }
 
@@ -60,18 +60,18 @@ class TaxCalculationService
      */
     public function calculateSpanishTax(float $amount, string $sellerCountry, string $buyerCountry, bool $isB2B, array $options = []): array
     {
-        $taxRate = $this->getSpanishTaxRate($options['category'] ?? 'standard');
+        $taxRate   = $this->getSpanishTaxRate($options['category'] ?? 'standard');
         $taxAmount = $amount * ($taxRate / 100);
 
         return [
-            'tax_rate' => $taxRate,
-            'tax_amount' => $taxAmount,
-            'amount' => $amount,
-            'total' => $amount + $taxAmount,
-            'tax_type' => 'iva',
-            'tax_name' => 'IVA',
+            'tax_rate'           => $taxRate,
+            'tax_amount'         => $taxAmount,
+            'amount'             => $amount,
+            'total'              => $amount + $taxAmount,
+            'tax_type'           => 'iva',
+            'tax_name'           => 'IVA',
             'special_conditions' => [],
-            'invoice_notes' => [],
+            'invoice_notes'      => [],
         ];
     }
 
@@ -97,18 +97,18 @@ class TaxCalculationService
      */
     private function calculateCanariasTax(float $amount, array $options = []): array
     {
-        $taxRate = $this->getCanariasTaxRate($options['category'] ?? 'standard');
+        $taxRate   = $this->getCanariasTaxRate($options['category'] ?? 'standard');
         $taxAmount = $amount * ($taxRate / 100);
 
         return [
-            'tax_rate' => $taxRate,
-            'tax_amount' => $taxAmount,
-            'amount' => $amount,
-            'total' => $amount + $taxAmount,
-            'tax_type' => 'igic',
-            'tax_name' => 'IGIC',
+            'tax_rate'           => $taxRate,
+            'tax_amount'         => $taxAmount,
+            'amount'             => $amount,
+            'total'              => $amount + $taxAmount,
+            'tax_type'           => 'igic',
+            'tax_name'           => 'IGIC',
             'special_conditions' => ['canarias'],
-            'invoice_notes' => ['Exento de IVA español. Aplicable IGIC canario.'],
+            'invoice_notes'      => ['Exento de IVA español. Aplicable IGIC canario.'],
         ];
     }
 
@@ -117,18 +117,18 @@ class TaxCalculationService
      */
     private function calculateCeutaMelillaTax(float $amount, array $options = []): array
     {
-        $taxRate = 0.0; // IPSI is always 0%
+        $taxRate   = 0.0; // IPSI is always 0%
         $taxAmount = 0.0;
 
         return [
-            'tax_rate' => $taxRate,
-            'tax_amount' => $taxAmount,
-            'amount' => $amount,
-            'total' => $amount + $taxAmount,
-            'tax_type' => 'ipsi',
-            'tax_name' => 'IPSI',
+            'tax_rate'           => $taxRate,
+            'tax_amount'         => $taxAmount,
+            'amount'             => $amount,
+            'total'              => $amount + $taxAmount,
+            'tax_type'           => 'ipsi',
+            'tax_name'           => 'IPSI',
             'special_conditions' => ['ceuta_melilla'],
-            'invoice_notes' => ['Exento de IVA español. Territorio especial de Ceuta/Melilla.'],
+            'invoice_notes'      => ['Exento de IVA español. Territorio especial de Ceuta/Melilla.'],
         ];
     }
 
@@ -163,14 +163,14 @@ class TaxCalculationService
 
         // Most countries outside EU have no VAT
         return [
-            'tax_rate' => 0.0,
-            'tax_amount' => 0.0,
-            'amount' => $amount,
-            'total' => $amount,
-            'tax_type' => 'none',
-            'tax_name' => 'Sin impuestos',
+            'tax_rate'           => 0.0,
+            'tax_amount'         => 0.0,
+            'amount'             => $amount,
+            'total'              => $amount,
+            'tax_type'           => 'none',
+            'tax_name'           => 'Sin impuestos',
             'special_conditions' => ['worldwide'],
-            'invoice_notes' => ['Transacción internacional. Sin IVA aplicable.'],
+            'invoice_notes'      => ['Transacción internacional. Sin IVA aplicable.'],
         ];
     }
 
@@ -179,19 +179,19 @@ class TaxCalculationService
      */
     private function calculateUSATax(float $amount, array $options = []): array
     {
-        $state = $options['state'] ?? 'CA'; // Default to California
-        $taxRate = $this->getUSATaxRate($state);
+        $state     = $options['state'] ?? 'CA'; // Default to California
+        $taxRate   = $this->getUSATaxRate($state);
         $taxAmount = $amount * ($taxRate / 100);
 
         return [
-            'tax_rate' => $taxRate,
-            'tax_amount' => $taxAmount,
-            'amount' => $amount,
-            'total' => $amount + $taxAmount,
-            'tax_type' => 'sales_tax',
-            'tax_name' => 'Sales Tax',
+            'tax_rate'           => $taxRate,
+            'tax_amount'         => $taxAmount,
+            'amount'             => $amount,
+            'total'              => $amount + $taxAmount,
+            'tax_type'           => 'sales_tax',
+            'tax_name'           => 'Sales Tax',
             'special_conditions' => ['usa', $state],
-            'invoice_notes' => ["Sales Tax aplicable en {$state}."],
+            'invoice_notes'      => ["Sales Tax aplicable en {$state}."],
         ];
     }
 
@@ -205,17 +205,17 @@ class TaxCalculationService
         }
 
         $category = $options['category'] ?? null;
-        $result = $this->destinationVatService->calculateDestinationVat($amount, $buyerCountry, $category);
+        $result   = $this->destinationVatService->calculateDestinationVat($amount, $buyerCountry, $category);
 
         return [
-            'tax_rate' => $result['vat_rate'],
-            'tax_amount' => $result['vat_amount'],
-            'amount' => $result['amount'],
-            'total' => $result['total'],
-            'tax_type' => 'destination_vat',
-            'tax_name' => 'IVA de Destino',
+            'tax_rate'           => $result['vat_rate'],
+            'tax_amount'         => $result['vat_amount'],
+            'amount'             => $result['amount'],
+            'total'              => $result['total'],
+            'tax_type'           => 'destination_vat',
+            'tax_name'           => 'IVA de Destino',
             'special_conditions' => ['destination_vat', $buyerCountry],
-            'invoice_notes' => ["IVA de destino aplicado para {$buyerCountry}."],
+            'invoice_notes'      => ["IVA de destino aplicado para {$buyerCountry}."],
         ];
     }
 
@@ -225,14 +225,14 @@ class TaxCalculationService
     private function calculateReverseCharge(float $amount, string $sellerCountry, string $buyerCountry, array $options = []): array
     {
         return [
-            'tax_rate' => 0.0,
-            'tax_amount' => 0.0,
-            'amount' => $amount,
-            'total' => $amount,
-            'tax_type' => 'reverse_charge',
-            'tax_name' => 'Reverse Charge',
+            'tax_rate'           => 0.0,
+            'tax_amount'         => 0.0,
+            'amount'             => $amount,
+            'total'              => $amount,
+            'tax_type'           => 'reverse_charge',
+            'tax_name'           => 'Reverse Charge',
             'special_conditions' => ['reverse_charge', 'eu_b2b'],
-            'invoice_notes' => [
+            'invoice_notes'      => [
                 'Operación sujeta al régimen de inversión del sujeto pasivo.',
                 'El destinatario debe repercutir el IVA correspondiente.',
             ],
@@ -244,18 +244,18 @@ class TaxCalculationService
      */
     private function calculateSellerCountryTax(float $amount, string $sellerCountry, array $options = []): array
     {
-        $taxRate = $this->getCountryTaxRate($sellerCountry);
+        $taxRate   = $this->getCountryTaxRate($sellerCountry);
         $taxAmount = $amount * ($taxRate / 100);
 
         return [
-            'tax_rate' => $taxRate,
-            'tax_amount' => $taxAmount,
-            'amount' => $amount,
-            'total' => $amount + $taxAmount,
-            'tax_type' => 'standard',
-            'tax_name' => 'IVA',
+            'tax_rate'           => $taxRate,
+            'tax_amount'         => $taxAmount,
+            'amount'             => $amount,
+            'total'              => $amount + $taxAmount,
+            'tax_type'           => 'standard',
+            'tax_name'           => 'IVA',
             'special_conditions' => ['eu_b2c'],
-            'invoice_notes' => ["IVA del país vendedor ({$sellerCountry}) aplicado."],
+            'invoice_notes'      => ["IVA del país vendedor ({$sellerCountry}) aplicado."],
         ];
     }
 
@@ -265,10 +265,10 @@ class TaxCalculationService
     private function getSpanishTaxRate(string $category): float
     {
         return match ($category) {
-            'reduced' => 10.0,
+            'reduced'       => 10.0,
             'super_reduced' => 4.0,
-            'exempt' => 0.0,
-            default => 21.0,
+            'exempt'        => 0.0,
+            default         => 21.0,
         };
     }
 
@@ -278,10 +278,10 @@ class TaxCalculationService
     private function getCanariasTaxRate(string $category): float
     {
         return match ($category) {
-            'reduced' => 3.0,
+            'reduced'       => 3.0,
             'super_reduced' => 0.0,
-            'exempt' => 0.0,
-            default => 7.0,
+            'exempt'        => 0.0,
+            default         => 7.0,
         };
     }
 

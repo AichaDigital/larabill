@@ -32,14 +32,14 @@ it('can get configured model class for user_tax_info', function () {
 
 it('can map fields correctly', function () {
     $this->app['config']->set('larabill.field_mappings.user_tax_info', [
-        'user_id' => 'customer_id',
-        'tax_id' => 'fiscal_id',
+        'user_id'      => 'customer_id',
+        'tax_id'       => 'fiscal_id',
         'company_name' => 'business_name',
     ]);
 
     $data = [
-        'customer_id' => 1,
-        'fiscal_id' => 'ESB12345678',
+        'customer_id'   => 1,
+        'fiscal_id'     => 'ESB12345678',
         'business_name' => 'Test Company S.L.',
     ];
 
@@ -52,14 +52,14 @@ it('can map fields correctly', function () {
 
 it('can reverse map fields correctly', function () {
     $this->app['config']->set('larabill.field_mappings.user_tax_info', [
-        'user_id' => 'customer_id',
-        'tax_id' => 'fiscal_id',
+        'user_id'      => 'customer_id',
+        'tax_id'       => 'fiscal_id',
         'company_name' => 'business_name',
     ]);
 
     $data = [
-        'user_id' => 1,
-        'tax_id' => 'ESB12345678',
+        'user_id'      => 1,
+        'tax_id'       => 'ESB12345678',
         'company_name' => 'Test Company S.L.',
     ];
 

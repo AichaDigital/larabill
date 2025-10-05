@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Services\PDF;
 
 use AichaDigital\Larabill\Models\Invoice;
-use Dompdf\Dompdf;
-use Dompdf\Options;
+use Dompdf\{Dompdf, Options};
 use Illuminate\Support\Facades\View;
 
 /**
@@ -30,17 +29,17 @@ class DomPDFService
     /**
      * Create a new DomPDF service instance
      *
-     * @param array $config Configuration array
+     * @param  array  $config  Configuration array
      */
     public function __construct(array $config = [])
     {
         $this->config = array_merge([
-            'paper_size' => 'A4',
-            'paper_orientation' => 'portrait',
-            'font_cache' => true,
-            'is_remote_enabled' => true,
+            'paper_size'              => 'A4',
+            'paper_orientation'       => 'portrait',
+            'font_cache'              => true,
+            'is_remote_enabled'       => true,
             'is_html5_parser_enabled' => true,
-            'default_font' => 'DejaVu Sans',
+            'default_font'            => 'DejaVu Sans',
         ], $config);
 
         $this->initializeDomPDF();
@@ -49,15 +48,15 @@ class DomPDFService
     /**
      * Generate PDF for an invoice
      *
-     * @param Invoice $invoice The invoice to generate PDF for
-     * @param array $qrData QR data (only for fiscal invoices)
+     * @param  Invoice  $invoice  The invoice to generate PDF for
+     * @param  array  $qrData  QR data (only for fiscal invoices)
      * @return array PDF generation result
      */
     public function generatePDF(Invoice $invoice, ?array $qrData = null): array
     {
         try {
             // Determine invoice type and template
-            $template = $this->getTemplateForInvoice($invoice);
+            $template  = $this->getTemplateForInvoice($invoice);
             $includeQR = $this->shouldIncludeQR($invoice);
 
             // Prepare template data
@@ -75,24 +74,24 @@ class DomPDFService
 
             // Save PDF file
             $pdfPath = $this->savePDF($invoice, $pdfContent);
-            $pdfUrl = $this->generatePDFUrl($invoice);
+            $pdfUrl  = $this->generatePDFUrl($invoice);
 
             return [
-                'success' => true,
-                'pdf_path' => $pdfPath,
-                'pdf_url' => $pdfUrl,
-                'pdf_size' => strlen($pdfContent),
+                'success'       => true,
+                'pdf_path'      => $pdfPath,
+                'pdf_url'       => $pdfUrl,
+                'pdf_size'      => strlen($pdfContent),
                 'template_used' => $template,
-                'qr_included' => $includeQR,
-                'generated_at' => now()->toISOString(),
+                'qr_included'   => $includeQR,
+                'generated_at'  => now()->toISOString(),
             ];
 
         } catch (\Exception $e) {
             return [
-                'success' => false,
-                'error' => $e->getMessage(),
+                'success'       => false,
+                'error'         => $e->getMessage(),
                 'template_used' => $template ?? 'unknown',
-                'generated_at' => now()->toISOString(),
+                'generated_at'  => now()->toISOString(),
             ];
         }
     }
@@ -105,10 +104,10 @@ class DomPDFService
     public function getAvailableTemplates(): array
     {
         return [
-            'fiscal' => 'larabill::pdf.invoice.fiscal',
-            'proforma' => 'larabill::pdf.invoice.proforma',
+            'fiscal'         => 'larabill::pdf.invoice.fiscal',
+            'proforma'       => 'larabill::pdf.invoice.proforma',
             'reverse_charge' => 'larabill::pdf.invoice.reverse-charge',
-            'exempt' => 'larabill::pdf.invoice.exempt',
+            'exempt'         => 'larabill::pdf.invoice.exempt',
         ];
     }
 
@@ -125,8 +124,7 @@ class DomPDFService
     /**
      * Update configuration
      *
-     * @param array $config New configuration
-     * @return void
+     * @param  array  $config  New configuration
      */
     public function updateConfiguration(array $config): void
     {
@@ -136,24 +134,30 @@ class DomPDFService
 
     /**
      * Initialize DomPDF with configuration
-     *
-     * @return void
      */
     protected function initializeDomPDF(): void
     {
         // Check if DomPDF is available (for testing compatibility)
-        if (!class_exists('Dompdf\Dompdf')) {
+        if (! class_exists('Dompdf\Dompdf')) {
             // Create a mock object for testing
-            $this->dompdf = new class {
+            $this->dompdf = new class
+            {
                 public function loadHtml($html) {}
+
                 public function setPaper($paper, $orientation) {}
+
                 public function render() {}
-                public function output() { return 'mock-pdf-content'; }
+
+                public function output()
+                {
+                    return 'mock-pdf-content';
+                }
             };
+
             return;
         }
 
-        $options = new Options();
+        $options = new Options;
         $options->set('defaultFont', $this->config['default_font']);
         $options->set('isRemoteEnabled', $this->config['is_remote_enabled']);
         $options->set('isHtml5ParserEnabled', $this->config['is_html5_parser_enabled']);
@@ -166,7 +170,7 @@ class DomPDFService
     /**
      * Get template for invoice type
      *
-     * @param Invoice $invoice The invoice
+     * @param  Invoice  $invoice  The invoice
      * @return string Template name
      */
     protected function getTemplateForInvoice(Invoice $invoice): string
@@ -211,7 +215,7 @@ class DomPDFService
     /**
      * Determine if invoice should include QR code
      *
-     * @param Invoice $invoice The invoice
+     * @param  Invoice  $invoice  The invoice
      * @return bool True if QR should be included
      */
     protected function shouldIncludeQR(Invoice $invoice): bool
@@ -228,7 +232,7 @@ class DomPDFService
     /**
      * Check if invoice is reverse charge
      *
-     * @param Invoice $invoice The invoice
+     * @param  Invoice  $invoice  The invoice
      * @return bool True if reverse charge
      */
     protected function isReverseCharge(Invoice $invoice): bool
@@ -242,7 +246,7 @@ class DomPDFService
     /**
      * Check if invoice is exempt
      *
-     * @param Invoice $invoice The invoice
+     * @param  Invoice  $invoice  The invoice
      * @return bool True if exempt
      */
     protected function isExemptInvoice(Invoice $invoice): bool
@@ -256,24 +260,24 @@ class DomPDFService
     /**
      * Prepare template data
      *
-     * @param Invoice $invoice The invoice
-     * @param array|null $qrData QR data
-     * @param bool $includeQR Whether to include QR
+     * @param  Invoice  $invoice  The invoice
+     * @param  array|null  $qrData  QR data
+     * @param  bool  $includeQR  Whether to include QR
      * @return array Template data
      */
     protected function prepareTemplateData(Invoice $invoice, ?array $qrData, bool $includeQR): array
     {
         $data = [
-            'invoice' => $invoice,
-            'company' => $this->getCompanyData(),
-            'client' => $this->getClientData($invoice),
-            'items' => $this->getInvoiceItems($invoice),
-            'totals' => $this->getInvoiceTotals($invoice),
-            'fiscal_data' => $invoice->fiscal_data ?? [],
-            'include_qr' => $includeQR,
-            'generated_at' => now(),
-            'notes' => $this->getInvoiceNotes($invoice),
-            'payment_terms' => $this->getPaymentTerms($invoice),
+            'invoice'           => $invoice,
+            'company'           => $this->getCompanyData(),
+            'client'            => $this->getClientData($invoice),
+            'items'             => $this->getInvoiceItems($invoice),
+            'totals'            => $this->getInvoiceTotals($invoice),
+            'fiscal_data'       => $invoice->fiscal_data ?? [],
+            'include_qr'        => $includeQR,
+            'generated_at'      => now(),
+            'notes'             => $this->getInvoiceNotes($invoice),
+            'payment_terms'     => $this->getPaymentTerms($invoice),
             'template_settings' => $this->getTemplateSettings($invoice),
         ];
 
@@ -294,22 +298,22 @@ class DomPDFService
     {
         // This should be configurable per company
         return [
-            'name' => $this->getConfigValue('app.name', 'Mi Empresa'),
-            'address' => 'Dirección de la empresa',
-            'city' => 'Ciudad',
+            'name'        => $this->getConfigValue('app.name', 'Mi Empresa'),
+            'address'     => 'Dirección de la empresa',
+            'city'        => 'Ciudad',
             'postal_code' => '00000',
-            'country' => 'España',
-            'tax_id' => 'NIF: 12345678A',
-            'phone' => '+34 123 456 789',
-            'email' => 'info@empresa.com',
-            'website' => 'https://empresa.com',
+            'country'     => 'España',
+            'tax_id'      => 'NIF: 12345678A',
+            'phone'       => '+34 123 456 789',
+            'email'       => 'info@empresa.com',
+            'website'     => 'https://empresa.com',
         ];
     }
 
     /**
      * Get client data for template
      *
-     * @param Invoice $invoice The invoice
+     * @param  Invoice  $invoice  The invoice
      * @return array Client data
      */
     protected function getClientData(Invoice $invoice): array
@@ -320,12 +324,12 @@ class DomPDFService
         if ($invoice->user_tax_info_encrypted) {
             // In a real implementation, decrypt the client data
             $clientData = [
-                'name' => 'Cliente',
-                'address' => 'Dirección del cliente',
-                'city' => 'Ciudad del cliente',
+                'name'        => 'Cliente',
+                'address'     => 'Dirección del cliente',
+                'city'        => 'Ciudad del cliente',
                 'postal_code' => '00000',
-                'country' => 'España',
-                'tax_id' => 'NIF: 87654321B',
+                'country'     => 'España',
+                'tax_id'      => 'NIF: 87654321B',
             ];
         }
 
@@ -335,7 +339,7 @@ class DomPDFService
     /**
      * Get invoice items for template
      *
-     * @param Invoice $invoice The invoice
+     * @param  Invoice  $invoice  The invoice
      * @return array Invoice items
      */
     protected function getInvoiceItems(Invoice $invoice): array
@@ -344,11 +348,11 @@ class DomPDFService
         return [
             [
                 'description' => 'Servicio 1',
-                'quantity' => 1,
-                'unit_price' => $invoice->subtotal,
-                'tax_rate' => 21,
-                'tax_amount' => $invoice->tax_amount,
-                'total' => $invoice->total,
+                'quantity'    => 1,
+                'unit_price'  => $invoice->subtotal,
+                'tax_rate'    => 21,
+                'tax_amount'  => $invoice->tax_amount,
+                'total'       => $invoice->total,
             ],
         ];
     }
@@ -356,38 +360,38 @@ class DomPDFService
     /**
      * Get invoice totals for template
      *
-     * @param Invoice $invoice The invoice
+     * @param  Invoice  $invoice  The invoice
      * @return array Invoice totals
      */
     protected function getInvoiceTotals(Invoice $invoice): array
     {
         return [
-            'subtotal' => $invoice->subtotal,
+            'subtotal'   => $invoice->subtotal,
             'tax_amount' => $invoice->tax_amount,
-            'total' => $invoice->total,
-            'currency' => 'EUR',
+            'total'      => $invoice->total,
+            'currency'   => 'EUR',
         ];
     }
 
     /**
      * Save PDF file
      *
-     * @param Invoice $invoice The invoice
-     * @param string $pdfContent PDF content
+     * @param  Invoice  $invoice  The invoice
+     * @param  string  $pdfContent  PDF content
      * @return string PDF file path
      */
     protected function savePDF(Invoice $invoice, string $pdfContent): string
     {
-        $filename = 'invoice_' . $invoice->id . '_' . $invoice->type . '.pdf';
+        $filename = 'invoice_'.$invoice->id.'_'.$invoice->type.'.pdf';
 
         // Use temp directory for testing, storage for production
-        if (!$this->isProductionEnvironment() || !function_exists('storage_path')) {
-            $pdfPath = sys_get_temp_dir() . '/' . $filename;
+        if (! $this->isProductionEnvironment() || ! function_exists('storage_path')) {
+            $pdfPath = sys_get_temp_dir().'/'.$filename;
         } else {
-            $pdfPath = storage_path('app/invoices/' . $filename);
+            $pdfPath = storage_path('app/invoices/'.$filename);
             // Ensure directory exists
             $directory = dirname($pdfPath);
-            if (!is_dir($directory)) {
+            if (! is_dir($directory)) {
                 mkdir($directory, 0755, true);
             }
         }
@@ -400,25 +404,25 @@ class DomPDFService
     /**
      * Generate PDF URL
      *
-     * @param Invoice $invoice The invoice
+     * @param  Invoice  $invoice  The invoice
      * @return string PDF URL
      */
     protected function generatePDFUrl(Invoice $invoice): string
     {
-        $filename = 'invoice_' . $invoice->id . '_' . $invoice->type . '.pdf';
+        $filename = 'invoice_'.$invoice->id.'_'.$invoice->type.'.pdf';
 
         // Use temp URL for testing, real URL for production
-        if (!$this->isProductionEnvironment() || !function_exists('url')) {
-            return 'http://localhost/storage/invoices/' . $filename;
+        if (! $this->isProductionEnvironment() || ! function_exists('url')) {
+            return 'http://localhost/storage/invoices/'.$filename;
         }
 
-        return url('storage/invoices/' . $filename);
+        return url('storage/invoices/'.$filename);
     }
 
     /**
      * Get invoice notes (individual, client-specific, or global)
      *
-     * @param Invoice $invoice The invoice
+     * @param  Invoice  $invoice  The invoice
      * @return string|null Notes
      */
     protected function getInvoiceNotes(Invoice $invoice): ?string
@@ -432,6 +436,7 @@ class DomPDFService
         if (class_exists('\AichaDigital\Larabill\Models\CompanyTemplateSettings') && app()->bound('db')) {
             try {
                 $companyId = $this->getCompanyId($invoice);
+
                 return \AichaDigital\Larabill\Models\CompanyTemplateSettings::getDefaultNotes(
                     $companyId,
                     $invoice->getInvoiceType(),
@@ -448,7 +453,7 @@ class DomPDFService
     /**
      * Get payment terms (individual, client-specific, or global)
      *
-     * @param Invoice $invoice The invoice
+     * @param  Invoice  $invoice  The invoice
      * @return string|null Payment terms
      */
     protected function getPaymentTerms(Invoice $invoice): ?string
@@ -462,6 +467,7 @@ class DomPDFService
         if (class_exists('\AichaDigital\Larabill\Models\CompanyTemplateSettings') && app()->bound('db')) {
             try {
                 $companyId = $this->getCompanyId($invoice);
+
                 return \AichaDigital\Larabill\Models\CompanyTemplateSettings::getPaymentTerms(
                     $companyId,
                     $invoice->getInvoiceType(),
@@ -478,7 +484,7 @@ class DomPDFService
     /**
      * Get template settings for invoice
      *
-     * @param Invoice $invoice The invoice
+     * @param  Invoice  $invoice  The invoice
      * @return array Template settings
      */
     protected function getTemplateSettings(Invoice $invoice): array
@@ -495,7 +501,7 @@ class DomPDFService
                     );
                 }
 
-                if (!$template) {
+                if (! $template) {
                     $template = \AichaDigital\Larabill\Models\InvoiceTemplate::getDefaultForType(
                         $invoice->getInvoiceType()
                     );
@@ -513,7 +519,7 @@ class DomPDFService
     /**
      * Get company ID for invoice (placeholder implementation)
      *
-     * @param Invoice $invoice The invoice
+     * @param  Invoice  $invoice  The invoice
      * @return string Company ID
      */
     protected function getCompanyId(Invoice $invoice): string
@@ -526,8 +532,8 @@ class DomPDFService
     /**
      * Safely get config value with fallback
      *
-     * @param string $key Config key
-     * @param mixed $default Default value
+     * @param  string  $key  Config key
+     * @param  mixed  $default  Default value
      * @return mixed Config value or default
      */
     protected function getConfigValue(string $key, $default = null)
@@ -546,8 +552,8 @@ class DomPDFService
     /**
      * Render template safely
      *
-     * @param string $template Template name
-     * @param array $data Template data
+     * @param  string  $template  Template name
+     * @param  array  $data  Template data
      * @return string Rendered HTML
      */
     protected function renderTemplate(string $template, array $data): string
@@ -567,15 +573,15 @@ class DomPDFService
     /**
      * Generate mock HTML for testing
      *
-     * @param string $template Template name
-     * @param array $data Template data
+     * @param  string  $template  Template name
+     * @param  array  $data  Template data
      * @return string Mock HTML
      */
     protected function generateMockHTML(string $template, array $data): string
     {
-        $invoice = $data['invoice'] ?? null;
+        $invoice       = $data['invoice']            ?? null;
         $invoiceNumber = $invoice ? $invoice->number ?? 'TEST-001' : 'TEST-001';
-        $total = $invoice ? $invoice->total ?? '100.00' : '100.00';
+        $total         = $invoice ? $invoice->total  ?? '100.00' : '100.00';
 
         return "
         <!DOCTYPE html>

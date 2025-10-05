@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\{Builder, Model};
 
 /**
  * Company Template Settings Model
@@ -47,14 +46,18 @@ class CompanyTemplateSettings extends Model
      * Setting types.
      */
     public const SETTING_TEMPLATE = 'template';
+
     public const SETTING_NOTES = 'notes';
+
     public const SETTING_PAYMENT_TERMS = 'payment_terms';
 
     /**
      * Scope types.
      */
     public const SCOPE_GLOBAL = 'global';
+
     public const SCOPE_CLIENT = 'client';
+
     public const SCOPE_INDIVIDUAL = 'individual';
 
     /**
@@ -145,14 +148,14 @@ class CompanyTemplateSettings extends Model
     ): self {
         return static::updateOrCreate(
             [
-                'company_id' => $companyId,
+                'company_id'   => $companyId,
                 'setting_type' => $settingType,
                 'invoice_type' => $invoiceType,
-                'scope' => $scope,
-                'client_id' => $clientId,
+                'scope'        => $scope,
+                'client_id'    => $clientId,
             ],
             [
-                'value' => $value,
+                'value'     => $value,
                 'is_active' => true,
             ]
         );
@@ -212,8 +215,8 @@ class CompanyTemplateSettings extends Model
     public static function getSettingTypes(): array
     {
         return [
-            self::SETTING_TEMPLATE => 'Template',
-            self::SETTING_NOTES => 'Notes',
+            self::SETTING_TEMPLATE      => 'Template',
+            self::SETTING_NOTES         => 'Notes',
             self::SETTING_PAYMENT_TERMS => 'Payment Terms',
         ];
     }
@@ -224,8 +227,8 @@ class CompanyTemplateSettings extends Model
     public static function getScopes(): array
     {
         return [
-            self::SCOPE_GLOBAL => 'Global',
-            self::SCOPE_CLIENT => 'Client',
+            self::SCOPE_GLOBAL     => 'Global',
+            self::SCOPE_CLIENT     => 'Client',
             self::SCOPE_INDIVIDUAL => 'Individual',
         ];
     }

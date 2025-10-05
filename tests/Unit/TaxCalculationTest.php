@@ -25,9 +25,9 @@ it('can calculate reverse charge for EU B2B transactions', function () {
     $service = new TaxCalculationService(null, $mockRoiService);
 
     $options = [
-        'user_id' => 'test-user',
+        'user_id'          => 'test-user',
         'vat_verification' => [
-            'vat_number' => 'DE123456789',
+            'vat_number'   => 'DE123456789',
             'country_code' => 'DE',
         ],
     ];
@@ -75,7 +75,7 @@ it('can calculate USA Sales Tax', function () {
     $service = new TaxCalculationService;
 
     $options = ['state' => 'CA'];
-    $result = $service->calculateTax(100.0, 'ES', 'US', false, $options);
+    $result  = $service->calculateTax(100.0, 'ES', 'US', false, $options);
 
     expect($result)->toBeArray();
     expect($result['tax_rate'])->toBe(7.25);

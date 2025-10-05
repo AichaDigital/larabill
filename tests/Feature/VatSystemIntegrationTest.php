@@ -4,16 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Tests\Feature;
 
-use AichaDigital\Larabill\Models\CompanyFiscalConfig;
-use AichaDigital\Larabill\Models\CountryVatRate;
-use AichaDigital\Larabill\Models\EuSalesThreshold;
-use AichaDigital\Larabill\Models\RoiQuery;
-use AichaDigital\Larabill\Models\UserRoiVerification;
-use AichaDigital\Larabill\Models\VatCategory;
-use AichaDigital\Larabill\Services\CacheService;
-use AichaDigital\Larabill\Services\CompanyConfigService;
-use AichaDigital\Larabill\Services\DestinationVatService;
-use AichaDigital\Larabill\Services\RoiVerificationService;
+use AichaDigital\Larabill\Models\{CompanyFiscalConfig, CountryVatRate, EuSalesThreshold, RoiQuery, UserRoiVerification, VatCategory};
+use AichaDigital\Larabill\Services\{CacheService, CompanyConfigService, DestinationVatService, RoiVerificationService};
 use Illuminate\Support\Facades\Http;
 
 beforeEach(function () {
@@ -26,15 +18,15 @@ beforeEach(function () {
 });
 
 it('can perform complete ROI verification workflow', function () {
-    $roiService = new RoiVerificationService;
+    $roiService   = new RoiVerificationService;
     $cacheService = new CacheService;
 
     // Mock successful API response
     Http::fake([
         'https://vat.abstractapi.com/v1/validate/*' => Http::response([
-            'valid' => true,
-            'company' => 'Test Company S.L.',
-            'address' => 'Test Address 123, Madrid, 28001, ES',
+            'valid'      => true,
+            'company'    => 'Test Company S.L.',
+            'address'    => 'Test Address 123, Madrid, 28001, ES',
             'vat_number' => 'ESB12345678',
         ], 200),
     ]);
@@ -75,12 +67,12 @@ it('can perform complete ROI verification workflow', function () {
 
 it('can perform complete destination VAT workflow', function () {
     $destinationVatService = new DestinationVatService;
-    $companyConfigService = new CompanyConfigService;
+    $companyConfigService  = new CompanyConfigService;
 
     // Step 1: Create company configuration
     $config = $companyConfigService->createCompanyConfig('company-123', 2024, [
-        'apply_destination_iva' => false,
-        'eu_sales_threshold' => 10000.00,
+        'apply_destination_iva'  => false,
+        'eu_sales_threshold'     => 10000.00,
         'auto_apply_destination' => true,
     ]);
 
@@ -89,36 +81,36 @@ it('can perform complete destination VAT workflow', function () {
 
     // Step 2: Add country VAT rates
     CountryVatRate::create([
-        'country_code' => 'ES',
-        'country_name' => 'Spain',
+        'country_code'  => 'ES',
+        'country_name'  => 'Spain',
         'standard_rate' => 21.00,
         'reduced_rates' => ['general' => 10.00],
-        'is_active' => true,
+        'is_active'     => true,
     ]);
 
     CountryVatRate::create([
-        'country_code' => 'FR',
-        'country_name' => 'France',
+        'country_code'  => 'FR',
+        'country_name'  => 'France',
         'standard_rate' => 20.00,
         'reduced_rates' => ['general' => 5.50],
-        'is_active' => true,
+        'is_active'     => true,
     ]);
 
     // Step 3: Add VAT categories
     VatCategory::create([
-        'name' => 'Standard Goods',
-        'country_code' => 'ES',
-        'vat_rate' => 21.00,
+        'name'          => 'Standard Goods',
+        'country_code'  => 'ES',
+        'vat_rate'      => 21.00,
         'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
-        'is_active' => true,
+        'is_active'     => true,
     ]);
 
     VatCategory::create([
-        'name' => 'Reduced Goods',
-        'country_code' => 'ES',
-        'vat_rate' => 10.00,
+        'name'          => 'Reduced Goods',
+        'country_code'  => 'ES',
+        'vat_rate'      => 10.00,
         'category_type' => VatCategory::CATEGORY_TYPE_REDUCED,
-        'is_active' => true,
+        'is_active'     => true,
     ]);
 
     // Step 4: Check initial destination VAT status
@@ -148,7 +140,7 @@ it('can perform complete destination VAT workflow', function () {
 
     // Step 9: Calculate VAT for specific categories
     $standardVat = $destinationVatService->calculateVatAmount(1000.00, 'ES', 'Standard Goods');
-    $reducedVat = $destinationVatService->calculateVatAmount(1000.00, 'ES', 'Reduced Goods');
+    $reducedVat  = $destinationVatService->calculateVatAmount(1000.00, 'ES', 'Reduced Goods');
 
     expect($standardVat)->toBe(210.00);
     expect($reducedVat)->toBe(100.00);
@@ -156,19 +148,19 @@ it('can perform complete destination VAT workflow', function () {
 
 it('can perform complete EU sales threshold monitoring workflow', function () {
     $destinationVatService = new DestinationVatService;
-    $companyConfigService = new CompanyConfigService;
+    $companyConfigService  = new CompanyConfigService;
 
     // Step 1: Create company configuration
     $config = $companyConfigService->createCompanyConfig('company-123', 2024, [
-        'eu_sales_threshold' => 10000.00,
+        'eu_sales_threshold'     => 10000.00,
         'auto_apply_destination' => true,
     ]);
 
     // Step 2: Create EU sales threshold tracking
     $threshold = EuSalesThreshold::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
-        'total_amount' => 0.00,
+        'company_id'           => 'company-123',
+        'fiscal_year'          => 2024,
+        'total_amount'         => 0.00,
         'breakdown_by_country' => [],
     ]);
 
@@ -210,7 +202,7 @@ it('can perform complete EU sales threshold monitoring workflow', function () {
 
 it('can perform complete cache management workflow', function () {
     $cacheService = new CacheService;
-    $roiService = new RoiVerificationService;
+    $roiService   = new RoiVerificationService;
 
     // Reset cache state
     CacheService::resetCounters();
@@ -232,9 +224,9 @@ it('can perform complete cache management workflow', function () {
     expect($cacheService->hasCompanyConfig('company-123'))->toBeTrue();
 
     // Step 3: Retrieve cache entries
-    $retrievedRoi = $cacheService->getRoiVerification('user-123', 'ESB12345678', 'ES');
+    $retrievedRoi      = $cacheService->getRoiVerification('user-123', 'ESB12345678', 'ES');
     $retrievedVatRates = $cacheService->getVatRates();
-    $retrievedConfig = $cacheService->getCompanyConfig('company-123');
+    $retrievedConfig   = $cacheService->getCompanyConfig('company-123');
 
     expect($retrievedRoi)->toBe($roiData);
     expect($retrievedVatRates)->toBe($vatRates);
@@ -265,8 +257,8 @@ it('can perform complete legal compliance workflow', function () {
     // Step 1: Perform multiple ROI verifications
     Http::fake([
         'https://vat.abstractapi.com/v1/validate/*' => Http::response([
-            'valid' => true,
-            'company' => 'Test Company S.L.',
+            'valid'      => true,
+            'company'    => 'Test Company S.L.',
             'vat_number' => 'ESB12345678',
         ], 200),
     ]);
@@ -292,11 +284,11 @@ it('can perform complete legal compliance workflow', function () {
 
     // Step 4: Create expired query for cleanup test
     RoiQuery::create([
-        'user_id' => 'user-old',
-        'vat_number' => 'ESB99999999',
-        'country_code' => 'ES',
-        'query_type' => RoiQuery::QUERY_TYPE_API,
-        'queried_at' => now()->subDays(3000), // 8+ years ago
+        'user_id'               => 'user-old',
+        'vat_number'            => 'ESB99999999',
+        'country_code'          => 'ES',
+        'query_type'            => RoiQuery::QUERY_TYPE_API,
+        'queried_at'            => now()->subDays(3000), // 8+ years ago
         'legal_retention_until' => now()->subDays(445), // Expired
     ]);
 
@@ -308,21 +300,21 @@ it('can perform complete legal compliance workflow', function () {
 
 it('can perform complete multi-company workflow', function () {
     $destinationVatService = new DestinationVatService;
-    $companyConfigService = new CompanyConfigService;
+    $companyConfigService  = new CompanyConfigService;
 
     // Step 1: Create multiple company configurations
     $config1 = $companyConfigService->createCompanyConfig('company-123', 2024, [
-        'eu_sales_threshold' => 10000.00,
+        'eu_sales_threshold'     => 10000.00,
         'auto_apply_destination' => true,
     ]);
 
     $config2 = $companyConfigService->createCompanyConfig('company-456', 2024, [
-        'eu_sales_threshold' => 15000.00,
+        'eu_sales_threshold'     => 15000.00,
         'auto_apply_destination' => true,
     ]);
 
     $config3 = $companyConfigService->createCompanyConfig('company-789', 2024, [
-        'eu_sales_threshold' => 8000.00,
+        'eu_sales_threshold'     => 8000.00,
         'auto_apply_destination' => true,
     ]);
 
@@ -371,16 +363,16 @@ it('can handle error scenarios gracefully', function () {
     config(['larabill.vat_apis.apilayer.key' => 'real_api_key_456']);
 
     // Create services after configuration
-    $roiService = new RoiVerificationService;
+    $roiService            = new RoiVerificationService;
     $destinationVatService = new DestinationVatService;
-    $companyConfigService = new CompanyConfigService;
+    $companyConfigService  = new CompanyConfigService;
 
     // Step 1: Test ROI verification with API failure
     Http::fake([
         'https://vat.abstractapi.com/v1/validate/*' => Http::response([], 500),
-        'http://apilayer.net/api/validate*' => Http::response([
-            'valid' => false,
-            'vat_number' => 'ESINVALID1',
+        'http://apilayer.net/api/validate*'         => Http::response([
+            'valid'        => false,
+            'vat_number'   => 'ESINVALID1',
             'company_name' => null,
         ], 200),
     ]);
@@ -404,13 +396,13 @@ it('can handle error scenarios gracefully', function () {
 
     // Step 5: Test cache with non-existent entries
     $cacheService = new CacheService;
-    $cached = $cacheService->getRoiVerification('nonexistent', 'INVALID', 'XX');
+    $cached       = $cacheService->getRoiVerification('nonexistent', 'INVALID', 'XX');
     expect($cached)->toBeNull();
 });
 
 it('can perform complete performance optimization workflow', function () {
     $cacheService = new CacheService;
-    $roiService = new RoiVerificationService;
+    $roiService   = new RoiVerificationService;
 
     // Reset cache state
     CacheService::resetCounters();
@@ -431,7 +423,7 @@ it('can perform complete performance optimization workflow', function () {
         $cacheService->getVatRates();
     }
 
-    $endTime = microtime(true);
+    $endTime       = microtime(true);
     $executionTime = $endTime - $startTime;
 
     // Step 3: Verify performance is acceptable (should be very fast with cache)
@@ -444,19 +436,19 @@ it('can perform complete performance optimization workflow', function () {
 
 it('can perform complete data consistency workflow', function () {
     $destinationVatService = new DestinationVatService;
-    $companyConfigService = new CompanyConfigService;
+    $companyConfigService  = new CompanyConfigService;
 
     // Step 1: Create company configuration
     $config = $companyConfigService->createCompanyConfig('company-123', 2024, [
-        'eu_sales_threshold' => 10000.00,
+        'eu_sales_threshold'     => 10000.00,
         'auto_apply_destination' => true,
     ]);
 
     // Step 2: Create EU sales threshold
     $threshold = EuSalesThreshold::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
-        'total_amount' => 0.00,
+        'company_id'           => 'company-123',
+        'fiscal_year'          => 2024,
+        'total_amount'         => 0.00,
         'breakdown_by_country' => [],
     ]);
 
@@ -464,7 +456,7 @@ it('can perform complete data consistency workflow', function () {
     $destinationVatService->updateEuSalesAmount('company-123', 2024, 'ES', 5000.00);
 
     // Step 4: Verify data consistency between models
-    $updatedConfig = CompanyFiscalConfig::findByCompanyAndYear('company-123', 2024);
+    $updatedConfig    = CompanyFiscalConfig::findByCompanyAndYear('company-123', 2024);
     $updatedThreshold = EuSalesThreshold::findByCompanyAndYear('company-123', 2024);
 
     expect($updatedConfig->current_eu_sales_amount)->toBe(5000);
@@ -475,7 +467,7 @@ it('can perform complete data consistency workflow', function () {
     $destinationVatService->updateEuSalesAmount('company-123', 2024, 'FR', 3000.00);
 
     // Step 6: Verify data consistency after second update
-    $finalConfig = CompanyFiscalConfig::findByCompanyAndYear('company-123', 2024);
+    $finalConfig    = CompanyFiscalConfig::findByCompanyAndYear('company-123', 2024);
     $finalThreshold = EuSalesThreshold::findByCompanyAndYear('company-123', 2024);
 
     expect($finalConfig->current_eu_sales_amount)->toBe(8000);

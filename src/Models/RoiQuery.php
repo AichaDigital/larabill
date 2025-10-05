@@ -42,10 +42,10 @@ class RoiQuery extends Model
      * The attributes that should be cast.
      */
     protected $casts = [
-        'cache_used' => 'boolean',
-        'queried_at' => 'datetime',
+        'cache_used'            => 'boolean',
+        'queried_at'            => 'datetime',
         'legal_retention_until' => 'datetime',
-        'response_data' => 'array',
+        'response_data'         => 'array',
     ];
 
     /**
@@ -69,7 +69,7 @@ class RoiQuery extends Model
             // Apply field mapping when creating
             $fieldMapping = \AichaDigital\Larabill\Services\ModelMappingService::getFieldMapping('roi_query');
             if (! empty($fieldMapping)) {
-                $attributes = $model->getAttributes();
+                $attributes       = $model->getAttributes();
                 $mappedAttributes = \AichaDigital\Larabill\Services\ModelMappingService::reverseMapFields($attributes, 'roi_query');
                 $model->setRawAttributes($mappedAttributes);
             }
@@ -79,7 +79,7 @@ class RoiQuery extends Model
             // Apply field mapping when retrieving
             $fieldMapping = \AichaDigital\Larabill\Services\ModelMappingService::getFieldMapping('roi_query');
             if (! empty($fieldMapping)) {
-                $attributes = $model->getAttributes();
+                $attributes       = $model->getAttributes();
                 $mappedAttributes = \AichaDigital\Larabill\Services\ModelMappingService::mapFields($attributes, 'roi_query');
                 $model->setRawAttributes($mappedAttributes);
             }
@@ -187,7 +187,7 @@ class RoiQuery extends Model
     public static function createQuery(array $data): self
     {
         return static::create(array_merge($data, [
-            'queried_at' => now(),
+            'queried_at'            => now(),
             'legal_retention_until' => now()->addDays(self::getLegalRetentionDays()),
         ]));
     }
@@ -198,13 +198,13 @@ class RoiQuery extends Model
     public static function createApiQuery(string $userId, string $vatNumber, string $countryCode, string $apiSource, array $responseData): self
     {
         return static::createQuery([
-            'user_id' => $userId,
-            'vat_number' => $vatNumber,
-            'country_code' => $countryCode,
-            'query_type' => self::QUERY_TYPE_API,
-            'api_source' => $apiSource,
+            'user_id'       => $userId,
+            'vat_number'    => $vatNumber,
+            'country_code'  => $countryCode,
+            'query_type'    => self::QUERY_TYPE_API,
+            'api_source'    => $apiSource,
             'response_data' => $responseData,
-            'cache_used' => false,
+            'cache_used'    => false,
         ]);
     }
 
@@ -214,13 +214,13 @@ class RoiQuery extends Model
     public static function createCacheQuery(string $userId, string $vatNumber, string $countryCode, array $responseData): self
     {
         return static::createQuery([
-            'user_id' => $userId,
-            'vat_number' => $vatNumber,
-            'country_code' => $countryCode,
-            'query_type' => self::QUERY_TYPE_CACHE,
-            'api_source' => 'cache',
+            'user_id'       => $userId,
+            'vat_number'    => $vatNumber,
+            'country_code'  => $countryCode,
+            'query_type'    => self::QUERY_TYPE_CACHE,
+            'api_source'    => 'cache',
             'response_data' => $responseData,
-            'cache_used' => true,
+            'cache_used'    => true,
         ]);
     }
 
@@ -267,14 +267,14 @@ class RoiQuery extends Model
             $query->whereBetween('queried_at', [$startDate, $endDate]);
         }
 
-        $total = $query->count();
-        $apiQueries = $query->clone()->where('query_type', self::QUERY_TYPE_API)->count();
+        $total        = $query->count();
+        $apiQueries   = $query->clone()->where('query_type', self::QUERY_TYPE_API)->count();
         $cacheQueries = $query->clone()->where('query_type', self::QUERY_TYPE_CACHE)->count();
 
         return [
-            'total' => $total,
-            'api_queries' => $apiQueries,
-            'cache_queries' => $cacheQueries,
+            'total'           => $total,
+            'api_queries'     => $apiQueries,
+            'cache_queries'   => $cacheQueries,
             'cache_hit_ratio' => $total > 0 ? round(($cacheQueries / $total) * 100, 2) : 0,
         ];
     }

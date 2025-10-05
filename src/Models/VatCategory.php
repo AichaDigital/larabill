@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use DateTimeInterface;
 use Illuminate\Database\Eloquent\{Builder, Model};
 use Illuminate\Support\Carbon;
 
@@ -76,13 +75,13 @@ class VatCategory extends Model
     public function casts(): array
     {
         return [
-            'vat_rate' => 'integer', // Base 100: 21.50% = 2150
-            'is_active' => 'boolean',
+            'vat_rate'            => 'integer', // Base 100: 21.50% = 2150
+            'is_active'           => 'boolean',
             'applies_to_products' => 'boolean',
             'applies_to_services' => 'boolean',
-            'special_conditions' => 'array',
-            'last_updated' => 'datetime',
-            'sort_order' => 'integer',
+            'special_conditions'  => 'array',
+            'last_updated'        => 'datetime',
+            'sort_order'          => 'integer',
         ];
     }
 
@@ -137,6 +136,7 @@ class VatCategory extends Model
     public function setVatRateFromPercentage(float $percentage): self
     {
         $this->update(['vat_rate' => static::percentageToBase100($percentage)]);
+
         return $this;
     }
 
@@ -161,7 +161,7 @@ class VatCategory extends Model
             // Apply field mapping when creating
             $fieldMapping = \AichaDigital\Larabill\Services\ModelMappingService::getFieldMapping('vat_category');
             if (! empty($fieldMapping)) {
-                $attributes = $model->getAttributes();
+                $attributes       = $model->getAttributes();
                 $mappedAttributes = \AichaDigital\Larabill\Services\ModelMappingService::reverseMapFields($attributes, 'vat_category');
                 $model->setRawAttributes($mappedAttributes);
             }
@@ -176,7 +176,7 @@ class VatCategory extends Model
             // Apply field mapping when retrieving
             $fieldMapping = \AichaDigital\Larabill\Services\ModelMappingService::getFieldMapping('vat_category');
             if (! empty($fieldMapping)) {
-                $attributes = $model->getAttributes();
+                $attributes       = $model->getAttributes();
                 $mappedAttributes = \AichaDigital\Larabill\Services\ModelMappingService::mapFields($attributes, 'vat_category');
                 $model->setRawAttributes($mappedAttributes);
             }
@@ -338,7 +338,7 @@ class VatCategory extends Model
      */
     public function setSpecialCondition(string $key, mixed $value): self
     {
-        $conditions = $this->special_conditions ?? [];
+        $conditions       = $this->special_conditions ?? [];
         $conditions[$key] = $value;
         $this->update(['special_conditions' => $conditions]);
 
@@ -472,11 +472,11 @@ class VatCategory extends Model
     public function getCategoryTypeLabel(): string
     {
         return match ($this->category_type) {
-            self::TYPE_STANDARD => 'Standard Rate',
-            self::TYPE_REDUCED => 'Reduced Rate',
+            self::TYPE_STANDARD      => 'Standard Rate',
+            self::TYPE_REDUCED       => 'Reduced Rate',
             self::TYPE_SUPER_REDUCED => 'Super Reduced Rate',
-            self::TYPE_EXEMPT => 'Exempt',
-            default => 'Unknown',
+            self::TYPE_EXEMPT        => 'Exempt',
+            default                  => 'Unknown',
         };
     }
 
@@ -586,6 +586,7 @@ class VatCategory extends Model
     public function activate(): self
     {
         $this->update(['is_active' => true]);
+
         return $this;
     }
 
@@ -595,6 +596,7 @@ class VatCategory extends Model
     public function deactivate(): self
     {
         $this->update(['is_active' => false]);
+
         return $this;
     }
 
@@ -604,6 +606,7 @@ class VatCategory extends Model
     public function setSpecialConditions(array $conditions): self
     {
         $this->update(['special_conditions' => $conditions]);
+
         return $this;
     }
 
@@ -613,11 +616,11 @@ class VatCategory extends Model
     public function getCategoryTypeName(): string
     {
         return match ($this->category_type) {
-            self::TYPE_STANDARD => 'Standard',
-            self::TYPE_REDUCED => 'Reduced',
+            self::TYPE_STANDARD      => 'Standard',
+            self::TYPE_REDUCED       => 'Reduced',
             self::TYPE_SUPER_REDUCED => 'Super Reduced',
-            self::TYPE_EXEMPT => 'Exempt',
-            default => 'Unknown',
+            self::TYPE_EXEMPT        => 'Exempt',
+            default                  => 'Unknown',
         };
     }
 
@@ -634,8 +637,8 @@ class VatCategory extends Model
      */
     public static function getCategoryStatistics(): array
     {
-        $total = static::count();
-        $active = static::where('is_active', true)->count();
+        $total    = static::count();
+        $active   = static::where('is_active', true)->count();
         $inactive = static::where('is_active', false)->count();
 
         $byType = static::selectRaw('category_type, COUNT(*) as count')
@@ -649,10 +652,10 @@ class VatCategory extends Model
             ->toArray();
 
         return [
-            'total' => $total,
-            'active' => $active,
-            'inactive' => $inactive,
-            'by_type' => $byType,
+            'total'      => $total,
+            'active'     => $active,
+            'inactive'   => $inactive,
+            'by_type'    => $byType,
             'by_country' => $byCountry,
         ];
     }

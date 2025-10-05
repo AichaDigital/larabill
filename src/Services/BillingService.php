@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services;
 
-use AichaDigital\Larabill\Models\Invoice;
-use AichaDigital\Larabill\Models\InvoiceItem;
+use AichaDigital\Larabill\Models\{Invoice, InvoiceItem};
 
 /**
  * Billing Service
@@ -27,7 +26,7 @@ class BillingService
         ?TaxCalculationService $taxCalculationService = null,
         ?RoiVerificationService $roiVerificationService = null
     ) {
-        $this->taxCalculationService = $taxCalculationService ?? app(TaxCalculationService::class);
+        $this->taxCalculationService  = $taxCalculationService  ?? app(TaxCalculationService::class);
         $this->roiVerificationService = $roiVerificationService ?? app(RoiVerificationService::class);
     }
 
@@ -40,20 +39,20 @@ class BillingService
      */
     public function createInvoice(array $invoiceData, array $options = []): Invoice
     {
-        $items = $invoiceData['items'] ?? [];
-        $userId = $invoiceData['user_id'];
+        $items           = $invoiceData['items'] ?? [];
+        $userId          = $invoiceData['user_id'];
         $customerCountry = $invoiceData['customer_country'] ?? 'ES';
-        $customerType = $invoiceData['customer_type'] ?? 'individual';
+        $customerType    = $invoiceData['customer_type']    ?? 'individual';
 
         // Extract options
-        $roiVerification = $options['roi_verification'] ?? false;
-        $makeImmutable = $options['make_immutable'] ?? false;
+        $roiVerification = $options['roi_verification']     ?? false;
+        $makeImmutable   = $options['make_immutable']       ?? false;
         $vatVerification = $invoiceData['vat_verification'] ?? null;
-        $companyId = $invoiceData['company_id'] ?? null;
+        $companyId       = $invoiceData['company_id']       ?? null;
 
         // Calculate taxes using TaxCalculationService
-        $subtotal = $this->calculateSubtotal($items);
-        $isB2B = $customerType === 'business';
+        $subtotal      = $this->calculateSubtotal($items);
+        $isB2B         = $customerType === 'business';
         $sellerCountry = 'ES'; // Default seller country
 
         $taxCalculation = $this->taxCalculationService->calculateTax(
@@ -62,7 +61,7 @@ class BillingService
             $customerCountry,
             $isB2B,
             [
-                'company_id' => $companyId,
+                'company_id'       => $companyId,
                 'vat_verification' => $vatVerification,
             ]
         );
@@ -72,34 +71,34 @@ class BillingService
         if ($roiVerification && $vatVerification) {
             $roiData = $this->roiVerificationService->verifyRoiStatus(
                 userId: (string) $userId,
-                vatNumber: $vatVerification['vat_number'] ?? '',
+                vatNumber: $vatVerification['vat_number']     ?? '',
                 countryCode: $vatVerification['country_code'] ?? $customerCountry
             );
         }
 
         // Create invoice
         $invoiceType = $invoiceData['type'] ?? 'invoice';
-        $invoice = Invoice::create([
-            'number' => $this->generateInvoiceNumber($invoiceType, $options),
-            'type' => $invoiceType,
-            'status' => $invoiceData['status'] ?? 'draft',
-            'user_id' => $userId,
-            'subtotal' => Invoice::amountToBase100($taxCalculation['amount']),
-            'tax_amount' => Invoice::amountToBase100($taxCalculation['tax_amount']),
-            'total' => Invoice::amountToBase100($taxCalculation['total']),
+        $invoice     = Invoice::create([
+            'number'      => $this->generateInvoiceNumber($invoiceType, $options),
+            'type'        => $invoiceType,
+            'status'      => $invoiceData['status'] ?? 'draft',
+            'user_id'     => $userId,
+            'subtotal'    => Invoice::amountToBase100($taxCalculation['amount']),
+            'tax_amount'  => Invoice::amountToBase100($taxCalculation['tax_amount']),
+            'total'       => Invoice::amountToBase100($taxCalculation['total']),
             'fiscal_data' => [
-                'tax_rate' => $taxCalculation['tax_rate'],
-                'tax_type' => $taxCalculation['tax_type'],
-                'tax_name' => $taxCalculation['tax_name'],
+                'tax_rate'           => $taxCalculation['tax_rate'],
+                'tax_type'           => $taxCalculation['tax_type'],
+                'tax_name'           => $taxCalculation['tax_name'],
                 'special_conditions' => $taxCalculation['special_conditions'],
             ],
             'vat_verification' => $vatVerification,
-            'is_roi_taxed' => $roiData['is_roi'] ?? false,
-            'is_immutable' => false,
-            'due_date' => $invoiceData['due_date'] ?? null,
-            'notes' => implode(' ', $taxCalculation['invoice_notes'] ?? []),
-            'payment_terms' => $invoiceData['payment_terms'] ?? null,
-            'template_name' => $invoiceData['template_name'] ?? null,
+            'is_roi_taxed'     => $roiData['is_roi'] ?? false,
+            'is_immutable'     => false,
+            'due_date'         => $invoiceData['due_date'] ?? null,
+            'notes'            => implode(' ', $taxCalculation['invoice_notes'] ?? []),
+            'payment_terms'    => $invoiceData['payment_terms'] ?? null,
+            'template_name'    => $invoiceData['template_name'] ?? null,
         ]);
 
         // Create invoice items
@@ -124,7 +123,7 @@ class BillingService
      */
     public function createProforma(array $invoiceData, array $options = []): Invoice
     {
-        $invoiceData['type'] = 'proforma';
+        $invoiceData['type']   = 'proforma';
         $invoiceData['status'] = 'draft';
 
         // Proforma invoices are never immutable
@@ -147,14 +146,14 @@ class BillingService
         }
 
         $invoiceData = [
-            'user_id' => $proforma->user_id,
-            'type' => 'invoice',
-            'status' => 'draft',
-            'due_date' => $proforma->due_date,
-            'payment_terms' => $proforma->payment_terms,
-            'template_name' => $proforma->template_name,
+            'user_id'          => $proforma->user_id,
+            'type'             => 'invoice',
+            'status'           => 'draft',
+            'due_date'         => $proforma->due_date,
+            'payment_terms'    => $proforma->payment_terms,
+            'template_name'    => $proforma->template_name,
             'vat_verification' => $proforma->vat_verification,
-            'items' => $this->getInvoiceItemsData($proforma),
+            'items'            => $this->getInvoiceItemsData($proforma),
         ];
 
         return $this->createInvoice($invoiceData, $options);
@@ -169,9 +168,9 @@ class BillingService
      */
     private function generateInvoiceNumber(string $type = 'invoice', array $options = []): string
     {
-        $prefix = $type === 'proforma' ? 'PRO' : 'FAC';
-        $format = $options['number_format'] ?? 'simple'; // 'simple' or 'detailed'
-        $annualReset = $options['annual_reset'] ?? false;
+        $prefix      = $type === 'proforma' ? 'PRO' : 'FAC';
+        $format      = $options['number_format'] ?? 'simple'; // 'simple' or 'detailed'
+        $annualReset = $options['annual_reset']  ?? false;
 
         // Get current year for annual reset
         $currentYear = date('Y');
@@ -179,12 +178,12 @@ class BillingService
         if ($format === 'detailed') {
             // Format: YYYYMMDDHHMMNN (year, month, day, hour, minute, sequential number)
             $timestamp = date('YmdHi');
-            $sequence = $this->getSequenceNumber($type, $annualReset, $currentYear);
-            $number = sprintf('%s-%s%02d', $prefix, $timestamp, $sequence);
+            $sequence  = $this->getSequenceNumber($type, $annualReset, $currentYear);
+            $number    = sprintf('%s-%s%02d', $prefix, $timestamp, $sequence);
         } else {
             // Simple format: PREFIX-XXXX
             $sequence = $this->getSequenceNumber($type, $annualReset, $currentYear);
-            $number = sprintf('%s-%04d', $prefix, $sequence);
+            $number   = sprintf('%s-%04d', $prefix, $sequence);
         }
 
         return $number;
@@ -225,23 +224,23 @@ class BillingService
      */
     private function createInvoiceItem(Invoice $invoice, array $itemData): InvoiceItem
     {
-        $quantity = $itemData['quantity'] ?? 1;
+        $quantity  = $itemData['quantity']   ?? 1;
         $unitPrice = $itemData['unit_price'] ?? 0;
-        $taxRate = $itemData['tax_rate'] ?? 0;
+        $taxRate   = $itemData['tax_rate']   ?? 0;
 
-        $subtotal = $quantity * $unitPrice;
+        $subtotal  = $quantity * $unitPrice;
         $taxAmount = $subtotal * ($taxRate / 100);
-        $total = $subtotal + $taxAmount;
+        $total     = $subtotal + $taxAmount;
 
         return InvoiceItem::create([
-            'invoice_id' => $invoice->id,
+            'invoice_id'  => $invoice->id,
             'description' => $itemData['description'] ?? '',
-            'quantity' => Invoice::amountToBase100($quantity),
-            'unit_price' => Invoice::amountToBase100($unitPrice),
-            'subtotal' => Invoice::amountToBase100($subtotal),
-            'tax_rate' => Invoice::amountToBase100($taxRate),
-            'tax_amount' => Invoice::amountToBase100($taxAmount),
-            'total' => Invoice::amountToBase100($total),
+            'quantity'    => Invoice::amountToBase100($quantity),
+            'unit_price'  => Invoice::amountToBase100($unitPrice),
+            'subtotal'    => Invoice::amountToBase100($subtotal),
+            'tax_rate'    => Invoice::amountToBase100($taxRate),
+            'tax_amount'  => Invoice::amountToBase100($taxAmount),
+            'total'       => Invoice::amountToBase100($total),
         ]);
     }
 
@@ -253,9 +252,9 @@ class BillingService
         return $invoice->items->map(function ($item) {
             return [
                 'description' => $item->description,
-                'quantity' => Invoice::base100ToAmount((int) $item->quantity),
-                'unit_price' => Invoice::base100ToAmount((int) $item->unit_price),
-                'tax_rate' => Invoice::base100ToAmount((int) $item->tax_rate),
+                'quantity'    => Invoice::base100ToAmount((int) $item->quantity),
+                'unit_price'  => Invoice::base100ToAmount((int) $item->unit_price),
+                'tax_rate'    => Invoice::base100ToAmount((int) $item->tax_rate),
             ];
         })->toArray();
     }

@@ -3,8 +3,7 @@
 declare(strict_types=1);
 
 use AichaDigital\Larabill\Models\VatVerification;
-use AichaDigital\Larabill\Services\VatApiIntegrationService;
-use AichaDigital\Larabill\Services\VatVerificationService;
+use AichaDigital\Larabill\Services\{VatApiIntegrationService, VatVerificationService};
 
 it('uses primary API when it works correctly', function () {
     // Mock the API integration service
@@ -15,13 +14,13 @@ it('uses primary API when it works correctly', function () {
         ->with('ESB12345678', 'ES')
         ->once()
         ->andReturn([
-            'is_valid' => true,
-            'vat_number' => 'ESB12345678',
-            'country_code' => 'ES',
-            'company_name' => 'Test Company S.L.',
+            'is_valid'        => true,
+            'vat_number'      => 'ESB12345678',
+            'country_code'    => 'ES',
+            'company_name'    => 'Test Company S.L.',
             'company_address' => 'Test Address 123',
-            'api_source' => 'abstractapi',
-            'response_data' => ['valid' => true],
+            'api_source'      => 'abstractapi',
+            'response_data'   => ['valid' => true],
         ]);
 
     // Fallback API should not be called
@@ -53,13 +52,13 @@ it('falls back to secondary API when primary fails', function () {
         ->with('ESB12345678', 'ES')
         ->once()
         ->andReturn([
-            'is_valid' => true,
-            'vat_number' => 'ESB12345678',
-            'country_code' => 'ES',
-            'company_name' => 'Test Company S.L.',
+            'is_valid'        => true,
+            'vat_number'      => 'ESB12345678',
+            'country_code'    => 'ES',
+            'company_name'    => 'Test Company S.L.',
             'company_address' => 'Test Address 123',
-            'api_source' => 'apilayer',
-            'response_data' => ['valid' => true],
+            'api_source'      => 'apilayer',
+            'response_data'   => ['valid' => true],
         ]);
 
     $service = new VatVerificationService($apiIntegration);
@@ -113,13 +112,13 @@ it('accepts mock responses as valid when no API keys configured', function () {
         ->with('ESB12345678', 'ES')
         ->once()
         ->andReturn([
-            'is_valid' => true,
-            'vat_number' => 'ESB12345678',
-            'country_code' => 'ES',
-            'company_name' => 'Test Company S.L.',
+            'is_valid'        => true,
+            'vat_number'      => 'ESB12345678',
+            'country_code'    => 'ES',
+            'company_name'    => 'Test Company S.L.',
             'company_address' => 'Test Address 123',
-            'api_source' => 'abstractapi',
-            'response_data' => ['valid' => true],
+            'api_source'      => 'abstractapi',
+            'response_data'   => ['valid' => true],
         ]);
 
     // Fallback API should not be called since mock is accepted as valid
@@ -150,13 +149,13 @@ it('caches fallback results correctly', function () {
         ->with('ESB12345678', 'ES')
         ->once()
         ->andReturn([
-            'is_valid' => true,
-            'vat_number' => 'ESB12345678',
-            'country_code' => 'ES',
-            'company_name' => 'Test Company S.L.',
+            'is_valid'        => true,
+            'vat_number'      => 'ESB12345678',
+            'country_code'    => 'ES',
+            'company_name'    => 'Test Company S.L.',
             'company_address' => 'Test Address 123',
-            'api_source' => 'apilayer',
-            'response_data' => ['valid' => true],
+            'api_source'      => 'apilayer',
+            'response_data'   => ['valid' => true],
         ]);
 
     $service = new VatVerificationService($apiIntegration);
@@ -194,13 +193,13 @@ it('handles different primary API configurations', function () {
         ->with('DE123456789', 'DE')
         ->once()
         ->andReturn([
-            'is_valid' => true,
-            'vat_number' => 'DE123456789',
-            'country_code' => 'DE',
-            'company_name' => 'German Company GmbH',
+            'is_valid'        => true,
+            'vat_number'      => 'DE123456789',
+            'country_code'    => 'DE',
+            'company_name'    => 'German Company GmbH',
             'company_address' => 'German Address 123',
-            'api_source' => 'abstractapi',
-            'response_data' => ['valid' => true],
+            'api_source'      => 'abstractapi',
+            'response_data'   => ['valid' => true],
         ]);
 
     $service = new VatVerificationService($apiIntegration);

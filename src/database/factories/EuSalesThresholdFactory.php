@@ -22,18 +22,18 @@ class EuSalesThresholdFactory extends Factory
         $currentYear = now()->year;
 
         return [
-            'company_id' => $this->faker->uuid(),
-            'fiscal_year' => $currentYear,
-            'total_amount' => $this->faker->numberBetween(0, 800000), // €0.00 to €8,000.00 in base 100
-            'threshold_amount' => 1000000, // €10,000.00 in base 100
-            'threshold_exceeded' => $this->faker->boolean(20), // 20% chance of exceeding threshold
-            'exceeded_at' => $this->faker->optional(0.2)->dateTimeBetween('-6 months', 'now'),
-            'notification_sent' => $this->faker->boolean(40),
+            'company_id'           => $this->faker->uuid(),
+            'fiscal_year'          => $currentYear,
+            'total_amount'         => $this->faker->numberBetween(0, 800000), // €0.00 to €8,000.00 in base 100
+            'threshold_amount'     => 1000000, // €10,000.00 in base 100
+            'threshold_exceeded'   => $this->faker->boolean(20), // 20% chance of exceeding threshold
+            'exceeded_at'          => $this->faker->optional(0.2)->dateTimeBetween('-6 months', 'now'),
+            'notification_sent'    => $this->faker->boolean(40),
             'notification_sent_at' => $this->faker->optional(0.4)->dateTimeBetween('-3 months', 'now'),
             'breakdown_by_country' => $this->generateCountryBreakdown(),
-            'last_updated' => $this->faker->dateTimeBetween('-1 month', 'now'),
-            'created_at' => $this->faker->dateTimeBetween('-1 year', 'now'),
-            'updated_at' => $this->faker->dateTimeBetween('-1 month', 'now'),
+            'last_updated'         => $this->faker->dateTimeBetween('-1 month', 'now'),
+            'created_at'           => $this->faker->dateTimeBetween('-1 year', 'now'),
+            'updated_at'           => $this->faker->dateTimeBetween('-1 month', 'now'),
         ];
     }
 
@@ -43,10 +43,10 @@ class EuSalesThresholdFactory extends Factory
     private function generateCountryBreakdown(): array
     {
         $countries = $this->faker->randomElements([
-            'FR', 'DE', 'IT', 'NL', 'BE', 'AT', 'PT', 'IE', 'FI', 'SE'
+            'FR', 'DE', 'IT', 'NL', 'BE', 'AT', 'PT', 'IE', 'FI', 'SE',
         ], $this->faker->numberBetween(2, 5));
 
-        $breakdown = [];
+        $breakdown       = [];
         $remainingAmount = $this->faker->numberBetween(100000, 800000); // €1,000 to €8,000 in base 100
 
         foreach ($countries as $country) {
@@ -60,9 +60,9 @@ class EuSalesThresholdFactory extends Factory
             }
 
             $breakdown[$country] = [
-                'amount' => $amount,
-                'percentage' => 0, // Will be calculated
-                'currency' => 'EUR',
+                'amount'         => $amount,
+                'percentage'     => 0, // Will be calculated
+                'currency'       => 'EUR',
                 'last_sale_date' => $this->faker->dateTimeBetween('-6 months', 'now')->format('Y-m-d'),
             ];
         }
@@ -85,10 +85,10 @@ class EuSalesThresholdFactory extends Factory
             $exceededAmount = $this->faker->numberBetween(1000000, 2000000); // €10,000+ to €20,000+ in base 100
 
             return [
-                'total_amount' => $exceededAmount,
-                'threshold_exceeded' => true,
-                'exceeded_at' => $this->faker->dateTimeBetween('-6 months', 'now'),
-                'notification_sent' => $this->faker->boolean(80),
+                'total_amount'         => $exceededAmount,
+                'threshold_exceeded'   => true,
+                'exceeded_at'          => $this->faker->dateTimeBetween('-6 months', 'now'),
+                'notification_sent'    => $this->faker->boolean(80),
                 'notification_sent_at' => $this->faker->optional(0.8)->dateTimeBetween('-3 months', 'now'),
                 'breakdown_by_country' => $this->generateHighSalesBreakdown($exceededAmount),
             ];
@@ -104,10 +104,10 @@ class EuSalesThresholdFactory extends Factory
             $underAmount = $this->faker->numberBetween(0, 800000); // €0 to €8,000 in base 100
 
             return [
-                'total_amount' => $underAmount,
-                'threshold_exceeded' => false,
-                'exceeded_at' => null,
-                'notification_sent' => false,
+                'total_amount'         => $underAmount,
+                'threshold_exceeded'   => false,
+                'exceeded_at'          => null,
+                'notification_sent'    => false,
                 'notification_sent_at' => null,
                 'breakdown_by_country' => $this->generateCountryBreakdown(),
             ];
@@ -123,10 +123,10 @@ class EuSalesThresholdFactory extends Factory
             $approachingAmount = $this->faker->numberBetween(800000, 950000); // €8,000 to €9,500 in base 100
 
             return [
-                'total_amount' => $approachingAmount,
-                'threshold_exceeded' => false,
-                'exceeded_at' => null,
-                'notification_sent' => false,
+                'total_amount'         => $approachingAmount,
+                'threshold_exceeded'   => false,
+                'exceeded_at'          => null,
+                'notification_sent'    => false,
                 'notification_sent_at' => null,
                 'breakdown_by_country' => $this->generateCountryBreakdown(),
             ];
@@ -140,10 +140,10 @@ class EuSalesThresholdFactory extends Factory
     {
         return $this->state(function (array $attributes) use ($amountInBase100) {
             return [
-                'total_amount' => $amountInBase100,
-                'threshold_exceeded' => $amountInBase100 >= 1000000, // €10,000 in base 100
-                'exceeded_at' => $amountInBase100 >= 1000000 ? $this->faker->dateTimeBetween('-6 months', 'now') : null,
-                'notification_sent' => $amountInBase100 >= 1000000 && $this->faker->boolean(80),
+                'total_amount'         => $amountInBase100,
+                'threshold_exceeded'   => $amountInBase100 >= 1000000, // €10,000 in base 100
+                'exceeded_at'          => $amountInBase100 >= 1000000 ? $this->faker->dateTimeBetween('-6 months', 'now') : null,
+                'notification_sent'    => $amountInBase100 >= 1000000 && $this->faker->boolean(80),
                 'notification_sent_at' => $amountInBase100 >= 1000000 && $this->faker->boolean(80)
                     ? $this->faker->dateTimeBetween('-3 months', 'now')
                     : null,
@@ -159,11 +159,11 @@ class EuSalesThresholdFactory extends Factory
     {
         return $this->state(function (array $attributes) use ($thresholdInBase100) {
             return [
-                'threshold_amount' => $thresholdInBase100,
-                'total_amount' => $this->faker->numberBetween(0, $thresholdInBase100 - 100000), // Under custom threshold
-                'threshold_exceeded' => false,
-                'exceeded_at' => null,
-                'notification_sent' => false,
+                'threshold_amount'     => $thresholdInBase100,
+                'total_amount'         => $this->faker->numberBetween(0, $thresholdInBase100 - 100000), // Under custom threshold
+                'threshold_exceeded'   => false,
+                'exceeded_at'          => null,
+                'notification_sent'    => false,
                 'notification_sent_at' => null,
             ];
         });
@@ -176,13 +176,13 @@ class EuSalesThresholdFactory extends Factory
     {
         return $this->state(function (array $attributes) use ($year) {
             return [
-                'fiscal_year' => $year,
-                'total_amount' => $this->faker->numberBetween(0, 500000), // Lower amounts for past years
-                'threshold_exceeded' => $this->faker->boolean(10), // Lower chance for past years
-                'exceeded_at' => $this->faker->optional(0.1)->dateTimeBetween("-{$year}-01-01", "-{$year}-12-31"),
-                'notification_sent' => $this->faker->boolean(20),
+                'fiscal_year'          => $year,
+                'total_amount'         => $this->faker->numberBetween(0, 500000), // Lower amounts for past years
+                'threshold_exceeded'   => $this->faker->boolean(10), // Lower chance for past years
+                'exceeded_at'          => $this->faker->optional(0.1)->dateTimeBetween("-{$year}-01-01", "-{$year}-12-31"),
+                'notification_sent'    => $this->faker->boolean(20),
                 'notification_sent_at' => $this->faker->optional(0.2)->dateTimeBetween("-{$year}-01-01", "-{$year}-12-31"),
-                'last_updated' => $this->faker->dateTimeBetween("-{$year}-01-01", "-{$year}-12-31"),
+                'last_updated'         => $this->faker->dateTimeBetween("-{$year}-01-01", "-{$year}-12-31"),
             ];
         });
     }
@@ -194,10 +194,10 @@ class EuSalesThresholdFactory extends Factory
     {
         return $this->state(function (array $attributes) {
             return [
-                'total_amount' => $this->faker->numberBetween(1000000, 1500000), // €10,000+ to €15,000+ in base 100
-                'threshold_exceeded' => true,
-                'exceeded_at' => $this->faker->dateTimeBetween('-1 week', 'now'),
-                'notification_sent' => false,
+                'total_amount'         => $this->faker->numberBetween(1000000, 1500000), // €10,000+ to €15,000+ in base 100
+                'threshold_exceeded'   => true,
+                'exceeded_at'          => $this->faker->dateTimeBetween('-1 week', 'now'),
+                'notification_sent'    => false,
                 'notification_sent_at' => null,
             ];
         });
@@ -210,10 +210,10 @@ class EuSalesThresholdFactory extends Factory
     {
         return $this->state(function (array $attributes) {
             return [
-                'total_amount' => $this->faker->numberBetween(1000000, 2000000), // €10,000+ to €20,000+ in base 100
-                'threshold_exceeded' => true,
-                'exceeded_at' => $this->faker->dateTimeBetween('-1 month', '-1 week'),
-                'notification_sent' => true,
+                'total_amount'         => $this->faker->numberBetween(1000000, 2000000), // €10,000+ to €20,000+ in base 100
+                'threshold_exceeded'   => true,
+                'exceeded_at'          => $this->faker->dateTimeBetween('-1 month', '-1 week'),
+                'notification_sent'    => true,
                 'notification_sent_at' => $this->faker->dateTimeBetween('-1 month', '-1 week'),
             ];
         });
@@ -228,10 +228,10 @@ class EuSalesThresholdFactory extends Factory
             $highAmount = $this->faker->numberBetween(1500000, 5000000); // €15,000 to €50,000 in base 100
 
             return [
-                'total_amount' => $highAmount,
-                'threshold_exceeded' => true,
-                'exceeded_at' => $this->faker->dateTimeBetween('-1 year', '-1 month'),
-                'notification_sent' => true,
+                'total_amount'         => $highAmount,
+                'threshold_exceeded'   => true,
+                'exceeded_at'          => $this->faker->dateTimeBetween('-1 year', '-1 month'),
+                'notification_sent'    => true,
                 'notification_sent_at' => $this->faker->dateTimeBetween('-1 year', '-1 month'),
                 'breakdown_by_country' => $this->generateHighSalesBreakdown($highAmount),
             ];
@@ -247,10 +247,10 @@ class EuSalesThresholdFactory extends Factory
             $lowAmount = $this->faker->numberBetween(0, 300000); // €0 to €3,000 in base 100
 
             return [
-                'total_amount' => $lowAmount,
-                'threshold_exceeded' => false,
-                'exceeded_at' => null,
-                'notification_sent' => false,
+                'total_amount'         => $lowAmount,
+                'threshold_exceeded'   => false,
+                'exceeded_at'          => null,
+                'notification_sent'    => false,
                 'notification_sent_at' => null,
                 'breakdown_by_country' => $this->generateCountryBreakdown(),
             ];
@@ -275,10 +275,10 @@ class EuSalesThresholdFactory extends Factory
     private function generateHighSalesBreakdown(int $totalAmount): array
     {
         $countries = $this->faker->randomElements([
-            'FR', 'DE', 'IT', 'NL', 'BE', 'AT', 'PT', 'IE', 'FI', 'SE', 'DK', 'PL', 'CZ', 'HU'
+            'FR', 'DE', 'IT', 'NL', 'BE', 'AT', 'PT', 'IE', 'FI', 'SE', 'DK', 'PL', 'CZ', 'HU',
         ], $this->faker->numberBetween(3, 8));
 
-        $breakdown = [];
+        $breakdown       = [];
         $remainingAmount = $totalAmount;
 
         foreach ($countries as $country) {
@@ -288,16 +288,16 @@ class EuSalesThresholdFactory extends Factory
             } else {
                 // Distribute amount among countries
                 $maxAmount = min($remainingAmount - 100000, 1000000); // Ensure at least €1,000 remains
-                $amount = $this->faker->numberBetween(100000, $maxAmount); // €1,000+ in base 100
+                $amount    = $this->faker->numberBetween(100000, $maxAmount); // €1,000+ in base 100
                 $remainingAmount -= $amount;
             }
 
             $breakdown[$country] = [
-                'amount' => $amount,
-                'percentage' => 0, // Will be calculated
-                'currency' => 'EUR',
+                'amount'         => $amount,
+                'percentage'     => 0, // Will be calculated
+                'currency'       => 'EUR',
                 'last_sale_date' => $this->faker->dateTimeBetween('-1 year', 'now')->format('Y-m-d'),
-                'sales_count' => $this->faker->numberBetween(5, 50),
+                'sales_count'    => $this->faker->numberBetween(5, 50),
             ];
         }
 

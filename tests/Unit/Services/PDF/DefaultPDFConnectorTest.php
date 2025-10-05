@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Services\PDF\DefaultPDFConnector;
 use AichaDigital\Larabill\Models\Invoice;
+use AichaDigital\Larabill\Services\PDF\DefaultPDFConnector;
 
 beforeEach(function () {
-    $this->connector = new DefaultPDFConnector();
+    $this->connector = new DefaultPDFConnector;
 });
 
 it('can be instantiated', function () {
@@ -59,21 +59,21 @@ it('returns metadata', function () {
 });
 
 it('can validate valid invoice', function () {
-    $invoice = new Invoice();
-    $invoice->id = 1;
-    $invoice->number = 'TEST-001';
-    $invoice->type = 'invoice';
-    $invoice->status = 'draft';
-    $invoice->user_id = 'test-user';
-    $invoice->subtotal = 10000;
+    $invoice             = new Invoice;
+    $invoice->id         = 1;
+    $invoice->number     = 'TEST-001';
+    $invoice->type       = 'invoice';
+    $invoice->status     = 'draft';
+    $invoice->user_id    = 'test-user';
+    $invoice->subtotal   = 10000;
     $invoice->tax_amount = 2100;
-    $invoice->total = 12100;
+    $invoice->total      = 12100;
 
     expect($this->connector->validateInvoice($invoice))->toBeTrue();
 });
 
 it('rejects invalid invoice', function () {
-    $invoice = new Invoice();
+    $invoice     = new Invoice;
     $invoice->id = 999;
     // Missing required fields
 
@@ -81,15 +81,15 @@ it('rejects invalid invoice', function () {
 });
 
 it('can generate QR for valid invoice', function () {
-    $invoice = new Invoice();
-    $invoice->id = 1;
-    $invoice->number = 'TEST-001';
-    $invoice->type = 'invoice';
-    $invoice->status = 'draft';
-    $invoice->user_id = 'test-user';
-    $invoice->subtotal = 10000;
+    $invoice             = new Invoice;
+    $invoice->id         = 1;
+    $invoice->number     = 'TEST-001';
+    $invoice->type       = 'invoice';
+    $invoice->status     = 'draft';
+    $invoice->user_id    = 'test-user';
+    $invoice->subtotal   = 10000;
     $invoice->tax_amount = 2100;
-    $invoice->total = 12100;
+    $invoice->total      = 12100;
 
     $result = $this->connector->generateQR($invoice);
 
@@ -102,7 +102,7 @@ it('can generate QR for valid invoice', function () {
 });
 
 it('handles QR generation errors gracefully', function () {
-    $invoice = new Invoice();
+    $invoice     = new Invoice;
     $invoice->id = 999;
     // Missing required fields
 
@@ -115,15 +115,15 @@ it('handles QR generation errors gracefully', function () {
 });
 
 it('includes invoice data in QR', function () {
-    $invoice = new Invoice();
-    $invoice->id = 1;
-    $invoice->number = 'TEST-001';
-    $invoice->type = 'invoice';
-    $invoice->status = 'draft';
-    $invoice->user_id = 'test-user';
-    $invoice->subtotal = 10000;
+    $invoice             = new Invoice;
+    $invoice->id         = 1;
+    $invoice->number     = 'TEST-001';
+    $invoice->type       = 'invoice';
+    $invoice->status     = 'draft';
+    $invoice->user_id    = 'test-user';
+    $invoice->subtotal   = 10000;
     $invoice->tax_amount = 2100;
-    $invoice->total = 12100;
+    $invoice->total      = 12100;
 
     $result = $this->connector->generateQR($invoice);
 
@@ -137,11 +137,11 @@ it('includes invoice data in QR', function () {
 
 it('can be configured with custom settings', function () {
     $config = [
-        'qr_base_url' => 'https://example.com',
+        'qr_base_url'             => 'https://example.com',
         'qr_include_invoice_data' => false,
     ];
 
-    $connector = new DefaultPDFConnector($config);
+    $connector       = new DefaultPDFConnector($config);
     $connectorConfig = $connector->getConfiguration();
 
     expect($connectorConfig['qr_base_url'])->toBe('https://example.com');
@@ -149,18 +149,18 @@ it('can be configured with custom settings', function () {
 });
 
 it('generates QR URL with custom base URL', function () {
-    $config = ['qr_base_url' => 'https://example.com'];
+    $config    = ['qr_base_url' => 'https://example.com'];
     $connector = new DefaultPDFConnector($config);
 
-    $invoice = new Invoice();
-    $invoice->id = 1;
-    $invoice->number = 'TEST-001';
-    $invoice->type = 'invoice';
-    $invoice->status = 'draft';
-    $invoice->user_id = 'test-user';
-    $invoice->subtotal = 10000;
+    $invoice             = new Invoice;
+    $invoice->id         = 1;
+    $invoice->number     = 'TEST-001';
+    $invoice->type       = 'invoice';
+    $invoice->status     = 'draft';
+    $invoice->user_id    = 'test-user';
+    $invoice->subtotal   = 10000;
     $invoice->tax_amount = 2100;
-    $invoice->total = 12100;
+    $invoice->total      = 12100;
 
     $result = $connector->generateQR($invoice);
 

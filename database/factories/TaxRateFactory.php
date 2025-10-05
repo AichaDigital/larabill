@@ -25,13 +25,13 @@ class TaxRateFactory extends Factory
     public function definition(): array
     {
         return [
-            'country_code' => 'ES',
-            'country_name' => 'Spain',
-            'tax_name' => 'IVA General',
-            'tax_type' => 'standard',
-            'rate' => TaxRate::percentageToBase100(21.0), // 2100
-            'is_active' => true,
-            'applies_to' => 'general_goods_services',
+            'country_code'       => 'ES',
+            'country_name'       => 'Spain',
+            'tax_name'           => 'IVA General',
+            'tax_type'           => 'standard',
+            'rate'               => TaxRate::percentageToBase100(21.0), // 2100
+            'is_active'          => true,
+            'applies_to'         => 'general_goods_services',
             'special_conditions' => null,
         ];
     }
@@ -53,9 +53,9 @@ class TaxRateFactory extends Factory
     public function spanishGeneral(): static
     {
         return $this->spanish()->state(fn (array $attributes) => [
-            'tax_name' => 'IVA General',
-            'tax_type' => 'standard',
-            'rate' => TaxRate::percentageToBase100(21.0),
+            'tax_name'   => 'IVA General',
+            'tax_type'   => 'standard',
+            'rate'       => TaxRate::percentageToBase100(21.0),
             'applies_to' => 'general_goods_services',
         ]);
     }
@@ -66,9 +66,9 @@ class TaxRateFactory extends Factory
     public function spanishReduced(): static
     {
         return $this->spanish()->state(fn (array $attributes) => [
-            'tax_name' => 'IVA Reducido',
-            'tax_type' => 'reduced',
-            'rate' => TaxRate::percentageToBase100(10.0),
+            'tax_name'   => 'IVA Reducido',
+            'tax_type'   => 'reduced',
+            'rate'       => TaxRate::percentageToBase100(10.0),
             'applies_to' => 'reduced_goods_services',
         ]);
     }
@@ -79,9 +79,9 @@ class TaxRateFactory extends Factory
     public function spanishSuperReduced(): static
     {
         return $this->spanish()->state(fn (array $attributes) => [
-            'tax_name' => 'IVA Superreducido',
-            'tax_type' => 'super_reduced',
-            'rate' => TaxRate::percentageToBase100(4.0),
+            'tax_name'   => 'IVA Superreducido',
+            'tax_type'   => 'super_reduced',
+            'rate'       => TaxRate::percentageToBase100(4.0),
             'applies_to' => 'super_reduced_goods_services',
         ]);
     }
@@ -94,10 +94,10 @@ class TaxRateFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'country_code' => 'DE',
             'country_name' => 'Germany',
-            'tax_name' => 'MwSt',
-            'tax_type' => 'standard',
-            'rate' => TaxRate::percentageToBase100(19.0),
-            'applies_to' => 'general_goods_services',
+            'tax_name'     => 'MwSt',
+            'tax_type'     => 'standard',
+            'rate'         => TaxRate::percentageToBase100(19.0),
+            'applies_to'   => 'general_goods_services',
         ]);
     }
 
@@ -109,10 +109,10 @@ class TaxRateFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'country_code' => 'FR',
             'country_name' => 'France',
-            'tax_name' => 'TVA',
-            'tax_type' => 'standard',
-            'rate' => TaxRate::percentageToBase100(20.0),
-            'applies_to' => 'general_goods_services',
+            'tax_name'     => 'TVA',
+            'tax_type'     => 'standard',
+            'rate'         => TaxRate::percentageToBase100(20.0),
+            'applies_to'   => 'general_goods_services',
         ]);
     }
 
@@ -122,12 +122,12 @@ class TaxRateFactory extends Factory
     public function canaryIslands(): static
     {
         return $this->state(fn (array $attributes) => [
-            'country_code' => 'IC',
-            'country_name' => 'Canary Islands',
-            'tax_name' => 'IGIC',
-            'tax_type' => 'standard',
-            'rate' => TaxRate::percentageToBase100(7.0),
-            'applies_to' => 'general_goods_services',
+            'country_code'       => 'IC',
+            'country_name'       => 'Canary Islands',
+            'tax_name'           => 'IGIC',
+            'tax_type'           => 'standard',
+            'rate'               => TaxRate::percentageToBase100(7.0),
+            'applies_to'         => 'general_goods_services',
             'special_conditions' => ['exempt_from_spanish_vat' => true],
         ]);
     }
@@ -138,12 +138,12 @@ class TaxRateFactory extends Factory
     public function ceuta(): static
     {
         return $this->state(fn (array $attributes) => [
-            'country_code' => 'CE',
-            'country_name' => 'Ceuta',
-            'tax_name' => 'IPSI',
-            'tax_type' => 'special',
-            'rate' => TaxRate::percentageToBase100(0.0),
-            'applies_to' => 'special_territory',
+            'country_code'       => 'CE',
+            'country_name'       => 'Ceuta',
+            'tax_name'           => 'IPSI',
+            'tax_type'           => 'special',
+            'rate'               => TaxRate::percentageToBase100(0.0),
+            'applies_to'         => 'special_territory',
             'special_conditions' => ['exempt_from_spanish_vat' => true],
         ]);
     }
@@ -154,12 +154,12 @@ class TaxRateFactory extends Factory
     public function melilla(): static
     {
         return $this->state(fn (array $attributes) => [
-            'country_code' => 'ML',
-            'country_name' => 'Melilla',
-            'tax_name' => 'IPSI',
-            'tax_type' => 'special',
-            'rate' => TaxRate::percentageToBase100(0.0),
-            'applies_to' => 'special_territory',
+            'country_code'       => 'ML',
+            'country_name'       => 'Melilla',
+            'tax_name'           => 'IPSI',
+            'tax_type'           => 'special',
+            'rate'               => TaxRate::percentageToBase100(0.0),
+            'applies_to'         => 'special_territory',
             'special_conditions' => ['exempt_from_spanish_vat' => true],
         ]);
     }

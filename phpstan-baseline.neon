@@ -1,0 +1,2659 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Class AichaDigital\\Larabill\\Database\\Factories\\TaxRateFactory extends generic class Illuminate\\Database\\Eloquent\\Factories\\Factory but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: database/factories/TaxRateFactory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Contracts\\PDFConnectorInterface\:\:generateQR\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Contracts/PDFConnectorInterface.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Contracts\\PDFConnectorInterface\:\:getAuthentication\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Contracts/PDFConnectorInterface.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Contracts\\PDFConnectorInterface\:\:getConfiguration\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Contracts/PDFConnectorInterface.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Contracts\\PDFConnectorInterface\:\:getMetadata\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Contracts/PDFConnectorInterface.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Contracts\\PDFConnectorInterface\:\:getRequiredFields\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Contracts/PDFConnectorInterface.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Contracts\\PDFConnectorInterface\:\:getSupportedCountries\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Contracts/PDFConnectorInterface.php
+
+		-
+			message: '#^Class AichaDigital\\Larabill\\Models\\CompanyConfig has PHPDoc tag @property for property \$custom_threshold_rules with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/CompanyConfig.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyConfig\:\:getCurrentEuSalesAmountAttribute\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/CompanyConfig.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyConfig\:\:getCustomThresholdRule\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/CompanyConfig.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyConfig\:\:getEuSalesThresholdAttribute\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/CompanyConfig.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyConfig\:\:setCurrentEuSalesAmountAttribute\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/CompanyConfig.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyConfig\:\:setCustomThresholdRule\(\) has parameter \$rule with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/CompanyConfig.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyConfig\:\:setEuSalesThresholdAttribute\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/CompanyConfig.php
+
+		-
+			message: '#^Class AichaDigital\\Larabill\\Models\\CompanyFiscalConfig has PHPDoc tag @property for property \$custom_threshold_rules with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/CompanyFiscalConfig.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyFiscalConfig\:\:getCurrentEuSalesAmountAttribute\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/CompanyFiscalConfig.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyFiscalConfig\:\:getCustomThresholdRule\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/CompanyFiscalConfig.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyFiscalConfig\:\:getEuSalesThresholdAttribute\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/CompanyFiscalConfig.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyFiscalConfig\:\:scopeApplyDestinationVat\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/CompanyFiscalConfig.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyFiscalConfig\:\:scopeApplyDestinationVat\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/CompanyFiscalConfig.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyFiscalConfig\:\:scopeAutoApplyEnabled\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/CompanyFiscalConfig.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyFiscalConfig\:\:scopeAutoApplyEnabled\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/CompanyFiscalConfig.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyFiscalConfig\:\:scopeByCompany\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/CompanyFiscalConfig.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyFiscalConfig\:\:scopeByCompany\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/CompanyFiscalConfig.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyFiscalConfig\:\:scopeByFiscalYear\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/CompanyFiscalConfig.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyFiscalConfig\:\:scopeByFiscalYear\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/CompanyFiscalConfig.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyFiscalConfig\:\:scopeNeedsNotification\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/CompanyFiscalConfig.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyFiscalConfig\:\:scopeNeedsNotification\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/CompanyFiscalConfig.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyFiscalConfig\:\:scopeThresholdExceeded\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/CompanyFiscalConfig.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyFiscalConfig\:\:scopeThresholdExceeded\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/CompanyFiscalConfig.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyFiscalConfig\:\:setCurrentEuSalesAmountAttribute\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/CompanyFiscalConfig.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyFiscalConfig\:\:setCustomThresholdRule\(\) has parameter \$rule with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/CompanyFiscalConfig.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyFiscalConfig\:\:setEuSalesThresholdAttribute\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/CompanyFiscalConfig.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyTemplateSettings\:\:getCompanySettings\(\) return type with generic class Illuminate\\Database\\Eloquent\\Collection does not specify its types\: TKey, TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CompanyTemplateSettings.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyTemplateSettings\:\:getScopes\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/CompanyTemplateSettings.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyTemplateSettings\:\:getSettingTypes\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/CompanyTemplateSettings.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyTemplateSettings\:\:getTemplateSettings\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/CompanyTemplateSettings.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyTemplateSettings\:\:scopeActive\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CompanyTemplateSettings.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyTemplateSettings\:\:scopeActive\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CompanyTemplateSettings.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyTemplateSettings\:\:scopeByInvoiceType\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CompanyTemplateSettings.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyTemplateSettings\:\:scopeByInvoiceType\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CompanyTemplateSettings.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyTemplateSettings\:\:scopeByScope\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CompanyTemplateSettings.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyTemplateSettings\:\:scopeByScope\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CompanyTemplateSettings.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyTemplateSettings\:\:scopeBySettingType\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CompanyTemplateSettings.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyTemplateSettings\:\:scopeBySettingType\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CompanyTemplateSettings.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyTemplateSettings\:\:scopeForCompany\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CompanyTemplateSettings.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CompanyTemplateSettings\:\:scopeForCompany\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CompanyTemplateSettings.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:calculateSafeAverage\(\) has parameter \$rates with generic class Illuminate\\Support\\Collection but does not specify its types\: TKey, TValue$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:calculateSafeMax\(\) has parameter \$rates with generic class Illuminate\\Support\\Collection but does not specify its types\: TKey, TValue$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:calculateSafeMin\(\) has parameter \$rates with generic class Illuminate\\Support\\Collection but does not specify its types\: TKey, TValue$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:extractStandardRatesAsPercentages\(\) has parameter \$collection with generic class Illuminate\\Database\\Eloquent\\Collection but does not specify its types\: TKey, TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:extractStandardRatesAsPercentages\(\) return type with generic class Illuminate\\Support\\Collection does not specify its types\: TKey, TValue$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:findByStandardRateRange\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:findSimilarRates\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:getAllCategories\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:getAllRates\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:getCountriesNeedingRateUpdate\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:getEuCountries\(\) return type with generic class Illuminate\\Database\\Eloquent\\Collection does not specify its types\: TKey, TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:getExemptCategories\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:getFormattedReducedRates\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:getReducedRates\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:getReducedRatesAsPercentages\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:getVatRateStatistics\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:getVatRateStatisticsAdjusted\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:importFromDataSource\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:reducedRates\(\) return type with generic class Illuminate\\Database\\Eloquent\\Casts\\Attribute does not specify its types\: TGet, TSet$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:scopeActive\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:scopeActive\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:scopeByCountry\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:scopeByCountry\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:scopeByDataSource\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:scopeByDataSource\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:scopeByRate\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:scopeByRate\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:scopeInactive\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:scopeInactive\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:scopeUpdatedAfter\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:scopeUpdatedAfter\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:updateVatRates\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Unsafe call to private method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:calculateSafeAverage\(\) through static\:\:\.$#'
+			identifier: staticClassAccess.privateMethod
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Unsafe call to private method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:calculateSafeMax\(\) through static\:\:\.$#'
+			identifier: staticClassAccess.privateMethod
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Unsafe call to private method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:calculateSafeMin\(\) through static\:\:\.$#'
+			identifier: staticClassAccess.privateMethod
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Unsafe call to private method AichaDigital\\Larabill\\Models\\CountryVatRate\:\:extractStandardRatesAsPercentages\(\) through static\:\:\.$#'
+			identifier: staticClassAccess.privateMethod
+			count: 1
+			path: src/Models/CountryVatRate.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: src/Models/EuSalesThreshold.php
+
+		-
+			message: '#^Class AichaDigital\\Larabill\\Models\\EuSalesThreshold has PHPDoc tag @property for property \$breakdown_by_country with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/EuSalesThreshold.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\EuSalesThreshold\:\:getBreakdownByCountryAttribute\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/EuSalesThreshold.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\EuSalesThreshold\:\:getBreakdownByCountryAttribute\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/EuSalesThreshold.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\EuSalesThreshold\:\:getCompaniesExceedingThreshold\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/EuSalesThreshold.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\EuSalesThreshold\:\:getCompaniesNeedingNotification\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/EuSalesThreshold.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\EuSalesThreshold\:\:getCountriesWithSales\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/EuSalesThreshold.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\EuSalesThreshold\:\:getSalesGrowthByCompany\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/EuSalesThreshold.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\EuSalesThreshold\:\:getThresholdStatistics\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/EuSalesThreshold.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\EuSalesThreshold\:\:getTopCountriesBySales\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/EuSalesThreshold.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\EuSalesThreshold\:\:getTopCountriesBySalesForInstance\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/EuSalesThreshold.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\EuSalesThreshold\:\:scopeByCompany\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/EuSalesThreshold.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\EuSalesThreshold\:\:scopeByCompany\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/EuSalesThreshold.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\EuSalesThreshold\:\:scopeByFiscalYear\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/EuSalesThreshold.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\EuSalesThreshold\:\:scopeByFiscalYear\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/EuSalesThreshold.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\EuSalesThreshold\:\:scopeCloseToThreshold\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/EuSalesThreshold.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\EuSalesThreshold\:\:scopeCloseToThreshold\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/EuSalesThreshold.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\EuSalesThreshold\:\:scopeCurrentFiscalYear\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/EuSalesThreshold.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\EuSalesThreshold\:\:scopeCurrentFiscalYear\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/EuSalesThreshold.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\EuSalesThreshold\:\:scopeExceeded\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/EuSalesThreshold.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\EuSalesThreshold\:\:scopeExceeded\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/EuSalesThreshold.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\EuSalesThreshold\:\:scopeNeedsNotification\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/EuSalesThreshold.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\EuSalesThreshold\:\:scopeNeedsNotification\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/EuSalesThreshold.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\EuSalesThreshold\:\:scopeThresholdExceeded\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/EuSalesThreshold.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\EuSalesThreshold\:\:scopeThresholdExceeded\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/EuSalesThreshold.php
+
+		-
+			message: '#^Parameter \#1 \$base100 of static method AichaDigital\\Larabill\\Models\\EuSalesThreshold\:\:base100ToAmount\(\) expects int, float given\.$#'
+			identifier: argument.type
+			count: 2
+			path: src/Models/EuSalesThreshold.php
+
+		-
+			message: '#^Class AichaDigital\\Larabill\\Models\\Invoice has PHPDoc tag @property for property \$fiscal_data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/Invoice.php
+
+		-
+			message: '#^Class AichaDigital\\Larabill\\Models\\Invoice has PHPDoc tag @property for property \$vat_verification with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/Invoice.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\Invoice\:\:generatePDF\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/Invoice.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\Invoice\:\:items\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/Invoice.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\Invoice\:\:user\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/Invoice.php
+
+		-
+			message: '#^Unable to resolve the template type TRelatedModel in call to method Illuminate\\Database\\Eloquent\\Model\:\:belongsTo\(\)$#'
+			identifier: argument.templateType
+			count: 1
+			path: src/Models/Invoice.php
+
+		-
+			message: '#^Unable to resolve the template type TRelatedModel in call to method Illuminate\\Database\\Eloquent\\Model\:\:hasMany\(\)$#'
+			identifier: argument.templateType
+			count: 1
+			path: src/Models/Invoice.php
+
+		-
+			message: '#^Binary operation "\*" between string and string results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 2
+			path: src/Models/InvoiceItem.php
+
+		-
+			message: '#^Binary operation "\+" between string and string results in an error\.$#'
+			identifier: binaryOp.invalid
+			count: 1
+			path: src/Models/InvoiceItem.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceItem\:\:getQuantityAttribute\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/InvoiceItem.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceItem\:\:getSubtotalAttribute\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/InvoiceItem.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceItem\:\:getTaxAmountAttribute\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/InvoiceItem.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceItem\:\:getTaxRateAttribute\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/InvoiceItem.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceItem\:\:getTotalAttribute\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/InvoiceItem.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceItem\:\:getUnitPriceAttribute\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/InvoiceItem.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceItem\:\:invoice\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/InvoiceItem.php
+
+		-
+			message: '#^Unable to resolve the template type TRelatedModel in call to method Illuminate\\Database\\Eloquent\\Model\:\:belongsTo\(\)$#'
+			identifier: argument.templateType
+			count: 1
+			path: src/Models/InvoiceItem.php
+
+		-
+			message: '#^Class AichaDigital\\Larabill\\Models\\InvoiceTemplate has PHPDoc tag @property for property \$settings with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/InvoiceTemplate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceTemplate\:\:getActiveForType\(\) return type with generic class Illuminate\\Database\\Eloquent\\Collection does not specify its types\: TKey, TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/InvoiceTemplate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceTemplate\:\:getAvailableTypes\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/InvoiceTemplate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceTemplate\:\:getSetting\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/InvoiceTemplate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceTemplate\:\:getSetting\(\) has parameter \$default with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/InvoiceTemplate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceTemplate\:\:getStatistics\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/InvoiceTemplate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceTemplate\:\:scopeActive\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/InvoiceTemplate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceTemplate\:\:scopeActive\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/InvoiceTemplate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceTemplate\:\:scopeByType\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/InvoiceTemplate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceTemplate\:\:scopeByType\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/InvoiceTemplate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceTemplate\:\:scopeDefault\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/InvoiceTemplate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceTemplate\:\:scopeDefault\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/InvoiceTemplate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceTemplate\:\:setSetting\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/InvoiceTemplate.php
+
+		-
+			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\RoiQuery\:\:\$legal_retention_until\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/RoiQuery.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\RoiQuery\:\:createApiQuery\(\) has parameter \$responseData with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/RoiQuery.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\RoiQuery\:\:createCacheQuery\(\) has parameter \$responseData with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/RoiQuery.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\RoiQuery\:\:createQuery\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/RoiQuery.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\RoiQuery\:\:findByUserAndDateRange\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/RoiQuery.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\RoiQuery\:\:findByUserAndVat\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/RoiQuery.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\RoiQuery\:\:getExpiredLegalRetention\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/RoiQuery.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\RoiQuery\:\:getQueryStatistics\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/RoiQuery.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\RoiQuery\:\:scopeApiQueries\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/RoiQuery.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\RoiQuery\:\:scopeApiQueries\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/RoiQuery.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\RoiQuery\:\:scopeByCountry\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/RoiQuery.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\RoiQuery\:\:scopeByCountry\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/RoiQuery.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\RoiQuery\:\:scopeByDateRange\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/RoiQuery.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\RoiQuery\:\:scopeByDateRange\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/RoiQuery.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\RoiQuery\:\:scopeByQueryType\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/RoiQuery.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\RoiQuery\:\:scopeByQueryType\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/RoiQuery.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\RoiQuery\:\:scopeByUser\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/RoiQuery.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\RoiQuery\:\:scopeByUser\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/RoiQuery.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\RoiQuery\:\:scopeCacheQueries\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/RoiQuery.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\RoiQuery\:\:scopeCacheQueries\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/RoiQuery.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\RoiQuery\:\:scopeLegalRetention\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/RoiQuery.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\RoiQuery\:\:scopeLegalRetention\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/RoiQuery.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\RoiQuery\:\:scopeUsedCache\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/RoiQuery.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\RoiQuery\:\:scopeUsedCache\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/RoiQuery.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\RoiQuery\:\:user\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/RoiQuery.php
+
+		-
+			message: '#^Unable to resolve the template type TRelatedModel in call to method Illuminate\\Database\\Eloquent\\Model\:\:belongsTo\(\)$#'
+			identifier: argument.templateType
+			count: 1
+			path: src/Models/RoiQuery.php
+
+		-
+			message: '#^Class AichaDigital\\Larabill\\Models\\TaxRate has PHPDoc tag @property for property \$special_conditions with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/TaxRate.php
+
+		-
+			message: '#^Class AichaDigital\\Larabill\\Models\\TaxRate uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/TaxRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\TaxRate\:\:getEURates\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/TaxRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\TaxRate\:\:getRateAttribute\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/TaxRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\TaxRate\:\:getSpanishRates\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/TaxRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\TaxRate\:\:scopeActive\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/TaxRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\TaxRate\:\:scopeActive\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/TaxRate.php
+
+		-
+			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\UserRoiVerification\:\:\$expired_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/UserRoiVerification.php
+
+		-
+			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\UserRoiVerification\:\:\$is_roi\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/UserRoiVerification.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\UserRoiVerification\:\:createOrUpdateRoiVerification\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/UserRoiVerification.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\UserRoiVerification\:\:scopeByCountry\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/UserRoiVerification.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\UserRoiVerification\:\:scopeByCountry\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/UserRoiVerification.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\UserRoiVerification\:\:scopeByUser\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/UserRoiVerification.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\UserRoiVerification\:\:scopeByUser\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/UserRoiVerification.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\UserRoiVerification\:\:scopeExpired\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/UserRoiVerification.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\UserRoiVerification\:\:scopeExpired\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/UserRoiVerification.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\UserRoiVerification\:\:scopeRoi\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/UserRoiVerification.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\UserRoiVerification\:\:scopeRoi\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/UserRoiVerification.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\UserRoiVerification\:\:scopeValid\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/UserRoiVerification.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\UserRoiVerification\:\:scopeValid\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/UserRoiVerification.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\UserRoiVerification\:\:user\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/UserRoiVerification.php
+
+		-
+			message: '#^Unable to resolve the template type TRelatedModel in call to method Illuminate\\Database\\Eloquent\\Model\:\:belongsTo\(\)$#'
+			identifier: argument.templateType
+			count: 1
+			path: src/Models/UserRoiVerification.php
+
+		-
+			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\UserTaxInfo\:\:\$user_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/UserTaxInfo.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\UserTaxInfo\:\:scopeCurrent\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/UserTaxInfo.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\UserTaxInfo\:\:scopeCurrent\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/UserTaxInfo.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\UserTaxInfo\:\:user\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/UserTaxInfo.php
+
+		-
+			message: '#^Unable to resolve the template type TRelatedModel in call to method Illuminate\\Database\\Eloquent\\Model\:\:belongsTo\(\)$#'
+			identifier: argument.templateType
+			count: 1
+			path: src/Models/UserTaxInfo.php
+
+		-
+			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\VatCategory\:\:\$parentCategory\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Class AichaDigital\\Larabill\\Models\\VatCategory has PHPDoc tag @property for property \$special_conditions with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:childCategories\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:findByCountry\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:findByType\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:getAvailableCategoryTypes\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:getByCategoryType\(\) return type with generic class Illuminate\\Database\\Eloquent\\Collection does not specify its types\: TKey, TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:getByCountry\(\) return type with generic class Illuminate\\Database\\Eloquent\\Collection does not specify its types\: TKey, TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:getByCountryAndType\(\) return type with generic class Illuminate\\Database\\Eloquent\\Collection does not specify its types\: TKey, TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:getCategoryStatistics\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:getCategoryTypes\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:getSpecialConditions\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:getVatRateAttribute\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:parentCategory\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:scopeActive\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:scopeActive\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:scopeByCategoryType\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:scopeByCategoryType\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:scopeByCountry\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:scopeByCountry\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:scopeByType\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:scopeByType\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:scopeForBoth\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:scopeForBoth\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:scopeForProducts\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:scopeForProducts\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:scopeForServices\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:scopeForServices\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:scopeInactive\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:scopeInactive\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:scopeOrdered\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:scopeOrdered\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:setSpecialConditions\(\) has parameter \$conditions with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatCategory\:\:setVatRateAttribute\(\) has parameter \$value with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/VatCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatVerification\:\:scopeValid\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/VatVerification.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\VatVerification\:\:scopeValid\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/VatVerification.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$description\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Services/BillingService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$quantity\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Services/BillingService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$tax_rate\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Services/BillingService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$unit_price\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Services/BillingService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\BillingService\:\:calculateSubtotal\(\) has parameter \$items with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/BillingService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\BillingService\:\:convertToInvoice\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/BillingService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\BillingService\:\:createInvoice\(\) has parameter \$invoiceData with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/BillingService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\BillingService\:\:createInvoice\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/BillingService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\BillingService\:\:createInvoiceItem\(\) has parameter \$itemData with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/BillingService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\BillingService\:\:createProforma\(\) has parameter \$invoiceData with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/BillingService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\BillingService\:\:createProforma\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/BillingService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\BillingService\:\:generateInvoiceNumber\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/BillingService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\BillingService\:\:getInvoiceItemsData\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/BillingService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: src/Services/BillingService.php
+
+		-
+			message: '#^Property AichaDigital\\Larabill\\Services\\BillingService\:\:\$invoiceCounter is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: src/Services/BillingService.php
+
+		-
+			message: '#^Return type of call to method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: method.unresolvableReturnType
+			count: 1
+			path: src/Services/BillingService.php
+
+		-
+			message: '#^Dead catch \- Exception is never thrown in the try block\.$#'
+			identifier: catch.neverThrown
+			count: 1
+			path: src/Services/CacheService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CacheService\:\:countEntriesByPattern\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: src/Services/CacheService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CacheService\:\:getCacheStatistics\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CacheService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CacheService\:\:getCompanyConfig\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CacheService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CacheService\:\:getDriverInfo\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CacheService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CacheService\:\:getKeyPatterns\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CacheService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CacheService\:\:getRoiVerification\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CacheService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CacheService\:\:getStats\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CacheService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CacheService\:\:getVatRates\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CacheService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CacheService\:\:storeCompanyConfig\(\) has parameter \$config with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CacheService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CacheService\:\:storeRoiVerification\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CacheService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CacheService\:\:storeVatRates\(\) has parameter \$rates with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CacheService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CacheService\:\:warmUp\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CacheService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CacheService\:\:warmUpCompanyConfigs\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CacheService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CacheService\:\:warmUpVatRates\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CacheService.php
+
+		-
+			message: '#^Offset 0 on non\-empty\-list\<string\> on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 3
+			path: src/Services/CacheService.php
+
+		-
+			message: '#^Property AichaDigital\\Larabill\\Services\\CacheService\:\:\$entryCounts type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CacheService.php
+
+		-
+			message: '#^Property AichaDigital\\Larabill\\Services\\CacheService\:\:\$tags type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CacheService.php
+
+		-
+			message: '#^Property AichaDigital\\Larabill\\Services\\CacheService\:\:\$ttl type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CacheService.php
+
+		-
+			message: '#^Unable to resolve the template type TCacheValue in call to method Illuminate\\Cache\\Repository\:\:remember\(\)$#'
+			identifier: argument.templateType
+			count: 1
+			path: src/Services/CacheService.php
+
+		-
+			message: '#^Unable to resolve the template type TCacheValue in call to method Illuminate\\Cache\\Repository\:\:rememberForever\(\)$#'
+			identifier: argument.templateType
+			count: 1
+			path: src/Services/CacheService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CompanyConfigService\:\:bulkUpdateCompanyConfigs\(\) has parameter \$companyUpdates with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CompanyConfigService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CompanyConfigService\:\:createCompanyConfig\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CompanyConfigService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CompanyConfigService\:\:createCompanyConfigWithMapping\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CompanyConfigService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CompanyConfigService\:\:getAllCompanyConfigs\(\) return type with generic class Illuminate\\Database\\Eloquent\\Collection does not specify its types\: TKey, TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Services/CompanyConfigService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CompanyConfigService\:\:getCompaniesNeedingNotification\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CompanyConfigService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CompanyConfigService\:\:getCompanyConfigStatistics\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CompanyConfigService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CompanyConfigService\:\:getCompanyConfigsByDestinationVatStatus\(\) return type with generic class Illuminate\\Database\\Eloquent\\Collection does not specify its types\: TKey, TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Services/CompanyConfigService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CompanyConfigService\:\:getCompanyConfigsByFiscalYear\(\) return type with generic class Illuminate\\Database\\Eloquent\\Collection does not specify its types\: TKey, TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Services/CompanyConfigService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CompanyConfigService\:\:getCompanyConfigsByFiscalYearRange\(\) return type with generic class Illuminate\\Database\\Eloquent\\Collection does not specify its types\: TKey, TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Services/CompanyConfigService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CompanyConfigService\:\:getCompanyConfigsByThresholdStatus\(\) return type with generic class Illuminate\\Database\\Eloquent\\Collection does not specify its types\: TKey, TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Services/CompanyConfigService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CompanyConfigService\:\:getCompanyConfigsNeedingNotification\(\) return type with generic class Illuminate\\Database\\Eloquent\\Collection does not specify its types\: TKey, TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Services/CompanyConfigService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CompanyConfigService\:\:getCompanyStatistics\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CompanyConfigService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CompanyConfigService\:\:getConfiguration\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CompanyConfigService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CompanyConfigService\:\:getDefaultCompanyConfig\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CompanyConfigService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CompanyConfigService\:\:getDefaultConfig\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CompanyConfigService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CompanyConfigService\:\:getOrCreateCompanyConfig\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CompanyConfigService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CompanyConfigService\:\:handleError\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CompanyConfigService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CompanyConfigService\:\:mergeWithDefaults\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CompanyConfigService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CompanyConfigService\:\:mergeWithDefaults\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CompanyConfigService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CompanyConfigService\:\:updateCompanyConfig\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CompanyConfigService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CompanyConfigService\:\:updateConfig\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CompanyConfigService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CompanyConfigService\:\:updateConfiguration\(\) has parameter \$newConfig with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CompanyConfigService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CompanyConfigService\:\:validateCompanyConfigData\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CompanyConfigService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CompanyConfigService\:\:validateConfigData\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CompanyConfigService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CompanyConfigService\:\:validateConfigData\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/CompanyConfigService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\DestinationVatService\:\:calculateDestinationVat\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/DestinationVatService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\DestinationVatService\:\:calculateVatSavings\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/DestinationVatService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\DestinationVatService\:\:getAvailableDestinationCountries\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/DestinationVatService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\DestinationVatService\:\:getCompaniesExceedingThreshold\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Services/DestinationVatService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\DestinationVatService\:\:getCompaniesNeedingNotification\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Services/DestinationVatService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\DestinationVatService\:\:getConfiguration\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/DestinationVatService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\DestinationVatService\:\:getDestinationVatStatistics\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/DestinationVatService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\DestinationVatService\:\:getEuCountriesWithVatRates\(\) return type with generic class Illuminate\\Database\\Eloquent\\Collection does not specify its types\: TKey, TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Services/DestinationVatService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\DestinationVatService\:\:getEuSalesBreakdownByCountry\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/DestinationVatService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\DestinationVatService\:\:getEuSalesThresholdStatus\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/DestinationVatService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\DestinationVatService\:\:getFiscalYearInfo\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/DestinationVatService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\DestinationVatService\:\:getThresholdStatistics\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/DestinationVatService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\DestinationVatService\:\:getVatCategories\(\) return type with generic class Illuminate\\Database\\Eloquent\\Collection does not specify its types\: TKey, TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Services/DestinationVatService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\DestinationVatService\:\:getVatRateComparison\(\) has parameter \$countryCodes with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/DestinationVatService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\DestinationVatService\:\:getVatRateComparison\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/DestinationVatService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\DestinationVatService\:\:importVatRates\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/DestinationVatService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\DestinationVatService\:\:sendThresholdExceededNotification\(\) invoked with 2 parameters, 1 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: src/Services/DestinationVatService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\DestinationVatService\:\:updateConfiguration\(\) has parameter \$config with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/DestinationVatService.php
+
+		-
+			message: '#^Property AichaDigital\\Larabill\\Models\\CompanyFiscalConfig\:\:\$current_eu_sales_amount \(int\) does not accept float\.$#'
+			identifier: assign.propertyType
+			count: 2
+			path: src/Services/DestinationVatService.php
+
+		-
+			message: '#^Call to function is_string\(\) with non\-falsy\-string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: src/Services/EuSalesThresholdService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\CompanyConfigService\:\:updateEuSalesAmount\(\) invoked with 1 parameter, 3 required\.$#'
+			identifier: arguments.count
+			count: 2
+			path: src/Services/EuSalesThresholdService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\EuSalesThresholdService\:\:getThresholdStatus\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/EuSalesThresholdService.php
+
+		-
+			message: '#^Parameter \#1 \$companyId of method AichaDigital\\Larabill\\Services\\CompanyConfigService\:\:updateEuSalesAmount\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 2
+			path: src/Services/EuSalesThresholdService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\ModelMappingService\:\:getFieldMapping\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/ModelMappingService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\ModelMappingService\:\:mapFields\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/ModelMappingService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\ModelMappingService\:\:mapFields\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/ModelMappingService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\ModelMappingService\:\:reverseMapFields\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/ModelMappingService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\ModelMappingService\:\:reverseMapFields\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/ModelMappingService.php
+
+		-
+			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$created_at\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Services/PDF/DefaultPDFConnector.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\DefaultPDFConnector\:\:__construct\(\) has parameter \$config with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/DefaultPDFConnector.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\DefaultPDFConnector\:\:generateQR\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/DefaultPDFConnector.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\DefaultPDFConnector\:\:generateQRCode\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/DefaultPDFConnector.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\DefaultPDFConnector\:\:getAuthentication\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/DefaultPDFConnector.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\DefaultPDFConnector\:\:getConfiguration\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/DefaultPDFConnector.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\DefaultPDFConnector\:\:getMetadata\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/DefaultPDFConnector.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\DefaultPDFConnector\:\:getRequiredFields\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/DefaultPDFConnector.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\DefaultPDFConnector\:\:getSupportedCountries\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/DefaultPDFConnector.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\DefaultPDFConnector\:\:prepareQRData\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/DefaultPDFConnector.php
+
+		-
+			message: '#^Property AichaDigital\\Larabill\\Services\\PDF\\DefaultPDFConnector\:\:\$config type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/DefaultPDFConnector.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between mixed and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: src/Services/PDF/DefaultPDFConnector.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\DomPDFService\:\:__construct\(\) has parameter \$config with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/DomPDFService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\DomPDFService\:\:generateMockHTML\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/DomPDFService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\DomPDFService\:\:generatePDF\(\) has parameter \$qrData with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/DomPDFService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\DomPDFService\:\:generatePDF\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/DomPDFService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\DomPDFService\:\:getAvailableTemplates\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/DomPDFService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\DomPDFService\:\:getClientData\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/DomPDFService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\DomPDFService\:\:getCompanyData\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/DomPDFService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\DomPDFService\:\:getConfiguration\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/DomPDFService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\DomPDFService\:\:getInvoiceItems\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/DomPDFService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\DomPDFService\:\:getInvoiceTotals\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/DomPDFService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\DomPDFService\:\:getTemplateSettings\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/DomPDFService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\DomPDFService\:\:prepareTemplateData\(\) has parameter \$qrData with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/DomPDFService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\DomPDFService\:\:prepareTemplateData\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/DomPDFService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\DomPDFService\:\:renderTemplate\(\) has parameter \$data with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/DomPDFService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\DomPDFService\:\:updateConfiguration\(\) has parameter \$config with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/DomPDFService.php
+
+		-
+			message: '#^Method class@anonymous/src/Services/PDF/DomPDFService\.php\:144\:\:loadHtml\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Services/PDF/DomPDFService.php
+
+		-
+			message: '#^Method class@anonymous/src/Services/PDF/DomPDFService\.php\:144\:\:loadHtml\(\) has parameter \$html with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Services/PDF/DomPDFService.php
+
+		-
+			message: '#^Method class@anonymous/src/Services/PDF/DomPDFService\.php\:144\:\:output\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Services/PDF/DomPDFService.php
+
+		-
+			message: '#^Method class@anonymous/src/Services/PDF/DomPDFService\.php\:144\:\:render\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Services/PDF/DomPDFService.php
+
+		-
+			message: '#^Method class@anonymous/src/Services/PDF/DomPDFService\.php\:144\:\:setPaper\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Services/PDF/DomPDFService.php
+
+		-
+			message: '#^Method class@anonymous/src/Services/PDF/DomPDFService\.php\:144\:\:setPaper\(\) has parameter \$orientation with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Services/PDF/DomPDFService.php
+
+		-
+			message: '#^Method class@anonymous/src/Services/PDF/DomPDFService\.php\:144\:\:setPaper\(\) has parameter \$paper with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Services/PDF/DomPDFService.php
+
+		-
+			message: '#^Property AichaDigital\\Larabill\\Services\\PDF\\DomPDFService\:\:\$config type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/DomPDFService.php
+
+		-
+			message: '#^Property AichaDigital\\Larabill\\Services\\PDF\\DomPDFService\:\:\$dompdf has no type specified\.$#'
+			identifier: missingType.property
+			count: 1
+			path: src/Services/PDF/DomPDFService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\PDFService\:\:__construct\(\) has parameter \$config with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/PDFService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\PDFService\:\:cachePDFResult\(\) has parameter \$result with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/PDFService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\PDFService\:\:generatePDF\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/PDFService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\PDFService\:\:getAvailableConnectors\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/PDFService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\PDFService\:\:getCachedPDFResult\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/PDFService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\PDFService\:\:getConfiguration\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/PDFService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\PDF\\PDFService\:\:updateConfiguration\(\) has parameter \$config with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/PDFService.php
+
+		-
+			message: '#^Property AichaDigital\\Larabill\\Services\\PDF\\PDFService\:\:\$config type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/PDFService.php
+
+		-
+			message: '#^Property AichaDigital\\Larabill\\Services\\PDF\\PDFService\:\:\$connectors type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/PDF/PDFService.php
+
+		-
+			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\UserRoiVerification\:\:\$company_address\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Services/RoiVerificationService.php
+
+		-
+			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\UserRoiVerification\:\:\$company_name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Services/RoiVerificationService.php
+
+		-
+			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\UserRoiVerification\:\:\$country_code\.$#'
+			identifier: property.notFound
+			count: 4
+			path: src/Services/RoiVerificationService.php
+
+		-
+			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\UserRoiVerification\:\:\$expired_at\.$#'
+			identifier: property.notFound
+			count: 4
+			path: src/Services/RoiVerificationService.php
+
+		-
+			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\UserRoiVerification\:\:\$is_roi\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Services/RoiVerificationService.php
+
+		-
+			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\UserRoiVerification\:\:\$last_check\.$#'
+			identifier: property.notFound
+			count: 3
+			path: src/Services/RoiVerificationService.php
+
+		-
+			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\UserRoiVerification\:\:\$user_id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Services/RoiVerificationService.php
+
+		-
+			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\UserRoiVerification\:\:\$vat_number\.$#'
+			identifier: property.notFound
+			count: 4
+			path: src/Services/RoiVerificationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\RoiVerificationService\:\:batchVerifyRoiStatus\(\) has parameter \$vatNumbers with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/RoiVerificationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\RoiVerificationService\:\:batchVerifyRoiStatus\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/RoiVerificationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\RoiVerificationService\:\:checkApiRateLimit\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/RoiVerificationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\RoiVerificationService\:\:forceRefreshRoiVerification\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/RoiVerificationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\RoiVerificationService\:\:getApiRateLimits\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/RoiVerificationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\RoiVerificationService\:\:getCacheStatistics\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/RoiVerificationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\RoiVerificationService\:\:getConfiguration\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/RoiVerificationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\RoiVerificationService\:\:getRoiQueryStatistics\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/RoiVerificationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\RoiVerificationService\:\:getRoiStatistics\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/RoiVerificationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\RoiVerificationService\:\:getRoiVerificationHistory\(\) return type with generic class Illuminate\\Database\\Eloquent\\Collection does not specify its types\: TKey, TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Services/RoiVerificationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\RoiVerificationService\:\:getUserRoiVerifications\(\) return type with generic class Illuminate\\Database\\Eloquent\\Collection does not specify its types\: TKey, TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Services/RoiVerificationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\RoiVerificationService\:\:isCacheExpired\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: src/Services/RoiVerificationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\RoiVerificationService\:\:logRoiQuery\(\) has parameter \$responseData with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/RoiVerificationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\RoiVerificationService\:\:logServiceOperation\(\) has parameter \$context with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/RoiVerificationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\RoiVerificationService\:\:updateConfiguration\(\) has parameter \$config with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/RoiVerificationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\RoiVerificationService\:\:verifyFromApi\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/RoiVerificationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\RoiVerificationService\:\:verifyRoiStatus\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/RoiVerificationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\TaxCalculationService\:\:calculateCanariasTax\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/TaxCalculationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\TaxCalculationService\:\:calculateCanariasTax\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/TaxCalculationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\TaxCalculationService\:\:calculateCeutaMelillaTax\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/TaxCalculationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\TaxCalculationService\:\:calculateCeutaMelillaTax\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/TaxCalculationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\TaxCalculationService\:\:calculateDestinationVat\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/TaxCalculationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\TaxCalculationService\:\:calculateDestinationVat\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/TaxCalculationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\TaxCalculationService\:\:calculateEUTax\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/TaxCalculationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\TaxCalculationService\:\:calculateEUTax\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/TaxCalculationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\TaxCalculationService\:\:calculateReverseCharge\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/TaxCalculationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\TaxCalculationService\:\:calculateReverseCharge\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/TaxCalculationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\TaxCalculationService\:\:calculateSellerCountryTax\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/TaxCalculationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\TaxCalculationService\:\:calculateSellerCountryTax\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/TaxCalculationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\TaxCalculationService\:\:calculateSpanishTax\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/TaxCalculationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\TaxCalculationService\:\:calculateSpanishTax\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/TaxCalculationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\TaxCalculationService\:\:calculateSpecialSpanishTax\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/TaxCalculationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\TaxCalculationService\:\:calculateSpecialSpanishTax\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/TaxCalculationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\TaxCalculationService\:\:calculateTax\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/TaxCalculationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\TaxCalculationService\:\:calculateTax\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/TaxCalculationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\TaxCalculationService\:\:calculateUSATax\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/TaxCalculationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\TaxCalculationService\:\:calculateUSATax\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/TaxCalculationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\TaxCalculationService\:\:calculateWorldwideTax\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/TaxCalculationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\TaxCalculationService\:\:calculateWorldwideTax\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/TaxCalculationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\TaxCalculationService\:\:isValidRoi\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/TaxCalculationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\TaxCalculationService\:\:shouldApplyDestinationVat\(\) has parameter \$options with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/TaxCalculationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\VatApiIntegrationService\:\:getMockResponse\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/VatApiIntegrationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\VatApiIntegrationService\:\:getMockResponses\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/VatApiIntegrationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\VatApiIntegrationService\:\:processAbstractApiResponse\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/VatApiIntegrationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\VatApiIntegrationService\:\:processApiLayerResponse\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/VatApiIntegrationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\VatApiIntegrationService\:\:verifyWithAbstractApi\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/VatApiIntegrationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\VatApiIntegrationService\:\:verifyWithApiLayer\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/VatApiIntegrationService.php
+
+		-
+			message: '#^Property AichaDigital\\Larabill\\Services\\VatApiIntegrationService\:\:\$config type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/VatApiIntegrationService.php
+
+		-
+			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\VatVerification\:\:\$api_source\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Services/VatVerificationService.php
+
+		-
+			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\VatVerification\:\:\$company_address\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Services/VatVerificationService.php
+
+		-
+			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\VatVerification\:\:\$company_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Services/VatVerificationService.php
+
+		-
+			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\VatVerification\:\:\$country_code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Services/VatVerificationService.php
+
+		-
+			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\VatVerification\:\:\$is_valid\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Services/VatVerificationService.php
+
+		-
+			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\VatVerification\:\:\$vat_number\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Services/VatVerificationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\VatVerificationService\:\:cacheVerificationResult\(\) has parameter \$result with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/VatVerificationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\VatVerificationService\:\:callApi\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/VatVerificationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\VatVerificationService\:\:getMockResponse\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: src/Services/VatVerificationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\VatVerificationService\:\:getMockResponse\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/VatVerificationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\VatVerificationService\:\:isValidApiResponse\(\) has parameter \$result with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/VatVerificationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\VatVerificationService\:\:tryApisWithFallback\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/VatVerificationService.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\VatVerificationService\:\:verifyVatNumber\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Services/VatVerificationService.php
+
+		-
+			message: '#^Class App\\Models\\User not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: src/config/larabill.php
+
+		-
+			message: '#^Class AichaDigital\\Larabill\\Database\\Factories\\CompanyFiscalConfigFactory extends generic class Illuminate\\Database\\Eloquent\\Factories\\Factory but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/database/factories/CompanyFiscalConfigFactory.php
+
+		-
+			message: '#^Class AichaDigital\\Larabill\\Database\\Factories\\CountryVatRateFactory extends generic class Illuminate\\Database\\Eloquent\\Factories\\Factory but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/database/factories/CountryVatRateFactory.php
+
+		-
+			message: '#^Class AichaDigital\\Larabill\\Database\\Factories\\EuSalesThresholdFactory extends generic class Illuminate\\Database\\Eloquent\\Factories\\Factory but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/database/factories/EuSalesThresholdFactory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Database\\Factories\\EuSalesThresholdFactory\:\:generateCountryBreakdown\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/database/factories/EuSalesThresholdFactory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Database\\Factories\\EuSalesThresholdFactory\:\:generateHighSalesBreakdown\(\) return type has no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/database/factories/EuSalesThresholdFactory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Database\\Factories\\EuSalesThresholdFactory\:\:withCountryBreakdown\(\) has parameter \$countries with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/database/factories/EuSalesThresholdFactory.php
+
+		-
+			message: '#^Class AichaDigital\\Larabill\\Database\\Factories\\InvoiceFactory extends generic class Illuminate\\Database\\Eloquent\\Factories\\Factory but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/database/factories/InvoiceFactory.php
+
+		-
+			message: '#^Class AichaDigital\\Larabill\\Database\\Factories\\InvoiceItemFactory extends generic class Illuminate\\Database\\Eloquent\\Factories\\Factory but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/database/factories/InvoiceItemFactory.php
+
+		-
+			message: '#^Class AichaDigital\\Larabill\\Database\\Factories\\TaxRateFactory extends generic class Illuminate\\Database\\Eloquent\\Factories\\Factory but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/database/factories/TaxRateFactory.php
+
+		-
+			message: '#^Class AichaDigital\\Larabill\\Database\\Factories\\VatCategoryFactory extends generic class Illuminate\\Database\\Eloquent\\Factories\\Factory but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/database/factories/VatCategoryFactory.php

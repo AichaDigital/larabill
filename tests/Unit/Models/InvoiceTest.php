@@ -6,13 +6,13 @@ use AichaDigital\Larabill\Models\Invoice;
 
 it('can create an invoice', function () {
     $invoice = new Invoice([
-        'number' => 'FAC-0001',
-        'type' => 'invoice',
-        'status' => 'draft',
-        'user_id' => 1,
-        'subtotal' => 100.0,
+        'number'     => 'FAC-0001',
+        'type'       => 'invoice',
+        'status'     => 'draft',
+        'user_id'    => 1,
+        'subtotal'   => 100.0,
         'tax_amount' => 21.0,
-        'total' => 121.0,
+        'total'      => 121.0,
     ]);
 
     expect($invoice->number)->toBe('FAC-0001');
@@ -26,13 +26,13 @@ it('can create an invoice', function () {
 
 it('can make an invoice immutable', function () {
     $invoice = new Invoice([
-        'number' => 'FAC-0001',
-        'type' => 'invoice',
-        'status' => 'draft',
-        'user_id' => 1,
-        'subtotal' => 100.0,
+        'number'     => 'FAC-0001',
+        'type'       => 'invoice',
+        'status'     => 'draft',
+        'user_id'    => 1,
+        'subtotal'   => 100.0,
         'tax_amount' => 21.0,
-        'total' => 121.0,
+        'total'      => 121.0,
     ]);
 
     $invoice->makeImmutable();
@@ -43,10 +43,10 @@ it('can make an invoice immutable', function () {
 
 it('cannot update an immutable invoice', function () {
     $invoice = new Invoice([
-        'number' => 'FAC-0001',
-        'type' => 'invoice',
-        'status' => 'draft',
-        'user_id' => 1,
+        'number'       => 'FAC-0001',
+        'type'         => 'invoice',
+        'status'       => 'draft',
+        'user_id'      => 1,
         'is_immutable' => true,
         'immutable_at' => now(),
     ]);

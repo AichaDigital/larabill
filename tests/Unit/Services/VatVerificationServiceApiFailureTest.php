@@ -2,8 +2,7 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Services\VatApiIntegrationService;
-use AichaDigital\Larabill\Services\VatVerificationService;
+use AichaDigital\Larabill\Services\{VatApiIntegrationService, VatVerificationService};
 use Illuminate\Support\Facades\Http;
 
 it('returns error when all apis fail', function () {
@@ -14,11 +13,11 @@ it('returns error when all apis fail', function () {
     // Mock HTTP to return 500 errors for both APIs
     Http::fake([
         'https://vat.abstractapi.com/v1/validate/*' => Http::response([], 500),
-        'http://apilayer.net/api/validate*' => Http::response([], 500),
+        'http://apilayer.net/api/validate*'         => Http::response([], 500),
     ]);
 
     $apiIntegration = new VatApiIntegrationService;
-    $service = new VatVerificationService($apiIntegration);
+    $service        = new VatVerificationService($apiIntegration);
 
     $result = $service->verifyVatNumber('ESB12345678', 'ES');
 
@@ -46,16 +45,16 @@ it('returns error when primary api fails but fallback succeeds', function () {
     // Mock HTTP to return 500 for primary API but success for fallback
     Http::fake([
         'https://vat.abstractapi.com/v1/validate/*' => Http::response([], 500),
-        'http://apilayer.net/api/validate*' => Http::response([
-            'valid' => true,
-            'vat_number' => 'ESB12345678',
-            'company_name' => 'Test Company S.L.',
+        'http://apilayer.net/api/validate*'         => Http::response([
+            'valid'           => true,
+            'vat_number'      => 'ESB12345678',
+            'company_name'    => 'Test Company S.L.',
             'company_address' => 'Test Address',
         ], 200),
     ]);
 
     $apiIntegration = new VatApiIntegrationService;
-    $service = new VatVerificationService($apiIntegration);
+    $service        = new VatVerificationService($apiIntegration);
 
     $result = $service->verifyVatNumber('ESB12345678', 'ES');
 

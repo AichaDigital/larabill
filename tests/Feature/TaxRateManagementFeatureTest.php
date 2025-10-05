@@ -9,10 +9,10 @@ it('can perform CRUD operations on tax rates', function () {
     $taxRate = TaxRate::create([
         'country_code' => 'ES',
         'country_name' => 'Spain',
-        'tax_name' => 'IVA General',
-        'tax_type' => 'vat',
-        'rate' => TaxRate::percentageToBase100(21.0),
-        'is_active' => true,
+        'tax_name'     => 'IVA General',
+        'tax_type'     => 'vat',
+        'rate'         => TaxRate::percentageToBase100(21.0),
+        'is_active'    => true,
     ]);
 
     expect($taxRate->exists)->toBeTrue();
@@ -27,7 +27,7 @@ it('can perform CRUD operations on tax rates', function () {
 
     // Update
     $foundTaxRate->update([
-        'rate' => TaxRate::percentageToBase100(22.0),
+        'rate'     => TaxRate::percentageToBase100(22.0),
         'tax_name' => 'Updated IVA',
     ]);
 
@@ -49,10 +49,10 @@ it('can validate tax rate data', function () {
     $taxRate = TaxRate::create([
         'country_code' => 'ES',
         'country_name' => 'Spain',
-        'tax_name' => 'Test Rate',
-        'tax_type' => 'vat',
-        'rate' => TaxRate::percentageToBase100(21.0),
-        'is_active' => true,
+        'tax_name'     => 'Test Rate',
+        'tax_type'     => 'vat',
+        'rate'         => TaxRate::percentageToBase100(21.0),
+        'is_active'    => true,
     ]);
 
     expect($taxRate->country_code)->toBe('ES');
@@ -131,40 +131,40 @@ it('can manage tax rate categories and special cases', function () {
     $standardRate = TaxRate::create([
         'country_code' => 'ES',
         'country_name' => 'Spain',
-        'tax_name' => 'IVA General',
-        'tax_type' => 'vat',
-        'rate' => TaxRate::percentageToBase100(21.0),
-        'is_active' => true,
+        'tax_name'     => 'IVA General',
+        'tax_type'     => 'vat',
+        'rate'         => TaxRate::percentageToBase100(21.0),
+        'is_active'    => true,
     ]);
 
     // Create reduced tax rates
     $reducedRate = TaxRate::create([
         'country_code' => 'ES',
         'country_name' => 'Spain',
-        'tax_name' => 'IVA Reducido',
-        'tax_type' => 'vat',
-        'rate' => TaxRate::percentageToBase100(10.0),
-        'is_active' => true,
+        'tax_name'     => 'IVA Reducido',
+        'tax_type'     => 'vat',
+        'rate'         => TaxRate::percentageToBase100(10.0),
+        'is_active'    => true,
     ]);
 
     // Create super-reduced tax rates
     $superReducedRate = TaxRate::create([
         'country_code' => 'ES',
         'country_name' => 'Spain',
-        'tax_name' => 'IVA Superreducido',
-        'tax_type' => 'vat',
-        'rate' => TaxRate::percentageToBase100(4.0),
-        'is_active' => true,
+        'tax_name'     => 'IVA Superreducido',
+        'tax_type'     => 'vat',
+        'rate'         => TaxRate::percentageToBase100(4.0),
+        'is_active'    => true,
     ]);
 
     // Create zero rate
     $zeroRate = TaxRate::create([
         'country_code' => 'ES',
         'country_name' => 'Spain',
-        'tax_name' => 'IVA Exento',
-        'tax_type' => 'vat',
-        'rate' => TaxRate::percentageToBase100(0.0),
-        'is_active' => true,
+        'tax_name'     => 'IVA Exento',
+        'tax_type'     => 'vat',
+        'rate'         => TaxRate::percentageToBase100(0.0),
+        'is_active'    => true,
     ]);
 
     // Test rate ordering
@@ -181,10 +181,10 @@ it('can handle tax rate validation and constraints', function () {
     $firstRate = TaxRate::create([
         'country_code' => 'ES',
         'country_name' => 'Spain',
-        'tax_name' => 'IVA General',
-        'tax_type' => 'vat',
-        'rate' => TaxRate::percentageToBase100(21.0),
-        'is_active' => true,
+        'tax_name'     => 'IVA General',
+        'tax_type'     => 'vat',
+        'rate'         => TaxRate::percentageToBase100(21.0),
+        'is_active'    => true,
     ]);
 
     // Test rate validation
@@ -203,10 +203,10 @@ it('can handle tax rate activation and deactivation', function () {
     $taxRate = TaxRate::create([
         'country_code' => 'ES',
         'country_name' => 'Spain',
-        'tax_name' => 'IVA General',
-        'tax_type' => 'vat',
-        'rate' => TaxRate::percentageToBase100(21.0),
-        'is_active' => true,
+        'tax_name'     => 'IVA General',
+        'tax_type'     => 'vat',
+        'rate'         => TaxRate::percentageToBase100(21.0),
+        'is_active'    => true,
     ]);
 
     expect($taxRate->is_active)->toBeTrue();
@@ -223,13 +223,13 @@ it('can handle tax rate activation and deactivation', function () {
 it('can handle tax rate with special conditions', function () {
     // Create tax rate with special conditions
     $taxRate = TaxRate::create([
-        'country_code' => 'ES',
-        'country_name' => 'Spain',
-        'tax_name' => 'IVA General',
-        'tax_type' => 'vat',
-        'rate' => TaxRate::percentageToBase100(21.0),
+        'country_code'       => 'ES',
+        'country_name'       => 'Spain',
+        'tax_name'           => 'IVA General',
+        'tax_type'           => 'vat',
+        'rate'               => TaxRate::percentageToBase100(21.0),
         'special_conditions' => ['applies_to' => 'standard_goods', 'notes' => 'Standard VAT rate with special conditions'],
-        'is_active' => true,
+        'is_active'          => true,
     ]);
 
     // Test special conditions (if implemented)
@@ -245,10 +245,10 @@ it('can handle tax rate bulk operations', function () {
         $bulkData[] = [
             'country_code' => 'ES',
             'country_name' => 'Spain',
-            'tax_name' => "Test Rate {$i}",
-            'tax_type' => 'vat',
-            'rate' => TaxRate::percentageToBase100(21.0 + $i),
-            'is_active' => true,
+            'tax_name'     => "Test Rate {$i}",
+            'tax_type'     => 'vat',
+            'rate'         => TaxRate::percentageToBase100(21.0 + $i),
+            'is_active'    => true,
         ];
     }
 

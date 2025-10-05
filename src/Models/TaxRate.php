@@ -49,8 +49,8 @@ class TaxRate extends Model
     public function casts(): array
     {
         return [
-            'is_active' => 'boolean',
-            'rate' => 'integer', // Base 100: 21.50% = 2150
+            'is_active'          => 'boolean',
+            'rate'               => 'integer', // Base 100: 21.50% = 2150
             'special_conditions' => 'array',
         ];
     }

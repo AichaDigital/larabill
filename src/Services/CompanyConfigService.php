@@ -46,8 +46,8 @@ class CompanyConfigService
 
         // Validate configuration
         $errors = $this->validateConfigData($data);
-        if (!empty($errors)) {
-            throw new \InvalidArgumentException('Invalid company configuration: ' . implode(', ', $errors));
+        if (! empty($errors)) {
+            throw new \InvalidArgumentException('Invalid company configuration: '.implode(', ', $errors));
         }
 
         $config->update($data);
@@ -131,7 +131,7 @@ class CompanyConfigService
      */
     public function updateThreshold(float|string $threshold): CompanyFiscalConfig
     {
-        $companyId = 'default-company';
+        $companyId  = 'default-company';
         $fiscalYear = 2024;
 
         // Get or create the configuration first
@@ -150,12 +150,12 @@ class CompanyConfigService
     public function updateEuSalesAmount(string $companyId, int $fiscalYear, float|string $amount): CompanyFiscalConfig
     {
         $config = $this->getCompanyConfig($companyId, $fiscalYear);
-        if (!$config) {
+        if (! $config) {
             throw new \Exception("Company configuration not found for {$companyId} in fiscal year {$fiscalYear}");
         }
 
         $currentAmount = $config->current_eu_sales_amount;
-        $newAmount = $currentAmount + (float) $amount;
+        $newAmount     = $currentAmount + (float) $amount;
 
         return $this->updateCompanyConfig($companyId, $fiscalYear, ['current_eu_sales_amount' => $newAmount]);
     }
@@ -165,7 +165,7 @@ class CompanyConfigService
      */
     public function updateAmount(float|string $amount): CompanyFiscalConfig
     {
-        $companyId = 'default-company';
+        $companyId  = 'default-company';
         $fiscalYear = 2024;
 
         // Get or create the configuration first
@@ -210,6 +210,7 @@ class CompanyConfigService
     public function needsNotification(): bool
     {
         $config = $this->getCurrentConfig();
+
         return (bool) $config->shouldSendNotification();
     }
 
@@ -233,6 +234,7 @@ class CompanyConfigService
     public function shouldApplyDestinationVat(): bool
     {
         $config = $this->getCurrentConfig();
+
         return $config->shouldApplyDestinationVat();
     }
 
@@ -242,6 +244,7 @@ class CompanyConfigService
     public function getThresholdPercentage(): float
     {
         $config = $this->getCurrentConfig();
+
         return $config->getThresholdPercentage();
     }
 
@@ -251,6 +254,7 @@ class CompanyConfigService
     public function getRemainingThresholdAmount(): float
     {
         $config = $this->getCurrentConfig();
+
         return $config->getRemainingThresholdAmount();
     }
 
@@ -261,18 +265,18 @@ class CompanyConfigService
     {
         $config = $this->getCurrentConfig();
 
-            return [
-            'is_oss' => $config->is_oss,
-            'is_roi' => $config->is_roi,
-            'eu_sales_threshold' => $config->eu_sales_threshold,
-            'current_eu_sales_amount' => $config->current_eu_sales_amount,
-            'threshold_percentage' => $config->getThresholdPercentage(),
-            'threshold_exceeded' => $config->threshold_exceeded,
-            'notification_sent' => $config->notification_sent,
-            'needs_notification' => $config->shouldSendNotification(),
+        return [
+            'is_oss'                       => $config->is_oss,
+            'is_roi'                       => $config->is_roi,
+            'eu_sales_threshold'           => $config->eu_sales_threshold,
+            'current_eu_sales_amount'      => $config->current_eu_sales_amount,
+            'threshold_percentage'         => $config->getThresholdPercentage(),
+            'threshold_exceeded'           => $config->threshold_exceeded,
+            'notification_sent'            => $config->notification_sent,
+            'needs_notification'           => $config->shouldSendNotification(),
             'should_apply_destination_vat' => $config->shouldApplyDestinationVat(),
-            'fiscal_year' => $config->fiscal_year,
-            'currency' => $config->currency,
+            'fiscal_year'                  => $config->fiscal_year,
+            'currency'                     => $config->currency,
         ];
     }
 
@@ -286,7 +290,7 @@ class CompanyConfigService
         // Validate numeric fields
         $numericFields = ['eu_sales_threshold', 'current_eu_sales_amount'];
         foreach ($numericFields as $field) {
-            if (isset($data[$field]) && !is_numeric($data[$field])) {
+            if (isset($data[$field]) && ! is_numeric($data[$field])) {
                 $errors[] = "Field '{$field}' must be numeric";
             }
         }
@@ -294,18 +298,18 @@ class CompanyConfigService
         // Validate boolean fields
         $booleanFields = ['is_oss', 'is_roi', 'auto_apply_destination', 'notification_sent', 'threshold_exceeded'];
         foreach ($booleanFields as $field) {
-            if (isset($data[$field]) && !is_bool($data[$field])) {
+            if (isset($data[$field]) && ! is_bool($data[$field])) {
                 $errors[] = "Field '{$field}' must be boolean";
             }
         }
 
         // Validate currency
-        if (isset($data['currency']) && !preg_match('/^[A-Z]{3}$/', $data['currency'])) {
+        if (isset($data['currency']) && ! preg_match('/^[A-Z]{3}$/', $data['currency'])) {
             $errors[] = "Field 'currency' must be a valid 3-letter currency code";
         }
 
         // Validate fiscal year start
-        if (isset($data['fiscal_year_start']) && !preg_match('/^\d{2}-\d{2}$/', $data['fiscal_year_start'])) {
+        if (isset($data['fiscal_year_start']) && ! preg_match('/^\d{2}-\d{2}$/', $data['fiscal_year_start'])) {
             $errors[] = "Field 'fiscal_year_start' must be in MM-DD format";
         }
 
@@ -331,15 +335,15 @@ class CompanyConfigService
     {
         // Merge with default configuration
         $defaultConfig = $this->getDefaultConfig();
-        $configData = array_merge($defaultConfig, $data, [
-            'company_id' => $companyId,
+        $configData    = array_merge($defaultConfig, $data, [
+            'company_id'  => $companyId,
             'fiscal_year' => $fiscalYear,
         ]);
 
         // Validate configuration
         $errors = $this->validateConfigData($configData);
-        if (!empty($errors)) {
-            throw new \InvalidArgumentException('Invalid company configuration: ' . implode(', ', $errors));
+        if (! empty($errors)) {
+            throw new \InvalidArgumentException('Invalid company configuration: '.implode(', ', $errors));
         }
 
         // Ensure monetary values are properly handled with factor 100
@@ -353,9 +357,9 @@ class CompanyConfigService
         $config = CompanyFiscalConfig::create($configData);
 
         Log::info('Company configuration created', [
-            'company_id' => $companyId,
+            'company_id'  => $companyId,
             'fiscal_year' => $fiscalYear,
-            'config_id' => $config->id,
+            'config_id'   => $config->id,
         ]);
 
         return $config;
@@ -367,16 +371,16 @@ class CompanyConfigService
     public function getDefaultConfig(): array
     {
         return [
-            'is_oss' => false,
-            'is_roi' => false,
-            'apply_destination_iva' => false,
-            'eu_sales_threshold' => 10000,
+            'is_oss'                  => false,
+            'is_roi'                  => false,
+            'apply_destination_iva'   => false,
+            'eu_sales_threshold'      => 10000,
             'current_eu_sales_amount' => 0,
-            'threshold_exceeded' => false,
-            'auto_apply_destination' => true,
-            'notification_sent' => false,
-            'fiscal_year_start' => '01-01',
-            'currency' => 'EUR',
+            'threshold_exceeded'      => false,
+            'auto_apply_destination'  => true,
+            'notification_sent'       => false,
+            'fiscal_year_start'       => '01-01',
+            'currency'                => 'EUR',
         ];
     }
 
@@ -392,8 +396,8 @@ class CompanyConfigService
         $config->update($data);
 
         Log::info('Company configuration updated', [
-            'company_id' => $companyId,
-            'fiscal_year' => $fiscalYear,
+            'company_id'     => $companyId,
+            'fiscal_year'    => $fiscalYear,
             'updated_fields' => array_keys($data),
         ]);
 
@@ -410,9 +414,9 @@ class CompanyConfigService
             ->delete();
 
         Log::info('Company configuration deleted', [
-            'company_id' => $companyId,
+            'company_id'  => $companyId,
             'fiscal_year' => $fiscalYear,
-            'deleted' => $deleted > 0,
+            'deleted'     => $deleted > 0,
         ]);
 
         return $deleted > 0;
@@ -435,7 +439,7 @@ class CompanyConfigService
     {
         return CompanyFiscalConfig::firstOrCreate(
             [
-                'company_id' => $companyId,
+                'company_id'  => $companyId,
                 'fiscal_year' => $fiscalYear,
             ],
             array_merge($this->getDefaultConfig(), $data)
@@ -507,8 +511,8 @@ class CompanyConfigService
     {
         return $this->updateCompanyConfig($companyId, $fiscalYear, [
             'current_eu_sales_amount' => 0.0,
-            'threshold_exceeded' => false,
-            'notification_sent' => false,
+            'threshold_exceeded'      => false,
+            'notification_sent'       => false,
         ]);
     }
 
@@ -557,13 +561,13 @@ class CompanyConfigService
         $averageThresholdPercentage = $thresholdPercentages->avg();
 
         return [
-            'total_companies' => $configs->count(),
+            'total_companies'                 => $configs->count(),
             'companies_using_destination_vat' => $configs->where('apply_destination_iva', true)->count(),
-            'companies_exceeding_threshold' => $configs->where('threshold_exceeded', true)->count(),
-            'companies_needing_notification' => $configs->where('threshold_exceeded', true)
+            'companies_exceeding_threshold'   => $configs->where('threshold_exceeded', true)->count(),
+            'companies_needing_notification'  => $configs->where('threshold_exceeded', true)
                 ->where('notification_sent', false)->count(),
-            'total_eu_sales' => $totalSales,
-            'average_threshold_usage' => $configs->avg('current_eu_sales_amount') / 10000.0 * 100,
+            'total_eu_sales'               => $totalSales,
+            'average_threshold_usage'      => $configs->avg('current_eu_sales_amount') / 10000.0 * 100,
             'average_threshold_percentage' => $averageThresholdPercentage,
         ];
     }
@@ -574,11 +578,11 @@ class CompanyConfigService
     public function getConfiguration(): array
     {
         return [
-            'model' => CompanyFiscalConfig::class,
-            'default_threshold' => 10000,
-            'currency' => 'EUR',
-            'fiscal_year_start' => '01-01',
-            'cache_enabled' => true,
+            'model'                  => CompanyFiscalConfig::class,
+            'default_threshold'      => 10000,
+            'currency'               => 'EUR',
+            'fiscal_year_start'      => '01-01',
+            'cache_enabled'          => true,
             'auto_apply_destination' => true,
         ];
     }
@@ -598,7 +602,7 @@ class CompanyConfigService
                 // Log error but continue with other updates
                 Log::error('Bulk update failed for company', [
                     'company_id' => $companyId,
-                    'error' => $e->getMessage(),
+                    'error'      => $e->getMessage(),
                 ]);
             }
         }
@@ -636,6 +640,7 @@ class CompanyConfigService
     public function validateCompanyConfigData(array $data): bool
     {
         $errors = $this->validateConfigData($data);
+
         return empty($errors);
     }
 
@@ -674,9 +679,9 @@ class CompanyConfigService
         ]);
 
         return [
-            'error' => true,
+            'error'   => true,
             'message' => $e->getMessage(),
-            'config' => $this->getDefaultConfig(),
+            'config'  => $this->getDefaultConfig(),
         ];
     }
 }

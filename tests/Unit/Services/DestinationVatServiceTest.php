@@ -2,10 +2,7 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Models\CompanyFiscalConfig;
-use AichaDigital\Larabill\Models\CountryVatRate;
-use AichaDigital\Larabill\Models\EuSalesThreshold;
-use AichaDigital\Larabill\Models\VatCategory;
+use AichaDigital\Larabill\Models\{CompanyFiscalConfig, CountryVatRate, EuSalesThreshold, VatCategory};
 use AichaDigital\Larabill\Services\DestinationVatService;
 
 beforeEach(function () {
@@ -25,11 +22,11 @@ it('can determine if destination VAT should be applied', function () {
 
     // Company with destination VAT enabled
     CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
-        'apply_destination_iva' => true,
-        'auto_apply_destination' => false,
-        'eu_sales_threshold' => 10000.00,
+        'company_id'              => 'company-123',
+        'fiscal_year'             => 2024,
+        'apply_destination_iva'   => true,
+        'auto_apply_destination'  => false,
+        'eu_sales_threshold'      => 10000.00,
         'current_eu_sales_amount' => 5000.00,
     ]);
 
@@ -43,11 +40,11 @@ it('can determine if destination VAT should not be applied', function () {
 
     // Company with destination VAT disabled and threshold not exceeded
     CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
-        'apply_destination_iva' => false,
-        'auto_apply_destination' => true,
-        'eu_sales_threshold' => 10000.00,
+        'company_id'              => 'company-123',
+        'fiscal_year'             => 2024,
+        'apply_destination_iva'   => false,
+        'auto_apply_destination'  => true,
+        'eu_sales_threshold'      => 10000.00,
         'current_eu_sales_amount' => 5000.00,
     ]);
 
@@ -61,11 +58,11 @@ it('can apply destination VAT automatically when threshold is exceeded', functio
 
     // Company with auto-apply enabled and threshold exceeded
     CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
-        'apply_destination_iva' => false,
-        'auto_apply_destination' => true,
-        'eu_sales_threshold' => 10000.00,
+        'company_id'              => 'company-123',
+        'fiscal_year'             => 2024,
+        'apply_destination_iva'   => false,
+        'auto_apply_destination'  => true,
+        'eu_sales_threshold'      => 10000.00,
         'current_eu_sales_amount' => 12000.00,
     ]);
 
@@ -79,19 +76,19 @@ it('can calculate VAT rate for destination country', function () {
 
     // Create country VAT rates
     CountryVatRate::create([
-        'country_code' => 'ES',
-        'country_name' => 'Spain',
+        'country_code'  => 'ES',
+        'country_name'  => 'Spain',
         'standard_rate' => 21.00,
         'reduced_rates' => ['general' => 10.00],
-        'is_active' => true,
+        'is_active'     => true,
     ]);
 
     CountryVatRate::create([
-        'country_code' => 'FR',
-        'country_name' => 'France',
+        'country_code'  => 'FR',
+        'country_name'  => 'France',
         'standard_rate' => 20.00,
         'reduced_rates' => ['general' => 5.50],
-        'is_active' => true,
+        'is_active'     => true,
     ]);
 
     $esRate = $service->getVatRateForCountry('ES');
@@ -106,23 +103,23 @@ it('can calculate VAT rate for specific category', function () {
 
     // Create VAT categories
     VatCategory::create([
-        'name' => 'Standard Goods',
-        'country_code' => 'ES',
-        'vat_rate' => 21.00,
+        'name'          => 'Standard Goods',
+        'country_code'  => 'ES',
+        'vat_rate'      => 21.00,
         'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
-        'is_active' => true,
+        'is_active'     => true,
     ]);
 
     VatCategory::create([
-        'name' => 'Reduced Goods',
-        'country_code' => 'ES',
-        'vat_rate' => 10.00,
+        'name'          => 'Reduced Goods',
+        'country_code'  => 'ES',
+        'vat_rate'      => 10.00,
         'category_type' => VatCategory::CATEGORY_TYPE_REDUCED,
-        'is_active' => true,
+        'is_active'     => true,
     ]);
 
     $standardRate = $service->getVatRateForCategory('ES', 'Standard Goods');
-    $reducedRate = $service->getVatRateForCategory('ES', 'Reduced Goods');
+    $reducedRate  = $service->getVatRateForCategory('ES', 'Reduced Goods');
 
     expect($standardRate)->toBe(21.00);
     expect($reducedRate)->toBe(10.00);
@@ -132,10 +129,10 @@ it('can calculate VAT amount for destination country', function () {
     $service = new DestinationVatService;
 
     CountryVatRate::create([
-        'country_code' => 'ES',
-        'country_name' => 'Spain',
+        'country_code'  => 'ES',
+        'country_name'  => 'Spain',
         'standard_rate' => 21.00,
-        'is_active' => true,
+        'is_active'     => true,
     ]);
 
     $vatAmount = $service->calculateVatAmount(1000.00, 'ES');
@@ -147,11 +144,11 @@ it('can calculate VAT amount for specific category', function () {
     $service = new DestinationVatService;
 
     VatCategory::create([
-        'name' => 'Reduced Goods',
-        'country_code' => 'ES',
-        'vat_rate' => 10.00,
+        'name'          => 'Reduced Goods',
+        'country_code'  => 'ES',
+        'vat_rate'      => 10.00,
         'category_type' => VatCategory::CATEGORY_TYPE_REDUCED,
-        'is_active' => true,
+        'is_active'     => true,
     ]);
 
     $vatAmount = $service->calculateVatAmount(1000.00, 'ES', 'Reduced Goods');
@@ -163,9 +160,9 @@ it('can update EU sales amount', function () {
     $service = new DestinationVatService;
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
-        'eu_sales_threshold' => 10000.00,
+        'company_id'              => 'company-123',
+        'fiscal_year'             => 2024,
+        'eu_sales_threshold'      => 10000.00,
         'current_eu_sales_amount' => 5000.00,
     ]);
 
@@ -179,11 +176,11 @@ it('can update EU sales amount and exceed threshold', function () {
     $service = new DestinationVatService;
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
-        'eu_sales_threshold' => 10000.00,
+        'company_id'              => 'company-123',
+        'fiscal_year'             => 2024,
+        'eu_sales_threshold'      => 10000.00,
         'current_eu_sales_amount' => 5000.00,
-        'auto_apply_destination' => true,
+        'auto_apply_destination'  => true,
     ]);
 
     $updated = $service->updateEuSalesAmount('company-123', 2024, 'ES', 6000.00);
@@ -197,9 +194,9 @@ it('can get EU sales threshold status', function () {
     $service = new DestinationVatService;
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
-        'eu_sales_threshold' => 10000.00,
+        'company_id'              => 'company-123',
+        'fiscal_year'             => 2024,
+        'eu_sales_threshold'      => 10000.00,
         'current_eu_sales_amount' => 7500.00,
     ]);
 
@@ -217,9 +214,9 @@ it('can get EU sales breakdown by country', function () {
     $service = new DestinationVatService;
 
     EuSalesThreshold::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
-        'total_amount' => 15000.00,
+        'company_id'           => 'company-123',
+        'fiscal_year'          => 2024,
+        'total_amount'         => 15000.00,
         'breakdown_by_country' => [
             'ES' => 8000.00,
             'FR' => 5000.00,
@@ -240,19 +237,19 @@ it('can get companies exceeding threshold', function () {
     $service = new DestinationVatService;
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
-        'eu_sales_threshold' => 10000.00,
+        'company_id'              => 'company-123',
+        'fiscal_year'             => 2024,
+        'eu_sales_threshold'      => 10000.00,
         'current_eu_sales_amount' => 12000.00,
-        'threshold_exceeded' => true,
+        'threshold_exceeded'      => true,
     ]);
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-456',
-        'fiscal_year' => 2024,
-        'eu_sales_threshold' => 10000.00,
+        'company_id'              => 'company-456',
+        'fiscal_year'             => 2024,
+        'eu_sales_threshold'      => 10000.00,
         'current_eu_sales_amount' => 5000.00,
-        'threshold_exceeded' => false,
+        'threshold_exceeded'      => false,
     ]);
 
     $exceededCompanies = $service->getCompaniesExceedingThreshold(2024);
@@ -265,21 +262,21 @@ it('can get companies needing notification', function () {
     $service = new DestinationVatService;
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
-        'eu_sales_threshold' => 10000.00,
+        'company_id'              => 'company-123',
+        'fiscal_year'             => 2024,
+        'eu_sales_threshold'      => 10000.00,
         'current_eu_sales_amount' => 12000.00,
-        'threshold_exceeded' => true,
-        'notification_sent' => false,
+        'threshold_exceeded'      => true,
+        'notification_sent'       => false,
     ]);
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-456',
-        'fiscal_year' => 2024,
-        'eu_sales_threshold' => 10000.00,
+        'company_id'              => 'company-456',
+        'fiscal_year'             => 2024,
+        'eu_sales_threshold'      => 10000.00,
         'current_eu_sales_amount' => 12000.00,
-        'threshold_exceeded' => true,
-        'notification_sent' => true,
+        'threshold_exceeded'      => true,
+        'notification_sent'       => true,
     ]);
 
     $needsNotification = $service->getCompaniesNeedingNotification(2024);
@@ -292,12 +289,12 @@ it('can send threshold exceeded notification', function () {
     $service = new DestinationVatService;
 
     $config = CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
-        'eu_sales_threshold' => 10000.00,
-        'current_eu_sales_amount' => 12000.00,
-        'threshold_exceeded' => true,
-        'notification_sent' => false,
+        'company_id'                   => 'company-123',
+        'fiscal_year'                  => 2024,
+        'eu_sales_threshold'           => 10000.00,
+        'current_eu_sales_amount'      => 12000.00,
+        'threshold_exceeded'           => true,
+        'notification_sent'            => false,
         'threshold_notification_email' => 'admin@company.com',
     ]);
 
@@ -311,20 +308,20 @@ it('can reset EU sales for new fiscal year', function () {
     $service = new DestinationVatService;
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
-        'eu_sales_threshold' => 10000.00,
+        'company_id'              => 'company-123',
+        'fiscal_year'             => 2024,
+        'eu_sales_threshold'      => 10000.00,
         'current_eu_sales_amount' => 15000.00,
-        'threshold_exceeded' => true,
-        'notification_sent' => true,
+        'threshold_exceeded'      => true,
+        'notification_sent'       => true,
     ]);
 
     EuSalesThreshold::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
-        'total_amount' => 15000.00,
-        'threshold_exceeded' => true,
-        'notification_sent' => true,
+        'company_id'           => 'company-123',
+        'fiscal_year'          => 2024,
+        'total_amount'         => 15000.00,
+        'threshold_exceeded'   => true,
+        'notification_sent'    => true,
         'breakdown_by_country' => [
             'ES' => 8000.00,
             'FR' => 7000.00,
@@ -351,21 +348,21 @@ it('can get destination VAT statistics', function () {
     $service = new DestinationVatService;
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-123',
-        'fiscal_year' => 2024,
-        'apply_destination_iva' => true,
-        'eu_sales_threshold' => 10000.00,
+        'company_id'              => 'company-123',
+        'fiscal_year'             => 2024,
+        'apply_destination_iva'   => true,
+        'eu_sales_threshold'      => 10000.00,
         'current_eu_sales_amount' => 12000.00,
-        'threshold_exceeded' => true,
+        'threshold_exceeded'      => true,
     ]);
 
     CompanyFiscalConfig::create([
-        'company_id' => 'company-456',
-        'fiscal_year' => 2024,
-        'apply_destination_iva' => false,
-        'eu_sales_threshold' => 10000.00,
+        'company_id'              => 'company-456',
+        'fiscal_year'             => 2024,
+        'apply_destination_iva'   => false,
+        'eu_sales_threshold'      => 10000.00,
         'current_eu_sales_amount' => 5000.00,
-        'threshold_exceeded' => false,
+        'threshold_exceeded'      => false,
     ]);
 
     $stats = $service->getDestinationVatStatistics(2024);
@@ -392,24 +389,24 @@ it('can get available destination countries', function () {
     $service = new DestinationVatService;
 
     CountryVatRate::create([
-        'country_code' => 'ES',
-        'country_name' => 'Spain',
+        'country_code'  => 'ES',
+        'country_name'  => 'Spain',
         'standard_rate' => 21.00,
-        'is_active' => true,
+        'is_active'     => true,
     ]);
 
     CountryVatRate::create([
-        'country_code' => 'FR',
-        'country_name' => 'France',
+        'country_code'  => 'FR',
+        'country_name'  => 'France',
         'standard_rate' => 20.00,
-        'is_active' => true,
+        'is_active'     => true,
     ]);
 
     CountryVatRate::create([
-        'country_code' => 'DE',
-        'country_name' => 'Germany',
+        'country_code'  => 'DE',
+        'country_name'  => 'Germany',
         'standard_rate' => 19.00,
-        'is_active' => false,
+        'is_active'     => false,
     ]);
 
     $countries = $service->getAvailableDestinationCountries();
@@ -424,24 +421,24 @@ it('can get VAT rate comparison between countries', function () {
     $service = new DestinationVatService;
 
     CountryVatRate::create([
-        'country_code' => 'ES',
-        'country_name' => 'Spain',
+        'country_code'  => 'ES',
+        'country_name'  => 'Spain',
         'standard_rate' => 21.00,
-        'is_active' => true,
+        'is_active'     => true,
     ]);
 
     CountryVatRate::create([
-        'country_code' => 'FR',
-        'country_name' => 'France',
+        'country_code'  => 'FR',
+        'country_name'  => 'France',
         'standard_rate' => 20.00,
-        'is_active' => true,
+        'is_active'     => true,
     ]);
 
     CountryVatRate::create([
-        'country_code' => 'DE',
-        'country_name' => 'Germany',
+        'country_code'  => 'DE',
+        'country_name'  => 'Germany',
         'standard_rate' => 19.00,
-        'is_active' => true,
+        'is_active'     => true,
     ]);
 
     $comparison = $service->getVatRateComparison(['ES', 'FR', 'DE']);
@@ -459,17 +456,17 @@ it('can calculate VAT savings for different countries', function () {
     $service = new DestinationVatService;
 
     CountryVatRate::create([
-        'country_code' => 'ES',
-        'country_name' => 'Spain',
+        'country_code'  => 'ES',
+        'country_name'  => 'Spain',
         'standard_rate' => 21.00,
-        'is_active' => true,
+        'is_active'     => true,
     ]);
 
     CountryVatRate::create([
-        'country_code' => 'FR',
-        'country_name' => 'France',
+        'country_code'  => 'FR',
+        'country_name'  => 'France',
         'standard_rate' => 20.00,
-        'is_active' => true,
+        'is_active'     => true,
     ]);
 
     $savings = $service->calculateVatSavings(1000.00, 'ES', 'FR');
@@ -482,7 +479,7 @@ it('can calculate VAT savings for different countries', function () {
 });
 
 it('can get fiscal year information', function () {
-    $service = new DestinationVatService;
+    $service     = new DestinationVatService;
     $currentYear = (int) now()->format('Y');
 
     $fiscalYear = $service->getFiscalYearInfo($currentYear);
@@ -495,7 +492,7 @@ it('can get fiscal year information', function () {
 });
 
 it('can check if date is within fiscal year', function () {
-    $service = new DestinationVatService;
+    $service     = new DestinationVatService;
     $currentYear = (int) now()->format('Y');
 
     expect($service->isWithinFiscalYear($currentYear, now()))->toBeTrue();
@@ -519,9 +516,9 @@ it('can update service configuration', function () {
     $service = new DestinationVatService;
 
     $newConfig = [
-        'default_threshold' => 15000,
-        'currency' => 'USD',
-        'fiscal_year_start' => '04-01',
+        'default_threshold'      => 15000,
+        'currency'               => 'USD',
+        'fiscal_year_start'      => '04-01',
         'auto_apply_destination' => false,
     ];
 

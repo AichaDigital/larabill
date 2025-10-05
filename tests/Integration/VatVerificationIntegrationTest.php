@@ -24,18 +24,18 @@ describe('VatVerification Integration Tests', function () {
 
             Http::fake([
                 'https://vat.abstractapi.com/v1/validate/*' => Http::response([
-                    'valid' => true,
+                    'valid'      => true,
                     'vat_number' => 'ESB12345678',
-                    'country' => [
+                    'country'    => [
                         'code' => 'ES',
                         'name' => 'Spain',
                     ],
                     'company' => [
-                        'name' => 'Test Company S.L.',
+                        'name'    => 'Test Company S.L.',
                         'address' => 'Calle Test 123, 41001 Sevilla, España',
                     ],
                     'format_valid' => true,
-                    'query' => 'ESB12345678',
+                    'query'        => 'ESB12345678',
                 ], 200),
             ]);
 
@@ -60,11 +60,11 @@ describe('VatVerification Integration Tests', function () {
 
             Http::fake([
                 'https://vat.abstractapi.com/v1/validate/*' => Http::response([], 500),
-                'http://apilayer.net/api/validate*' => Http::response([
-                    'valid' => true,
-                    'vat_number' => 'ESB12345678',
-                    'country_code' => 'ES',
-                    'company_name' => 'Test Company S.L.',
+                'http://apilayer.net/api/validate*'         => Http::response([
+                    'valid'           => true,
+                    'vat_number'      => 'ESB12345678',
+                    'country_code'    => 'ES',
+                    'company_name'    => 'Test Company S.L.',
                     'company_address' => 'Calle Test 123, 41001 Sevilla, España',
                 ], 200),
             ]);
@@ -96,10 +96,10 @@ describe('VatVerification Integration Tests', function () {
                     'error' => 'Invalid API key',
                 ], 401),
                 'http://apilayer.net/api/validate*' => Http::response([
-                    'valid' => true,
-                    'vat_number' => 'ESB12345678',
-                    'country_code' => 'ES',
-                    'company_name' => 'Test Company S.L.',
+                    'valid'           => true,
+                    'vat_number'      => 'ESB12345678',
+                    'country_code'    => 'ES',
+                    'company_name'    => 'Test Company S.L.',
                     'company_address' => 'Calle Test 123, 41001 Sevilla, España',
                 ], 200),
             ]);
@@ -125,7 +125,7 @@ describe('VatVerification Integration Tests', function () {
 
             Http::fake([
                 'https://vat.abstractapi.com/v1/validate/*' => Http::response([], 500),
-                'http://apilayer.net/api/validate*' => Http::response([], 503),
+                'http://apilayer.net/api/validate*'         => Http::response([], 503),
             ]);
 
             $result = $service->verifyVatNumber('ESB12345678', 'ES');
@@ -149,18 +149,18 @@ describe('VatVerification Integration Tests', function () {
 
             Http::fake([
                 'https://vat.abstractapi.com/v1/validate/*' => Http::response([
-                    'valid' => true,
+                    'valid'      => true,
                     'vat_number' => 'ESB12345678',
-                    'country' => [
+                    'country'    => [
                         'code' => 'ES',
                         'name' => 'Spain',
                     ],
                     'company' => [
-                        'name' => 'Test Company S.L.',
+                        'name'    => 'Test Company S.L.',
                         'address' => 'Calle Test 123, 41001 Sevilla, España',
                     ],
                     'format_valid' => true,
-                    'query' => 'ESB12345678',
+                    'query'        => 'ESB12345678',
                 ], 200),
             ]);
 
@@ -184,11 +184,11 @@ describe('VatVerification Integration Tests', function () {
 
             Http::fake([
                 'https://vat.abstractapi.com/v1/validate/*' => Http::response([], 500),
-                'http://apilayer.net/api/validate*' => Http::response([
-                    'valid' => true,
-                    'vat_number' => 'ESB12345678',
-                    'country_code' => 'ES',
-                    'company_name' => 'Test Company S.L.',
+                'http://apilayer.net/api/validate*'         => Http::response([
+                    'valid'           => true,
+                    'vat_number'      => 'ESB12345678',
+                    'country_code'    => 'ES',
+                    'company_name'    => 'Test Company S.L.',
                     'company_address' => 'Calle Test 123, 41001 Sevilla, España',
                 ], 200),
             ]);
@@ -217,10 +217,10 @@ describe('VatVerification Integration Tests', function () {
 
             Http::fake([
                 'http://apilayer.net/api/validate*' => Http::response([
-                    'valid' => true,
-                    'vat_number' => 'ESB12345678',
-                    'country_code' => 'ES',
-                    'company_name' => 'Test Company S.L.',
+                    'valid'           => true,
+                    'vat_number'      => 'ESB12345678',
+                    'country_code'    => 'ES',
+                    'company_name'    => 'Test Company S.L.',
                     'company_address' => 'Calle Test 123, 41001 Sevilla, España',
                 ], 200),
             ]);
@@ -244,20 +244,20 @@ describe('VatVerification Integration Tests', function () {
             $service = new VatVerificationService;
 
             Http::fake([
-                'http://apilayer.net/api/validate*' => Http::response([], 500),
+                'http://apilayer.net/api/validate*'         => Http::response([], 500),
                 'https://vat.abstractapi.com/v1/validate/*' => Http::response([
-                    'valid' => true,
+                    'valid'      => true,
                     'vat_number' => 'ESB12345678',
-                    'country' => [
+                    'country'    => [
                         'code' => 'ES',
                         'name' => 'Spain',
                     ],
                     'company' => [
-                        'name' => 'Test Company S.L.',
+                        'name'    => 'Test Company S.L.',
                         'address' => 'Calle Test 123, 41001 Sevilla, España',
                     ],
                     'format_valid' => true,
-                    'query' => 'ESB12345678',
+                    'query'        => 'ESB12345678',
                 ], 200),
             ]);
 

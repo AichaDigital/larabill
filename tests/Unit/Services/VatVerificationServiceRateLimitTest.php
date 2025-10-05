@@ -2,8 +2,7 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Services\VatApiIntegrationService;
-use AichaDigital\Larabill\Services\VatVerificationService;
+use AichaDigital\Larabill\Services\{VatApiIntegrationService, VatVerificationService};
 use Illuminate\Support\Facades\Http;
 
 it('handles rate limiting from AbstractAPI', function () {
@@ -14,19 +13,19 @@ it('handles rate limiting from AbstractAPI', function () {
     // Mock HTTP to return rate limit error for primary API
     Http::fake([
         'https://vat.abstractapi.com/v1/validate/*' => Http::response([
-            'error' => 'Rate limit exceeded',
+            'error'   => 'Rate limit exceeded',
             'message' => 'You have exceeded your rate limit',
         ], 429),
         'http://apilayer.net/api/validate*' => Http::response([
-            'valid' => true,
-            'vat_number' => 'ESB12345678',
-            'company_name' => 'Test Company S.L.',
+            'valid'           => true,
+            'vat_number'      => 'ESB12345678',
+            'company_name'    => 'Test Company S.L.',
             'company_address' => 'Test Address',
         ], 200),
     ]);
 
     $apiIntegration = new VatApiIntegrationService;
-    $service = new VatVerificationService($apiIntegration);
+    $service        = new VatVerificationService($apiIntegration);
 
     $result = $service->verifyVatNumber('ESB12345678', 'ES');
 
@@ -57,7 +56,7 @@ it('handles rate limiting from APILayer', function () {
     ]);
 
     $apiIntegration = new VatApiIntegrationService;
-    $service = new VatVerificationService($apiIntegration);
+    $service        = new VatVerificationService($apiIntegration);
 
     $result = $service->verifyVatNumber('ESB12345678', 'ES');
 
@@ -80,15 +79,15 @@ it('handles rate limiting with cache fallback', function () {
 
     // Create a cached verification first with rate limiting info
     $cachedVerification = \AichaDigital\Larabill\Models\VatVerification::create([
-        'vat_number' => 'ESB12345678',
-        'country_code' => 'ES',
-        'is_valid' => true,
-        'company_name' => 'Cached Company S.L.',
+        'vat_number'      => 'ESB12345678',
+        'country_code'    => 'ES',
+        'is_valid'        => true,
+        'company_name'    => 'Cached Company S.L.',
         'company_address' => 'Cached Address',
-        'api_source' => 'abstractapi',
-        'response_data' => ['valid' => true, 'rate_limit_hit' => true],
-        'checked_at' => now(),
-        'expires_at' => now()->addDays(30),
+        'api_source'      => 'abstractapi',
+        'response_data'   => ['valid' => true, 'rate_limit_hit' => true],
+        'checked_at'      => now(),
+        'expires_at'      => now()->addDays(30),
     ]);
 
     // Mock HTTP to return rate limit error for both APIs
@@ -102,7 +101,7 @@ it('handles rate limiting with cache fallback', function () {
     ]);
 
     $apiIntegration = new VatApiIntegrationService;
-    $service = new VatVerificationService($apiIntegration);
+    $service        = new VatVerificationService($apiIntegration);
 
     $result = $service->verifyVatNumber('ESB12345678', 'ES');
 
@@ -124,15 +123,15 @@ it('handles rate limiting with expired cache', function () {
 
     // Create an expired cached verification
     $expiredVerification = \AichaDigital\Larabill\Models\VatVerification::create([
-        'vat_number' => 'ESB12345678',
-        'country_code' => 'ES',
-        'is_valid' => true,
-        'company_name' => 'Expired Company S.L.',
+        'vat_number'      => 'ESB12345678',
+        'country_code'    => 'ES',
+        'is_valid'        => true,
+        'company_name'    => 'Expired Company S.L.',
         'company_address' => 'Expired Address',
-        'api_source' => 'abstractapi',
-        'response_data' => ['valid' => true],
-        'checked_at' => now()->subDays(35),
-        'expires_at' => now()->subDays(5), // Expired
+        'api_source'      => 'abstractapi',
+        'response_data'   => ['valid' => true],
+        'checked_at'      => now()->subDays(35),
+        'expires_at'      => now()->subDays(5), // Expired
     ]);
 
     // Mock HTTP to return rate limit error for both APIs
@@ -146,7 +145,7 @@ it('handles rate limiting with expired cache', function () {
     ]);
 
     $apiIntegration = new VatApiIntegrationService;
-    $service = new VatVerificationService($apiIntegration);
+    $service        = new VatVerificationService($apiIntegration);
 
     $result = $service->verifyVatNumber('ESB12345678', 'ES');
 
@@ -178,7 +177,7 @@ it('handles rate limiting with mock fallback', function () {
     ]);
 
     $apiIntegration = new VatApiIntegrationService;
-    $service = new VatVerificationService($apiIntegration);
+    $service        = new VatVerificationService($apiIntegration);
 
     $result = $service->verifyVatNumber('ESB12345678', 'ES');
 

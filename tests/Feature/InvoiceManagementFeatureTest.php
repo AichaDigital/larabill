@@ -8,35 +8,35 @@ use AichaDigital\Larabill\Services\BillingService;
 it('can list and filter invoices', function () {
     // Create test invoices with different statuses
     $draftInvoice = Invoice::create([
-        'number' => 'FAC-0001',
-        'type' => 'invoice',
-        'status' => 'draft',
-        'user_id' => 1,
-        'subtotal' => Invoice::amountToBase100(100.0),
-        'tax_amount' => Invoice::amountToBase100(21.0),
-        'total' => Invoice::amountToBase100(121.0),
+        'number'       => 'FAC-0001',
+        'type'         => 'invoice',
+        'status'       => 'draft',
+        'user_id'      => 1,
+        'subtotal'     => Invoice::amountToBase100(100.0),
+        'tax_amount'   => Invoice::amountToBase100(21.0),
+        'total'        => Invoice::amountToBase100(121.0),
         'is_immutable' => false,
     ]);
 
     $sentInvoice = Invoice::create([
-        'number' => 'FAC-0002',
-        'type' => 'invoice',
-        'status' => 'sent',
-        'user_id' => 1,
-        'subtotal' => Invoice::amountToBase100(200.0),
-        'tax_amount' => Invoice::amountToBase100(42.0),
-        'total' => Invoice::amountToBase100(242.0),
+        'number'       => 'FAC-0002',
+        'type'         => 'invoice',
+        'status'       => 'sent',
+        'user_id'      => 1,
+        'subtotal'     => Invoice::amountToBase100(200.0),
+        'tax_amount'   => Invoice::amountToBase100(42.0),
+        'total'        => Invoice::amountToBase100(242.0),
         'is_immutable' => false,
     ]);
 
     $paidInvoice = Invoice::create([
-        'number' => 'FAC-0003',
-        'type' => 'invoice',
-        'status' => 'paid',
-        'user_id' => 1,
-        'subtotal' => Invoice::amountToBase100(300.0),
-        'tax_amount' => Invoice::amountToBase100(63.0),
-        'total' => Invoice::amountToBase100(363.0),
+        'number'       => 'FAC-0003',
+        'type'         => 'invoice',
+        'status'       => 'paid',
+        'user_id'      => 1,
+        'subtotal'     => Invoice::amountToBase100(300.0),
+        'tax_amount'   => Invoice::amountToBase100(63.0),
+        'total'        => Invoice::amountToBase100(363.0),
         'is_immutable' => false,
     ]);
 
@@ -62,15 +62,15 @@ it('can create invoices through BillingService', function () {
     $service = new BillingService;
 
     $invoiceData = [
-        'user_id' => 1,
+        'user_id'          => 1,
         'customer_country' => 'ES',
-        'customer_type' => 'individual',
-        'items' => [
+        'customer_type'    => 'individual',
+        'items'            => [
             [
                 'description' => 'Feature Test Item',
-                'quantity' => 1,
-                'unit_price' => 100.0,
-                'tax_rate' => 21.0,
+                'quantity'    => 1,
+                'unit_price'  => 100.0,
+                'tax_rate'    => 21.0,
             ],
         ],
     ];
@@ -93,15 +93,15 @@ it('can edit invoices only when not immutable', function () {
     $service = new BillingService;
 
     $invoiceData = [
-        'user_id' => 1,
+        'user_id'          => 1,
         'customer_country' => 'ES',
-        'customer_type' => 'individual',
-        'items' => [
+        'customer_type'    => 'individual',
+        'items'            => [
             [
                 'description' => 'Editable Item',
-                'quantity' => 1,
-                'unit_price' => 100.0,
-                'tax_rate' => 21.0,
+                'quantity'    => 1,
+                'unit_price'  => 100.0,
+                'tax_rate'    => 21.0,
             ],
         ],
     ];
@@ -113,7 +113,7 @@ it('can edit invoices only when not immutable', function () {
     // Can edit mutable invoice
     $mutableInvoice->update([
         'status' => 'sent',
-        'notes' => 'Invoice sent to customer',
+        'notes'  => 'Invoice sent to customer',
     ]);
 
     $updatedInvoice = Invoice::find($mutableInvoice->id);
@@ -133,15 +133,15 @@ it('can generate PDF for invoices', function () {
     $service = new BillingService;
 
     $invoiceData = [
-        'user_id' => 1,
+        'user_id'          => 1,
         'customer_country' => 'ES',
-        'customer_type' => 'individual',
-        'items' => [
+        'customer_type'    => 'individual',
+        'items'            => [
             [
                 'description' => 'PDF Test Item',
-                'quantity' => 1,
-                'unit_price' => 100.0,
-                'tax_rate' => 21.0,
+                'quantity'    => 1,
+                'unit_price'  => 100.0,
+                'tax_rate'    => 21.0,
             ],
         ],
     ];
@@ -156,15 +156,15 @@ it('can handle email sending for invoices', function () {
     $service = new BillingService;
 
     $invoiceData = [
-        'user_id' => 1,
+        'user_id'          => 1,
         'customer_country' => 'ES',
-        'customer_type' => 'individual',
-        'items' => [
+        'customer_type'    => 'individual',
+        'items'            => [
             [
                 'description' => 'Email Test Item',
-                'quantity' => 1,
-                'unit_price' => 100.0,
-                'tax_rate' => 21.0,
+                'quantity'    => 1,
+                'unit_price'  => 100.0,
+                'tax_rate'    => 21.0,
             ],
         ],
     ];
@@ -184,15 +184,15 @@ it('can manage proforma invoices', function () {
     $service = new BillingService;
 
     $invoiceData = [
-        'user_id' => 1,
+        'user_id'          => 1,
         'customer_country' => 'ES',
-        'customer_type' => 'individual',
-        'items' => [
+        'customer_type'    => 'individual',
+        'items'            => [
             [
                 'description' => 'Proforma Item',
-                'quantity' => 1,
-                'unit_price' => 100.0,
-                'tax_rate' => 21.0,
+                'quantity'    => 1,
+                'unit_price'  => 100.0,
+                'tax_rate'    => 21.0,
             ],
         ],
     ];
@@ -217,27 +217,27 @@ it('can handle invoice with multiple items and complex calculations', function (
     $service = new BillingService;
 
     $invoiceData = [
-        'user_id' => 1,
+        'user_id'          => 1,
         'customer_country' => 'ES',
-        'customer_type' => 'individual',
-        'items' => [
+        'customer_type'    => 'individual',
+        'items'            => [
             [
                 'description' => 'Item 1',
-                'quantity' => 2,
-                'unit_price' => 50.0,
-                'tax_rate' => 21.0,
+                'quantity'    => 2,
+                'unit_price'  => 50.0,
+                'tax_rate'    => 21.0,
             ],
             [
                 'description' => 'Item 2',
-                'quantity' => 1,
-                'unit_price' => 100.0,
-                'tax_rate' => 10.0,
+                'quantity'    => 1,
+                'unit_price'  => 100.0,
+                'tax_rate'    => 10.0,
             ],
             [
                 'description' => 'Item 3',
-                'quantity' => 3,
-                'unit_price' => 25.0,
-                'tax_rate' => 4.0,
+                'quantity'    => 3,
+                'unit_price'  => 25.0,
+                'tax_rate'    => 4.0,
             ],
         ],
     ];
@@ -249,14 +249,14 @@ it('can handle invoice with multiple items and complex calculations', function (
 
     // Verify calculations
     $totalSubtotal = 0;
-    $totalTax = 0;
+    $totalTax      = 0;
 
     foreach ($invoice->items as $item) {
-        $subtotal = $item->getQuantityAsFloat() * $item->getUnitPriceAsAmount();
-        $taxAmount = $subtotal * ($item->getTaxRateAsPercentage() / 100);
+        $subtotal  = $item->getQuantityAsFloat() * $item->getUnitPriceAsAmount();
+        $taxAmount = $subtotal                   * ($item->getTaxRateAsPercentage() / 100);
 
         $totalSubtotal += $subtotal;
-        $totalTax += $taxAmount;
+        $totalTax      += $taxAmount;
     }
 
     $expectedTotal = $totalSubtotal + $totalTax;
@@ -270,19 +270,19 @@ it('can handle invoice with ROI verification', function () {
     $service = new BillingService;
 
     $invoiceData = [
-        'user_id' => 1,
+        'user_id'          => 1,
         'customer_country' => 'DE',
-        'customer_type' => 'business',
+        'customer_type'    => 'business',
         'vat_verification' => [
-            'vat_number' => 'DE123456789',
+            'vat_number'   => 'DE123456789',
             'country_code' => 'DE',
         ],
         'items' => [
             [
                 'description' => 'ROI Test Item',
-                'quantity' => 1,
-                'unit_price' => 100.0,
-                'tax_rate' => 21.0,
+                'quantity'    => 1,
+                'unit_price'  => 100.0,
+                'tax_rate'    => 21.0,
             ],
         ],
     ];
@@ -300,18 +300,18 @@ it('can handle invoice with custom templates and payment terms', function () {
     $dueDate = now()->addDays(30);
 
     $invoiceData = [
-        'user_id' => 1,
+        'user_id'          => 1,
         'customer_country' => 'ES',
-        'customer_type' => 'individual',
-        'due_date' => $dueDate,
-        'payment_terms' => 'Net 30',
-        'template_name' => 'custom_template',
-        'items' => [
+        'customer_type'    => 'individual',
+        'due_date'         => $dueDate,
+        'payment_terms'    => 'Net 30',
+        'template_name'    => 'custom_template',
+        'items'            => [
             [
                 'description' => 'Template Test Item',
-                'quantity' => 1,
-                'unit_price' => 100.0,
-                'tax_rate' => 21.0,
+                'quantity'    => 1,
+                'unit_price'  => 100.0,
+                'tax_rate'    => 21.0,
             ],
         ],
     ];

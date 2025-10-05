@@ -4,10 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services;
 
-use AichaDigital\Larabill\Models\CompanyFiscalConfig;
-use AichaDigital\Larabill\Models\CountryVatRate;
-use AichaDigital\Larabill\Models\EuSalesThreshold;
-use AichaDigital\Larabill\Models\VatCategory;
+use AichaDigital\Larabill\Models\{CompanyFiscalConfig, CountryVatRate, EuSalesThreshold, VatCategory};
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -75,16 +72,16 @@ class DestinationVatService
      */
     public function calculateDestinationVat(float $amount, string $countryCode, ?string $category = null): array
     {
-        $vatRate = $this->getDestinationVatRate($countryCode, $category);
+        $vatRate   = $this->getDestinationVatRate($countryCode, $category);
         $vatAmount = $amount * ($vatRate / 100);
 
         return [
-            'amount' => $amount,
-            'vat_rate' => $vatRate,
-            'vat_amount' => $vatAmount,
-            'total' => $amount + $vatAmount,
+            'amount'       => $amount,
+            'vat_rate'     => $vatRate,
+            'vat_amount'   => $vatAmount,
+            'total'        => $amount + $vatAmount,
             'country_code' => $countryCode,
-            'category' => $category,
+            'category'     => $category,
         ];
     }
 
@@ -129,21 +126,21 @@ class DestinationVatService
      */
     public function getThresholdStatistics(string $companyId, ?int $fiscalYear = null): array
     {
-        $config = CompanyFiscalConfig::getOrCreateForCompany($companyId, $fiscalYear);
+        $config    = CompanyFiscalConfig::getOrCreateForCompany($companyId, $fiscalYear);
         $threshold = EuSalesThreshold::getOrCreateForCompany($companyId, $fiscalYear);
 
         return [
-            'company_id' => $companyId,
-            'fiscal_year' => $fiscalYear ?: now()->year,
-            'current_amount' => $config->current_eu_sales_amount,
-            'threshold_amount' => $config->eu_sales_threshold,
-            'threshold_percentage' => $config->getThresholdPercentage(),
-            'remaining_amount' => $config->getRemainingThresholdAmount(),
-            'exceeded' => $config->checkThreshold(),
-            'exceeded_at' => $config->threshold_exceeded_at,
+            'company_id'              => $companyId,
+            'fiscal_year'             => $fiscalYear ?: now()->year,
+            'current_amount'          => $config->current_eu_sales_amount,
+            'threshold_amount'        => $config->eu_sales_threshold,
+            'threshold_percentage'    => $config->getThresholdPercentage(),
+            'remaining_amount'        => $config->getRemainingThresholdAmount(),
+            'exceeded'                => $config->checkThreshold(),
+            'exceeded_at'             => $config->threshold_exceeded_at,
             'applies_destination_vat' => $config->shouldApplyDestinationVat(),
-            'breakdown_by_country' => $threshold->breakdown_by_country ?? [],
-            'top_countries' => $threshold->getTopCountriesBySales(5),
+            'breakdown_by_country'    => $threshold->breakdown_by_country ?? [],
+            'top_countries'           => $threshold->getTopCountriesBySales(5),
         ];
     }
 
@@ -158,7 +155,7 @@ class DestinationVatService
         $this->clearCompanyCache($companyId);
 
         Log::info('Destination VAT enabled for company', [
-            'company_id' => $companyId,
+            'company_id'  => $companyId,
             'fiscal_year' => $fiscalYear ?: now()->year,
         ]);
 
@@ -176,7 +173,7 @@ class DestinationVatService
         $this->clearCompanyCache($companyId);
 
         Log::info('Destination VAT disabled for company', [
-            'company_id' => $companyId,
+            'company_id'  => $companyId,
             'fiscal_year' => $fiscalYear ?: now()->year,
         ]);
 
@@ -197,7 +194,7 @@ class DestinationVatService
         $this->clearCompanyCache($companyId);
 
         Log::info('EU sales reset for new fiscal year', [
-            'company_id' => $companyId,
+            'company_id'      => $companyId,
             'new_fiscal_year' => $newFiscalYear,
         ]);
     }
@@ -245,7 +242,7 @@ class DestinationVatService
         $this->cacheService->clearByTag('vat');
 
         Log::info('VAT rates imported', [
-            'count' => $imported,
+            'count'       => $imported,
             'data_source' => $dataSource,
         ]);
 
@@ -265,15 +262,15 @@ class DestinationVatService
                 $query->where('fiscal_year', $fiscalYear);
             }
 
-            $totalCompanies = $query->count();
-            $companiesExceeding = (clone $query)->whereColumn('current_eu_sales_amount', '>=', 'eu_sales_threshold')->count();
+            $totalCompanies            = $query->count();
+            $companiesExceeding        = (clone $query)->whereColumn('current_eu_sales_amount', '>=', 'eu_sales_threshold')->count();
             $companiesUsingDestination = (clone $query)->where('apply_destination_iva', true)->count();
-            $totalEuSales = (clone $query)->sum('current_eu_sales_amount');
+            $totalEuSales              = (clone $query)->sum('current_eu_sales_amount');
 
             // Calculate average threshold percentage
-            $configs = (clone $query)->get();
+            $configs         = (clone $query)->get();
             $totalPercentage = 0;
-            $count = 0;
+            $count           = 0;
             foreach ($configs as $config) {
                 if ($config->eu_sales_threshold > 0) {
                     $percentage = ($config->current_eu_sales_amount / $config->eu_sales_threshold) * 100;
@@ -284,12 +281,12 @@ class DestinationVatService
             $averageThresholdPercentage = $count > 0 ? $totalPercentage / $count : 0;
 
             return [
-                'total_companies' => $totalCompanies,
-                'companies_exceeding_threshold' => $companiesExceeding,
+                'total_companies'                 => $totalCompanies,
+                'companies_exceeding_threshold'   => $companiesExceeding,
                 'companies_using_destination_vat' => $companiesUsingDestination,
-                'total_eu_sales' => (float) $totalEuSales,
-                'average_threshold_percentage' => (float) $averageThresholdPercentage,
-                'vat_rate_statistics' => CountryVatRate::getVatRateStatistics(),
+                'total_eu_sales'                  => (float) $totalEuSales,
+                'average_threshold_percentage'    => (float) $averageThresholdPercentage,
+                'vat_rate_statistics'             => CountryVatRate::getVatRateStatistics(),
             ];
         });
     }
@@ -336,7 +333,7 @@ class DestinationVatService
     public function getFiscalYearEndDate(int $fiscalYear): \DateTime
     {
         $startDate = $this->getFiscalYearStartDate($fiscalYear);
-        $endDate = clone $startDate;
+        $endDate   = clone $startDate;
         $endDate->add(new \DateInterval('P1Y'))->sub(new \DateInterval('P1D'));
 
         return $endDate;
@@ -392,8 +389,8 @@ class DestinationVatService
         $config = CompanyFiscalConfig::getOrCreateForCompany($companyId, $fiscalYear);
 
         // Work directly with monetary amounts (no base100 conversion)
-        $currentAmount = $config->current_eu_sales_amount;
-        $newAmount = $currentAmount + $amount;
+        $currentAmount                   = $config->current_eu_sales_amount;
+        $newAmount                       = $currentAmount + $amount;
         $config->current_eu_sales_amount = $newAmount;
 
         if ($config->current_eu_sales_amount >= $config->eu_sales_threshold) {
@@ -406,11 +403,11 @@ class DestinationVatService
         // Also update EuSalesThreshold for detailed tracking
         $threshold = EuSalesThreshold::findByCompanyAndYear($companyId, $fiscalYear);
         if ($threshold) {
-            $breakdown = $threshold->breakdown_by_country ?? [];
-            $currentCountryAmount = (float) ($breakdown[$countryCode] ?? 0.0);
-            $breakdown[$countryCode] = (float) ($currentCountryAmount + $amount);
+            $breakdown                       = $threshold->breakdown_by_country ?? [];
+            $currentCountryAmount            = (float) ($breakdown[$countryCode] ?? 0.0);
+            $breakdown[$countryCode]         = (float) ($currentCountryAmount + $amount);
             $threshold->breakdown_by_country = $breakdown;
-            $threshold->total_amount = (float) array_sum($breakdown);
+            $threshold->total_amount         = (float) array_sum($breakdown);
             $threshold->save();
         }
 
@@ -422,18 +419,18 @@ class DestinationVatService
      */
     public function getEuSalesThresholdStatus(string $companyId, int $fiscalYear): array
     {
-        $config = CompanyFiscalConfig::getOrCreateForCompany($companyId, $fiscalYear);
+        $config    = CompanyFiscalConfig::getOrCreateForCompany($companyId, $fiscalYear);
         $threshold = (float) $config->eu_sales_threshold;
-        $current = (float) $config->current_eu_sales_amount;
+        $current   = (float) $config->current_eu_sales_amount;
 
         $remaining = max(0, $threshold - $current);
 
         return [
-            'threshold' => $threshold,
+            'threshold'      => $threshold,
             'current_amount' => $current,
-            'exceeded' => $current >= $threshold,
-            'percentage' => round(($current / $threshold) * 100, 1),
-            'remaining' => $remaining == 0 ? 0 : round($remaining, 2),
+            'exceeded'       => $current >= $threshold,
+            'percentage'     => round(($current / $threshold) * 100, 1),
+            'remaining'      => $remaining == 0 ? 0 : round($remaining, 2),
         ];
     }
 
@@ -449,7 +446,7 @@ class DestinationVatService
         }
 
         $breakdown = $threshold->breakdown_by_country ?? [];
-        $total = (float) array_sum($breakdown);
+        $total     = (float) array_sum($breakdown);
 
         // Convert all country values to float
         $floatBreakdown = [];
@@ -458,7 +455,7 @@ class DestinationVatService
         }
 
         return [
-            'total' => $total,
+            'total'     => $total,
             'countries' => $floatBreakdown,
         ];
     }
@@ -508,10 +505,10 @@ class DestinationVatService
         $config = CompanyFiscalConfig::getOrCreateForCompany($companyId, $newFiscalYear);
 
         $config->current_eu_sales_amount = 0.0;
-        $config->apply_destination_iva = false;
-        $config->threshold_exceeded = false;
-        $config->threshold_exceeded_at = null;
-        $config->notification_sent = false;
+        $config->apply_destination_iva   = false;
+        $config->threshold_exceeded      = false;
+        $config->threshold_exceeded_at   = null;
+        $config->notification_sent       = false;
 
         $config->save();
 
@@ -519,17 +516,17 @@ class DestinationVatService
         $threshold = EuSalesThreshold::findByCompanyAndYear($companyId, $newFiscalYear);
         if (! $threshold) {
             EuSalesThreshold::create([
-                'company_id' => $companyId,
-                'fiscal_year' => $newFiscalYear,
-                'total_amount' => 0.0,
-                'threshold_exceeded' => false,
-                'notification_sent' => false,
+                'company_id'           => $companyId,
+                'fiscal_year'          => $newFiscalYear,
+                'total_amount'         => 0.0,
+                'threshold_exceeded'   => false,
+                'notification_sent'    => false,
                 'breakdown_by_country' => [],
             ]);
         } else {
-            $threshold->total_amount = 0.0;
-            $threshold->threshold_exceeded = false;
-            $threshold->notification_sent = false;
+            $threshold->total_amount         = 0.0;
+            $threshold->threshold_exceeded   = false;
+            $threshold->notification_sent    = false;
             $threshold->breakdown_by_country = [];
             $threshold->save();
         }
@@ -575,21 +572,21 @@ class DestinationVatService
     public function getVatRateComparison(array $countryCodes): array
     {
         $comparison = [];
-        $rates = [];
+        $rates      = [];
 
         foreach ($countryCodes as $countryCode) {
             $countryVatRate = CountryVatRate::findByCountryCode($countryCode);
             if ($countryVatRate) {
-                $rate = (float) $countryVatRate->standard_rate;
+                $rate                     = (float) $countryVatRate->standard_rate;
                 $comparison[$countryCode] = $rate;
-                $rates[] = $rate;
+                $rates[]                  = $rate;
             }
         }
 
         if (! empty($rates)) {
             $comparison['average'] = array_sum($rates) / count($rates);
             $comparison['highest'] = max($rates);
-            $comparison['lowest'] = min($rates);
+            $comparison['lowest']  = min($rates);
         }
 
         return $comparison;
@@ -600,22 +597,22 @@ class DestinationVatService
      */
     public function calculateVatSavings(float $amount, string $sourceCountry, string $destinationCountry): array
     {
-        $sourceRate = $this->getVatRateForCountry($sourceCountry);
+        $sourceRate      = $this->getVatRateForCountry($sourceCountry);
         $destinationRate = $this->getVatRateForCountry($destinationCountry);
 
-        $sourceVat = $amount * ($sourceRate / 100);
+        $sourceVat      = $amount * ($sourceRate / 100);
         $destinationVat = $amount * ($destinationRate / 100);
 
-        $savings = $sourceVat - $destinationVat;
+        $savings    = $sourceVat  - $destinationVat;
         $percentage = $sourceRate - $destinationRate;
 
         return [
-            'amount' => $savings,
-            'percentage' => $percentage,
-            'source_vat' => $sourceVat,
+            'amount'          => $savings,
+            'percentage'      => $percentage,
+            'source_vat'      => $sourceVat,
             'destination_vat' => $destinationVat,
-            'from_country' => $sourceCountry,
-            'to_country' => $destinationCountry,
+            'from_country'    => $sourceCountry,
+            'to_country'      => $destinationCountry,
         ];
     }
 
@@ -624,15 +621,15 @@ class DestinationVatService
      */
     public function getFiscalYearInfo(int $fiscalYear): array
     {
-        $startDate = $this->getFiscalYearStartDate($fiscalYear);
-        $endDate = $this->getFiscalYearEndDate($fiscalYear);
+        $startDate   = $this->getFiscalYearStartDate($fiscalYear);
+        $endDate     = $this->getFiscalYearEndDate($fiscalYear);
         $currentYear = (int) now()->format('Y');
 
         return [
-            'year' => $fiscalYear,
+            'year'       => $fiscalYear,
             'start_date' => $startDate->format('Y-m-d'),
-            'end_date' => $endDate->format('Y-m-d'),
-            'days' => $startDate->diff($endDate)->days + 1,
+            'end_date'   => $endDate->format('Y-m-d'),
+            'days'       => $startDate->diff($endDate)->days + 1,
             'is_current' => $currentYear === $fiscalYear,
         ];
     }

@@ -6,8 +6,8 @@ use AichaDigital\Larabill\Models\TaxRate;
 
 it('can create Spanish tax rates with factories', function () {
     // Preparación: crear las tax rates usando factories
-    $generalRate = TaxRate::factory()->spanishGeneral()->create();
-    $reducedRate = TaxRate::factory()->spanishReduced()->create();
+    $generalRate      = TaxRate::factory()->spanishGeneral()->create();
+    $reducedRate      = TaxRate::factory()->spanishReduced()->create();
     $superReducedRate = TaxRate::factory()->spanishSuperReduced()->create();
 
     // Verificación: comprobar que se crearon correctamente
@@ -46,8 +46,8 @@ it('can create EU tax rates with factories', function () {
 
 it('can create special territories rates with factories', function () {
     // Preparación: crear las tax rates usando factories
-    $canaryRate = TaxRate::factory()->canaryIslands()->create();
-    $ceutaRate = TaxRate::factory()->ceuta()->create();
+    $canaryRate  = TaxRate::factory()->canaryIslands()->create();
+    $ceutaRate   = TaxRate::factory()->ceuta()->create();
     $melillaRate = TaxRate::factory()->melilla()->create();
 
     // Verificación: comprobar que se crearon correctamente

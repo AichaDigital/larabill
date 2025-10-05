@@ -54,11 +54,11 @@ class CountryVatRate extends Model
     public function casts(): array
     {
         return [
-            'standard_rate' => 'integer', // Base 100: 21.50% = 2150
-            'reduced_rates' => 'json',    // Array of integers in base 100 - explicit JSON cast
+            'standard_rate'     => 'integer', // Base 100: 21.50% = 2150
+            'reduced_rates'     => 'json',    // Array of integers in base 100 - explicit JSON cast
             'exempt_categories' => 'json', // Explicit JSON cast
-            'is_active' => 'boolean',
-            'last_updated' => 'datetime',
+            'is_active'         => 'boolean',
+            'last_updated'      => 'datetime',
         ];
     }
 
@@ -89,7 +89,7 @@ class CountryVatRate extends Model
             if (! app()->environment('testing')) {
                 $fieldMapping = \AichaDigital\Larabill\Services\ModelMappingService::getFieldMapping('country_vat_rate');
                 if (! empty($fieldMapping)) {
-                    $attributes = $model->getAttributes();
+                    $attributes       = $model->getAttributes();
                     $mappedAttributes = \AichaDigital\Larabill\Services\ModelMappingService::reverseMapFields($attributes, 'country_vat_rate');
 
                     // Filter out keys that are not mass-assignable columns to avoid DB errors
@@ -118,7 +118,7 @@ class CountryVatRate extends Model
             // Apply field mapping when retrieving
             $fieldMapping = \AichaDigital\Larabill\Services\ModelMappingService::getFieldMapping('country_vat_rate');
             if (! empty($fieldMapping)) {
-                $attributes = $model->getAttributes();
+                $attributes       = $model->getAttributes();
                 $mappedAttributes = \AichaDigital\Larabill\Services\ModelMappingService::mapFields($attributes, 'country_vat_rate');
                 $model->setRawAttributes($mappedAttributes);
             }
@@ -297,7 +297,7 @@ class CountryVatRate extends Model
      */
     public function setReducedRate(string $category, int $rate): self
     {
-        $reducedRates = $this->reduced_rates ?? [];
+        $reducedRates            = $this->reduced_rates ?? [];
         $reducedRates[$category] = $rate;
 
         $this->update(['reduced_rates' => $reducedRates]);
@@ -415,7 +415,7 @@ class CountryVatRate extends Model
      */
     public function getFormattedReducedRates(): array
     {
-        $formatted = [];
+        $formatted    = [];
         $reducedRates = $this->reduced_rates ?? [];
 
         foreach ($reducedRates as $category => $rate) {
@@ -498,8 +498,8 @@ class CountryVatRate extends Model
         $imported = 0;
 
         foreach ($data as $countryData) {
-            $countryCode = $countryData['country_code'] ?? null;
-            $countryName = $countryData['country_name'] ?? null;
+            $countryCode  = $countryData['country_code']  ?? null;
+            $countryName  = $countryData['country_name']  ?? null;
             $standardRate = $countryData['standard_rate'] ?? null;
 
             if (! $countryCode || ! $countryName || ! $standardRate) {
@@ -509,12 +509,12 @@ class CountryVatRate extends Model
             $vatRate = static::updateOrCreate(
                 ['country_code' => $countryCode],
                 [
-                    'country_name' => $countryName,
-                    'standard_rate' => $standardRate,
-                    'reduced_rates' => $countryData['reduced_rates'] ?? [],
+                    'country_name'      => $countryName,
+                    'standard_rate'     => $standardRate,
+                    'reduced_rates'     => $countryData['reduced_rates']     ?? [],
                     'exempt_categories' => $countryData['exempt_categories'] ?? [],
-                    'data_source' => $dataSource,
-                    'is_active' => true,
+                    'data_source'       => $dataSource,
+                    'is_active'         => true,
                 ]
             );
 
@@ -689,7 +689,7 @@ class CountryVatRate extends Model
     {
         return [
             'standard' => (float) $this->standard_rate,
-            'reduced' => $this->getReducedRates(),
+            'reduced'  => $this->getReducedRates(),
         ];
     }
 
@@ -756,19 +756,19 @@ class CountryVatRate extends Model
      */
     public static function getVatRateStatisticsAdjusted(): array
     {
-        $all = static::query()->get();
-        $active = $all->where('is_active', true);
+        $all      = static::query()->get();
+        $active   = $all->where('is_active', true);
         $inactive = $all->where('is_active', false);
 
         $standardRates = static::extractStandardRatesAsPercentages($all);
 
         return [
-            'total' => $all->count(),
-            'active' => $active->count(),
-            'inactive' => $inactive->count(),
+            'total'                 => $all->count(),
+            'active'                => $active->count(),
+            'inactive'              => $inactive->count(),
             'average_standard_rate' => static::calculateSafeAverage($standardRates),
             'highest_standard_rate' => static::calculateSafeMax($standardRates),
-            'lowest_standard_rate' => static::calculateSafeMin($standardRates),
+            'lowest_standard_rate'  => static::calculateSafeMin($standardRates),
         ];
     }
 
@@ -794,7 +794,7 @@ class CountryVatRate extends Model
             return 0.0;
         }
 
-        $sum = $rates->sum();
+        $sum   = $rates->sum();
         $count = $rates->count();
 
         if ($count === 0 || ! is_numeric($sum)) {

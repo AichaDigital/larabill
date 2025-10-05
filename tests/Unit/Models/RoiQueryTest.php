@@ -6,14 +6,14 @@ use AichaDigital\Larabill\Models\RoiQuery;
 
 it('can create a ROI query', function () {
     $query = RoiQuery::create([
-        'user_id' => 'user-123',
-        'vat_number' => 'ESB12345678',
-        'country_code' => 'ES',
-        'query_type' => RoiQuery::QUERY_TYPE_API,
-        'api_source' => 'abstractapi',
+        'user_id'       => 'user-123',
+        'vat_number'    => 'ESB12345678',
+        'country_code'  => 'ES',
+        'query_type'    => RoiQuery::QUERY_TYPE_API,
+        'api_source'    => 'abstractapi',
         'response_data' => ['valid' => true],
-        'queried_at' => now(),
-        'cache_used' => false,
+        'queried_at'    => now(),
+        'cache_used'    => false,
     ]);
 
     expect($query)->toBeInstanceOf(RoiQuery::class);
@@ -56,22 +56,22 @@ it('can create cache query', function () {
 
 it('can find queries by user and date range', function () {
     $startDate = now()->subDays(10);
-    $endDate = now();
+    $endDate   = now();
 
     RoiQuery::create([
-        'user_id' => 'user-123',
-        'vat_number' => 'ESB12345678',
+        'user_id'      => 'user-123',
+        'vat_number'   => 'ESB12345678',
         'country_code' => 'ES',
-        'query_type' => RoiQuery::QUERY_TYPE_API,
-        'queried_at' => now()->subDays(5), // Within range
+        'query_type'   => RoiQuery::QUERY_TYPE_API,
+        'queried_at'   => now()->subDays(5), // Within range
     ]);
 
     RoiQuery::create([
-        'user_id' => 'user-123',
-        'vat_number' => 'ESB87654321',
+        'user_id'      => 'user-123',
+        'vat_number'   => 'ESB87654321',
         'country_code' => 'ES',
-        'query_type' => RoiQuery::QUERY_TYPE_CACHE,
-        'queried_at' => now()->subDays(15), // Outside range
+        'query_type'   => RoiQuery::QUERY_TYPE_CACHE,
+        'queried_at'   => now()->subDays(15), // Outside range
     ]);
 
     $queries = RoiQuery::findByUserAndDateRange('user-123', $startDate, $endDate)->get();
@@ -82,19 +82,19 @@ it('can find queries by user and date range', function () {
 
 it('can find queries by user and VAT', function () {
     RoiQuery::create([
-        'user_id' => 'user-123',
-        'vat_number' => 'ESB12345678',
+        'user_id'      => 'user-123',
+        'vat_number'   => 'ESB12345678',
         'country_code' => 'ES',
-        'query_type' => RoiQuery::QUERY_TYPE_API,
-        'queried_at' => now()->subDays(5),
+        'query_type'   => RoiQuery::QUERY_TYPE_API,
+        'queried_at'   => now()->subDays(5),
     ]);
 
     RoiQuery::create([
-        'user_id' => 'user-123',
-        'vat_number' => 'ESB87654321',
+        'user_id'      => 'user-123',
+        'vat_number'   => 'ESB87654321',
         'country_code' => 'ES',
-        'query_type' => RoiQuery::QUERY_TYPE_CACHE,
-        'queried_at' => now()->subDays(3),
+        'query_type'   => RoiQuery::QUERY_TYPE_CACHE,
+        'queried_at'   => now()->subDays(3),
     ]);
 
     $queries = RoiQuery::findByUserAndVat('user-123', 'ESB12345678', 'ES')->get();
@@ -105,28 +105,28 @@ it('can find queries by user and VAT', function () {
 
 it('can use scopes correctly', function () {
     RoiQuery::create([
-        'user_id' => 'user-123',
-        'vat_number' => 'ESB12345678',
+        'user_id'      => 'user-123',
+        'vat_number'   => 'ESB12345678',
         'country_code' => 'ES',
-        'query_type' => RoiQuery::QUERY_TYPE_API,
-        'queried_at' => now()->subDays(5),
+        'query_type'   => RoiQuery::QUERY_TYPE_API,
+        'queried_at'   => now()->subDays(5),
     ]);
 
     RoiQuery::create([
-        'user_id' => 'user-456',
-        'vat_number' => 'ESB87654321',
+        'user_id'      => 'user-456',
+        'vat_number'   => 'ESB87654321',
         'country_code' => 'ES',
-        'query_type' => RoiQuery::QUERY_TYPE_CACHE,
-        'cache_used' => true,
-        'queried_at' => now()->subDays(3),
+        'query_type'   => RoiQuery::QUERY_TYPE_CACHE,
+        'cache_used'   => true,
+        'queried_at'   => now()->subDays(3),
     ]);
 
     RoiQuery::create([
-        'user_id' => 'user-789',
-        'vat_number' => 'FRB12345678',
+        'user_id'      => 'user-789',
+        'vat_number'   => 'FRB12345678',
         'country_code' => 'FR',
-        'query_type' => RoiQuery::QUERY_TYPE_API,
-        'queried_at' => now()->subDays(1),
+        'query_type'   => RoiQuery::QUERY_TYPE_API,
+        'queried_at'   => now()->subDays(1),
     ]);
 
     // Test by query type scope
@@ -151,11 +151,11 @@ it('can use scopes correctly', function () {
 
 it('can check if within legal retention period', function () {
     $query = RoiQuery::create([
-        'user_id' => 'user-123',
-        'vat_number' => 'ESB12345678',
-        'country_code' => 'ES',
-        'query_type' => RoiQuery::QUERY_TYPE_API,
-        'queried_at' => now(),
+        'user_id'               => 'user-123',
+        'vat_number'            => 'ESB12345678',
+        'country_code'          => 'ES',
+        'query_type'            => RoiQuery::QUERY_TYPE_API,
+        'queried_at'            => now(),
         'legal_retention_until' => now()->addDays(2555), // 7 years
     ]);
 
@@ -163,11 +163,11 @@ it('can check if within legal retention period', function () {
 
     // Create expired query
     $expiredQuery = RoiQuery::create([
-        'user_id' => 'user-456',
-        'vat_number' => 'ESB87654321',
-        'country_code' => 'ES',
-        'query_type' => RoiQuery::QUERY_TYPE_API,
-        'queried_at' => now()->subDays(3000), // 8+ years ago
+        'user_id'               => 'user-456',
+        'vat_number'            => 'ESB87654321',
+        'country_code'          => 'ES',
+        'query_type'            => RoiQuery::QUERY_TYPE_API,
+        'queried_at'            => now()->subDays(3000), // 8+ years ago
         'legal_retention_until' => now()->subDays(445), // Expired
     ]);
 
@@ -177,21 +177,21 @@ it('can check if within legal retention period', function () {
 it('can get expired legal retention queries', function () {
     // Create valid query
     RoiQuery::create([
-        'user_id' => 'user-123',
-        'vat_number' => 'ESB12345678',
-        'country_code' => 'ES',
-        'query_type' => RoiQuery::QUERY_TYPE_API,
-        'queried_at' => now(),
+        'user_id'               => 'user-123',
+        'vat_number'            => 'ESB12345678',
+        'country_code'          => 'ES',
+        'query_type'            => RoiQuery::QUERY_TYPE_API,
+        'queried_at'            => now(),
         'legal_retention_until' => now()->addDays(2555),
     ]);
 
     // Create expired query
     RoiQuery::create([
-        'user_id' => 'user-456',
-        'vat_number' => 'ESB87654321',
-        'country_code' => 'ES',
-        'query_type' => RoiQuery::QUERY_TYPE_API,
-        'queried_at' => now()->subDays(3000),
+        'user_id'               => 'user-456',
+        'vat_number'            => 'ESB87654321',
+        'country_code'          => 'ES',
+        'query_type'            => RoiQuery::QUERY_TYPE_API,
+        'queried_at'            => now()->subDays(3000),
         'legal_retention_until' => now()->subDays(445),
     ]);
 
@@ -204,11 +204,11 @@ it('can get expired legal retention queries', function () {
 it('can cleanup expired legal retention queries', function () {
     // Create expired query
     RoiQuery::create([
-        'user_id' => 'user-456',
-        'vat_number' => 'ESB87654321',
-        'country_code' => 'ES',
-        'query_type' => RoiQuery::QUERY_TYPE_API,
-        'queried_at' => now()->subDays(3000),
+        'user_id'               => 'user-456',
+        'vat_number'            => 'ESB87654321',
+        'country_code'          => 'ES',
+        'query_type'            => RoiQuery::QUERY_TYPE_API,
+        'queried_at'            => now()->subDays(3000),
         'legal_retention_until' => now()->subDays(445),
     ]);
 
@@ -221,36 +221,36 @@ it('can cleanup expired legal retention queries', function () {
 it('can get query statistics for a user', function () {
     // Create various queries for user-123
     RoiQuery::create([
-        'user_id' => 'user-123',
-        'vat_number' => 'ESB12345678',
+        'user_id'      => 'user-123',
+        'vat_number'   => 'ESB12345678',
         'country_code' => 'ES',
-        'query_type' => RoiQuery::QUERY_TYPE_API,
-        'queried_at' => now()->subDays(5),
+        'query_type'   => RoiQuery::QUERY_TYPE_API,
+        'queried_at'   => now()->subDays(5),
     ]);
 
     RoiQuery::create([
-        'user_id' => 'user-123',
-        'vat_number' => 'ESB87654321',
+        'user_id'      => 'user-123',
+        'vat_number'   => 'ESB87654321',
         'country_code' => 'ES',
-        'query_type' => RoiQuery::QUERY_TYPE_CACHE,
-        'queried_at' => now()->subDays(3),
+        'query_type'   => RoiQuery::QUERY_TYPE_CACHE,
+        'queried_at'   => now()->subDays(3),
     ]);
 
     RoiQuery::create([
-        'user_id' => 'user-123',
-        'vat_number' => 'FRB12345678',
+        'user_id'      => 'user-123',
+        'vat_number'   => 'FRB12345678',
         'country_code' => 'FR',
-        'query_type' => RoiQuery::QUERY_TYPE_CACHE,
-        'queried_at' => now()->subDays(1),
+        'query_type'   => RoiQuery::QUERY_TYPE_CACHE,
+        'queried_at'   => now()->subDays(1),
     ]);
 
     // Create query for different user
     RoiQuery::create([
-        'user_id' => 'user-456',
-        'vat_number' => 'ESB99999999',
+        'user_id'      => 'user-456',
+        'vat_number'   => 'ESB99999999',
         'country_code' => 'ES',
-        'query_type' => RoiQuery::QUERY_TYPE_API,
-        'queried_at' => now()->subDays(2),
+        'query_type'   => RoiQuery::QUERY_TYPE_API,
+        'queried_at'   => now()->subDays(2),
     ]);
 
     $stats = RoiQuery::getQueryStatistics('user-123');
@@ -263,24 +263,24 @@ it('can get query statistics for a user', function () {
 
 it('can get query statistics with date range', function () {
     $startDate = now()->subDays(5);
-    $endDate = now();
+    $endDate   = now();
 
     // Create query within range
     RoiQuery::create([
-        'user_id' => 'user-123',
-        'vat_number' => 'ESB12345678',
+        'user_id'      => 'user-123',
+        'vat_number'   => 'ESB12345678',
         'country_code' => 'ES',
-        'query_type' => RoiQuery::QUERY_TYPE_API,
-        'queried_at' => now()->subDays(3),
+        'query_type'   => RoiQuery::QUERY_TYPE_API,
+        'queried_at'   => now()->subDays(3),
     ]);
 
     // Create query outside range
     RoiQuery::create([
-        'user_id' => 'user-123',
-        'vat_number' => 'ESB87654321',
+        'user_id'      => 'user-123',
+        'vat_number'   => 'ESB87654321',
         'country_code' => 'ES',
-        'query_type' => RoiQuery::QUERY_TYPE_CACHE,
-        'queried_at' => now()->subDays(10),
+        'query_type'   => RoiQuery::QUERY_TYPE_CACHE,
+        'queried_at'   => now()->subDays(10),
     ]);
 
     $stats = RoiQuery::getQueryStatistics('user-123', $startDate, $endDate);
@@ -301,11 +301,11 @@ it('automatically sets legal retention period on creation', function () {
     config(['larabill.roi_verification.legal_retention_days' => 2555]);
 
     $query = RoiQuery::create([
-        'user_id' => 'user-123',
-        'vat_number' => 'ESB12345678',
+        'user_id'      => 'user-123',
+        'vat_number'   => 'ESB12345678',
         'country_code' => 'ES',
-        'query_type' => RoiQuery::QUERY_TYPE_API,
-        'queried_at' => now(),
+        'query_type'   => RoiQuery::QUERY_TYPE_API,
+        'queried_at'   => now(),
     ]);
 
     expect($query->legal_retention_until)->toBeGreaterThan(now()->addDays(2550));
@@ -316,10 +316,10 @@ it('automatically sets queried_at on creation', function () {
     $beforeCreation = now();
 
     $query = RoiQuery::create([
-        'user_id' => 'user-123',
-        'vat_number' => 'ESB12345678',
+        'user_id'      => 'user-123',
+        'vat_number'   => 'ESB12345678',
         'country_code' => 'ES',
-        'query_type' => RoiQuery::QUERY_TYPE_API,
+        'query_type'   => RoiQuery::QUERY_TYPE_API,
     ]);
 
     $afterCreation = now();

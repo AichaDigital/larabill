@@ -46,9 +46,9 @@ class TestCase extends Orchestra
     {
         config()->set('database.default', 'testing');
         config()->set('database.connections.testing', [
-            'driver' => 'sqlite',
+            'driver'   => 'sqlite',
             'database' => ':memory:',
-            'prefix' => '',
+            'prefix'   => '',
         ]);
 
         // Load package configuration
@@ -61,23 +61,23 @@ class TestCase extends Orchestra
     protected function createTestUsers(): void
     {
         TestUser::create([
-            'id' => 1,
-            'name' => 'Test User 1',
-            'email' => 'user1@test.com',
+            'id'       => 1,
+            'name'     => 'Test User 1',
+            'email'    => 'user1@test.com',
             'password' => bcrypt('password'),
         ]);
 
         TestUser::create([
-            'id' => 2,
-            'name' => 'Test User 2',
-            'email' => 'user2@test.com',
+            'id'       => 2,
+            'name'     => 'Test User 2',
+            'email'    => 'user2@test.com',
             'password' => bcrypt('password'),
         ]);
 
         TestUser::create([
-            'id' => 3,
-            'name' => 'Test User 3',
-            'email' => 'user3@test.com',
+            'id'       => 3,
+            'name'     => 'Test User 3',
+            'email'    => 'user3@test.com',
             'password' => bcrypt('password'),
         ]);
     }

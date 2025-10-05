@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\{Builder, Model};
 
 /**
  * Invoice Template Model
@@ -43,8 +42,8 @@ class InvoiceTemplate extends Model
      */
     protected $casts = [
         'is_default' => 'boolean',
-        'is_active' => 'boolean',
-        'settings' => 'array',
+        'is_active'  => 'boolean',
+        'settings'   => 'array',
     ];
 
     /**
@@ -140,10 +139,10 @@ class InvoiceTemplate extends Model
     public static function getAvailableTypes(): array
     {
         return [
-            'fiscal' => 'Factura Fiscal',
-            'proforma' => 'Factura Proforma',
+            'fiscal'         => 'Factura Fiscal',
+            'proforma'       => 'Factura Proforma',
             'reverse-charge' => 'Factura Reverse Charge',
-            'exempt' => 'Factura Exenta',
+            'exempt'         => 'Factura Exenta',
         ];
     }
 
@@ -153,8 +152,8 @@ class InvoiceTemplate extends Model
     public static function getStatistics(): array
     {
         return [
-            'total_templates' => static::count(),
-            'active_templates' => static::where('is_active', true)->count(),
+            'total_templates'   => static::count(),
+            'active_templates'  => static::where('is_active', true)->count(),
             'templates_by_type' => static::active()
                 ->selectRaw('type, count(*) as count')
                 ->groupBy('type')

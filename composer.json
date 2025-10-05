@@ -54,9 +54,11 @@
         "post-autoload-dump": "@composer run prepare",
         "prepare": "@php vendor/bin/testbench package:discover --ansi",
         "analyse": "vendor/bin/phpstan analyse",
+        "format": "vendor/bin/pint",
         "test": "vendor/bin/pest",
         "test-coverage": "vendor/bin/pest --coverage",
-        "format": "vendor/bin/pint"
+        "phpstan": "vendor/bin/phpstan analyse --memory-limit=1G",
+        "phpstan-baseline": "vendor/bin/phpstan analyse --generate-baseline --memory-limit=1G"
     },
     "config": {
         "sort-packages": true,

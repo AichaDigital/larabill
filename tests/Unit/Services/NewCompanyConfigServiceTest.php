@@ -27,7 +27,7 @@ it('can update company configuration', function () {
     $service = new CompanyConfigService;
 
     $data = [
-        'is_oss' => true,
+        'is_oss'             => true,
         'eu_sales_threshold' => 15000.0,
     ];
 
@@ -227,9 +227,9 @@ it('can validate configuration data', function () {
     $service = new CompanyConfigService;
 
     $validData = [
-        'is_oss' => true,
+        'is_oss'             => true,
         'eu_sales_threshold' => 15000.0,
-        'currency' => 'EUR',
+        'currency'           => 'EUR',
     ];
 
     $errors = $service->validateConfigData($validData);
@@ -241,9 +241,9 @@ it('can detect invalid configuration data', function () {
     $service = new CompanyConfigService;
 
     $invalidData = [
-        'is_oss' => 'invalid', // Should be boolean
+        'is_oss'             => 'invalid', // Should be boolean
         'eu_sales_threshold' => 'invalid', // Should be numeric
-        'currency' => 'INVALID', // Should be 3 letters
+        'currency'           => 'INVALID', // Should be 3 letters
     ];
 
     $errors = $service->validateConfigData($invalidData);
@@ -270,7 +270,7 @@ it('can handle service errors gracefully', function () {
     $service = new CompanyConfigService;
 
     $exception = new \Exception('Test error');
-    $result = $service->handleError($exception);
+    $result    = $service->handleError($exception);
 
     expect($result)->toBeArray();
     expect($result['error'])->toBeTrue();

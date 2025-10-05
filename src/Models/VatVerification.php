@@ -32,10 +32,10 @@ class VatVerification extends Model
      * The attributes that should be cast.
      */
     protected $casts = [
-        'is_valid' => 'boolean',
+        'is_valid'      => 'boolean',
         'response_data' => 'array',
-        'checked_at' => 'datetime',
-        'expires_at' => 'datetime',
+        'checked_at'    => 'datetime',
+        'expires_at'    => 'datetime',
     ];
 
     /**

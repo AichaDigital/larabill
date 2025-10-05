@@ -20,18 +20,18 @@ describe('VatApiIntegrationService', function () {
 
             Http::fake([
                 'https://vat.abstractapi.com/v1/validate/*' => Http::response([
-                    'valid' => true,
+                    'valid'      => true,
                     'vat_number' => 'ESB12345678',
-                    'country' => [
+                    'country'    => [
                         'code' => 'ES',
                         'name' => 'Spain',
                     ],
                     'company' => [
-                        'name' => 'Test Company S.L.',
+                        'name'    => 'Test Company S.L.',
                         'address' => 'Calle Test 123, 41001 Sevilla, España',
                     ],
                     'format_valid' => true,
-                    'query' => 'ESB12345678',
+                    'query'        => 'ESB12345678',
                 ], 200),
             ]);
 
@@ -48,8 +48,8 @@ describe('VatApiIntegrationService', function () {
 
             Http::assertSent(function ($request) {
                 return str_starts_with($request->url(), 'https://vat.abstractapi.com/v1/validate/') &&
-                       $request['api_key'] === 'test_abstractapi_key' &&
-                       $request['vat_number'] === 'ESB12345678' &&
+                       $request['api_key']      === 'test_abstractapi_key'                          &&
+                       $request['vat_number']   === 'ESB12345678'                                   &&
                        $request['country_code'] === 'ES';
             });
         });
@@ -59,15 +59,15 @@ describe('VatApiIntegrationService', function () {
 
             Http::fake([
                 'https://vat.abstractapi.com/v1/validate/*' => Http::response([
-                    'valid' => false,
+                    'valid'      => false,
                     'vat_number' => 'INVALID123',
-                    'country' => [
+                    'country'    => [
                         'code' => 'ES',
                         'name' => 'Spain',
                     ],
-                    'company' => null,
+                    'company'      => null,
                     'format_valid' => false,
-                    'query' => 'INVALID123',
+                    'query'        => 'INVALID123',
                 ], 200),
             ]);
 
@@ -122,10 +122,10 @@ describe('VatApiIntegrationService', function () {
 
             Http::fake([
                 'http://apilayer.net/api/validate*' => Http::response([
-                    'valid' => true,
-                    'vat_number' => 'FRB87654321',
-                    'country_code' => 'FR',
-                    'company_name' => 'French Company SARL',
+                    'valid'           => true,
+                    'vat_number'      => 'FRB87654321',
+                    'country_code'    => 'FR',
+                    'company_name'    => 'French Company SARL',
                     'company_address' => '123 Rue de la Paix, 75001 Paris, France',
                 ], 200),
             ]);
@@ -143,8 +143,8 @@ describe('VatApiIntegrationService', function () {
 
             Http::assertSent(function ($request) {
                 return str_starts_with($request->url(), 'http://apilayer.net/api/validate') &&
-                       $request['access_key'] === 'test_apilayer_key' &&
-                       $request['vat_number'] === 'FRB87654321' &&
+                       $request['access_key']   === 'test_apilayer_key'                     &&
+                       $request['vat_number']   === 'FRB87654321'                           &&
                        $request['country_code'] === 'FR';
             });
         });
@@ -154,10 +154,10 @@ describe('VatApiIntegrationService', function () {
 
             Http::fake([
                 'http://apilayer.net/api/validate*' => Http::response([
-                    'valid' => false,
-                    'vat_number' => 'INVALID456',
-                    'country_code' => 'FR',
-                    'company_name' => null,
+                    'valid'           => false,
+                    'vat_number'      => 'INVALID456',
+                    'country_code'    => 'FR',
+                    'company_name'    => null,
                     'company_address' => null,
                 ], 200),
             ]);
@@ -212,7 +212,7 @@ describe('VatApiIntegrationService', function () {
             config(['larabill.vat_apis.abstractapi.key' => null]);
 
             $service = new VatApiIntegrationService;
-            $result = $service->verifyWithAbstractApi('ESB12345678', 'ES');
+            $result  = $service->verifyWithAbstractApi('ESB12345678', 'ES');
 
             expect($result)->toBeArray();
             expect($result['is_valid'])->toBeTrue();
@@ -227,7 +227,7 @@ describe('VatApiIntegrationService', function () {
             config(['larabill.vat_apis.apilayer.key' => null]);
 
             $service = new VatApiIntegrationService;
-            $result = $service->verifyWithApiLayer('FRB87654321', 'FR');
+            $result  = $service->verifyWithApiLayer('FRB87654321', 'FR');
 
             expect($result)->toBeArray();
             expect($result['is_valid'])->toBeTrue();
