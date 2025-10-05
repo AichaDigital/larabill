@@ -30,6 +30,9 @@ use Illuminate\Support\Carbon;
  * @property bool $is_roi_taxed
  * @property Carbon|null $due_date
  * @property Carbon|null $paid_at
+ * @property string|null $notes
+ * @property string|null $payment_terms
+ * @property string|null $template_name
  */
 class Invoice extends Model
 {
@@ -52,6 +55,9 @@ class Invoice extends Model
         'is_roi_taxed',
         'due_date',
         'paid_at',
+        'notes',
+        'payment_terms',
+        'template_name',
     ];
 
     /**
@@ -213,5 +219,71 @@ class Invoice extends Model
     public function getTotalAttribute($value): string
     {
         return number_format((float) $value, 2, '.', '');
+    }
+
+    /**
+     * Generate PDF for this invoice
+     *
+     * @return array PDF generation result
+     */
+    public function generatePDF(): array
+    {
+        $pdfService = app(\AichaDigital\Larabill\Services\PDF\PDFService::class);
+        return $pdfService->generatePDF($this);
+    }
+
+    /**
+     * Check if this invoice should include QR code
+     *
+     * @return bool True if QR should be included
+     */
+    public function shouldIncludeQR(): bool
+    {
+        // Proforma invoices never include QR
+        if ($this->type === 'proforma') {
+            return false;
+        }
+
+        // Only fiscal invoices include QR
+        return $this->type === 'invoice' || $this->type === 'fiscal';
+    }
+
+    /**
+     * Get the invoice type for PDF generation
+     *
+     * @return string Invoice type
+     */
+    public function getInvoiceType(): string
+    {
+        return $this->type ?? 'invoice';
+    }
+
+    /**
+     * Get PDF path for this invoice
+     *
+     * @return string|null PDF file path
+     */
+    public function getPDFPath(): ?string
+    {
+        $filename = 'invoice_' . $this->id . '_' . $this->getInvoiceType() . '.pdf';
+        $pdfPath = storage_path('app/invoices/' . $filename);
+
+        return file_exists($pdfPath) ? $pdfPath : null;
+    }
+
+    /**
+     * Get PDF URL for this invoice
+     *
+     * @return string|null PDF URL
+     */
+    public function getPDFUrl(): ?string
+    {
+        $path = $this->getPDFPath();
+        if (!$path) {
+            return null;
+        }
+
+        $filename = 'invoice_' . $this->id . '_' . $this->getInvoiceType() . '.pdf';
+        return url('storage/invoices/' . $filename);
     }
 }

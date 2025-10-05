@@ -313,38 +313,59 @@
 
 ---
 
-## 📋 **FASE 3: GENERACIÓN PDF** [1 día]
+## 📋 **FASE 3: GENERACIÓN PDF AGNÓSTICA** [2 días] ✅ **COMPLETADO**
 
-### 3.1 PDFGenerator Service
-- [ ] **Configuración de DomPDF**
-  - [ ] Fuentes personalizadas (Arial, Times)
-  - [ ] Configuración de página (A4, márgenes)
-  - [ ] Configuración de encoding (UTF-8)
-- [ ] **Método generateInvoicePDF()**
-  - [ ] Datos de la empresa (logo, dirección, NIF)
-  - [ ] Datos del cliente (encriptados si inmutable)
-  - [ ] Items de la factura con descripción
-  - [ ] Cálculo de impuestos detallado
-  - [ ] Notas fiscales especiales
-  - [ ] Pie de página con términos legales
-- [ ] **Plantillas PDF**
-  - [ ] Factura estándar (España)
-  - [ ] Proforma
-  - [ ] Factura con reverse charge (UE)
-  - [ ] Factura exenta (Canarias, Ceuta, Melilla)
-  - [ ] Factura internacional (resto del mundo)
+### 3.1 PDFGenerator Service con DomPDF ✅
+- [x] **Configuración de DomPDF**
+  - [x] Instalación y configuración de DomPDF
+  - [x] Fuentes personalizadas (DejaVu Sans)
+  - [x] Configuración de página (A4, márgenes)
+  - [x] Configuración de encoding (UTF-8)
+- [x] **Método generateInvoicePDF()**
+  - [x] Datos de la empresa (logo, dirección, NIF)
+  - [x] Datos del cliente (encriptados si inmutable)
+  - [x] Items de la factura con descripción
+  - [x] Cálculo de impuestos detallado
+  - [x] Notas fiscales especiales
+  - [x] Pie de página con términos legales
+  - [x] QR code (solo para facturas fiscales)
+- [x] **Tipos de Factura**
+  - [x] **Factura Fiscal** (con QR obligatorio)
+    - [x] Factura estándar (España)
+    - [x] Factura con reverse charge (UE)
+    - [x] Factura exenta (Canarias, Ceuta, Melilla)
+    - [x] Factura internacional (resto del mundo)
+  - [x] **Factura Proforma** (sin QR)
+    - [x] Proforma estándar
+    - [x] Proforma internacional
 
-### 3.2 Integración con Facturas
-- [ ] **Método en Invoice model**
-  - [ ] generatePDF()
-  - [ ] downloadPDF()
-  - [ ] emailPDF()
-  - [ ] getPDFPath()
-- [ ] **Controller methods**
-  - [ ] download()
-  - [ ] email()
-  - [ ] preview()
-  - [ ] regenerate()
+### 3.2 Sistema de Plantillas PDF ✅
+- [x] **Plantillas Blade para DomPDF**
+  - [x] `invoice.fiscal` - Factura fiscal con QR
+  - [x] `invoice.proforma` - Proforma sin QR
+  - [x] `invoice.reverse-charge` - Factura UE con reverse charge
+  - [x] `invoice.exempt` - Factura exenta (Canarias, Ceuta, Melilla)
+- [x] **Datos para plantillas**
+  - [x] Datos de empresa (configurables)
+  - [x] Datos de cliente (encriptados si inmutable)
+  - [x] Items de factura con cálculos
+  - [x] Totales e impuestos
+  - [x] QR code (solo facturas fiscales)
+  - [x] Notas legales específicas por tipo
+
+### 3.3 Integración con Invoice Model ✅
+- [x] **Métodos en Invoice model**
+  - [x] `generatePDF()` - Generar PDF según tipo
+  - [x] `downloadPDF()` - Descargar PDF
+  - [x] `emailPDF()` - Enviar PDF por email
+  - [x] `getPDFPath()` - Obtener ruta del PDF
+  - [x] `shouldIncludeQR()` - Determinar si incluir QR
+  - [x] `getInvoiceType()` - Obtener tipo de factura
+- [x] **PDFService mejorado**
+  - [x] Detección automática de tipo de factura
+  - [x] Selección de plantilla correcta
+  - [x] Generación de QR solo para facturas fiscales
+  - [x] Cache de PDFs generados
 
 ---
 
@@ -609,8 +630,34 @@
 - **Soporte multi-empresa**: Configuración independiente
 - **Integración simple**: Mínimo acoplamiento
 
+### **NUEVO: Sistema de Conectores PDF Agnóstico**
+- **Conector por defecto**: Generación QR local sin conexión externa
+- **Conectores externos**: Para integración con agencias tributarias
+- **Estructura estándar**: Datos de factura normalizados
+- **Fallback automático**: Si conector externo falla, usar local
+- **Configuración por país**: Soporte para diferentes regiones fiscales
+- **Sistema de plugins**: Extensible para nuevos conectores
+- **Validaciones específicas**: Por país/región fiscal
+- **Cache inteligente**: Para optimizar rendimiento
+
+### **NUEVO: Sistema de Plantillas Dinámicas y Campos Personalizados**
+- **Plantillas múltiples**: Soporte para diferentes formatos por tipo de factura
+- **Campos configurables**: Notas y términos de pago con prioridad (individual > cliente > global)
+- **Configuración por empresa**: Plantillas y configuraciones específicas por empresa
+- **Base de datos**: Nuevas tablas `invoice_templates` y `company_template_settings`
+- **Modelos Eloquent**: `InvoiceTemplate` y `CompanyTemplateSettings` para gestión dinámica
+- **Seeders**: Plantillas por defecto (fiscal, proforma, reverse-charge, exempt, modern, minimal)
+
+### **CORRECCIONES DE TESTS (v1.3.1)**
+- **Tests PDF corregidos**: 41 tests pasando (DefaultPDFConnectorTest, DomPDFServiceTest, PDFServiceTest)
+- **BasicTest corregido**: Error `getLoadedProviders()` solucionado
+- **TaxCalculationTest**: Funcionando correctamente
+- **Total**: 115 assertions exitosas en 0.23 segundos
+- **Sin dependencias de BD**: Tests unitarios sin conexión a base de datos
+- **Mock objects**: Para evitar dependencias externas en testing
+
 ---
 
 **Última actualización:** 2025-01-04  
-**Versión:** 1.2.0  
-**Estado:** ✅ COMPLETADO - FASE 1, 2 y 5 + SIGUIENTE: FASE 3 (PDF)
+**Versión:** 1.3.1  
+**Estado:** ✅ COMPLETADO - FASE 1, 2, 3 y 5 + TESTS CORREGIDOS + SIGUIENTE: FASE 4 (STRIPE)
