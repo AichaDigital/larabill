@@ -38,6 +38,34 @@ class UserTaxInfo extends Model
     ];
 
     /**
+     * Boot the model.
+     */
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($model) {
+            // Apply field mapping when creating
+            $fieldMapping = \AichaDigital\Larabill\Services\ModelMappingService::getFieldMapping('user_tax_info');
+            if (! empty($fieldMapping)) {
+                $attributes = $model->getAttributes();
+                $mappedAttributes = \AichaDigital\Larabill\Services\ModelMappingService::reverseMapFields($attributes, 'user_tax_info');
+                $model->setRawAttributes($mappedAttributes);
+            }
+        });
+
+        static::retrieved(function ($model) {
+            // Apply field mapping when retrieving
+            $fieldMapping = \AichaDigital\Larabill\Services\ModelMappingService::getFieldMapping('user_tax_info');
+            if (! empty($fieldMapping)) {
+                $attributes = $model->getAttributes();
+                $mappedAttributes = \AichaDigital\Larabill\Services\ModelMappingService::mapFields($attributes, 'user_tax_info');
+                $model->setRawAttributes($mappedAttributes);
+            }
+        });
+    }
+
+    /**
      * Make this tax info the current one for the user.
      */
     public function makeCurrent(): void
@@ -64,7 +92,7 @@ class UserTaxInfo extends Model
      */
     public function user(): BelongsTo
     {
-        $userModel = config('larabill.models.user');
+        $userModel = \AichaDigital\Larabill\Services\ModelMappingService::getModelClass('user');
 
         return $this->belongsTo($userModel);
     }

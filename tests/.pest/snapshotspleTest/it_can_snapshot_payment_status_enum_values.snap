@@ -1,0 +1,30 @@
+{
+    "PENDING": {
+        "value": 1,
+        "label": "Pending",
+        "is_successful": false,
+        "is_failed": false,
+        "can_be_refunded": false
+    },
+    "COMPLETED": {
+        "value": 2,
+        "label": "Completed",
+        "is_successful": true,
+        "is_failed": false,
+        "can_be_refunded": true
+    },
+    "FAILED": {
+        "value": 3,
+        "label": "Failed",
+        "is_successful": false,
+        "is_failed": true,
+        "can_be_refunded": false
+    },
+    "REFUNDED": {
+        "value": 4,
+        "label": "Refunded",
+        "is_successful": false,
+        "is_failed": false,
+        "can_be_refunded": false
+    }
+}

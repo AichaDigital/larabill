@@ -29,6 +29,12 @@ return [
         'invoice_item' => \AichaDigital\Larabill\Models\InvoiceItem::class,
         'tax_rate' => \AichaDigital\Larabill\Models\TaxRate::class,
         'vat_verification' => \AichaDigital\Larabill\Models\VatVerification::class,
+        'user_roi_verification' => \AichaDigital\Larabill\Models\UserRoiVerification::class,
+        'roi_query' => \AichaDigital\Larabill\Models\RoiQuery::class,
+        'company_fiscal_config' => \AichaDigital\Larabill\Models\CompanyFiscalConfig::class,
+        'vat_category' => \AichaDigital\Larabill\Models\VatCategory::class,
+        'eu_sales_threshold' => \AichaDigital\Larabill\Models\EuSalesThreshold::class,
+        'country_vat_rate' => \AichaDigital\Larabill\Models\CountryVatRate::class,
     ],
 
     /*
@@ -155,5 +161,66 @@ return [
         'pdf_generation' => env('LARABILL_PDF_GENERATION', true),
         'default_currency' => env('LARABILL_DEFAULT_CURRENCY', 'EUR'),
         'payment_terms_days' => env('LARABILL_PAYMENT_TERMS_DAYS', 30),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | ROI Verification Settings
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for ROI (Reverse Charge Operator) verification.
+    |
+    */
+    'roi_verification' => [
+        'cache_duration_days' => env('LARABILL_ROI_CACHE_DAYS', 15),
+        'force_api_check' => env('LARABILL_FORCE_API_CHECK', false),
+        'legal_retention_days' => env('LARABILL_LEGAL_RETENTION_DAYS', 2555), // 7 years
+        'api_rate_limits' => [
+            'abstractapi' => env('LARABILL_ABSTRACTAPI_RATE_LIMIT', 100),
+            'apilayer' => env('LARABILL_APILAYER_RATE_LIMIT', 100),
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Destination VAT Settings
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for destination VAT application and thresholds.
+    |
+    */
+    'destination_vat' => [
+        'default_threshold' => env('LARABILL_DEFAULT_THRESHOLD', 10000),
+        'currency' => env('LARABILL_DESTINATION_CURRENCY', 'EUR'),
+        'fiscal_year_start' => env('LARABILL_FISCAL_YEAR_START', '01-01'),
+        'auto_apply_destination' => env('LARABILL_AUTO_APPLY_DESTINATION', true),
+        'notification_settings' => [
+            'enabled' => env('LARABILL_THRESHOLD_NOTIFICATIONS', true),
+            'email' => env('LARABILL_NOTIFICATION_EMAIL'),
+            'threshold_percentage' => env('LARABILL_NOTIFICATION_THRESHOLD', 90),
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Cache Settings
+    |--------------------------------------------------------------------------
+    |
+    | Configuration for cache system (agnostic to driver).
+    |
+    */
+    'cache' => [
+        'driver' => env('LARABILL_CACHE_DRIVER', 'file'), // file or redis
+        'prefix' => env('LARABILL_CACHE_PREFIX', 'larabill'),
+        'ttl' => [
+            'roi_verification' => env('LARABILL_ROI_CACHE_TTL', 1296000), // 15 days in seconds
+            'vat_rates' => env('LARABILL_VAT_RATES_CACHE_TTL', 86400), // 1 day in seconds
+            'company_config' => env('LARABILL_COMPANY_CONFIG_CACHE_TTL', 3600), // 1 hour in seconds
+        ],
+        'tags' => [
+            'roi_verification' => 'roi',
+            'vat_rates' => 'vat',
+            'company_config' => 'company',
+        ],
     ],
 ];

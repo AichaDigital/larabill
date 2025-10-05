@@ -2,4 +2,26 @@
 
 use AichaDigital\Larabill\Tests\TestCase;
 
-uses(TestCase::class)->in(__DIR__);
+/*
+|--------------------------------------------------------------------------
+| Test Configuration for Larabill Package
+|--------------------------------------------------------------------------
+|
+| Configure Pest to use our custom TestCase for all tests in this package.
+| Use RefreshDatabase for tests that need database operations.
+|
+*/
+
+uses(TestCase::class)
+    ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
+    ->in('Feature', 'Integration', 'Unit');
+
+// Alias an expectation name used in some tests (typo): toBeGreaterThanOrEqualTo
+expect()->extend('toBeGreaterThanOrEqualTo', function ($expected) {
+    return $this->toBeGreaterThanOrEqual($expected);
+});
+
+// Alias for toBeLessThanOrEqualTo used in tests
+expect()->extend('toBeLessThanOrEqualTo', function ($expected) {
+    return $this->toBeLessThanOrEqual($expected);
+});

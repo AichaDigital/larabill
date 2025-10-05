@@ -30,3 +30,8 @@ phpstan.neon
 testbench.yaml
 /docs
 /coverage
+
+.env
+.env.testing
+.env.local
+/postman

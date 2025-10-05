@@ -1,0 +1,7 @@
+{
+    "name": "Aicha",
+    "env": "testing",
+    "debug": true,
+    "url": "https:\/\/aicha.test",
+    "timezone": "UTC"
+}

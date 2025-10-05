@@ -1,0 +1,70 @@
+---
+description: migration, models
+alwaysApply: false
+---
+# Database Conventions
+
+## Migration Rules
+- One migration per table
+- Clear and descriptive migration names
+- Always include down() method for rollback
+- Use appropriate column types
+- Add indexes for frequently queried columns
+- Document complex migrations
+- Use `migrate:fresh` during development phase
+
+## Model Rules
+- Use proper relationships (hasMany, belongsTo, etc.)
+- Implement proper attribute casting
+- Use model observers when needed
+- Define fillable/guarded properties
+- Add proper PHPDoc blocks
+- Use soft deletes when appropriate
+
+## ID Strategy (Hybrid Approach)
+### ULID (Binary) for Business Entities
+- Tables: `users`, `sites`, `monitoring_results`
+- Format: ULID v7 stored as binary(16)
+- Used for: High-volume data, global traceability
+
+### Integer for Configuration
+- Tables: `nodes`, `node_services`, `regions` (with ULID for traceability)
+- Format: incrementing integer (smallInt/int)
+- Used for: Low-volume data, efficient JOINs
+
+### Implementation
+```php
+// ULID model
+protected $keyType = 'string';
+public $incrementing = false;
+
+// Integer model with ULID tracking
+protected $casts = [
+    'uuid' => 'string', // ULID for logs/tracing
+];
+```
+
+## Naming Conventions
+- Tables: plural, snake_case (users, nodes, regions)
+- Columns: snake_case (created_at, last_check_time)
+- Foreign keys: singular_model_id (user_id, node_id, region_id)
+- Indexes: idx_{table}_{column(s)} (idx_nodes_region_id)
+
+## New Tables Structure
+- `regions`: Dynamic region management
+- `nodes`: Node instances with roles
+- `node_services`: Service configuration per node
+- `monitoring_checks`: Check results with hybrid IDs
+
+## Performance
+- Avoid N+1 queries using eager loading
+- Use database transactions appropriately
+- Implement chunking for large datasets
+- Use query builders efficiently
+- Index foreign keys and frequently queried columns
+
+## Id
+- UUID format v7
+- Binario
+- Primary
+

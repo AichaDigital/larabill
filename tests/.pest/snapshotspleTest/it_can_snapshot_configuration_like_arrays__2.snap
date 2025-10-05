@@ -1,0 +1,16 @@
+{
+    "languages": {
+        "1": "Spanish",
+        "2": "English"
+    },
+    "levels": {
+        "1": "Beginner",
+        "2": "Intermediate",
+        "3": "Advanced"
+    },
+    "video_providers": {
+        "1": "YouTube",
+        "2": "Vimeo",
+        "3": "Custom"
+    }
+}
