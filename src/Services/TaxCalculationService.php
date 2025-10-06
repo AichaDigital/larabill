@@ -33,8 +33,8 @@ class TaxCalculationService
      * @param  string  $sellerCountry  Seller's country code
      * @param  string  $buyerCountry  Buyer's country code
      * @param  bool  $isB2B  Whether this is a B2B transaction
-     * @param  array  $options  Additional options (vat_verification, company_id, etc.)
-     * @return array Tax calculation result
+     * @param  array<string, mixed>  $options  Additional options (vat_verification, company_id, etc.)
+     * @return array<string, mixed> Tax calculation result
      */
     public function calculateTax(float $amount, string $sellerCountry, string $buyerCountry, bool $isB2B, array $options = []): array
     {
@@ -57,6 +57,9 @@ class TaxCalculationService
 
     /**
      * Calculate Spanish domestic tax (IVA).
+     *
+     * @param  array<string, mixed>  $options
+     * @return array<string, mixed>
      */
     public function calculateSpanishTax(float $amount, string $sellerCountry, string $buyerCountry, bool $isB2B, array $options = []): array
     {
@@ -77,6 +80,9 @@ class TaxCalculationService
 
     /**
      * Calculate special Spanish tax (Canarias IGIC, Ceuta/Melilla IPSI).
+     *
+     * @param  array<string, mixed>  $options
+     * @return array<string, mixed>
      */
     public function calculateSpecialSpanishTax(float $amount, string $sellerCountry, string $buyerCountry, bool $isB2B, array $options = []): array
     {
@@ -94,6 +100,9 @@ class TaxCalculationService
 
     /**
      * Calculate Canarias IGIC tax.
+     *
+     * @param  array<string, mixed>  $options
+     * @return array<string, mixed>
      */
     private function calculateCanariasTax(float $amount, array $options = []): array
     {
@@ -114,6 +123,9 @@ class TaxCalculationService
 
     /**
      * Calculate Ceuta/Melilla IPSI tax.
+     *
+     * @param  array<string, mixed>  $options
+     * @return array<string, mixed>
      */
     private function calculateCeutaMelillaTax(float $amount, array $options = []): array
     {
@@ -134,6 +146,9 @@ class TaxCalculationService
 
     /**
      * Calculate EU tax (with reverse charge and destination VAT).
+     *
+     * @param  array<string, mixed>  $options
+     * @return array<string, mixed>
      */
     public function calculateEUTax(float $amount, string $sellerCountry, string $buyerCountry, bool $isB2B, array $options = []): array
     {
@@ -153,6 +168,9 @@ class TaxCalculationService
 
     /**
      * Calculate worldwide tax (outside EU).
+     *
+     * @param  array<string, mixed>  $options
+     * @return array<string, mixed>
      */
     public function calculateWorldwideTax(float $amount, string $sellerCountry, string $buyerCountry, bool $isB2B, array $options = []): array
     {
@@ -176,6 +194,9 @@ class TaxCalculationService
 
     /**
      * Calculate USA Sales Tax.
+     *
+     * @param  array<string, mixed>  $options
+     * @return array<string, mixed>
      */
     private function calculateUSATax(float $amount, array $options = []): array
     {
@@ -197,6 +218,9 @@ class TaxCalculationService
 
     /**
      * Calculate destination VAT.
+     *
+     * @param  array<string, mixed>  $options
+     * @return array<string, mixed>
      */
     private function calculateDestinationVat(float $amount, string $buyerCountry, array $options = []): array
     {
@@ -221,6 +245,9 @@ class TaxCalculationService
 
     /**
      * Calculate reverse charge.
+     *
+     * @param  array<string, mixed>  $options
+     * @return array<string, mixed>
      */
     private function calculateReverseCharge(float $amount, string $sellerCountry, string $buyerCountry, array $options = []): array
     {
@@ -241,6 +268,9 @@ class TaxCalculationService
 
     /**
      * Calculate seller country tax.
+     *
+     * @param  array<string, mixed>  $options
+     * @return array<string, mixed>
      */
     private function calculateSellerCountryTax(float $amount, string $sellerCountry, array $options = []): array
     {
@@ -321,6 +351,8 @@ class TaxCalculationService
 
     /**
      * Check if destination VAT should be applied.
+     *
+     * @param  array<string, mixed>  $options
      */
     private function shouldApplyDestinationVat(array $options): bool
     {
@@ -333,6 +365,8 @@ class TaxCalculationService
 
     /**
      * Check if ROI is valid.
+     *
+     * @param  array<string, mixed>  $options
      */
     private function isValidRoi(array $options): bool
     {

@@ -62,6 +62,9 @@ class CompanyTemplateSettings extends Model
 
     /**
      * Get settings by company.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeForCompany(Builder $query, string $companyId): Builder
     {
@@ -70,6 +73,9 @@ class CompanyTemplateSettings extends Model
 
     /**
      * Get settings by type.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeBySettingType(Builder $query, string $settingType): Builder
     {
@@ -78,6 +84,9 @@ class CompanyTemplateSettings extends Model
 
     /**
      * Get settings by invoice type.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeByInvoiceType(Builder $query, string $invoiceType): Builder
     {
@@ -86,6 +95,9 @@ class CompanyTemplateSettings extends Model
 
     /**
      * Get settings by scope.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeByScope(Builder $query, string $scope): Builder
     {
@@ -94,6 +106,9 @@ class CompanyTemplateSettings extends Model
 
     /**
      * Get active settings only.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeActive(Builder $query): Builder
     {
@@ -163,6 +178,8 @@ class CompanyTemplateSettings extends Model
 
     /**
      * Get all settings for a company.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, CompanyTemplateSettings>
      */
     public static function getCompanySettings(string $companyId): \Illuminate\Database\Eloquent\Collection
     {
@@ -176,6 +193,8 @@ class CompanyTemplateSettings extends Model
 
     /**
      * Get template settings for a company.
+     *
+     * @return array<string, mixed>
      */
     public static function getTemplateSettings(string $companyId, string $invoiceType): array
     {
@@ -211,6 +230,8 @@ class CompanyTemplateSettings extends Model
 
     /**
      * Get available setting types.
+     *
+     * @return array<string, string>
      */
     public static function getSettingTypes(): array
     {
@@ -223,6 +244,8 @@ class CompanyTemplateSettings extends Model
 
     /**
      * Get available scopes.
+     *
+     * @return array<string, string>
      */
     public static function getScopes(): array
     {

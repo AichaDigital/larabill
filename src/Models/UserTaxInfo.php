@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\{Builder, Model};
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -84,8 +84,11 @@ class UserTaxInfo extends Model
 
     /**
      * Scope to get only current tax info.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeCurrent($query)
+    public function scopeCurrent(Builder $query): Builder
     {
         return $query->where('is_current', true);
     }

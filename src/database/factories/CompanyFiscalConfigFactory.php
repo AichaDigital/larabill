@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  *
  * Uses integer base 100 for monetary amounts
  * Example: €1,234.56 is stored as 123456, €100.00 as 10000
+ *
+ * @extends Factory<CompanyFiscalConfig>
  */
 class CompanyFiscalConfigFactory extends Factory
 {

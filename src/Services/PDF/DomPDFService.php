@@ -23,6 +23,8 @@ class DomPDFService
 
     /**
      * Configuration
+     *
+     * @var array<string, mixed>
      */
     protected array $config;
 

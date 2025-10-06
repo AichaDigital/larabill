@@ -19,6 +19,8 @@ class PDFService
 {
     /**
      * Available PDF connectors
+     *
+     * @var array<string, PDFConnectorInterface>
      */
     protected array $connectors = [];
 
@@ -29,6 +31,8 @@ class PDFService
 
     /**
      * Configuration
+     *
+     * @var array<string, mixed>
      */
     protected array $config;
 

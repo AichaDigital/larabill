@@ -14,24 +14,28 @@ use Illuminate\Support\Carbon;
  * Represents an invoice with immutability and encryption features.
  * All monetary amounts are stored as base-100 integers (e.g., €12.34 => 1234).
  *
+ * @property int $id
  * @property string $number
  * @property string $type
  * @property string $status
  * @property int|string $user_id
  * @property string|null $user_tax_info_encrypted
+ * @property array<string, mixed>|null $customer_data
  * @property bool $is_immutable
  * @property Carbon|null $immutable_at
  * @property int $subtotal Base-100 integer (e.g., 1234 => €12.34)
  * @property int $tax_amount Base-100 integer (e.g., 1234 => €12.34)
  * @property int $total Base-100 integer (e.g., 1234 => €12.34)
- * @property array|null $fiscal_data
- * @property array|null $vat_verification
+ * @property array<string, mixed>|null $fiscal_data
+ * @property array<string, mixed>|null $vat_verification
  * @property bool $is_roi_taxed
  * @property Carbon|null $due_date
  * @property Carbon|null $paid_at
  * @property string|null $notes
  * @property string|null $payment_terms
  * @property string|null $template_name
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 class Invoice extends Model
 {
@@ -171,6 +175,9 @@ class Invoice extends Model
 
     /**
      * Override update to prevent modifications of immutable invoices.
+     *
+     * @param  array<string, mixed>  $attributes
+     * @param  array<string, mixed>  $options
      */
     public function update(array $attributes = [], array $options = []): bool
     {
@@ -183,6 +190,8 @@ class Invoice extends Model
 
     /**
      * Get the invoice items.
+     *
+     * @return HasMany<InvoiceItem>
      */
     public function items(): HasMany
     {
@@ -193,6 +202,8 @@ class Invoice extends Model
 
     /**
      * Get the user that owns the invoice.
+     *
+     * @return BelongsTo<\Illuminate\Foundation\Auth\User, Invoice>
      */
     public function user(): BelongsTo
     {
@@ -204,7 +215,7 @@ class Invoice extends Model
     /**
      * Generate PDF for this invoice
      *
-     * @return array PDF generation result
+     * @return array<string, mixed> PDF generation result
      */
     public function generatePDF(): array
     {

@@ -13,8 +13,6 @@ use AichaDigital\Larabill\Models\{Invoice, InvoiceItem};
  */
 class BillingService
 {
-    private int $invoiceCounter = 1;
-
     private TaxCalculationService $taxCalculationService;
 
     private RoiVerificationService $roiVerificationService;
@@ -33,8 +31,8 @@ class BillingService
     /**
      * Create a new invoice with optional ROI verification and immutability.
      *
-     * @param  array  $invoiceData  Invoice data
-     * @param  array  $options  Additional options (roi_verification, make_immutable)
+     * @param  array<string, mixed>  $invoiceData  Invoice data
+     * @param  array<string, mixed>  $options  Additional options (roi_verification, make_immutable)
      * @return Invoice Created invoice model
      */
     public function createInvoice(array $invoiceData, array $options = []): Invoice
@@ -117,8 +115,8 @@ class BillingService
     /**
      * Create a proforma invoice.
      *
-     * @param  array  $invoiceData  Invoice data
-     * @param  array  $options  Additional options
+     * @param  array<string, mixed>  $invoiceData  Invoice data
+     * @param  array<string, mixed>  $options  Additional options
      * @return Invoice Created proforma invoice model
      */
     public function createProforma(array $invoiceData, array $options = []): Invoice
@@ -136,7 +134,7 @@ class BillingService
      * Convert a proforma invoice to a regular invoice.
      *
      * @param  Invoice  $proforma  The proforma invoice to convert
-     * @param  array  $options  Additional options
+     * @param  array<string, mixed>  $options  Additional options
      * @return Invoice Created invoice model
      */
     public function convertToInvoice(Invoice $proforma, array $options = []): Invoice
@@ -163,7 +161,7 @@ class BillingService
      * Generate a sequential invoice number with optional annual reset and configurable format.
      *
      * @param  string  $type  Invoice type (invoice, proforma)
-     * @param  array  $options  Generation options
+     * @param  array<string, mixed>  $options  Generation options
      * @return string Generated invoice number
      */
     private function generateInvoiceNumber(string $type = 'invoice', array $options = []): string
@@ -208,6 +206,8 @@ class BillingService
 
     /**
      * Calculate subtotal from items.
+     *
+     * @param  array<int, array<string, mixed>>  $items
      */
     private function calculateSubtotal(array $items): float
     {
@@ -221,6 +221,8 @@ class BillingService
 
     /**
      * Create an invoice item.
+     *
+     * @param  array<string, mixed>  $itemData
      */
     private function createInvoiceItem(Invoice $invoice, array $itemData): InvoiceItem
     {
@@ -246,10 +248,15 @@ class BillingService
 
     /**
      * Get invoice items data for conversion.
+     *
+     * @return array<int, array{description: string, quantity: float, unit_price: float, tax_rate: float}>
      */
     private function getInvoiceItemsData(Invoice $invoice): array
     {
-        return $invoice->items->map(function ($item) {
+        /** @var \Illuminate\Database\Eloquent\Collection<int, InvoiceItem> $items */
+        $items = $invoice->items;
+
+        return $items->map(function (InvoiceItem $item): array {
             return [
                 'description' => $item->description,
                 'quantity'    => Invoice::base100ToAmount((int) $item->quantity),

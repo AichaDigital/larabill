@@ -222,6 +222,8 @@ class CountryVatRate extends Model
 
     /**
      * Get all reduced rates in base 100 format.
+     *
+     * @return array<string, int>
      */
     public function getReducedRates(): array
     {
@@ -235,6 +237,8 @@ class CountryVatRate extends Model
 
     /**
      * Get all reduced rates as percentages.
+     *
+     * @return array<string, float>
      */
     public function getReducedRatesAsPercentages(): array
     {
@@ -248,6 +252,8 @@ class CountryVatRate extends Model
 
     /**
      * Get all exempt categories.
+     *
+     * @return array<int, string>
      */
     public function getExemptCategories(): array
     {
@@ -427,6 +433,9 @@ class CountryVatRate extends Model
 
     /**
      * Scope to get only active VAT rates.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeActive(Builder $query): Builder
     {
@@ -435,6 +444,9 @@ class CountryVatRate extends Model
 
     /**
      * Scope to get VAT rates by country.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeByCountry(Builder $query, string $countryCode): Builder
     {
@@ -443,6 +455,9 @@ class CountryVatRate extends Model
 
     /**
      * Scope to get VAT rates by rate range.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeByRate(Builder $query, ?float $minRate = null, ?float $maxRate = null): Builder
     {
@@ -459,6 +474,9 @@ class CountryVatRate extends Model
 
     /**
      * Scope to get VAT rates updated after a specific date.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeUpdatedAfter(Builder $query, DateTimeInterface|Carbon|string $date): Builder
     {
@@ -467,6 +485,9 @@ class CountryVatRate extends Model
 
     /**
      * Scope to get VAT rates by data source.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeByDataSource(Builder $query, string $dataSource): Builder
     {
@@ -610,6 +631,9 @@ class CountryVatRate extends Model
 
     /**
      * Scope: inactive rates.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeInactive(Builder $query): Builder
     {

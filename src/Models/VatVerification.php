@@ -4,12 +4,25 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\{Builder, Model};
 
 /**
  * VatVerification Model
  *
  * Represents VAT number verification results from external APIs.
+ *
+ * @property int $id
+ * @property string $vat_number
+ * @property string $country_code
+ * @property bool $is_valid
+ * @property string|null $company_name
+ * @property string|null $company_address
+ * @property string|null $api_source
+ * @property array<string, mixed>|null $response_data
+ * @property \Illuminate\Support\Carbon|null $checked_at
+ * @property \Illuminate\Support\Carbon|null $expires_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
  */
 class VatVerification extends Model
 {
@@ -58,8 +71,11 @@ class VatVerification extends Model
 
     /**
      * Scope to get only valid VAT verifications.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeValid($query)
+    public function scopeValid(Builder $query): Builder
     {
         return $query->where('is_valid', true);
     }

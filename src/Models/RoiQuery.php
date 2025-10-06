@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Models;
 
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\{Builder, Model};
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -13,6 +13,19 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *
  * Represents ROI queries for legal protection and audit purposes.
  * All ROI verification queries are logged here for compliance.
+ *
+ * @property int $id
+ * @property string $user_id
+ * @property string $vat_number
+ * @property string $country_code
+ * @property string $query_type
+ * @property string|null $api_source
+ * @property array<string, mixed>|null $response_data
+ * @property \Carbon\Carbon $queried_at
+ * @property bool $cache_used
+ * @property \Carbon\Carbon $legal_retention_until
+ * @property \Carbon\Carbon|null $created_at
+ * @property \Carbon\Carbon|null $updated_at
  */
 class RoiQuery extends Model
 {
@@ -109,64 +122,88 @@ class RoiQuery extends Model
 
     /**
      * Scope to get queries by date range.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeByDateRange($query, Carbon $startDate, Carbon $endDate)
+    public function scopeByDateRange(Builder $query, Carbon $startDate, Carbon $endDate): Builder
     {
         return $query->whereBetween('queried_at', [$startDate, $endDate]);
     }
 
     /**
      * Scope to get queries by type.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeByQueryType($query, string $queryType)
+    public function scopeByQueryType(Builder $query, string $queryType): Builder
     {
         return $query->where('query_type', $queryType);
     }
 
     /**
      * Scope to get queries within legal retention period.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeLegalRetention($query)
+    public function scopeLegalRetention(Builder $query): Builder
     {
         return $query->where('legal_retention_until', '>', now());
     }
 
     /**
      * Scope to get queries by user.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeByUser($query, string $userId)
+    public function scopeByUser(Builder $query, string $userId): Builder
     {
         return $query->where('user_id', $userId);
     }
 
     /**
      * Scope to get queries by country.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeByCountry($query, string $countryCode)
+    public function scopeByCountry(Builder $query, string $countryCode): Builder
     {
         return $query->where('country_code', $countryCode);
     }
 
     /**
      * Scope to get API queries.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeApiQueries($query)
+    public function scopeApiQueries(Builder $query): Builder
     {
         return $query->where('query_type', self::QUERY_TYPE_API);
     }
 
     /**
      * Scope to get cache queries.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeCacheQueries($query)
+    public function scopeCacheQueries(Builder $query): Builder
     {
         return $query->where('query_type', self::QUERY_TYPE_CACHE);
     }
 
     /**
      * Scope to get queries that used cache.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeUsedCache($query)
+    public function scopeUsedCache(Builder $query): Builder
     {
         return $query->where('cache_used', true);
     }

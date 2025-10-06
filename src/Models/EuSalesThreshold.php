@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\{Builder, Model};
 use Illuminate\Support\Carbon;
 
 /**
@@ -20,7 +20,7 @@ use Illuminate\Support\Carbon;
  * @property bool $threshold_exceeded
  * @property Carbon|null $exceeded_at
  * @property bool $notification_sent
- * @property array|null $breakdown_by_country
+ * @property array<string, float>|null $breakdown_by_country
  * @property string $currency
  * @property Carbon|null $last_updated
  */
@@ -63,6 +63,9 @@ class EuSalesThreshold extends Model
 
     /**
      * Accessor for breakdown_by_country to ensure float values.
+     *
+     * @param  mixed  $value
+     * @return array<string, float>
      */
     public function getBreakdownByCountryAttribute($value): array
     {
@@ -284,6 +287,8 @@ class EuSalesThreshold extends Model
 
     /**
      * Get all countries with sales.
+     *
+     * @return array<int, string>
      */
     public function getCountriesWithSales(): array
     {
@@ -296,6 +301,8 @@ class EuSalesThreshold extends Model
 
     /**
      * Get top countries by sales amount (instance method).
+     *
+     * @return array<string, float>
      */
     public function getTopCountriesBySalesForInstance(int $limit = 10): array
     {
@@ -363,32 +370,44 @@ class EuSalesThreshold extends Model
 
     /**
      * Scope to get thresholds by fiscal year.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeByFiscalYear($query, int $fiscalYear)
+    public function scopeByFiscalYear(Builder $query, int $fiscalYear): Builder
     {
         return $query->where('fiscal_year', $fiscalYear);
     }
 
     /**
      * Scope to get thresholds that have been exceeded.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeExceeded($query)
+    public function scopeExceeded(Builder $query): Builder
     {
         return $query->where('threshold_exceeded', true);
     }
 
     /**
      * Scope to get thresholds by company.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeByCompany($query, string $companyId)
+    public function scopeByCompany(Builder $query, string $companyId): Builder
     {
         return $query->where('company_id', $companyId);
     }
 
     /**
      * Scope to get thresholds that need notification.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeNeedsNotification($query)
+    public function scopeNeedsNotification(Builder $query): Builder
     {
         return $query->where('threshold_exceeded', true)
             ->where('notification_sent', false);
@@ -396,22 +415,30 @@ class EuSalesThreshold extends Model
 
     /**
      * Scope to get thresholds close to being exceeded.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeCloseToThreshold($query, float $percentage = 90)
+    public function scopeCloseToThreshold(Builder $query, float $percentage = 90): Builder
     {
         return $query->whereRaw('(total_amount / threshold_amount) * 100 >= ?', [$percentage]);
     }
 
     /**
      * Scope to get current fiscal year thresholds.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeCurrentFiscalYear($query)
+    public function scopeCurrentFiscalYear(Builder $query): Builder
     {
         return $query->where('fiscal_year', now()->year);
     }
 
     /**
      * Get threshold statistics for a company.
+     *
+     * @return array<string, mixed>
      */
     public static function getThresholdStatistics(int $fiscalYear): array
     {
@@ -521,16 +548,21 @@ class EuSalesThreshold extends Model
 
     /**
      * Scope for threshold exceeded.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeThresholdExceeded($query)
+    public function scopeThresholdExceeded(Builder $query): Builder
     {
         return $query->where('threshold_exceeded', true);
     }
 
     /**
      * Get companies exceeding threshold.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, EuSalesThreshold>
      */
-    public static function getCompaniesExceedingThreshold(?int $fiscalYear = null)
+    public static function getCompaniesExceedingThreshold(?int $fiscalYear = null): \Illuminate\Database\Eloquent\Collection
     {
         if (! $fiscalYear) {
             $fiscalYear = now()->year;
@@ -543,8 +575,10 @@ class EuSalesThreshold extends Model
 
     /**
      * Get companies needing notification.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, EuSalesThreshold>
      */
-    public static function getCompaniesNeedingNotification(?int $fiscalYear = null)
+    public static function getCompaniesNeedingNotification(?int $fiscalYear = null): \Illuminate\Database\Eloquent\Collection
     {
         if (! $fiscalYear) {
             $fiscalYear = now()->year;
@@ -602,6 +636,8 @@ class EuSalesThreshold extends Model
 
     /**
      * Get top countries by sales amount.
+     *
+     * @return array<int, array<string, mixed>>
      */
     public static function getTopCountriesBySales(int $fiscalYear, int $limit = 5): array
     {
@@ -642,6 +678,8 @@ class EuSalesThreshold extends Model
 
     /**
      * Get sales growth by company.
+     *
+     * @return array<string, mixed>
      */
     public static function getSalesGrowthByCompany(string $companyId, int $fiscalYear): array
     {

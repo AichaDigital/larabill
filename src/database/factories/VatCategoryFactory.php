@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  *
  * Uses integer base 100 for VAT rates (percentages)
  * Example: 21.50% is stored as 2150, 12.34% as 1234
+ *
+ * @extends Factory<VatCategory>
  */
 class VatCategoryFactory extends Factory
 {

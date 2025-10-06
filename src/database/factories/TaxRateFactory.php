@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  *
  * Uses integer base 100 for tax rates (percentages)
  * Example: 21.50% is stored as 2150, 12.34% as 1234
+ *
+ * @extends Factory<TaxRate>
  */
 class TaxRateFactory extends Factory
 {

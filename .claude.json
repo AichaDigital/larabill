@@ -1,0 +1,12 @@
+{
+    "mcpServers": {
+        "larabill-files": {
+            "command": "npx",
+            "args": [
+                "@modelcontextprotocol/server-filesystem",
+                "."
+            ],
+            "description": "Archivos del proyecto larabill"
+        }
+    }
+}

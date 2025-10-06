@@ -20,6 +20,8 @@ class DefaultPDFConnector implements PDFConnectorInterface
 {
     /**
      * Configuration for the connector
+     *
+     * @var array<string, mixed>
      */
     protected array $config;
 
@@ -104,7 +106,8 @@ class DefaultPDFConnector implements PDFConnectorInterface
         $requiredFields = $this->getRequiredFields();
 
         foreach ($requiredFields as $field) {
-            if (! isset($invoice->{$field}) || $invoice->{$field} === null || $invoice->{$field} === '') {
+            $value = $invoice->{$field} ?? null;
+            if ($value === null || $value === '') {
                 return false;
             }
         }

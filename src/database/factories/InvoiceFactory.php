@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  *
  * Uses integer base 100 for monetary values (amounts, prices)
  * Example: €12.34 is stored as 1234, €1.00 as 100
+ *
+ * @extends Factory<Invoice>
  */
 class InvoiceFactory extends Factory
 {

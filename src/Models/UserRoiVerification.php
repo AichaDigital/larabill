@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\{Builder, Model};
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -13,7 +13,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Represents ROI (Reverse Charge Operator) verification results for users.
  * This model handles caching of ROI verifications with configurable expiration.
  *
+ * @property int $id
  * @property string|int $user_id
+ * @property string $vat_number
+ * @property string $country_code
  * @property bool $is_roi
  * @property bool $cache_hit
  * @property string|null $company_name
@@ -22,6 +25,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property \Illuminate\Support\Carbon|null $expired_at
  * @property string|null $api_source
  * @property array<string,mixed>|null $response_data
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
  */
 class UserRoiVerification extends Model
 {
@@ -130,40 +135,55 @@ class UserRoiVerification extends Model
 
     /**
      * Scope to get only valid (not expired) ROI verifications.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeValid($query)
+    public function scopeValid(Builder $query): Builder
     {
         return $query->where('expired_at', '>', now());
     }
 
     /**
      * Scope to get only expired ROI verifications.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeExpired($query)
+    public function scopeExpired(Builder $query): Builder
     {
         return $query->where('expired_at', '<=', now());
     }
 
     /**
      * Scope to get ROI verifications by country.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeByCountry($query, string $countryCode)
+    public function scopeByCountry(Builder $query, string $countryCode): Builder
     {
         return $query->where('country_code', $countryCode);
     }
 
     /**
      * Scope to get ROI verifications by user.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeByUser($query, string $userId)
+    public function scopeByUser(Builder $query, string $userId): Builder
     {
         return $query->where('user_id', $userId);
     }
 
     /**
      * Scope to get ROI verifications that are actually ROI.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeRoi($query)
+    public function scopeRoi(Builder $query): Builder
     {
         return $query->where('is_roi', true);
     }

@@ -21,7 +21,7 @@ use Illuminate\Support\Carbon;
  * @property bool $is_active
  * @property bool $applies_to_products
  * @property bool $applies_to_services
- * @property array|null $special_conditions
+ * @property array<string, mixed>|null $special_conditions
  * @property Carbon|null $last_updated
  * @property int|null $parent_category_id
  * @property int $sort_order
@@ -347,56 +347,76 @@ class VatCategory extends Model
 
     /**
      * Scope to get only active categories.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeActive($query)
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
     }
 
     /**
      * Scope to get categories by country.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeByCountry($query, string $countryCode)
+    public function scopeByCountry(Builder $query, string $countryCode): Builder
     {
         return $query->where('country_code', $countryCode);
     }
 
     /**
      * Scope to get categories by type.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeByCategoryType($query, string $categoryType)
+    public function scopeByCategoryType(Builder $query, string $categoryType): Builder
     {
         return $query->where('category_type', $categoryType);
     }
 
     /**
      * Scope to get categories that apply to products.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeForProducts($query)
+    public function scopeForProducts(Builder $query): Builder
     {
         return $query->where('applies_to_products', true);
     }
 
     /**
      * Scope to get categories that apply to services.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeForServices($query)
+    public function scopeForServices(Builder $query): Builder
     {
         return $query->where('applies_to_services', true);
     }
 
     /**
      * Scope to get categories ordered by sort order.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeOrdered($query)
+    public function scopeOrdered(Builder $query): Builder
     {
         return $query->orderBy('sort_order');
     }
 
     /**
      * Get parent category.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<VatCategory, $this>
      */
-    public function parentCategory()
+    public function parentCategory(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(self::class, 'parent_category_id');
     }
@@ -432,10 +452,13 @@ class VatCategory extends Model
     {
         $path = [$this->name];
 
+        /** @var VatCategory|null $parent */
         $parent = $this->parentCategory;
         while ($parent) {
             array_unshift($path, $parent->name);
-            $parent = $parent->parentCategory;
+            /** @var VatCategory|null $parentOfParent */
+            $parentOfParent = $parent->parentCategory;
+            $parent         = $parentOfParent;
         }
 
         return implode(' > ', $path);
@@ -531,16 +554,22 @@ class VatCategory extends Model
 
     /**
      * Scope for inactive categories.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeInactive($query)
+    public function scopeInactive(Builder $query): Builder
     {
         return $query->where('is_active', false);
     }
 
     /**
      * Scope for categories that apply to both products and services.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeForBoth($query)
+    public function scopeForBoth(Builder $query): Builder
     {
         return $query->where('applies_to_products', true)
             ->where('applies_to_services', true);
@@ -566,8 +595,11 @@ class VatCategory extends Model
 
     /**
      * Scope to get categories by type.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeByType($query, string $categoryType)
+    public function scopeByType(Builder $query, string $categoryType): Builder
     {
         return $query->where('category_type', $categoryType);
     }

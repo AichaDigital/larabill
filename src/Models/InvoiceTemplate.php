@@ -19,7 +19,7 @@ use Illuminate\Database\Eloquent\{Builder, Model};
  * @property string|null $description
  * @property bool $is_default
  * @property bool $is_active
- * @property array|null $settings
+ * @property array<string, mixed>|null $settings
  */
 class InvoiceTemplate extends Model
 {
@@ -48,6 +48,9 @@ class InvoiceTemplate extends Model
 
     /**
      * Get templates by type.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeByType(Builder $query, string $type): Builder
     {
@@ -56,6 +59,9 @@ class InvoiceTemplate extends Model
 
     /**
      * Get active templates only.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeActive(Builder $query): Builder
     {
@@ -64,6 +70,9 @@ class InvoiceTemplate extends Model
 
     /**
      * Get default template for a type.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeDefault(Builder $query): Builder
     {

@@ -104,7 +104,7 @@ class DestinationVatService
 
         // Check if threshold exceeded and send notification
         if ($threshold->checkThreshold() && ! $threshold->notification_sent) {
-            $this->sendThresholdExceededNotification($config, $threshold);
+            $this->sendThresholdExceededNotification($config);
         }
 
         // Clear cache for this company
@@ -388,9 +388,10 @@ class DestinationVatService
     {
         $config = CompanyFiscalConfig::getOrCreateForCompany($companyId, $fiscalYear);
 
-        // Work directly with monetary amounts (no base100 conversion)
+        // Work with base100 integers
         $currentAmount                   = $config->current_eu_sales_amount;
-        $newAmount                       = $currentAmount + $amount;
+        $amountBase100                   = CompanyFiscalConfig::amountToBase100($amount);
+        $newAmount                       = $currentAmount + $amountBase100;
         $config->current_eu_sales_amount = $newAmount;
 
         if ($config->current_eu_sales_amount >= $config->eu_sales_threshold) {
@@ -504,7 +505,7 @@ class DestinationVatService
     {
         $config = CompanyFiscalConfig::getOrCreateForCompany($companyId, $newFiscalYear);
 
-        $config->current_eu_sales_amount = 0.0;
+        $config->current_eu_sales_amount = 0;
         $config->apply_destination_iva   = false;
         $config->threshold_exceeded      = false;
         $config->threshold_exceeded_at   = null;

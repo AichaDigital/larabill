@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\{Http, Log};
  */
 class VatApiIntegrationService
 {
+    /** @var array<string, mixed> */
     private array $config;
 
     public function __construct()

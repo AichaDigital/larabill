@@ -30,18 +30,17 @@
             ],
             "env": {
                 "SITE_PATH": "/Users/abkrim/develop/larabill"
-
             }
+        },
+        "mcp-supermemory-ai": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "supergateway",
+                "--sse",
+                "https://mcp.supermemory.ai/m98Tuf_QRhzgZjxuP5HYY/sse"
+            ],
+            "description": "SuperMemory AI - Memoria extendida para contexto"
         }
-    },
-    "mcp-supermemory-ai": {
-      "command": "npx",
-      "args": [
-          "-y",
-          "supergateway",
-          "--sse",
-          "https://mcp.supermemory.ai/m98Tuf_QRhzgZjxuP5HYY/sse"
-      ],
-      "description": "SuperMemory AI - Memoria extendida para contexto"
     }
 }

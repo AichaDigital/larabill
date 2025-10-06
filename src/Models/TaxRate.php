@@ -4,8 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\{Builder, Factories\HasFactory, Model};
 
 /**
  * TaxRate Model
@@ -20,7 +19,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $rate Base-100 integer (e.g., 2150 => 21.50%)
  * @property bool $is_active
  * @property string|null $applies_to
- * @property array|null $special_conditions
+ * @property array<string, mixed>|null $special_conditions
  */
 class TaxRate extends Model
 {
@@ -136,8 +135,11 @@ class TaxRate extends Model
 
     /**
      * Scope to get only active tax rates.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeActive($query)
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
     }

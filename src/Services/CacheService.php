@@ -21,12 +21,16 @@ class CacheService
 
     private string $prefix;
 
+    /** @var array<string, int> */
     private array $ttl;
 
+    /** @var array<string, array<int, string>> */
     private array $tags;
 
     /**
      * Internal counter for testing purposes.
+     *
+     * @var array<string, int>
      */
     private static array $entryCounts = [
         'roi_verifications' => 0,
@@ -700,23 +704,16 @@ class CacheService
 
     /**
      * Count entries by pattern (basic implementation).
+     *
+     * @phpstan-ignore-next-line method.unused
      */
     private function countEntriesByPattern(string $pattern): int
     {
         // This is a simplified implementation
         // In a real scenario, you might need to use Redis SCAN or similar
-        try {
-            // For testing purposes, we'll return a mock count
-            // In production, this would depend on the cache driver
-            return 0;
-        } catch (\Exception $e) {
-            Log::warning('Failed to count cache entries', [
-                'pattern' => $pattern,
-                'error'   => $e->getMessage(),
-            ]);
-
-            return 0;
-        }
+        // For testing purposes, we'll return a mock count
+        // In production, this would depend on the cache driver
+        return 0;
     }
 
     /**

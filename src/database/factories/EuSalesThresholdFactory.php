@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  *
  * Uses integer base 100 for monetary amounts
  * Example: €1,234.56 is stored as 123456, €100.00 as 10000
+ *
+ * @extends Factory<EuSalesThreshold>
  */
 class EuSalesThresholdFactory extends Factory
 {
@@ -39,6 +41,8 @@ class EuSalesThresholdFactory extends Factory
 
     /**
      * Generate realistic country breakdown data
+     *
+     * @return array<string, array<string, mixed>>
      */
     private function generateCountryBreakdown(): array
     {
@@ -259,6 +263,8 @@ class EuSalesThresholdFactory extends Factory
 
     /**
      * Create a threshold with specific country breakdown
+     *
+     * @param  array<string, mixed>  $countries
      */
     public function withCountryBreakdown(array $countries): static
     {
@@ -271,6 +277,8 @@ class EuSalesThresholdFactory extends Factory
 
     /**
      * Generate high sales breakdown for exceeded thresholds
+     *
+     * @return array<string, array<string, mixed>>
      */
     private function generateHighSalesBreakdown(int $totalAmount): array
     {

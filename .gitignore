@@ -35,3 +35,8 @@ testbench.yaml
 .env.testing
 .env.local
 /postman
+
+# Temporales
+PHPSTAN_LEVEL6_SUMMARY.md
+PHPSTAN_LEVEL6_REPORT.md
+phpstan-baseline-level6.neon

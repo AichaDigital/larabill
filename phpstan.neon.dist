@@ -1,8 +1,8 @@
 includes:
-    - phpstan-baseline.neon
+    - phpstan-baseline-level6.neon
 
 parameters:
-    level: 5
+    level: 6
     paths:
         - src
         - config

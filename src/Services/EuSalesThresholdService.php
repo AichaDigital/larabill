@@ -62,7 +62,9 @@ class EuSalesThresholdService
 
         // Add invoice amount to EU sales counter
         $invoiceAmount = $invoice->subtotal; // Use subtotal (base amount without tax)
-        $this->companyConfigService->updateEuSalesAmount($invoiceAmount);
+        $companyId     = (string) ($invoice->company_id ?? config('larabill.company.id', '1'));
+        $fiscalYear    = (int) ($invoice->fiscal_year ?? date('Y'));
+        $this->companyConfigService->updateEuSalesAmount($companyId, $fiscalYear, (float) $invoiceAmount);
 
         Log::info('EU sales threshold updated', [
             'invoice_number' => $invoice->number,
@@ -96,7 +98,9 @@ class EuSalesThresholdService
 
         // Subtract invoice amount from EU sales counter (refund)
         $invoiceAmount = $invoice->subtotal;
-        $this->companyConfigService->updateEuSalesAmount(-$invoiceAmount);
+        $companyId     = (string) ($invoice->company_id ?? config('larabill.company.id', '1'));
+        $fiscalYear    = (int) ($invoice->fiscal_year ?? date('Y'));
+        $this->companyConfigService->updateEuSalesAmount($companyId, $fiscalYear, (float) -$invoiceAmount);
 
         Log::info('EU sales threshold updated (refund)', [
             'invoice_number' => $invoice->number,

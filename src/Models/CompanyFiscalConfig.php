@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Models;
 
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\{Builder, Model};
 
 /**
  * CompanyFiscalConfig Model
@@ -17,8 +17,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property bool $is_oss
  * @property bool $is_roi
  * @property bool $apply_destination_iva
- * @property float $eu_sales_threshold Monetary amount (e.g., 10000.00 => €10,000.00)
- * @property float $current_eu_sales_amount Monetary amount (e.g., 12.34 => €12.34)
+ * @property int $eu_sales_threshold Monetary amount as integer (e.g., 1000000 => €10,000.00)
+ * @property int $current_eu_sales_amount Monetary amount as integer (e.g., 1234 => €12.34)
  * @property Carbon|null $threshold_exceeded_at
  * @property bool $threshold_exceeded
  * @property int $fiscal_year
@@ -27,7 +27,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $fiscal_year_start
  * @property string $currency
  * @property string|null $threshold_notification_email
- * @property array|null $custom_threshold_rules
+ * @property array<string, mixed>|null $custom_threshold_rules
  */
 class CompanyFiscalConfig extends Model
 {
@@ -67,8 +67,8 @@ class CompanyFiscalConfig extends Model
             'auto_apply_destination'  => 'boolean',
             'notification_sent'       => 'boolean',
             'threshold_exceeded'      => 'boolean',
-            'eu_sales_threshold'      => 'float', // Monetary amount: €10000.00
-            'current_eu_sales_amount' => 'float', // Monetary amount: €12.34
+            'eu_sales_threshold'      => 'integer', // Base-100 integer: 1000000 => €10,000.00
+            'current_eu_sales_amount' => 'integer', // Base-100 integer: 1234 => €12.34
             'threshold_exceeded_at'   => 'datetime',
             'custom_threshold_rules'  => 'array',
         ];
@@ -338,48 +338,66 @@ class CompanyFiscalConfig extends Model
 
     /**
      * Scope to get configs by fiscal year.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeByFiscalYear($query, int $fiscalYear)
+    public function scopeByFiscalYear(Builder $query, int $fiscalYear): Builder
     {
         return $query->where('fiscal_year', $fiscalYear);
     }
 
     /**
      * Scope to get configs that have exceeded threshold.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeThresholdExceeded($query)
+    public function scopeThresholdExceeded(Builder $query): Builder
     {
         return $query->whereColumn('current_eu_sales_amount', '>=', 'eu_sales_threshold');
     }
 
     /**
      * Scope to get configs by company.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeByCompany($query, string $companyId)
+    public function scopeByCompany(Builder $query, string $companyId): Builder
     {
         return $query->where('company_id', $companyId);
     }
 
     /**
      * Scope to get configs that apply destination VAT.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeApplyDestinationVat($query)
+    public function scopeApplyDestinationVat(Builder $query): Builder
     {
         return $query->where('apply_destination_iva', true);
     }
 
     /**
      * Scope to get configs with auto apply enabled.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeAutoApplyEnabled($query)
+    public function scopeAutoApplyEnabled(Builder $query): Builder
     {
         return $query->where('auto_apply_destination', true);
     }
 
     /**
      * Scope to get configs that need notification.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeNeedsNotification($query)
+    public function scopeNeedsNotification(Builder $query): Builder
     {
         return $query->whereColumn('current_eu_sales_amount', '>=', 'eu_sales_threshold')
             ->where('notification_sent', false);
@@ -440,6 +458,8 @@ class CompanyFiscalConfig extends Model
 
     /**
      * Get custom threshold rules for specific countries or products.
+     *
+     * @return array<string, mixed>|null
      */
     public function getCustomThresholdRule(string $key): ?array
     {
@@ -448,6 +468,8 @@ class CompanyFiscalConfig extends Model
 
     /**
      * Set custom threshold rule.
+     *
+     * @param  array<string, mixed>  $rule
      */
     public function setCustomThresholdRule(string $key, array $rule): self
     {
@@ -484,6 +506,8 @@ class CompanyFiscalConfig extends Model
 
     /**
      * Accessor for eu_sales_threshold to return as integer.
+     *
+     * @param  mixed  $value
      */
     public function getEuSalesThresholdAttribute($value): int
     {
@@ -492,6 +516,8 @@ class CompanyFiscalConfig extends Model
 
     /**
      * Accessor for current_eu_sales_amount to return as integer.
+     *
+     * @param  mixed  $value
      */
     public function getCurrentEuSalesAmountAttribute($value): int
     {
@@ -500,6 +526,8 @@ class CompanyFiscalConfig extends Model
 
     /**
      * Mutator for eu_sales_threshold to store as monetary amount.
+     *
+     * @param  mixed  $value
      */
     public function setEuSalesThresholdAttribute($value): void
     {
@@ -508,6 +536,8 @@ class CompanyFiscalConfig extends Model
 
     /**
      * Mutator for current_eu_sales_amount to store as monetary amount.
+     *
+     * @param  mixed  $value
      */
     public function setCurrentEuSalesAmountAttribute($value): void
     {

@@ -304,14 +304,6 @@ class RoiVerificationService
     }
 
     /**
-     * Check if cache is expired.
-     */
-    private function isCacheExpired(UserRoiVerification $verification): bool
-    {
-        return $verification->isExpired();
-    }
-
-    /**
      * Build cache key.
      */
     private function buildCacheKey(string $userId, string $vatNumber, string $countryCode): string

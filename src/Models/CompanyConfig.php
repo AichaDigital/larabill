@@ -141,7 +141,7 @@ class CompanyConfig extends Model
     /**
      * Mutator for eu_sales_threshold to store as base 100 integer.
      *
-     * @param float|null $value Monetary amount in standard units (e.g., 123.45)
+     * @param  float|null  $value  Monetary amount in standard units (e.g., 123.45)
      */
     public function setEuSalesThresholdAttribute($value): void
     {
@@ -151,7 +151,7 @@ class CompanyConfig extends Model
     /**
      * Mutator for current_eu_sales_amount to store as base 100 integer.
      *
-     * @param float|null $value Monetary amount in standard units (e.g., 123.45)
+     * @param  float|null  $value  Monetary amount in standard units (e.g., 123.45)
      */
     public function setCurrentEuSalesAmountAttribute($value): void
     {
@@ -345,7 +345,7 @@ class CompanyConfig extends Model
     /**
      * Set custom threshold rule.
      *
-     * @param array<string,mixed> $rule
+     * @param  array<string,mixed>  $rule
      */
     public function setCustomThresholdRule(string $key, array $rule): self
     {
