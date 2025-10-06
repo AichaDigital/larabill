@@ -184,7 +184,9 @@ class InvoiceItem extends Model
      */
     public function calculateSubtotal(): int
     {
-        return (int) (($this->quantity * $this->unit_price) / 100);
+        $quantity = (int) $this->getAttribute('quantity');
+        $unitPrice = (int) $this->getAttribute('unit_price');
+        return (int) (($quantity * $unitPrice) / 100);
     }
 
     /**
@@ -192,7 +194,9 @@ class InvoiceItem extends Model
      */
     public function calculateTaxAmount(): int
     {
-        return (int) (($this->subtotal * $this->tax_rate) / 10000); // Divide by 10000 because both are base 100
+        $subtotal = (int) $this->getAttribute('subtotal');
+        $taxRate = (int) $this->getAttribute('tax_rate');
+        return (int) (($subtotal * $taxRate) / 10000); // Divide by 10000 because both are base 100
     }
 
     /**
@@ -200,7 +204,9 @@ class InvoiceItem extends Model
      */
     public function calculateTotal(): int
     {
-        return $this->subtotal + $this->tax_amount;
+        $subtotal = (int) $this->getAttribute('subtotal');
+        $taxAmount = (int) $this->getAttribute('tax_amount');
+        return $subtotal + $taxAmount;
     }
 
     /**

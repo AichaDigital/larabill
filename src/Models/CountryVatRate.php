@@ -777,7 +777,7 @@ class CountryVatRate extends Model
      *
      * @param  \Illuminate\Database\Eloquent\Collection  $collection
      */
-    private static function extractStandardRatesAsPercentages($collection): \Illuminate\Support\Collection
+    protected static function extractStandardRatesAsPercentages($collection): \Illuminate\Support\Collection
     {
         return $collection->pluck('standard_rate')
             ->filter(fn ($rate) => $rate !== null)
@@ -788,7 +788,7 @@ class CountryVatRate extends Model
     /**
      * Calcula el promedio de forma segura, manejando colecciones vacías.
      */
-    private static function calculateSafeAverage(\Illuminate\Support\Collection $rates): float
+    protected static function calculateSafeAverage(\Illuminate\Support\Collection $rates): float
     {
         if ($rates->isEmpty()) {
             return 0.0;
@@ -810,7 +810,7 @@ class CountryVatRate extends Model
     /**
      * Calcula el máximo de forma segura, manejando colecciones vacías.
      */
-    private static function calculateSafeMax(\Illuminate\Support\Collection $rates): float
+    protected static function calculateSafeMax(\Illuminate\Support\Collection $rates): float
     {
         if ($rates->isEmpty()) {
             return 0.0;
@@ -824,7 +824,7 @@ class CountryVatRate extends Model
     /**
      * Calcula el mínimo de forma segura, manejando colecciones vacías.
      */
-    private static function calculateSafeMin(\Illuminate\Support\Collection $rates): float
+    protected static function calculateSafeMin(\Illuminate\Support\Collection $rates): float
     {
         if ($rates->isEmpty()) {
             return 0.0;

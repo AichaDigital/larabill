@@ -23,7 +23,7 @@ return [
     |
     */
     'models' => [
-        'user'                  => \App\Models\User::class,
+        'user'                  => 'App\\Models\\User',
         'user_tax_info'         => \AichaDigital\Larabill\Models\UserTaxInfo::class,
         'invoice'               => \AichaDigital\Larabill\Models\Invoice::class,
         'invoice_item'          => \AichaDigital\Larabill\Models\InvoiceItem::class,

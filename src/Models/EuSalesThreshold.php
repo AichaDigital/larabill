@@ -101,7 +101,7 @@ class EuSalesThreshold extends Model
      */
     public function getTotalAmountAsAmount(): float
     {
-        return static::base100ToAmount($this->total_amount);
+        return (float) $this->total_amount;
     }
 
     /**
@@ -109,7 +109,7 @@ class EuSalesThreshold extends Model
      */
     public function getThresholdAmountAsAmount(): float
     {
-        return static::base100ToAmount($this->threshold_amount);
+        return (float) $this->threshold_amount;
     }
 
     /**

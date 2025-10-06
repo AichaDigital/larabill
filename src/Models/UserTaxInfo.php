@@ -11,6 +11,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * UserTaxInfo Model
  *
  * Represents fiscal information for a user.
+ *
+ * @property string|int $user_id
+ * @property bool $is_current
  */
 class UserTaxInfo extends Model
 {

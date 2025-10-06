@@ -11,6 +11,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  * TaxRate Factory
  *
  * Creates TaxRate instances for testing.
+ *
+ * @extends Factory<TaxRate>
  */
 class TaxRateFactory extends Factory
 {

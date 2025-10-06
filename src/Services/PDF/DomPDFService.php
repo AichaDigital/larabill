@@ -142,13 +142,13 @@ class DomPDFService
             // Create a mock object for testing
             $this->dompdf = new class
             {
-                public function loadHtml($html) {}
+                public function loadHtml(string $html): void {}
 
-                public function setPaper($paper, $orientation) {}
+                public function setPaper(string $paper, string $orientation): void {}
 
-                public function render() {}
+                public function render(): void {}
 
-                public function output()
+                public function output(): string
                 {
                     return 'mock-pdf-content';
                 }

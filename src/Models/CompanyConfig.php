@@ -25,7 +25,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $fiscal_year_start
  * @property string $currency
  * @property string|null $threshold_notification_email
- * @property array|null $custom_threshold_rules
+ * @property array<string,mixed>|null $custom_threshold_rules
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
@@ -125,7 +125,7 @@ class CompanyConfig extends Model
     /**
      * Accessor for eu_sales_threshold to return as float.
      */
-    public function getEuSalesThresholdAttribute($value): float
+    public function getEuSalesThresholdAttribute(?int $value): float
     {
         return $value === null ? 0.0 : static::base100ToAmount($value);
     }
@@ -133,25 +133,29 @@ class CompanyConfig extends Model
     /**
      * Accessor for current_eu_sales_amount to return as float.
      */
-    public function getCurrentEuSalesAmountAttribute($value): float
+    public function getCurrentEuSalesAmountAttribute(?int $value): float
     {
         return $value === null ? 0.0 : static::base100ToAmount($value);
     }
 
     /**
      * Mutator for eu_sales_threshold to store as base 100 integer.
+     *
+     * @param float|null $value Monetary amount in standard units (e.g., 123.45)
      */
     public function setEuSalesThresholdAttribute($value): void
     {
-        $this->attributes['eu_sales_threshold'] = $value === null ? 0 : static::amountToBase100($value);
+        $this->attributes['eu_sales_threshold'] = $value === null ? 0 : static::amountToBase100((float) $value);
     }
 
     /**
      * Mutator for current_eu_sales_amount to store as base 100 integer.
+     *
+     * @param float|null $value Monetary amount in standard units (e.g., 123.45)
      */
     public function setCurrentEuSalesAmountAttribute($value): void
     {
-        $this->attributes['current_eu_sales_amount'] = $value === null ? 0 : static::amountToBase100($value);
+        $this->attributes['current_eu_sales_amount'] = $value === null ? 0 : static::amountToBase100((float) $value);
     }
 
     /**
@@ -330,6 +334,8 @@ class CompanyConfig extends Model
 
     /**
      * Get custom threshold rules for specific countries or products.
+     *
+     * @return array<string,mixed>|null
      */
     public function getCustomThresholdRule(string $key): ?array
     {
@@ -338,6 +344,8 @@ class CompanyConfig extends Model
 
     /**
      * Set custom threshold rule.
+     *
+     * @param array<string,mixed> $rule
      */
     public function setCustomThresholdRule(string $key, array $rule): self
     {

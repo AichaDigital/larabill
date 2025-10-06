@@ -12,6 +12,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *
  * Represents ROI (Reverse Charge Operator) verification results for users.
  * This model handles caching of ROI verifications with configurable expiration.
+ *
+ * @property string|int $user_id
+ * @property bool $is_roi
+ * @property bool $cache_hit
+ * @property string|null $company_name
+ * @property string|null $company_address
+ * @property \Illuminate\Support\Carbon|null $last_check
+ * @property \Illuminate\Support\Carbon|null $expired_at
+ * @property string|null $api_source
+ * @property array<string,mixed>|null $response_data
  */
 class UserRoiVerification extends Model
 {

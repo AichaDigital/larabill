@@ -18,7 +18,7 @@ interface PDFConnectorInterface
      * Generate QR code data for an invoice
      *
      * @param  Invoice  $invoice  The invoice to generate QR for
-     * @return array QR data including code, url, and metadata
+     * @return array<string,mixed> QR data including code, url, and metadata
      */
     public function generateQR(Invoice $invoice): array;
 
@@ -33,7 +33,7 @@ interface PDFConnectorInterface
     /**
      * Get required fields for this connector
      *
-     * @return array List of required field names
+     * @return array<int,string> List of required field names
      */
     public function getRequiredFields(): array;
 
@@ -47,7 +47,7 @@ interface PDFConnectorInterface
     /**
      * Get authentication data for external connectors
      *
-     * @return array Authentication data (keys, tokens, etc.)
+     * @return array<string,mixed> Authentication data (keys, tokens, etc.)
      */
     public function getAuthentication(): array;
 
@@ -68,21 +68,21 @@ interface PDFConnectorInterface
     /**
      * Get connector configuration
      *
-     * @return array Configuration data for this connector
+     * @return array<string,mixed> Configuration data for this connector
      */
     public function getConfiguration(): array;
 
     /**
      * Get supported countries/regions for this connector
      *
-     * @return array List of supported country codes
+     * @return array<int,string> List of supported country codes
      */
     public function getSupportedCountries(): array;
 
     /**
      * Get connector metadata
      *
-     * @return array Metadata including name, version, description
+     * @return array<string,mixed> Metadata including name, version, description
      */
     public function getMetadata(): array;
 }
