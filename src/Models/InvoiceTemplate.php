@@ -92,6 +92,8 @@ class InvoiceTemplate extends Model
 
     /**
      * Get all active templates for a type.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, InvoiceTemplate>
      */
     public static function getActiveForType(string $type): \Illuminate\Database\Eloquent\Collection
     {
@@ -126,16 +128,21 @@ class InvoiceTemplate extends Model
 
     /**
      * Get template settings.
+     *
+     * @param  mixed  $default
+     * @return mixed
      */
-    public function getSetting(string $key, $default = null)
+    public function getSetting(string $key, $default = null): mixed
     {
         return data_get($this->settings, $key, $default);
     }
 
     /**
      * Set template setting.
+     *
+     * @param  mixed  $value
      */
-    public function setSetting(string $key, $value): void
+    public function setSetting(string $key, mixed $value): void
     {
         $settings = $this->settings ?? [];
         data_set($settings, $key, $value);
@@ -144,6 +151,8 @@ class InvoiceTemplate extends Model
 
     /**
      * Get available template types.
+     *
+     * @return array<string, string>
      */
     public static function getAvailableTypes(): array
     {
@@ -157,6 +166,8 @@ class InvoiceTemplate extends Model
 
     /**
      * Get template statistics.
+     *
+     * @return array<string, mixed>
      */
     public static function getStatistics(): array
     {

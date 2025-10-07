@@ -30,6 +30,8 @@ class RoiVerificationService
 
     /**
      * Verify ROI status for a user.
+     *
+     * @return array<string, mixed>
      */
     public function verifyRoiStatus(string $userId, string $vatNumber, string $countryCode): array
     {
@@ -132,6 +134,8 @@ class RoiVerificationService
 
     /**
      * Verify ROI from API.
+     *
+     * @return array<string, mixed>
      */
     private function verifyFromApi(string $userId, string $vatNumber, string $countryCode): array
     {
@@ -283,6 +287,8 @@ class RoiVerificationService
 
     /**
      * Log ROI query for legal compliance.
+     *
+     * @param  array<string, mixed>  $responseData
      */
     private function logRoiQuery(string $userId, string $vatNumber, string $countryCode, string $queryType, string $apiSource, array $responseData): void
     {
@@ -313,6 +319,8 @@ class RoiVerificationService
 
     /**
      * Get ROI verification statistics for a user.
+     *
+     * @return array<string, mixed>
      */
     public function getRoiStatistics(string $userId, int $days = 30): array
     {
@@ -355,6 +363,8 @@ class RoiVerificationService
 
     /**
      * Get all ROI verifications for a user.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, \AichaDigital\Larabill\Models\UserRoiVerification>
      */
     public function getUserRoiVerifications(string $userId): \Illuminate\Database\Eloquent\Collection
     {
@@ -365,6 +375,8 @@ class RoiVerificationService
 
     /**
      * Get ROI verification history for a user.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, \AichaDigital\Larabill\Models\UserRoiVerification>
      */
     public function getRoiVerificationHistory(string $userId, int $limit = 50): \Illuminate\Database\Eloquent\Collection
     {
@@ -376,6 +388,8 @@ class RoiVerificationService
 
     /**
      * Force refresh ROI verification (bypass cache).
+     *
+     * @return array<string, mixed>
      */
     public function forceRefreshRoiVerification(string $userId, string $vatNumber, string $countryCode): array
     {
@@ -395,6 +409,8 @@ class RoiVerificationService
 
     /**
      * Get cache statistics.
+     *
+     * @return array<string, mixed>
      */
     public function getCacheStatistics(): array
     {
@@ -411,6 +427,8 @@ class RoiVerificationService
 
     /**
      * Get ROI query statistics for a user.
+     *
+     * @return array<string, mixed>
      */
     public function getRoiQueryStatistics(string $userId): array
     {
@@ -492,6 +510,8 @@ class RoiVerificationService
 
     /**
      * Get API rate limits configuration.
+     *
+     * @return array<string, mixed>
      */
     public function getApiRateLimits(): array
     {
@@ -500,6 +520,8 @@ class RoiVerificationService
 
     /**
      * Check API rate limit status.
+     *
+     * @return array<string, mixed>
      */
     public function checkApiRateLimit(string $apiSource): array
     {
@@ -515,6 +537,9 @@ class RoiVerificationService
 
     /**
      * Batch verify ROI status for multiple users.
+     *
+     * @param  array<int, array<string, mixed>>  $vatNumbers
+     * @return array<int, array<string, mixed>>
      */
     public function batchVerifyRoiStatus(array $vatNumbers): array
     {
@@ -537,6 +562,8 @@ class RoiVerificationService
 
     /**
      * Get service configuration.
+     *
+     * @return array<string, mixed>
      */
     public function getConfiguration(): array
     {
@@ -545,6 +572,8 @@ class RoiVerificationService
 
     /**
      * Update service configuration.
+     *
+     * @param  array<string, mixed>  $config
      */
     public function updateConfiguration(array $config): void
     {
@@ -555,6 +584,8 @@ class RoiVerificationService
 
     /**
      * Log service operations.
+     *
+     * @param  array<string, mixed>  $context
      */
     public function logServiceOperation(string $operation, array $context = []): void
     {

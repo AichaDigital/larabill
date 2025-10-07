@@ -288,6 +288,8 @@ class CacheService
 
     /**
      * Get cache statistics.
+     *
+     * @return array<string, mixed>
      */
     public function getStats(): array
     {
@@ -359,6 +361,8 @@ class CacheService
 
     /**
      * Store ROI verification data.
+     *
+     * @param  array<string, mixed>  $data
      */
     public function storeRoiVerification(string $userId, string $vatNumber, string $countryCode, array $data): bool
     {
@@ -376,6 +380,8 @@ class CacheService
 
     /**
      * Get ROI verification data.
+     *
+     * @return array<string, mixed>|null
      */
     public function getRoiVerification(string $userId, string $vatNumber, string $countryCode): ?array
     {
@@ -419,6 +425,8 @@ class CacheService
 
     /**
      * Store VAT rates.
+     *
+     * @param  array<string, mixed>  $rates
      */
     public function storeVatRates(array $rates): bool
     {
@@ -434,6 +442,8 @@ class CacheService
 
     /**
      * Get VAT rates.
+     *
+     * @return array<string, mixed>|null
      */
     public function getVatRates(): ?array
     {
@@ -450,6 +460,8 @@ class CacheService
 
     /**
      * Store company configuration.
+     *
+     * @param  array<string, mixed>  $config
      */
     public function storeCompanyConfig(string $companyId, array $config): bool
     {
@@ -467,6 +479,8 @@ class CacheService
 
     /**
      * Get company configuration.
+     *
+     * @return array<string, mixed>|null
      */
     public function getCompanyConfig(string $companyId): ?array
     {
@@ -485,6 +499,8 @@ class CacheService
 
     /**
      * Get cache driver information.
+     *
+     * @return array<string, mixed>
      */
     public function getDriverInfo(): array
     {
@@ -546,6 +562,8 @@ class CacheService
 
     /**
      * Get cache key patterns for debugging.
+     *
+     * @return array<string, string>
      */
     public function getKeyPatterns(): array
     {
@@ -558,6 +576,8 @@ class CacheService
 
     /**
      * Warm up cache with common data.
+     *
+     * @return array<string, mixed>
      */
     public function warmUp(): array
     {
@@ -584,6 +604,8 @@ class CacheService
 
     /**
      * Warm up VAT rates cache.
+     *
+     * @return array<string, string>
      */
     private function warmUpVatRates(): array
     {
@@ -593,6 +615,8 @@ class CacheService
 
     /**
      * Warm up company configs cache.
+     *
+     * @return array<string, string>
      */
     private function warmUpCompanyConfigs(): array
     {
@@ -663,6 +687,8 @@ class CacheService
 
     /**
      * Get cache statistics.
+     *
+     * @return array<string, mixed>
      */
     public function getCacheStatistics(): array
     {

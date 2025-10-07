@@ -95,11 +95,14 @@ class UserTaxInfo extends Model
 
     /**
      * Get the user that owns the tax info.
+     *
+     * @return BelongsTo<\Illuminate\Foundation\Auth\User, $this>
      */
     public function user(): BelongsTo
     {
         $userModel = \AichaDigital\Larabill\Services\ModelMappingService::getModelClass('user');
 
+        // @phpstan-ignore-next-line return.type,argument.templateType
         return $this->belongsTo($userModel);
     }
 }

@@ -36,6 +36,8 @@ class ModelMappingService
 
     /**
      * Get field mapping for a given model type.
+     *
+     * @return array<string, string>
      */
     public static function getFieldMapping(string $modelType): array
     {
@@ -44,6 +46,9 @@ class ModelMappingService
 
     /**
      * Map field names using the configured mapping.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
      */
     public static function mapFields(array $data, string $modelType): array
     {
@@ -69,6 +74,9 @@ class ModelMappingService
 
     /**
      * Reverse map field names (from mapped to original).
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
      */
     public static function reverseMapFields(array $data, string $modelType): array
     {

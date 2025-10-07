@@ -214,18 +214,21 @@ class InvoiceItem extends Model
 
     /**
      * Get the invoice that owns the item.
+     *
+     * @return BelongsTo<\AichaDigital\Larabill\Models\Invoice, $this>
      */
     public function invoice(): BelongsTo
     {
         $invoiceModel = \AichaDigital\Larabill\Services\ModelMappingService::getModelClass('invoice');
 
+        // @phpstan-ignore-next-line return.type,argument.templateType
         return $this->belongsTo($invoiceModel);
     }
 
     /**
      * Accessor for quantity to return as formatted string.
      */
-    public function getQuantityAttribute($value): string
+    public function getQuantityAttribute(mixed $value): string
     {
         return number_format(static::base100ToQuantity((int) $value), 2, '.', '');
     }
@@ -233,7 +236,7 @@ class InvoiceItem extends Model
     /**
      * Accessor for unit_price to return as formatted string.
      */
-    public function getUnitPriceAttribute($value): string
+    public function getUnitPriceAttribute(mixed $value): string
     {
         return number_format(static::base100ToAmount((int) $value), 2, '.', '');
     }
@@ -241,7 +244,7 @@ class InvoiceItem extends Model
     /**
      * Accessor for subtotal to return as formatted string.
      */
-    public function getSubtotalAttribute($value): string
+    public function getSubtotalAttribute(mixed $value): string
     {
         return number_format(static::base100ToAmount((int) $value), 2, '.', '');
     }
@@ -249,7 +252,7 @@ class InvoiceItem extends Model
     /**
      * Accessor for tax_rate to return as formatted string.
      */
-    public function getTaxRateAttribute($value): string
+    public function getTaxRateAttribute(mixed $value): string
     {
         return number_format(static::base100ToPercentage((int) $value), 4, '.', '');
     }
@@ -257,7 +260,7 @@ class InvoiceItem extends Model
     /**
      * Accessor for tax_amount to return as formatted string.
      */
-    public function getTaxAmountAttribute($value): string
+    public function getTaxAmountAttribute(mixed $value): string
     {
         return number_format(static::base100ToAmount((int) $value), 2, '.', '');
     }
@@ -265,7 +268,7 @@ class InvoiceItem extends Model
     /**
      * Accessor for total to return as formatted string.
      */
-    public function getTotalAttribute($value): string
+    public function getTotalAttribute(mixed $value): string
     {
         return number_format(static::base100ToAmount((int) $value), 2, '.', '');
     }

@@ -87,6 +87,8 @@ class VatCategory extends Model
 
     /**
      * Get VAT rate as base-100 integer.
+     *
+     * @param  mixed  $value
      */
     public function getVatRateAttribute($value): int
     {
@@ -95,6 +97,8 @@ class VatCategory extends Model
 
     /**
      * Mutator for vat_rate to convert percentage to base 100.
+     *
+     * @param  mixed  $value
      */
     public function setVatRateAttribute($value): void
     {
@@ -185,6 +189,8 @@ class VatCategory extends Model
 
     /**
      * Get VAT categories by country.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, VatCategory>
      */
     public static function getByCountry(string $countryCode): \Illuminate\Database\Eloquent\Collection
     {
@@ -196,6 +202,8 @@ class VatCategory extends Model
 
     /**
      * Get VAT categories by category type.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, VatCategory>
      */
     public static function getByCategoryType(string $categoryType): \Illuminate\Database\Eloquent\Collection
     {
@@ -207,6 +215,8 @@ class VatCategory extends Model
 
     /**
      * Get VAT categories by country and type.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, VatCategory>
      */
     public static function getByCountryAndType(string $countryCode, string $categoryType): \Illuminate\Database\Eloquent\Collection
     {
@@ -311,6 +321,8 @@ class VatCategory extends Model
 
     /**
      * Get special conditions for this category.
+     *
+     * @return array<string, mixed>
      */
     public function getSpecialConditions(): array
     {
@@ -423,8 +435,10 @@ class VatCategory extends Model
 
     /**
      * Get child categories.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<VatCategory, $this>
      */
-    public function childCategories()
+    public function childCategories(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(self::class, 'parent_category_id');
     }
@@ -478,6 +492,8 @@ class VatCategory extends Model
 
     /**
      * Get all available category types.
+     *
+     * @return array<int, string>
      */
     public static function getCategoryTypes(): array
     {
@@ -536,6 +552,8 @@ class VatCategory extends Model
 
     /**
      * Find VAT categories by country.
+     *
+     * @return Builder<VatCategory>
      */
     public static function findByCountry(string $countryCode): Builder
     {
@@ -545,6 +563,8 @@ class VatCategory extends Model
 
     /**
      * Find VAT categories by type.
+     *
+     * @return Builder<VatCategory>
      */
     public static function findByType(string $categoryType): Builder
     {
@@ -634,6 +654,8 @@ class VatCategory extends Model
 
     /**
      * Set special conditions.
+     *
+     * @param  array<string, mixed>  $conditions
      */
     public function setSpecialConditions(array $conditions): self
     {
@@ -658,6 +680,8 @@ class VatCategory extends Model
 
     /**
      * Get available category types.
+     *
+     * @return array<int, string>
      */
     public static function getAvailableCategoryTypes(): array
     {
@@ -666,6 +690,8 @@ class VatCategory extends Model
 
     /**
      * Get category statistics.
+     *
+     * @return array<string, mixed>
      */
     public static function getCategoryStatistics(): array
     {

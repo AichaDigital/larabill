@@ -24,6 +24,8 @@ class VatApiIntegrationService
 
     /**
      * Verify VAT number using AbstractAPI.
+     *
+     * @return array<string, mixed>
      */
     public function verifyWithAbstractApi(string $vatNumber, string $countryCode): array
     {
@@ -90,6 +92,8 @@ class VatApiIntegrationService
 
     /**
      * Verify VAT number using API Layer.
+     *
+     * @return array<string, mixed>
      */
     public function verifyWithApiLayer(string $vatNumber, string $countryCode): array
     {
@@ -134,6 +138,8 @@ class VatApiIntegrationService
 
     /**
      * Process AbstractAPI response.
+     *
+     * @return array<string, mixed>
      */
     private function processAbstractApiResponse(Response $response, string $vatNumber, string $countryCode): array
     {
@@ -188,6 +194,8 @@ class VatApiIntegrationService
 
     /**
      * Process API Layer response.
+     *
+     * @return array<string, mixed>
      */
     private function processApiLayerResponse(Response $response, string $vatNumber, string $countryCode): array
     {
@@ -248,6 +256,8 @@ class VatApiIntegrationService
 
     /**
      * Get mock response for testing.
+     *
+     * @return array<string, mixed>
      */
     private function getMockResponse(string $apiSource, string $vatNumber, string $countryCode): array
     {
@@ -280,6 +290,8 @@ class VatApiIntegrationService
 
     /**
      * Get mock responses for testing.
+     *
+     * @return array<string, mixed>
      */
     private function getMockResponses(): array
     {

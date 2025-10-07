@@ -382,6 +382,8 @@ class CountryVatRate extends Model
 
     /**
      * Get all available categories (reduced rates + exempt categories).
+     *
+     * @return array<string, array<string, mixed>>
      */
     public function getAllCategories(): array
     {
@@ -418,6 +420,8 @@ class CountryVatRate extends Model
 
     /**
      * Get formatted reduced rates.
+     *
+     * @return array<string, string>
      */
     public function getFormattedReducedRates(): array
     {
@@ -496,6 +500,8 @@ class CountryVatRate extends Model
 
     /**
      * Get all EU countries VAT rates.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, CountryVatRate>
      */
     public static function getEuCountries(): \Illuminate\Database\Eloquent\Collection
     {
@@ -513,6 +519,8 @@ class CountryVatRate extends Model
 
     /**
      * Import VAT rates from external data source.
+     *
+     * @param array<int, array<string, mixed>> $data
      */
     public static function importFromDataSource(array $data, string $dataSource = 'manual'): int
     {
@@ -598,8 +606,10 @@ class CountryVatRate extends Model
 
     /**
      * Finder: by standard rate range (inclusive).
+     *
+     * @return Builder<static>
      */
-    public static function findByStandardRateRange(float $minRate, float $maxRate)
+    public static function findByStandardRateRange(float $minRate, float $maxRate): Builder
     {
         $query = static::query()->where('standard_rate', '>=', $minRate);
 
@@ -617,6 +627,8 @@ class CountryVatRate extends Model
 
     /**
      * Finder: similar rates within a tolerance around a target.
+     *
+     * @return Builder<static>
      */
     public static function findSimilarRates(float $targetRate, float $tolerance): Builder
     {
@@ -642,6 +654,8 @@ class CountryVatRate extends Model
 
     /**
      * Eloquent attribute accessor to always return reduced_rates as float values.
+     *
+     * @return Attribute<array<string, int>|null, array<string, int>|null>
      */
     protected function reducedRates(): Attribute
     {
@@ -709,6 +723,9 @@ class CountryVatRate extends Model
         return $this->isCategoryExempt($category);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getAllRates(): array
     {
         return [
@@ -731,6 +748,9 @@ class CountryVatRate extends Model
         return $this->fresh();
     }
 
+    /**
+     * @param array<string, mixed> $data
+     */
     public function updateVatRates(array $data): self
     {
         $payload = [];
@@ -765,7 +785,10 @@ class CountryVatRate extends Model
         return $this->last_updated >= $threshold;
     }
 
-    public static function getCountriesNeedingRateUpdate(int $maxAgeDays)
+    /**
+     * @return \Illuminate\Database\Eloquent\Collection<int, CountryVatRate>
+     */
+    public static function getCountriesNeedingRateUpdate(int $maxAgeDays): \Illuminate\Database\Eloquent\Collection
     {
         $threshold = now()->subDays($maxAgeDays);
 
@@ -777,6 +800,8 @@ class CountryVatRate extends Model
 
     /**
      * Adjust statistics keys to match tests expectations.
+     *
+     * @return array<string, mixed>
      */
     public static function getVatRateStatisticsAdjusted(): array
     {
@@ -799,9 +824,10 @@ class CountryVatRate extends Model
     /**
      * Extrae y convierte las tasas estándar de base 100 a porcentajes.
      *
-     * @param  \Illuminate\Database\Eloquent\Collection  $collection
+     * @param  \Illuminate\Database\Eloquent\Collection<int, static>  $collection
+     * @return \Illuminate\Support\Collection<int, float>
      */
-    protected static function extractStandardRatesAsPercentages($collection): \Illuminate\Support\Collection
+    protected static function extractStandardRatesAsPercentages(\Illuminate\Database\Eloquent\Collection $collection): \Illuminate\Support\Collection
     {
         return $collection->pluck('standard_rate')
             ->filter(fn ($rate) => $rate !== null)
@@ -811,6 +837,8 @@ class CountryVatRate extends Model
 
     /**
      * Calcula el promedio de forma segura, manejando colecciones vacías.
+     *
+     * @param  \Illuminate\Support\Collection<int, float>  $rates
      */
     protected static function calculateSafeAverage(\Illuminate\Support\Collection $rates): float
     {
@@ -827,12 +855,13 @@ class CountryVatRate extends Model
 
         $average = (float) $sum / (float) $count;
 
-        // Redondeo manual a 2 decimales para evitar problemas con round()
         return floor($average * 100 + 0.5) / 100;
     }
 
     /**
      * Calcula el máximo de forma segura, manejando colecciones vacías.
+     *
+     * @param  \Illuminate\Support\Collection<int, float>  $rates
      */
     protected static function calculateSafeMax(\Illuminate\Support\Collection $rates): float
     {
@@ -847,6 +876,8 @@ class CountryVatRate extends Model
 
     /**
      * Calcula el mínimo de forma segura, manejando colecciones vacías.
+     *
+     * @param  \Illuminate\Support\Collection<int, float>  $rates
      */
     protected static function calculateSafeMin(\Illuminate\Support\Collection $rates): float
     {
@@ -859,7 +890,11 @@ class CountryVatRate extends Model
         return is_numeric($min) ? (float) $min : 0.0;
     }
 
-    // Keep the original method name but return adjusted keys used in tests
+    /**
+     * Keep the original method name but return adjusted keys used in tests
+     *
+     * @return array<string, mixed>
+     */
     public static function getVatRateStatistics(): array
     {
         return static::getVatRateStatisticsAdjusted();

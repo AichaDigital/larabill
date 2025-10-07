@@ -69,6 +69,8 @@ class DestinationVatService
 
     /**
      * Calculate destination VAT for a transaction.
+     *
+     * @return array<string, mixed>
      */
     public function calculateDestinationVat(float $amount, string $countryCode, ?string $category = null): array
     {
@@ -123,6 +125,8 @@ class DestinationVatService
 
     /**
      * Get threshold statistics for a company.
+     *
+     * @return array<string, mixed>
      */
     public function getThresholdStatistics(string $companyId, ?int $fiscalYear = null): array
     {
@@ -209,6 +213,8 @@ class DestinationVatService
 
     /**
      * Get VAT categories for a country.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, \AichaDigital\Larabill\Models\VatCategory>
      */
     public function getVatCategories(string $countryCode): \Illuminate\Database\Eloquent\Collection
     {
@@ -221,6 +227,8 @@ class DestinationVatService
 
     /**
      * Get all EU countries with VAT rates.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, \AichaDigital\Larabill\Models\CountryVatRate>
      */
     public function getEuCountriesWithVatRates(): \Illuminate\Database\Eloquent\Collection
     {
@@ -233,6 +241,8 @@ class DestinationVatService
 
     /**
      * Import VAT rates from external source.
+     *
+     * @param  array<int, mixed>  $data
      */
     public function importVatRates(array $data, string $dataSource = 'external'): int
     {
@@ -251,6 +261,8 @@ class DestinationVatService
 
     /**
      * Get destination VAT statistics.
+     *
+     * @return array<string, mixed>
      */
     public function getDestinationVatStatistics(?int $fiscalYear = null): array
     {
@@ -417,6 +429,8 @@ class DestinationVatService
 
     /**
      * Get EU sales threshold status for a company.
+     *
+     * @return array<string, mixed>
      */
     public function getEuSalesThresholdStatus(string $companyId, int $fiscalYear): array
     {
@@ -437,6 +451,8 @@ class DestinationVatService
 
     /**
      * Get EU sales breakdown by country for a company.
+     *
+     * @return array<string, mixed>
      */
     public function getEuSalesBreakdownByCountry(string $companyId, int $fiscalYear): array
     {
@@ -463,8 +479,10 @@ class DestinationVatService
 
     /**
      * Get companies exceeding threshold for a fiscal year.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, \AichaDigital\Larabill\Models\CompanyFiscalConfig>
      */
-    public function getCompaniesExceedingThreshold(int $fiscalYear)
+    public function getCompaniesExceedingThreshold(int $fiscalYear): \Illuminate\Database\Eloquent\Collection
     {
         return CompanyFiscalConfig::where('fiscal_year', $fiscalYear)
             ->whereColumn('current_eu_sales_amount', '>=', 'eu_sales_threshold')
@@ -473,8 +491,10 @@ class DestinationVatService
 
     /**
      * Get companies needing notification for threshold exceeded.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, \AichaDigital\Larabill\Models\CompanyFiscalConfig>
      */
-    public function getCompaniesNeedingNotification(int $fiscalYear)
+    public function getCompaniesNeedingNotification(int $fiscalYear): \Illuminate\Database\Eloquent\Collection
     {
         return CompanyFiscalConfig::where('fiscal_year', $fiscalYear)
             ->where(function ($query) {
@@ -559,6 +579,8 @@ class DestinationVatService
 
     /**
      * Get available destination countries.
+     *
+     * @return array<int, string>
      */
     public function getAvailableDestinationCountries(): array
     {
@@ -569,6 +591,9 @@ class DestinationVatService
 
     /**
      * Get VAT rate comparison between countries.
+     *
+     * @param  array<int, string>  $countryCodes
+     * @return array<string, mixed>
      */
     public function getVatRateComparison(array $countryCodes): array
     {
@@ -595,6 +620,8 @@ class DestinationVatService
 
     /**
      * Calculate VAT savings between countries.
+     *
+     * @return array<string, mixed>
      */
     public function calculateVatSavings(float $amount, string $sourceCountry, string $destinationCountry): array
     {
@@ -619,6 +646,8 @@ class DestinationVatService
 
     /**
      * Get fiscal year information.
+     *
+     * @return array<string, mixed>
      */
     public function getFiscalYearInfo(int $fiscalYear): array
     {
@@ -637,6 +666,8 @@ class DestinationVatService
 
     /**
      * Get service configuration.
+     *
+     * @return array<string, mixed>
      */
     public function getConfiguration(): array
     {
@@ -645,6 +676,8 @@ class DestinationVatService
 
     /**
      * Update service configuration.
+     *
+     * @param  array<string, mixed>  $config
      */
     public function updateConfiguration(array $config): void
     {

@@ -190,16 +190,21 @@ class UserRoiVerification extends Model
 
     /**
      * Get the user that owns the ROI verification.
+     *
+     * @return BelongsTo<\Illuminate\Foundation\Auth\User, $this>
      */
     public function user(): BelongsTo
     {
         $userModel = \AichaDigital\Larabill\Services\ModelMappingService::getModelClass('user');
 
+        // @phpstan-ignore-next-line return.type,argument.templateType
         return $this->belongsTo($userModel);
     }
 
     /**
      * Create or update ROI verification with automatic expiration.
+     *
+     * @param  array<string, mixed>  $data
      */
     public static function createOrUpdateRoiVerification(array $data): self
     {

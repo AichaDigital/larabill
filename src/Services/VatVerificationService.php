@@ -22,6 +22,8 @@ class VatVerificationService
 
     /**
      * Verify a VAT number against external APIs with automatic fallback.
+     *
+     * @return array<string, mixed>
      */
     public function verifyVatNumber(string $vatNumber, string $countryCode): array
     {
@@ -75,6 +77,8 @@ class VatVerificationService
 
     /**
      * Try APIs with automatic fallback.
+     *
+     * @return array<string, mixed>
      */
     private function tryApisWithFallback(string $vatNumber, string $countryCode): array
     {
@@ -155,6 +159,8 @@ class VatVerificationService
 
     /**
      * Call specific API.
+     *
+     * @return array<string, mixed>
      */
     private function callApi(string $apiName, string $vatNumber, string $countryCode): array
     {
@@ -167,6 +173,8 @@ class VatVerificationService
 
     /**
      * Check if API response is valid (not a mock).
+     *
+     * @param  array<string, mixed>  $result
      */
     private function isValidApiResponse(array $result, string $apiName): bool
     {
@@ -193,6 +201,7 @@ class VatVerificationService
     /**
      * Get mock response as last resort.
      *
+     * @return array<string, mixed>
      * @phpstan-ignore-next-line method is intentionally kept for testing fallbacks
      */
     private function getMockResponse(string $apiName, string $vatNumber, string $countryCode): array
@@ -229,6 +238,8 @@ class VatVerificationService
 
     /**
      * Cache verification result in database.
+     *
+     * @param  array<string, mixed>  $result
      */
     private function cacheVerificationResult(array $result): void
     {

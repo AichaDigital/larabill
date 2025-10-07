@@ -23,6 +23,7 @@ use Illuminate\Database\Eloquent\{Builder, Factories\HasFactory, Model};
  */
 class TaxRate extends Model
 {
+    /** @phpstan-ignore-next-line */
     use HasFactory;
 
     /**
@@ -90,6 +91,8 @@ class TaxRate extends Model
 
     /**
      * Accessor for rate to return as formatted string.
+     *
+     * @param  mixed  $value
      */
     public function getRateAttribute($value): string
     {
@@ -110,8 +113,10 @@ class TaxRate extends Model
 
     /**
      * Get Spanish tax rates.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, TaxRate>
      */
-    public static function getSpanishRates()
+    public static function getSpanishRates(): \Illuminate\Database\Eloquent\Collection
     {
         return static::where('country_code', 'ES')
             ->where('is_active', true)
@@ -120,8 +125,10 @@ class TaxRate extends Model
 
     /**
      * Get EU tax rates.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, TaxRate>
      */
-    public static function getEURates()
+    public static function getEURates(): \Illuminate\Database\Eloquent\Collection
     {
         $euCountries = [
             'AT', 'BE', 'BG', 'CY', 'CZ', 'DE', 'DK', 'EE', 'EL', 'ES', 'FI', 'FR', 'HR', 'HU',

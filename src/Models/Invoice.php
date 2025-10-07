@@ -191,24 +191,26 @@ class Invoice extends Model
     /**
      * Get the invoice items.
      *
-     * @return HasMany<InvoiceItem>
+     * @return HasMany<InvoiceItem, $this>
      */
     public function items(): HasMany
     {
         $invoiceItemModel = \AichaDigital\Larabill\Services\ModelMappingService::getModelClass('invoice_item');
 
+        // @phpstan-ignore-next-line return.type,argument.templateType
         return $this->hasMany($invoiceItemModel);
     }
 
     /**
      * Get the user that owns the invoice.
      *
-     * @return BelongsTo<\Illuminate\Foundation\Auth\User, Invoice>
+     * @return BelongsTo<\Illuminate\Foundation\Auth\User, $this>
      */
     public function user(): BelongsTo
     {
         $userModel = \AichaDigital\Larabill\Services\ModelMappingService::getModelClass('user');
 
+        // @phpstan-ignore-next-line return.type,argument.templateType
         return $this->belongsTo($userModel);
     }
 

@@ -49,7 +49,7 @@ class PDFService
     /**
      * Create a new PDF service instance
      *
-     * @param  array  $config  Configuration array
+     * @param  array<string, mixed>  $config  Configuration array
      */
     public function __construct(array $config = [], ?CacheRepository $cache = null)
     {
@@ -71,7 +71,7 @@ class PDFService
      *
      * @param  Invoice  $invoice  The invoice to generate PDF for
      * @param  string|null  $connectorType  Specific connector type to use
-     * @return array PDF generation result
+     * @return array<string, mixed> PDF generation result
      */
     public function generatePDF(Invoice $invoice, ?string $connectorType = null): array
     {
@@ -152,7 +152,7 @@ class PDFService
     /**
      * Get available connectors
      *
-     * @return array List of available connectors
+     * @return array<string, mixed> List of available connectors
      */
     public function getAvailableConnectors(): array
     {
@@ -202,7 +202,7 @@ class PDFService
     /**
      * Get connector configuration
      *
-     * @return array Configuration array
+     * @return array<string, mixed> Configuration array
      */
     public function getConfiguration(): array
     {
@@ -212,7 +212,7 @@ class PDFService
     /**
      * Update configuration
      *
-     * @param  array  $config  New configuration
+     * @param  array<string, mixed>  $config  New configuration
      */
     public function updateConfiguration(array $config): void
     {
@@ -248,7 +248,7 @@ class PDFService
      * Cache PDF result
      *
      * @param  Invoice  $invoice  The invoice
-     * @param  array  $result  PDF generation result
+     * @param  array<string, mixed>  $result  PDF generation result
      */
     protected function cachePDFResult(Invoice $invoice, array $result): void
     {
@@ -262,7 +262,7 @@ class PDFService
      * Get cached PDF result
      *
      * @param  Invoice  $invoice  The invoice
-     * @return array|null Cached result or null
+     * @return array<string, mixed>|null Cached result or null
      */
     public function getCachedPDFResult(Invoice $invoice): ?array
     {

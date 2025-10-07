@@ -24,17 +24,22 @@ class CompanyFiscalConfigFactory extends Factory
         $currentYear = now()->year;
 
         return [
-            'company_id'              => $this->faker->uuid(),
-            'apply_destination_iva'   => $this->faker->boolean(30), // 30% chance of applying destination VAT
-            'eu_sales_threshold'      => 1000000, // €10,000.00 in base 100
-            'current_eu_sales_amount' => $this->faker->numberBetween(0, 800000), // €0.00 to €8,000.00 in base 100
-            'threshold_exceeded'      => $this->faker->boolean(20), // 20% chance of exceeding threshold
-            'threshold_exceeded_at'   => $this->faker->optional(0.2)->dateTimeBetween('-6 months', 'now'),
-            'fiscal_year'             => $currentYear,
-            'auto_apply_destination'  => $this->faker->boolean(60),
-            'notification_sent'       => $this->faker->boolean(40),
-            'notification_sent_at'    => $this->faker->optional(0.4)->dateTimeBetween('-3 months', 'now'),
-            'last_threshold_check'    => $this->faker->dateTimeBetween('-1 month', 'now'),
+            'company_id'                   => $this->faker->uuid(),
+            'apply_destination_iva'        => $this->faker->boolean(30), // 30% chance of applying destination VAT
+            'eu_sales_threshold'           => 1000000, // €10,000.00 in base 100
+            'current_eu_sales_amount'      => $this->faker->numberBetween(0, 800000), // €0.00 to €8,000.00 in base 100
+            'threshold_exceeded_at'        => $this->faker->optional(0.2)->dateTimeBetween('-6 months', 'now'),
+            'fiscal_year'                  => $currentYear,
+            'auto_apply_destination'       => $this->faker->boolean(60),
+            'notification_sent'            => $this->faker->boolean(40),
+            'fiscal_year_start'            => '01-01',
+            'currency'                     => 'EUR',
+            'threshold_notification_email' => $this->faker->optional(0.3)->email(),
+            'custom_threshold_rules'       => $this->faker->optional(0.1)->randomElement([
+                null,
+                ['DE' => ['threshold' => 800000, 'products' => ['books']]],
+                ['FR' => ['threshold' => 1200000, 'products' => ['electronics']]],
+            ]),
             'created_at'              => $this->faker->dateTimeBetween('-1 year', 'now'),
             'updated_at'              => $this->faker->dateTimeBetween('-1 month', 'now'),
         ];
@@ -49,10 +54,8 @@ class CompanyFiscalConfigFactory extends Factory
             return [
                 'apply_destination_iva'  => true,
                 'auto_apply_destination' => true,
-                'threshold_exceeded'     => true,
                 'threshold_exceeded_at'  => $this->faker->dateTimeBetween('-6 months', 'now'),
                 'notification_sent'      => true,
-                'notification_sent_at'   => $this->faker->dateTimeBetween('-3 months', 'now'),
             ];
         });
     }
@@ -66,10 +69,8 @@ class CompanyFiscalConfigFactory extends Factory
             return [
                 'apply_destination_iva'   => false,
                 'auto_apply_destination'  => false,
-                'threshold_exceeded'      => false,
                 'threshold_exceeded_at'   => null,
                 'notification_sent'       => false,
-                'notification_sent_at'    => null,
                 'current_eu_sales_amount' => $this->faker->numberBetween(0, 500000), // Under threshold
             ];
         });
@@ -85,12 +86,10 @@ class CompanyFiscalConfigFactory extends Factory
 
             return [
                 'apply_destination_iva'   => true,
-                'threshold_exceeded'      => true,
                 'current_eu_sales_amount' => $exceededAmount,
                 'threshold_exceeded_at'   => $this->faker->dateTimeBetween('-6 months', 'now'),
                 'auto_apply_destination'  => true,
                 'notification_sent'       => $this->faker->boolean(80),
-                'notification_sent_at'    => $this->faker->optional(0.8)->dateTimeBetween('-3 months', 'now'),
             ];
         });
     }
@@ -105,12 +104,10 @@ class CompanyFiscalConfigFactory extends Factory
 
             return [
                 'apply_destination_iva'   => false,
-                'threshold_exceeded'      => false,
                 'current_eu_sales_amount' => $approachingAmount,
                 'threshold_exceeded_at'   => null,
                 'auto_apply_destination'  => false,
                 'notification_sent'       => false,
-                'notification_sent_at'    => null,
             ];
         });
     }
@@ -124,7 +121,6 @@ class CompanyFiscalConfigFactory extends Factory
             return [
                 'eu_sales_threshold'      => $thresholdInBase100,
                 'current_eu_sales_amount' => $this->faker->numberBetween(0, $thresholdInBase100 - 100000), // Under custom threshold
-                'threshold_exceeded'      => false,
                 'threshold_exceeded_at'   => null,
             ];
         });
@@ -139,11 +135,8 @@ class CompanyFiscalConfigFactory extends Factory
             return [
                 'fiscal_year'             => $year,
                 'current_eu_sales_amount' => 0, // Reset for new year
-                'threshold_exceeded'      => false,
                 'threshold_exceeded_at'   => null,
                 'notification_sent'       => false,
-                'notification_sent_at'    => null,
-                'last_threshold_check'    => $this->faker->dateTimeBetween("-{$year}-01-01", "-{$year}-12-31"),
             ];
         });
     }
@@ -156,10 +149,8 @@ class CompanyFiscalConfigFactory extends Factory
         return $this->state(function (array $attributes) {
             return [
                 'apply_destination_iva'  => true,
-                'threshold_exceeded'     => true,
                 'auto_apply_destination' => true,
                 'notification_sent'      => false,
-                'notification_sent_at'   => null,
                 'threshold_exceeded_at'  => $this->faker->dateTimeBetween('-1 week', 'now'),
             ];
         });
@@ -173,10 +164,8 @@ class CompanyFiscalConfigFactory extends Factory
         return $this->state(function (array $attributes) {
             return [
                 'apply_destination_iva'  => true,
-                'threshold_exceeded'     => true,
                 'auto_apply_destination' => true,
                 'notification_sent'      => true,
-                'notification_sent_at'   => $this->faker->dateTimeBetween('-1 month', '-1 week'),
             ];
         });
     }
@@ -191,7 +180,6 @@ class CompanyFiscalConfigFactory extends Factory
 
             return [
                 'current_eu_sales_amount' => $highAmount,
-                'threshold_exceeded'      => true,
                 'apply_destination_iva'   => true,
                 'auto_apply_destination'  => true,
                 'threshold_exceeded_at'   => $this->faker->dateTimeBetween('-1 year', '-1 month'),
@@ -209,12 +197,10 @@ class CompanyFiscalConfigFactory extends Factory
 
             return [
                 'current_eu_sales_amount' => $lowAmount,
-                'threshold_exceeded'      => false,
                 'apply_destination_iva'   => false,
                 'auto_apply_destination'  => false,
                 'threshold_exceeded_at'   => null,
                 'notification_sent'       => false,
-                'notification_sent_at'    => null,
             ];
         });
     }

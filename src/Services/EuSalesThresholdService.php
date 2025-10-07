@@ -208,6 +208,8 @@ class EuSalesThresholdService
 
     /**
      * Get current threshold status.
+     *
+     * @return array<string, mixed>
      */
     public function getThresholdStatus(): array
     {

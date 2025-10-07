@@ -17,9 +17,9 @@ use Illuminate\Support\Facades\View;
 class DomPDFService
 {
     /**
-     * DomPDF instance
+     * DomPDF instance (or mock for testing)
      */
-    protected $dompdf;
+    protected mixed $dompdf;
 
     /**
      * Configuration
@@ -31,7 +31,7 @@ class DomPDFService
     /**
      * Create a new DomPDF service instance
      *
-     * @param  array  $config  Configuration array
+     * @param  array<string, mixed>  $config  Configuration array
      */
     public function __construct(array $config = [])
     {
@@ -51,8 +51,8 @@ class DomPDFService
      * Generate PDF for an invoice
      *
      * @param  Invoice  $invoice  The invoice to generate PDF for
-     * @param  array  $qrData  QR data (only for fiscal invoices)
-     * @return array PDF generation result
+     * @param  array<string, mixed>|null  $qrData  QR data (only for fiscal invoices)
+     * @return array<string, mixed> PDF generation result
      */
     public function generatePDF(Invoice $invoice, ?array $qrData = null): array
     {
@@ -101,7 +101,7 @@ class DomPDFService
     /**
      * Get available templates
      *
-     * @return array List of available templates
+     * @return array<string, string> List of available templates
      */
     public function getAvailableTemplates(): array
     {
@@ -116,7 +116,7 @@ class DomPDFService
     /**
      * Get configuration
      *
-     * @return array Configuration array
+     * @return array<string, mixed> Configuration array
      */
     public function getConfiguration(): array
     {
@@ -126,7 +126,7 @@ class DomPDFService
     /**
      * Update configuration
      *
-     * @param  array  $config  New configuration
+     * @param  array<string, mixed>  $config  New configuration
      */
     public function updateConfiguration(array $config): void
     {
@@ -263,9 +263,9 @@ class DomPDFService
      * Prepare template data
      *
      * @param  Invoice  $invoice  The invoice
-     * @param  array|null  $qrData  QR data
+     * @param  array<string, mixed>|null  $qrData  QR data
      * @param  bool  $includeQR  Whether to include QR
-     * @return array Template data
+     * @return array<string, mixed> Template data
      */
     protected function prepareTemplateData(Invoice $invoice, ?array $qrData, bool $includeQR): array
     {
@@ -294,7 +294,7 @@ class DomPDFService
     /**
      * Get company data for template
      *
-     * @return array Company data
+     * @return array<string, mixed> Company data
      */
     protected function getCompanyData(): array
     {
@@ -316,7 +316,7 @@ class DomPDFService
      * Get client data for template
      *
      * @param  Invoice  $invoice  The invoice
-     * @return array Client data
+     * @return array<string, mixed> Client data
      */
     protected function getClientData(Invoice $invoice): array
     {
@@ -342,7 +342,7 @@ class DomPDFService
      * Get invoice items for template
      *
      * @param  Invoice  $invoice  The invoice
-     * @return array Invoice items
+     * @return array<int, array<string, mixed>> Invoice items
      */
     protected function getInvoiceItems(Invoice $invoice): array
     {
@@ -363,7 +363,7 @@ class DomPDFService
      * Get invoice totals for template
      *
      * @param  Invoice  $invoice  The invoice
-     * @return array Invoice totals
+     * @return array<string, mixed> Invoice totals
      */
     protected function getInvoiceTotals(Invoice $invoice): array
     {
@@ -487,7 +487,7 @@ class DomPDFService
      * Get template settings for invoice
      *
      * @param  Invoice  $invoice  The invoice
-     * @return array Template settings
+     * @return array<string, mixed> Template settings
      */
     protected function getTemplateSettings(Invoice $invoice): array
     {
@@ -555,7 +555,7 @@ class DomPDFService
      * Render template safely
      *
      * @param  string  $template  Template name
-     * @param  array  $data  Template data
+     * @param  array<string, mixed>  $data  Template data
      * @return string Rendered HTML
      */
     protected function renderTemplate(string $template, array $data): string
@@ -576,7 +576,7 @@ class DomPDFService
      * Generate mock HTML for testing
      *
      * @param  string  $template  Template name
-     * @param  array  $data  Template data
+     * @param  array<string, mixed>  $data  Template data
      * @return string Mock HTML
      */
     protected function generateMockHTML(string $template, array $data): string

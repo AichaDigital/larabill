@@ -28,7 +28,7 @@ class DefaultPDFConnector implements PDFConnectorInterface
     /**
      * Create a new default PDF connector instance
      *
-     * @param  array  $config  Configuration array
+     * @param  array<string, mixed>  $config  Configuration array
      */
     public function __construct(array $config = [])
     {
@@ -45,7 +45,7 @@ class DefaultPDFConnector implements PDFConnectorInterface
      * Generate QR code data for an invoice
      *
      * @param  Invoice  $invoice  The invoice to generate QR for
-     * @return array QR data including code, url, and metadata
+     * @return array<string, mixed> QR data including code, url, and metadata
      */
     public function generateQR(Invoice $invoice): array
     {
@@ -118,7 +118,7 @@ class DefaultPDFConnector implements PDFConnectorInterface
     /**
      * Get required fields for this connector
      *
-     * @return array List of required field names
+     * @return array<int, string> List of required field names
      */
     public function getRequiredFields(): array
     {
@@ -143,7 +143,7 @@ class DefaultPDFConnector implements PDFConnectorInterface
     /**
      * Get authentication data for external connectors
      *
-     * @return array Authentication data (keys, tokens, etc.)
+     * @return array<string, mixed> Authentication data (keys, tokens, etc.)
      */
     public function getAuthentication(): array
     {
@@ -173,7 +173,7 @@ class DefaultPDFConnector implements PDFConnectorInterface
     /**
      * Get connector configuration
      *
-     * @return array Configuration data for this connector
+     * @return array<string, mixed> Configuration data for this connector
      */
     public function getConfiguration(): array
     {
@@ -183,7 +183,7 @@ class DefaultPDFConnector implements PDFConnectorInterface
     /**
      * Get supported countries/regions for this connector
      *
-     * @return array List of supported country codes
+     * @return array<int, string> List of supported country codes
      */
     public function getSupportedCountries(): array
     {
@@ -193,7 +193,7 @@ class DefaultPDFConnector implements PDFConnectorInterface
     /**
      * Get connector metadata
      *
-     * @return array Metadata including name, version, description
+     * @return array<string, mixed> Metadata including name, version, description
      */
     public function getMetadata(): array
     {
@@ -212,7 +212,7 @@ class DefaultPDFConnector implements PDFConnectorInterface
      * Prepare QR data from invoice
      *
      * @param  Invoice  $invoice  The invoice to prepare data for
-     * @return array Prepared QR data
+     * @return array<string, mixed> Prepared QR data
      */
     protected function prepareQRData(Invoice $invoice): array
     {
@@ -255,7 +255,7 @@ class DefaultPDFConnector implements PDFConnectorInterface
     /**
      * Generate QR code from data
      *
-     * @param  array  $data  The data to encode
+     * @param  array<string, mixed>  $data  The data to encode
      * @return string Generated QR code
      */
     protected function generateQRCode(array $data): string

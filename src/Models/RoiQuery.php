@@ -101,9 +101,12 @@ class RoiQuery extends Model
 
     /**
      * Find queries by user and date range.
+     *
+     * @return Builder<RoiQuery>
      */
-    public static function findByUserAndDateRange(string $userId, Carbon $startDate, Carbon $endDate)
+    public static function findByUserAndDateRange(string $userId, Carbon $startDate, Carbon $endDate): Builder
     {
+        /** @var Builder<RoiQuery> */
         return static::where('user_id', $userId)
             ->whereBetween('queried_at', [$startDate, $endDate])
             ->orderBy('queried_at', 'desc');
@@ -111,9 +114,12 @@ class RoiQuery extends Model
 
     /**
      * Find queries by user and VAT number.
+     *
+     * @return Builder<RoiQuery>
      */
-    public static function findByUserAndVat(string $userId, string $vatNumber, string $countryCode)
+    public static function findByUserAndVat(string $userId, string $vatNumber, string $countryCode): Builder
     {
+        /** @var Builder<RoiQuery> */
         return static::where('user_id', $userId)
             ->where('vat_number', $vatNumber)
             ->where('country_code', $countryCode)
@@ -210,16 +216,21 @@ class RoiQuery extends Model
 
     /**
      * Get the user that owns the ROI query.
+     *
+     * @return BelongsTo<\Illuminate\Foundation\Auth\User, $this>
      */
     public function user(): BelongsTo
     {
         $userModel = \AichaDigital\Larabill\Services\ModelMappingService::getModelClass('user');
 
+        // @phpstan-ignore-next-line return.type,argument.templateType
         return $this->belongsTo($userModel);
     }
 
     /**
      * Create a new ROI query record.
+     *
+     * @param  array<string, mixed>  $data
      */
     public static function createQuery(array $data): self
     {
@@ -231,6 +242,8 @@ class RoiQuery extends Model
 
     /**
      * Create an API query record.
+     *
+     * @param  array<string, mixed>  $responseData
      */
     public static function createApiQuery(string $userId, string $vatNumber, string $countryCode, string $apiSource, array $responseData): self
     {
@@ -247,6 +260,8 @@ class RoiQuery extends Model
 
     /**
      * Create a cache query record.
+     *
+     * @param  array<string, mixed>  $responseData
      */
     public static function createCacheQuery(string $userId, string $vatNumber, string $countryCode, array $responseData): self
     {
@@ -271,8 +286,10 @@ class RoiQuery extends Model
 
     /**
      * Get queries that are outside legal retention period.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, RoiQuery>
      */
-    public static function getExpiredLegalRetention()
+    public static function getExpiredLegalRetention(): \Illuminate\Database\Eloquent\Collection
     {
         return static::where('legal_retention_until', '<=', now())->get();
     }
@@ -295,6 +312,8 @@ class RoiQuery extends Model
 
     /**
      * Get query statistics for a user.
+     *
+     * @return array<string, mixed>
      */
     public static function getQueryStatistics(string $userId, ?Carbon $startDate = null, ?Carbon $endDate = null): array
     {

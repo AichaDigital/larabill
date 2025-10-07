@@ -39,6 +39,8 @@ class CompanyConfigService
 
     /**
      * Update company configuration.
+     *
+     * @param  array<string, mixed>  $data
      */
     public function updateConfig(array $data): CompanyFiscalConfig
     {
@@ -216,6 +218,8 @@ class CompanyConfigService
 
     /**
      * Get companies that need notification (always returns current company if needed).
+     *
+     * @return array<int, CompanyFiscalConfig>
      */
     public function getCompaniesNeedingNotification(): array
     {
@@ -260,6 +264,8 @@ class CompanyConfigService
 
     /**
      * Get company configuration statistics.
+     *
+     * @return array<string, mixed>
      */
     public function getCompanyStatistics(): array
     {
@@ -282,6 +288,9 @@ class CompanyConfigService
 
     /**
      * Validate configuration data.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<int, string>
      */
     public function validateConfigData(array $data): array
     {
@@ -330,6 +339,8 @@ class CompanyConfigService
 
     /**
      * Create a new company configuration.
+     *
+     * @param  array<string, mixed>  $data
      */
     public function createCompanyConfig(string $companyId, int $fiscalYear, array $data = []): CompanyFiscalConfig
     {
@@ -367,6 +378,8 @@ class CompanyConfigService
 
     /**
      * Get default configuration.
+     *
+     * @return array<string, mixed>
      */
     public function getDefaultConfig(): array
     {
@@ -386,6 +399,8 @@ class CompanyConfigService
 
     /**
      * Update company configuration by company ID and fiscal year.
+     *
+     * @param  array<string, mixed>  $data
      */
     public function updateCompanyConfig(string $companyId, int $fiscalYear, array $data): CompanyFiscalConfig
     {
@@ -434,6 +449,8 @@ class CompanyConfigService
 
     /**
      * Get or create company configuration.
+     *
+     * @param  array<string, mixed>  $data
      */
     public function getOrCreateCompanyConfig(string $companyId, int $fiscalYear, array $data = []): CompanyFiscalConfig
     {
@@ -448,6 +465,8 @@ class CompanyConfigService
 
     /**
      * Get all company configurations.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, CompanyFiscalConfig>
      */
     public function getAllCompanyConfigs(): \Illuminate\Database\Eloquent\Collection
     {
@@ -456,6 +475,8 @@ class CompanyConfigService
 
     /**
      * Get company configurations by fiscal year.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, CompanyFiscalConfig>
      */
     public function getCompanyConfigsByFiscalYear(int $fiscalYear): \Illuminate\Database\Eloquent\Collection
     {
@@ -464,6 +485,8 @@ class CompanyConfigService
 
     /**
      * Get company configurations by destination VAT status.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, CompanyFiscalConfig>
      */
     public function getCompanyConfigsByDestinationVatStatus(bool $applyDestinationVat): \Illuminate\Database\Eloquent\Collection
     {
@@ -472,6 +495,8 @@ class CompanyConfigService
 
     /**
      * Get company configurations by threshold status.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, CompanyFiscalConfig>
      */
     public function getCompanyConfigsByThresholdStatus(bool $thresholdExceeded): \Illuminate\Database\Eloquent\Collection
     {
@@ -480,6 +505,8 @@ class CompanyConfigService
 
     /**
      * Get company configurations needing notification.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, CompanyFiscalConfig>
      */
     public function getCompanyConfigsNeedingNotification(): \Illuminate\Database\Eloquent\Collection
     {
@@ -518,6 +545,9 @@ class CompanyConfigService
 
     /**
      * Merge configuration data with defaults.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
      */
     public function mergeWithDefaults(array $data): array
     {
@@ -546,6 +576,8 @@ class CompanyConfigService
 
     /**
      * Get company configuration statistics.
+     *
+     * @return array<string, mixed>
      */
     public function getCompanyConfigStatistics(int $fiscalYear): array
     {
@@ -574,6 +606,8 @@ class CompanyConfigService
 
     /**
      * Get service configuration.
+     *
+     * @return array<string, mixed>
      */
     public function getConfiguration(): array
     {
@@ -589,6 +623,8 @@ class CompanyConfigService
 
     /**
      * Bulk update company configurations.
+     *
+     * @param  array<string, mixed>  $companyUpdates
      */
     public function bulkUpdateCompanyConfigs(array $companyUpdates, int $fiscalYear): int
     {
@@ -612,6 +648,8 @@ class CompanyConfigService
 
     /**
      * Get company configurations by fiscal year range.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, CompanyFiscalConfig>
      */
     public function getCompanyConfigsByFiscalYearRange(string $companyId, int $startYear, int $endYear): \Illuminate\Database\Eloquent\Collection
     {
@@ -623,6 +661,8 @@ class CompanyConfigService
 
     /**
      * Update service configuration.
+     *
+     * @param  array<string, mixed>  $newConfig
      */
     public function updateConfiguration(array $newConfig): void
     {
@@ -636,6 +676,8 @@ class CompanyConfigService
 
     /**
      * Validate company configuration data.
+     *
+     * @param  array<string, mixed>  $data
      */
     public function validateCompanyConfigData(array $data): bool
     {
@@ -646,6 +688,8 @@ class CompanyConfigService
 
     /**
      * Get default company configuration.
+     *
+     * @return array<string, mixed>
      */
     public function getDefaultCompanyConfig(): array
     {
@@ -654,6 +698,8 @@ class CompanyConfigService
 
     /**
      * Create company configuration with mapping.
+     *
+     * @param  array<string, mixed>  $data
      */
     public function createCompanyConfigWithMapping(string $companyId, int $fiscalYear, array $data = []): CompanyFiscalConfig
     {
@@ -670,6 +716,8 @@ class CompanyConfigService
 
     /**
      * Handle service errors gracefully.
+     *
+     * @return array<string, mixed>
      */
     public function handleError(\Exception $e): array
     {
