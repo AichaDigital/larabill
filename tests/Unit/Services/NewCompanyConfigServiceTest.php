@@ -19,7 +19,7 @@ it('can get current company configuration', function () {
     expect($config)->toBeInstanceOf(CompanyFiscalConfig::class);
     expect($config->is_oss)->toBeFalse();
     expect($config->is_roi)->toBeFalse();
-    expect($config->eu_sales_threshold)->toBe(1000000);
+    expect($config->eu_sales_threshold)->toBe(10000);
     expect($config->current_eu_sales_amount)->toBe(0);
 });
 

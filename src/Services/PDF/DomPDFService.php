@@ -442,7 +442,7 @@ class DomPDFService
                 return \AichaDigital\Larabill\Models\CompanyTemplateSettings::getDefaultNotes(
                     $companyId,
                     $invoice->getInvoiceType(),
-                    $invoice->user_id
+                    (string) $invoice->user_id
                 );
             } catch (\Exception $e) {
                 // Fall back to null if database access fails
@@ -473,7 +473,7 @@ class DomPDFService
                 return \AichaDigital\Larabill\Models\CompanyTemplateSettings::getPaymentTerms(
                     $companyId,
                     $invoice->getInvoiceType(),
-                    $invoice->user_id
+                    (string) $invoice->user_id
                 );
             } catch (\Exception $e) {
                 // Fall back to null if database access fails

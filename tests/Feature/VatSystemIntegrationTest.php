@@ -72,12 +72,12 @@ it('can perform complete destination VAT workflow', function () {
     // Step 1: Create company configuration
     $config = $companyConfigService->createCompanyConfig('company-123', 2024, [
         'apply_destination_iva'  => false,
-        'eu_sales_threshold'     => 10000.00,
+        'eu_sales_threshold'     => 1000000, // €10,000.00 in base 100
         'auto_apply_destination' => true,
     ]);
 
     expect($config->apply_destination_iva)->toBeFalse();
-    expect($config->eu_sales_threshold)->toBe(10000);
+    expect($config->eu_sales_threshold)->toBe(1000000);
 
     // Step 2: Add country VAT rates
     CountryVatRate::create([
@@ -119,11 +119,11 @@ it('can perform complete destination VAT workflow', function () {
 
     // Step 5: Update EU sales to exceed threshold
     $updated = $destinationVatService->updateEuSalesAmount('company-123', 2024, 'ES', 6000.00);
-    expect($updated->current_eu_sales_amount)->toBe(6000);
+    expect($updated->current_eu_sales_amount)->toBe(600000);
 
     // Step 6: Update EU sales to exceed threshold
     $exceeded = $destinationVatService->updateEuSalesAmount('company-123', 2024, 'FR', 5000.00);
-    expect($exceeded->current_eu_sales_amount)->toBe(11000);
+    expect($exceeded->current_eu_sales_amount)->toBe(1100000);
     expect($exceeded->checkThreshold())->toBeTrue();
     expect($exceeded->apply_destination_iva)->toBeTrue();
 
@@ -152,7 +152,7 @@ it('can perform complete EU sales threshold monitoring workflow', function () {
 
     // Step 1: Create company configuration
     $config = $companyConfigService->createCompanyConfig('company-123', 2024, [
-        'eu_sales_threshold'     => 10000.00,
+        'eu_sales_threshold'     => 1000000, // €10,000.00 in base 100
         'auto_apply_destination' => true,
     ]);
 
@@ -304,17 +304,17 @@ it('can perform complete multi-company workflow', function () {
 
     // Step 1: Create multiple company configurations
     $config1 = $companyConfigService->createCompanyConfig('company-123', 2024, [
-        'eu_sales_threshold'     => 10000.00,
+        'eu_sales_threshold'     => 1000000, // €10,000.00 in base 100
         'auto_apply_destination' => true,
     ]);
 
     $config2 = $companyConfigService->createCompanyConfig('company-456', 2024, [
-        'eu_sales_threshold'     => 15000.00,
+        'eu_sales_threshold'     => 1500000, // €15,000.00 in base 100
         'auto_apply_destination' => true,
     ]);
 
     $config3 = $companyConfigService->createCompanyConfig('company-789', 2024, [
-        'eu_sales_threshold'     => 8000.00,
+        'eu_sales_threshold'     => 800000, // €8,000.00 in base 100
         'auto_apply_destination' => true,
     ]);
 
@@ -459,7 +459,7 @@ it('can perform complete data consistency workflow', function () {
     $updatedConfig    = CompanyFiscalConfig::findByCompanyAndYear('company-123', 2024);
     $updatedThreshold = EuSalesThreshold::findByCompanyAndYear('company-123', 2024);
 
-    expect($updatedConfig->current_eu_sales_amount)->toBe(5000);
+    expect($updatedConfig->current_eu_sales_amount)->toBe(500000);
     expect($updatedThreshold->total_amount)->toBe(5000.0);
     expect($updatedThreshold->breakdown_by_country['ES'])->toBe(5000.0);
 
@@ -470,7 +470,7 @@ it('can perform complete data consistency workflow', function () {
     $finalConfig    = CompanyFiscalConfig::findByCompanyAndYear('company-123', 2024);
     $finalThreshold = EuSalesThreshold::findByCompanyAndYear('company-123', 2024);
 
-    expect($finalConfig->current_eu_sales_amount)->toBe(8000);
+    expect($finalConfig->current_eu_sales_amount)->toBe(800000);
     expect($finalThreshold->total_amount)->toBe(8000.0);
     expect($finalThreshold->breakdown_by_country['ES'])->toBe(5000.0);
     expect($finalThreshold->breakdown_by_country['FR'])->toBe(3000.0);

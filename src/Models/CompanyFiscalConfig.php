@@ -67,12 +67,14 @@ class CompanyFiscalConfig extends Model
             'auto_apply_destination'  => 'boolean',
             'notification_sent'       => 'boolean',
             'threshold_exceeded'      => 'boolean',
-            'eu_sales_threshold'      => 'integer', // Base-100 integer: 1000000 => €10,000.00
-            'current_eu_sales_amount' => 'integer', // Base-100 integer: 1234 => €12.34
+            // Stored as base-100 in DB but exposed as human amounts via accessors
+            'eu_sales_threshold'      => 'integer',
+            'current_eu_sales_amount' => 'integer',
             'threshold_exceeded_at'   => 'datetime',
             'custom_threshold_rules'  => 'array',
         ];
     }
+
 
     /**
      * Convert monetary amount to base 100 integer.
@@ -105,6 +107,7 @@ class CompanyFiscalConfig extends Model
     {
         return static::base100ToAmount($this->current_eu_sales_amount);
     }
+
 
     /**
      * Set EU sales threshold from monetary amount.
@@ -141,7 +144,8 @@ class CompanyFiscalConfig extends Model
 
             // Set default threshold if not provided
             if (! $model->eu_sales_threshold) {
-                $model->eu_sales_threshold = config('larabill.destination_vat.default_threshold', 1000000); // Base 100 integer
+                // Set from human amount; mutator will convert to base-100
+                $model->eu_sales_threshold = config('larabill.destination_vat.default_threshold', 10000);
             }
 
             // Set default currency if not provided
@@ -222,7 +226,8 @@ class CompanyFiscalConfig extends Model
             [
                 'is_oss'                  => false,
                 'is_roi'                  => false,
-                'eu_sales_threshold'      => config('larabill.destination_vat.default_threshold', 1000000), // Base 100 integer
+                // Human amount; mutator converts to base-100
+                'eu_sales_threshold'      => config('larabill.destination_vat.default_threshold', 10000),
                 'currency'                => config('larabill.destination_vat.currency', 'EUR'),
                 'fiscal_year_start'       => config('larabill.destination_vat.fiscal_year_start', '01-01'),
                 'auto_apply_destination'  => config('larabill.destination_vat.auto_apply_destination', true),
@@ -262,11 +267,14 @@ class CompanyFiscalConfig extends Model
 
     /**
      * Update EU sales amount and check threshold.
+     *
+     * @param float $amount The monetary amount to add (e.g., 12.34)
      */
     public function updateEuSales(float $amount): self
     {
+        // Convert amount to base 100 and add to current amount
         $amountInBase100 = static::amountToBase100($amount);
-        $this->current_eu_sales_amount += $amountInBase100;
+        $this->current_eu_sales_amount = $this->current_eu_sales_amount + $amountInBase100;
         $this->save();
 
         $this->checkThreshold();
@@ -485,7 +493,8 @@ class CompanyFiscalConfig extends Model
      */
     public static function getDefaultThreshold(): int
     {
-        return config('larabill.destination_vat.default_threshold', 1000000); // Base 100 integer
+        // Human amount; mutator converts where needed
+        return (int) config('larabill.destination_vat.default_threshold', 10000);
     }
 
     /**
@@ -504,45 +513,6 @@ class CompanyFiscalConfig extends Model
         return config('larabill.destination_vat.fiscal_year_start', '01-01');
     }
 
-    /**
-     * Accessor for eu_sales_threshold to return as integer.
-     *
-     * @param  mixed  $value
-     */
-    public function getEuSalesThresholdAttribute($value): int
-    {
-        return $value === null ? 0 : (int) $value;
-    }
-
-    /**
-     * Accessor for current_eu_sales_amount to return as integer.
-     *
-     * @param  mixed  $value
-     */
-    public function getCurrentEuSalesAmountAttribute($value): int
-    {
-        return $value === null ? 0 : (int) $value;
-    }
-
-    /**
-     * Mutator for eu_sales_threshold to store as monetary amount.
-     *
-     * @param  mixed  $value
-     */
-    public function setEuSalesThresholdAttribute($value): void
-    {
-        $this->attributes['eu_sales_threshold'] = $value === null ? 0.0 : (float) $value;
-    }
-
-    /**
-     * Mutator for current_eu_sales_amount to store as monetary amount.
-     *
-     * @param  mixed  $value
-     */
-    public function setCurrentEuSalesAmountAttribute($value): void
-    {
-        $this->attributes['current_eu_sales_amount'] = $value === null ? 0.0 : (float) $value;
-    }
 
     /**
      * Enable OSS registration.

@@ -56,6 +56,8 @@
         "analyse": "vendor/bin/phpstan analyse",
         "format": "vendor/bin/pint",
         "test": "vendor/bin/pest",
+        "test-parallel": "vendor/bin/pest --parallel",
+        "test-profile": "vendor/bin/pest --profile",
         "test-coverage": "vendor/bin/pest --coverage",
         "phpstan": "vendor/bin/phpstan analyse --memory-limit=1G",
         "phpstan-baseline": "vendor/bin/phpstan analyse --generate-baseline --memory-limit=1G"

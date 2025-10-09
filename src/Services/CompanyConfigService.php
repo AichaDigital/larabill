@@ -157,7 +157,8 @@ class CompanyConfigService
         }
 
         $currentAmount = $config->current_eu_sales_amount;
-        $newAmount     = $currentAmount + (float) $amount;
+        $amountInBase100 = CompanyFiscalConfig::amountToBase100((float) $amount);
+        $newAmount = $currentAmount + $amountInBase100;
 
         return $this->updateCompanyConfig($companyId, $fiscalYear, ['current_eu_sales_amount' => $newAmount]);
     }

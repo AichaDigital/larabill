@@ -6,7 +6,10 @@ use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Services\PDF\DomPDFService;
 
 beforeEach(function () {
-    $this->dompdfService = new DomPDFService;
+    // Reuse the same service instance to avoid reinitializing DomPDF
+    if (! isset($this->dompdfService)) {
+        $this->dompdfService = new DomPDFService;
+    }
 });
 
 it('can be instantiated', function () {
@@ -41,15 +44,15 @@ it('can update configuration', function () {
 });
 
 it('can generate PDF for fiscal invoice', function () {
-    $invoice             = new Invoice;
-    $invoice->id         = 1;
-    $invoice->number     = 'FAC-001';
-    $invoice->type       = 'invoice';
-    $invoice->status     = 'paid';
-    $invoice->user_id    = 'test-user';
-    $invoice->subtotal   = 10000;
-    $invoice->tax_amount = 2100;
-    $invoice->total      = 12100;
+    $invoice = Invoice::factory()->create([
+        'number'     => 'FAC-001',
+        'type'       => 'invoice',
+        'status'     => 'paid',
+        'user_id'    => 'test-user',
+        'subtotal'   => 10000,
+        'tax_amount' => 2100,
+        'total'      => 12100,
+    ]);
 
     $qrData = [
         'success' => true,
@@ -68,15 +71,15 @@ it('can generate PDF for fiscal invoice', function () {
 });
 
 it('can generate PDF for proforma invoice without QR', function () {
-    $invoice             = new Invoice;
-    $invoice->id         = 2;
-    $invoice->number     = 'PRO-001';
-    $invoice->type       = 'proforma';
-    $invoice->status     = 'draft';
-    $invoice->user_id    = 'test-user';
-    $invoice->subtotal   = 10000;
-    $invoice->tax_amount = 2100;
-    $invoice->total      = 12100;
+    $invoice = Invoice::factory()->create([
+        'number'     => 'PRO-001',
+        'type'       => 'proforma',
+        'status'     => 'draft',
+        'user_id'    => 'test-user',
+        'subtotal'   => 10000,
+        'tax_amount' => 2100,
+        'total'      => 12100,
+    ]);
 
     $result = $this->dompdfService->generatePDF($invoice);
 
@@ -89,16 +92,16 @@ it('can generate PDF for proforma invoice without QR', function () {
 });
 
 it('can detect reverse charge invoice', function () {
-    $invoice              = new Invoice;
-    $invoice->id          = 3;
-    $invoice->number      = 'FAC-003';
-    $invoice->type        = 'invoice';
-    $invoice->status      = 'paid';
-    $invoice->user_id     = 'test-user';
-    $invoice->subtotal    = 10000;
-    $invoice->tax_amount  = 0;
-    $invoice->total       = 10000;
-    $invoice->fiscal_data = ['reverse_charge' => true];
+    $invoice = Invoice::factory()->create([
+        'number'      => 'FAC-003',
+        'type'        => 'invoice',
+        'status'      => 'paid',
+        'user_id'     => 'test-user',
+        'subtotal'    => 10000,
+        'tax_amount'  => 0,
+        'total'       => 10000,
+        'fiscal_data' => ['reverse_charge' => true],
+    ]);
 
     $result = $this->dompdfService->generatePDF($invoice);
 
@@ -108,16 +111,16 @@ it('can detect reverse charge invoice', function () {
 });
 
 it('can detect exempt invoice', function () {
-    $invoice              = new Invoice;
-    $invoice->id          = 4;
-    $invoice->number      = 'FAC-004';
-    $invoice->type        = 'invoice';
-    $invoice->status      = 'paid';
-    $invoice->user_id     = 'test-user';
-    $invoice->subtotal    = 10000;
-    $invoice->tax_amount  = 0;
-    $invoice->total       = 10000;
-    $invoice->fiscal_data = ['exempt' => true];
+    $invoice = Invoice::factory()->create([
+        'number'      => 'FAC-004',
+        'type'        => 'invoice',
+        'status'      => 'paid',
+        'user_id'     => 'test-user',
+        'subtotal'    => 10000,
+        'tax_amount'  => 0,
+        'total'       => 10000,
+        'fiscal_data' => ['exempt' => true],
+    ]);
 
     $result = $this->dompdfService->generatePDF($invoice);
 
@@ -127,9 +130,10 @@ it('can detect exempt invoice', function () {
 });
 
 it('handles PDF generation errors gracefully', function () {
-    $invoice     = new Invoice;
-    $invoice->id = 999;
-    // Missing required fields
+    $invoice = Invoice::factory()->create([
+        'id' => 999,
+        // Missing required fields intentionally for error testing
+    ]);
 
     $result = $this->dompdfService->generatePDF($invoice);
 

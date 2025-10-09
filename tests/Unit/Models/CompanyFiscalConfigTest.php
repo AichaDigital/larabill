@@ -20,8 +20,8 @@ it('can create a company fiscal config', function () {
     expect($config)->toBeInstanceOf(CompanyFiscalConfig::class);
     expect($config->company_id)->toBe('company-123');
     expect($config->fiscal_year)->toBe(2024);
-    expect($config->eu_sales_threshold)->toBe(1000000); // Base 100 integer
-    expect($config->current_eu_sales_amount)->toBe(500000); // Base 100 integer
+    expect($config->eu_sales_threshold)->toBe(1000000); // €10,000.00 in base 100
+    expect($config->current_eu_sales_amount)->toBe(500000); // €5,000.00 in base 100
 
     // Test helper methods for amount conversion
     expect($config->getEuSalesThresholdAsAmount())->toBe(10000.00);
@@ -32,7 +32,7 @@ it('can find fiscal config by company and year', function () {
     CompanyFiscalConfig::create([
         'company_id'         => 'company-123',
         'fiscal_year'        => 2024,
-        'eu_sales_threshold' => 1000000, // €10,000.00 in base 100
+        'eu_sales_threshold' => 10000.0, // €10,000.00 in decimal format
     ]);
 
     $found = CompanyFiscalConfig::findByCompanyAndYear('company-123', 2024);
@@ -69,8 +69,8 @@ it('can check if threshold has been exceeded', function () {
     // Update to exceed threshold
     $config->update(['current_eu_sales_amount' => 1200000]); // €12,000.00 in base 100
 
-    expect($config->checkThreshold())->toBeTrue();
-    expect($config->threshold_exceeded_at)->not->toBeNull();
+    expect($config->checkThreshold())->toBeTrue()
+        ->and($config->threshold_exceeded_at)->not->toBeNull();
 });
 
 it('can update EU sales amount', function () {
@@ -81,16 +81,16 @@ it('can update EU sales amount', function () {
         'current_eu_sales_amount' => 500000, // €5,000.00 in base 100
     ]);
 
-    $updated = $config->updateEuSales(3000.00); // This should use the helper method
+    $updated = $config->updateEuSales(300.00); // €300.00 - should convert to 30000 in base 100
 
-    expect($updated->current_eu_sales_amount)->toBe(800000); // €8,000.00 in base 100
-    expect($updated->checkThreshold())->toBeFalse();
+    expect($updated->current_eu_sales_amount)->toBe(530000)
+        ->and($updated->checkThreshold())->toBeFalse(); // €5,300.00 in base 100
 
     // Update to exceed threshold
-    $updated->updateEuSales(3000.00);
+    $updated->updateEuSales(5000.00); // €5,000.00 - should convert to 500000 in base 100
 
-    expect($updated->current_eu_sales_amount)->toBe(1100000); // €11,000.00 in base 100
-    expect($updated->checkThreshold())->toBeTrue();
+    expect($updated->current_eu_sales_amount)->toBe(1030000)
+        ->and($updated->checkThreshold())->toBeTrue(); // €10,300.00 in base 100
 });
 
 it('can reset EU sales amount', function () {
@@ -105,9 +105,9 @@ it('can reset EU sales amount', function () {
 
     $reset = $config->resetEuSales();
 
-    expect($reset->current_eu_sales_amount)->toBe(0); // 0 in base 100
-    expect($reset->threshold_exceeded_at)->toBeNull();
-    expect($reset->notification_sent)->toBeFalse();
+    expect($reset->current_eu_sales_amount)->toBe(0)
+        ->and($reset->threshold_exceeded_at)->toBeNull()
+        ->and($reset->notification_sent)->toBeFalse(); // 0 in base 100
 });
 
 it('can check if destination VAT should be applied', function () {
@@ -159,8 +159,9 @@ it('can enable destination VAT', function () {
 
     $enabled = $config->enableDestinationVat();
 
-    expect($enabled->apply_destination_iva)->toBeTrue();
-    expect($enabled->threshold_exceeded_at)->toBeNull(); // Should not set if not exceeded
+    expect($enabled->apply_destination_iva)->toBeTrue()
+        ->and($enabled->threshold_exceeded_at)->toBeNull();
+    // Should not set if not exceeded
 });
 
 it('can disable destination VAT', function () {
@@ -320,7 +321,7 @@ it('can get default values from config', function () {
     config(['larabill.destination_vat.currency' => 'USD']);
     config(['larabill.destination_vat.fiscal_year_start' => '04-01']);
 
-    expect(CompanyFiscalConfig::getDefaultThreshold())->toBe(1500000); // Base 100 integer
+    expect(CompanyFiscalConfig::getDefaultThreshold())->toBe(1500000); // €15,000.00 in base 100
     expect(CompanyFiscalConfig::getDefaultCurrency())->toBe('USD');
     expect(CompanyFiscalConfig::getDefaultFiscalYearStart())->toBe('04-01');
 });
@@ -336,10 +337,10 @@ it('sets default values on creation', function () {
         'auto_apply_destination' => true, // Explicitly set to ensure it's not null
     ]);
 
-    expect($config->eu_sales_threshold)->toBe(1500000); // Base 100 integer
+    expect($config->eu_sales_threshold)->toBe(1500000); // €15,000.00 in base 100
     expect($config->currency)->toBe('USD');
     expect($config->fiscal_year_start)->toBe('04-01');
     expect($config->auto_apply_destination)->toBeTrue();
     expect($config->apply_destination_iva)->toBeFalse();
-    expect($config->current_eu_sales_amount)->toBe(0); // Base 100 integer
+    expect($config->current_eu_sales_amount)->toBe(0); // 0 in base 100
 });

@@ -277,15 +277,24 @@ class DestinationVatService
             $totalCompanies            = $query->count();
             $companiesExceeding        = (clone $query)->whereColumn('current_eu_sales_amount', '>=', 'eu_sales_threshold')->count();
             $companiesUsingDestination = (clone $query)->where('apply_destination_iva', true)->count();
-            $totalEuSales              = (clone $query)->sum('current_eu_sales_amount');
+
+            // Load configs to use accessors (human amounts)
+            $configs = (clone $query)->get();
+
+            // Sum using accessors to avoid base-100 inflation
+            $totalEuSales = 0.0;
+            foreach ($configs as $cfg) {
+                $totalEuSales += $cfg->getCurrentEuSalesAmountAsAmount();
+            }
 
             // Calculate average threshold percentage
-            $configs         = (clone $query)->get();
             $totalPercentage = 0;
             $count           = 0;
             foreach ($configs as $config) {
                 if ($config->eu_sales_threshold > 0) {
-                    $percentage = ($config->current_eu_sales_amount / $config->eu_sales_threshold) * 100;
+                    $currentAmount = $config->getCurrentEuSalesAmountAsAmount();
+                    $thresholdAmount = $config->getEuSalesThresholdAsAmount();
+                    $percentage = ($currentAmount / $thresholdAmount) * 100;
                     $totalPercentage += $percentage;
                     $count++;
                 }
@@ -400,11 +409,9 @@ class DestinationVatService
     {
         $config = CompanyFiscalConfig::getOrCreateForCompany($companyId, $fiscalYear);
 
-        // Work with base100 integers
-        $currentAmount                   = $config->current_eu_sales_amount;
-        $amountBase100                   = CompanyFiscalConfig::amountToBase100($amount);
-        $newAmount                       = $currentAmount + $amountBase100;
-        $config->current_eu_sales_amount = $newAmount;
+        // Convert amount to base 100 and add to current amount
+        $amountInBase100 = CompanyFiscalConfig::amountToBase100($amount);
+        $config->current_eu_sales_amount = $config->current_eu_sales_amount + $amountInBase100;
 
         if ($config->current_eu_sales_amount >= $config->eu_sales_threshold) {
             $config->apply_destination_iva = true;
@@ -435,8 +442,8 @@ class DestinationVatService
     public function getEuSalesThresholdStatus(string $companyId, int $fiscalYear): array
     {
         $config    = CompanyFiscalConfig::getOrCreateForCompany($companyId, $fiscalYear);
-        $threshold = (float) $config->eu_sales_threshold;
-        $current   = (float) $config->current_eu_sales_amount;
+        $threshold = $config->getEuSalesThresholdAsAmount();
+        $current   = $config->getCurrentEuSalesAmountAsAmount();
 
         $remaining = max(0, $threshold - $current);
 
