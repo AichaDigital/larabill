@@ -13,10 +13,10 @@ use Illuminate\Database\Eloquent\Model;
  * Represents the fiscal configuration for the company using the software.
  * This is a singleton model - only one record should exist.
  *
- * @property bool $is_oss Whether the company is registered in OSS (One Stop Shop)
+ * @property bool $is_oss Whether the company is registered in OSS (One-Stop Shop)
  * @property bool $is_roi Whether the company is a Reverse Charge Operator (ROI)
- * @property int $eu_sales_threshold Base-100 integer (e.g., 1000000 => €10,000.00)
- * @property int $current_eu_sales_amount Base-100 integer (e.g., 1234 => €12.34)
+ * @property int $eu_sales_threshold Base-100 integer (for example, 1,000,000 => €10,000.00)
+ * @property int $current_eu_sales_amount Base-100 integer (for example, 1234 => €12.34)
  * @property Carbon|null $threshold_exceeded_at
  * @property bool $threshold_exceeded
  * @property int $fiscal_year
@@ -88,7 +88,7 @@ class CompanyConfig extends Model
     }
 
     /**
-     * Create default company configuration.
+     * Create the default company configuration.
      */
     public static function createDefault(): self
     {

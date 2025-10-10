@@ -23,6 +23,8 @@ _ide_helper_models.php
 /.idea
 /.fleet
 /.vscode
+/.cursor
+/.claude
 
 # Misc
 phpunit.xml
