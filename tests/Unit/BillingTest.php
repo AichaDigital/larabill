@@ -106,6 +106,23 @@ it('can convert proforma to invoice', function () {
     expect($invoice->number)->not->toBe($proforma->number);
 });
 
+it('throws exception when trying to convert non-proforma invoice', function () {
+    $service = new BillingService;
+
+    $regularInvoice = Invoice::create([
+        'number'     => 'FAC-001',
+        'type'       => 'invoice', // Not proforma
+        'status'     => 'draft',
+        'user_id'    => 1,
+        'subtotal'   => 100.0,
+        'tax_amount' => 21.0,
+        'total'      => 121.0,
+    ]);
+
+    expect(fn () => $service->convertToInvoice($regularInvoice))
+        ->toThrow(InvalidArgumentException::class, 'Only proforma invoices can be converted');
+});
+
 it('can generate sequential invoice numbers', function () {
     $service = new BillingService;
 

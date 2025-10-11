@@ -114,6 +114,25 @@ describe('VatApiIntegrationService', function () {
             expect($result['api_source'])->toBe('abstractapi');
             expect($result['all_apis_failed'])->toBeTrue();
         });
+
+        it('can handle AbstractAPI error in response data', function () {
+            $service = new VatApiIntegrationService;
+
+            Http::fake([
+                'https://vat.abstractapi.com/v1/validate/*' => Http::response([
+                    'error' => [
+                        'message' => 'Invalid API key',
+                    ],
+                ], 200),
+            ]);
+
+            $result = $service->verifyWithAbstractApi('ESB12345678', 'ES');
+
+            expect($result)->toBeArray();
+            expect($result['is_valid'])->toBeFalse();
+            expect($result['error'])->toContain('AbstractAPI error');
+            expect($result['all_apis_failed'])->toBeTrue();
+        });
     });
 
     describe('APILayer Integration', function () {
@@ -203,6 +222,62 @@ describe('VatApiIntegrationService', function () {
             expect($result['is_valid'])->toBeFalse();
             expect($result['error'])->toContain('HTTP error');
             expect($result['api_source'])->toBe('apilayer');
+            expect($result['all_apis_failed'])->toBeTrue();
+        });
+
+        it('can handle APILayer error in response data', function () {
+            $service = new VatApiIntegrationService;
+
+            Http::fake([
+                'http://apilayer.net/api/validate*' => Http::response([
+                    'error' => [
+                        'info' => 'API rate limit exceeded',
+                    ],
+                ], 200),
+            ]);
+
+            $result = $service->verifyWithApiLayer('FRB87654321', 'FR');
+
+            expect($result)->toBeArray();
+            expect($result['is_valid'])->toBeFalse();
+            expect($result['error'])->toContain('API Layer error');
+            expect($result['all_apis_failed'])->toBeTrue();
+        });
+
+        it('can handle APILayer success false response', function () {
+            $service = new VatApiIntegrationService;
+
+            Http::fake([
+                'http://apilayer.net/api/validate*' => Http::response([
+                    'success' => false,
+                    'error'   => [
+                        'info' => 'Invalid API credentials',
+                    ],
+                ], 200),
+            ]);
+
+            $result = $service->verifyWithApiLayer('FRB87654321', 'FR');
+
+            expect($result)->toBeArray();
+            expect($result['is_valid'])->toBeFalse();
+            expect($result['error'])->not->toBeEmpty();
+            expect($result['all_apis_failed'])->toBeTrue();
+        });
+
+        it('can handle APILayer success false without error info', function () {
+            $service = new VatApiIntegrationService;
+
+            Http::fake([
+                'http://apilayer.net/api/validate*' => Http::response([
+                    'success' => false,
+                ], 200),
+            ]);
+
+            $result = $service->verifyWithApiLayer('FRB87654321', 'FR');
+
+            expect($result)->toBeArray();
+            expect($result['is_valid'])->toBeFalse();
+            expect($result['error'])->not->toBeEmpty();
             expect($result['all_apis_failed'])->toBeTrue();
         });
     });
