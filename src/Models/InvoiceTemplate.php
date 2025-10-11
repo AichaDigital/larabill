@@ -130,7 +130,6 @@ class InvoiceTemplate extends Model
      * Get template settings.
      *
      * @param  mixed  $default
-     * @return mixed
      */
     public function getSetting(string $key, $default = null): mixed
     {
@@ -139,8 +138,6 @@ class InvoiceTemplate extends Model
 
     /**
      * Set template setting.
-     *
-     * @param  mixed  $value
      */
     public function setSetting(string $key, mixed $value): void
     {

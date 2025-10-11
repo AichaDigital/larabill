@@ -520,7 +520,7 @@ class CountryVatRate extends Model
     /**
      * Import VAT rates from external data source.
      *
-     * @param array<int, array<string, mixed>> $data
+     * @param  array<int, array<string, mixed>>  $data
      */
     public static function importFromDataSource(array $data, string $dataSource = 'manual'): int
     {
@@ -749,7 +749,7 @@ class CountryVatRate extends Model
     }
 
     /**
-     * @param array<string, mixed> $data
+     * @param  array<string, mixed>  $data
      */
     public function updateVatRates(array $data): self
     {

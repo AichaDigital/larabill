@@ -202,6 +202,7 @@ class VatVerificationService
      * Get mock response as last resort.
      *
      * @return array<string, mixed>
+     *
      * @phpstan-ignore-next-line method is intentionally kept for testing fallbacks
      */
     private function getMockResponse(string $apiName, string $vatNumber, string $countryCode): array
