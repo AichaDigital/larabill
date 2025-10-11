@@ -565,3 +565,55 @@ it('can get company configuration by fiscal year range', function () {
     expect($configs->pluck('fiscal_year')->toArray())->toContain(2023);
     expect($configs->pluck('fiscal_year')->toArray())->toContain(2024);
 });
+
+it('throws exception when updating with invalid data', function () {
+    $service = new CompanyConfigService;
+
+    expect(fn () => $service->updateConfig([
+        'eu_sales_threshold' => 'invalid-string', // Invalid non-numeric value
+    ]))->toThrow(InvalidArgumentException::class, 'Invalid company configuration');
+});
+
+it('throws exception when updating sales amount for non-existent config', function () {
+    $service = new CompanyConfigService;
+
+    expect(fn () => $service->updateEuSalesAmount('nonexistent-company', 2024, 1000.0))
+        ->toThrow(\Exception::class, 'Company configuration not found');
+});
+
+it('throws exception when creating with invalid data', function () {
+    $service = new CompanyConfigService;
+
+    expect(fn () => $service->createCompanyConfig('company-123', 2024, [
+        'currency' => 'INVALID', // Invalid currency format (not 3 uppercase letters)
+    ]))->toThrow(InvalidArgumentException::class, 'Invalid company configuration');
+});
+
+it('handles errors in bulk update gracefully', function () {
+    $service = new CompanyConfigService;
+
+    // Create some valid configs
+    CompanyFiscalConfig::create([
+        'company_id'  => 'company-1',
+        'fiscal_year' => 2024,
+    ]);
+
+    CompanyFiscalConfig::create([
+        'company_id'  => 'company-2',
+        'fiscal_year' => 2024,
+    ]);
+
+    // Bulk update with one error (nonexistent company)
+    $updates = [
+        'company-1'        => ['currency' => 'USD'],
+        'company-2'        => ['currency' => 'EUR'],
+        'nonexistent-comp' => ['currency' => 'GBP'], // This will fail
+    ];
+
+    $successCount = $service->bulkUpdateCompanyConfigs($updates, 2024);
+
+    // Should succeed for company-1 and company-2, fail for nonexistent-comp
+    expect($successCount)->toBe(2);
+    expect(CompanyFiscalConfig::where('company_id', 'company-1')->first()->currency)->toBe('USD');
+    expect(CompanyFiscalConfig::where('company_id', 'company-2')->first()->currency)->toBe('EUR');
+});

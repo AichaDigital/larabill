@@ -199,23 +199,23 @@ it('can get fiscal year dates', function () {
 });
 
 it('can check if date is within fiscal year', function () {
+    $currentYear = now()->year;
+
     $config = CompanyConfig::create([
-        'fiscal_year'       => 2024,
+        'fiscal_year'       => $currentYear,
         'fiscal_year_start' => '01-01',
     ]);
 
     // Date within fiscal year
-    $dateWithin = Carbon::create(2024, 6, 15);
+    $dateWithin = Carbon::create($currentYear, 6, 15);
     expect($config->isWithinFiscalYear($dateWithin))->toBeTrue();
 
     // Date outside fiscal year
-    $dateOutside = Carbon::create(2023, 12, 31);
+    $dateOutside = Carbon::create($currentYear - 1, 12, 31);
     expect($config->isWithinFiscalYear($dateOutside))->toBeFalse();
 
-    // Current date (default) - only test if current year is 2024
-    if (now()->year === 2024) {
-        expect($config->isWithinFiscalYear())->toBeTrue();
-    }
+    // Current date (default) - should always be within the current fiscal year
+    expect($config->isWithinFiscalYear())->toBeTrue();
 });
 
 it('can get threshold percentage', function () {
