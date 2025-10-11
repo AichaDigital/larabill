@@ -167,3 +167,25 @@ it('generates QR URL with custom base URL', function () {
     expect($result['success'])->toBeTrue();
     expect($result['qr_url'])->toStartWith('https://example.com');
 });
+
+it('returns false when validating invoice if connector is not available', function () {
+    $connector = new class extends DefaultPDFConnector
+    {
+        public function isAvailable(): bool
+        {
+            return false;
+        }
+    };
+
+    $invoice             = new Invoice;
+    $invoice->id         = 1;
+    $invoice->number     = 'TEST-001';
+    $invoice->type       = 'invoice';
+    $invoice->status     = 'draft';
+    $invoice->user_id    = 'test-user';
+    $invoice->subtotal   = 10000;
+    $invoice->tax_amount = 2100;
+    $invoice->total      = 12100;
+
+    expect($connector->validateInvoice($invoice))->toBeFalse();
+});
