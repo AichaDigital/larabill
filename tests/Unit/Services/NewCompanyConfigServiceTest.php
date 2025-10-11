@@ -19,8 +19,8 @@ it('can get current company configuration', function () {
     expect($config)->toBeInstanceOf(CompanyFiscalConfig::class);
     expect($config->is_oss)->toBeFalse();
     expect($config->is_roi)->toBeFalse();
-    expect($config->eu_sales_threshold)->toBe(10000);
-    expect($config->current_eu_sales_amount)->toBe(0);
+    expect($config->eu_sales_threshold)->toBe(10000.0);
+    expect($config->current_eu_sales_amount)->toBe(0.0);
 });
 
 it('can update company configuration', function () {
@@ -34,7 +34,7 @@ it('can update company configuration', function () {
     $config = $service->updateConfig($data);
 
     expect($config->is_oss)->toBeTrue();
-    expect($config->eu_sales_threshold)->toBe(15000);
+    expect($config->eu_sales_threshold)->toBe(15000.0);
 });
 
 it('can enable OSS registration', function () {
@@ -82,7 +82,7 @@ it('can update EU sales threshold', function () {
 
     $config = $service->updateThreshold(12000.0);
 
-    expect($config->eu_sales_threshold)->toBe(1200000);
+    expect($config->eu_sales_threshold)->toBe(12000.0);
 });
 
 it('can update EU sales amount', function () {
@@ -90,7 +90,7 @@ it('can update EU sales amount', function () {
 
     $config = $service->updateAmount(5000.0);
 
-    expect($config->current_eu_sales_amount)->toBe(500000);
+    expect($config->current_eu_sales_amount)->toBe(5000.0);
 });
 
 it('can reset EU sales for new fiscal year', function () {
@@ -102,7 +102,7 @@ it('can reset EU sales for new fiscal year', function () {
     // Then reset for new year
     $config = $service->resetEuSalesForNewYear(2025);
 
-    expect($config->current_eu_sales_amount)->toBe(0);
+    expect($config->current_eu_sales_amount)->toBe(0.0);
     expect($config->fiscal_year)->toBe(2025);
     expect($config->threshold_exceeded)->toBeFalse();
     expect($config->notification_sent)->toBeFalse();
@@ -217,8 +217,8 @@ it('can get company statistics', function () {
 
     expect($stats)->toBeArray();
     expect($stats['is_roi'])->toBeTrue();
-    expect($stats['eu_sales_threshold'])->toBe(1000000);
-    expect($stats['current_eu_sales_amount'])->toBe(750000);
+    expect($stats['eu_sales_threshold'])->toBe(10000.0);
+    expect($stats['current_eu_sales_amount'])->toBe(7500.0);
     expect($stats['threshold_percentage'])->toBe(75.0);
     expect($stats['should_apply_destination_vat'])->toBeFalse();
 });
@@ -262,7 +262,7 @@ it('can get default configuration', function () {
     expect($default)->toBeArray();
     expect($default['is_oss'])->toBeFalse();
     expect($default['is_roi'])->toBeFalse();
-    expect($default['eu_sales_threshold'])->toBe(10000);
+    expect($default['eu_sales_threshold'])->toBe(10000.0);
     expect($default['currency'])->toBe('EUR');
 });
 
@@ -305,5 +305,5 @@ it('clears cache when configuration is updated', function () {
     // Get updated config
     $config2 = $service->getCurrentConfig();
 
-    expect($config2->eu_sales_threshold)->toBe(1500000);
+    expect($config2->eu_sales_threshold)->toBe(15000.0);
 });

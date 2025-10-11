@@ -12,9 +12,9 @@ it('can perform complete CRUD operations on invoices', function () {
         'type'         => 'invoice',
         'status'       => 'draft',
         'user_id'      => 1,
-        'subtotal'     => Invoice::amountToBase100(100.0),
-        'tax_amount'   => Invoice::amountToBase100(21.0),
-        'total'        => Invoice::amountToBase100(121.0),
+        'subtotal'     => 100.0,
+        'tax_amount'   => 21.0,
+        'total'        => 121.0,
         'is_immutable' => false,
     ]);
 
@@ -24,7 +24,7 @@ it('can perform complete CRUD operations on invoices', function () {
     // Read
     $foundInvoice = Invoice::find($invoice->id);
     expect($foundInvoice->number)->toBe('FAC-0001');
-    expect($foundInvoice->getTotalAsAmount())->toBe(121.0);
+    expect($foundInvoice->total)->toBe(121.0);
 
     // Update
     $foundInvoice->update([
@@ -47,9 +47,9 @@ it('can handle invoice with items relationship', function () {
         'type'         => 'invoice',
         'status'       => 'draft',
         'user_id'      => 1,
-        'subtotal'     => Invoice::amountToBase100(200.0),
-        'tax_amount'   => Invoice::amountToBase100(42.0),
-        'total'        => Invoice::amountToBase100(242.0),
+        'subtotal'     => 200.0,
+        'tax_amount'   => 42.0,
+        'total'        => 242.0,
         'is_immutable' => false,
     ]);
 
@@ -57,23 +57,23 @@ it('can handle invoice with items relationship', function () {
     $item1 = InvoiceItem::create([
         'invoice_id'  => $invoice->id,
         'description' => 'Item 1',
-        'quantity'    => InvoiceItem::quantityToBase100(2),
-        'unit_price'  => InvoiceItem::amountToBase100(50.0),
-        'subtotal'    => InvoiceItem::amountToBase100(100.0),
-        'tax_rate'    => InvoiceItem::percentageToBase100(21.0),
-        'tax_amount'  => InvoiceItem::amountToBase100(21.0),
-        'total'       => InvoiceItem::amountToBase100(121.0),
+        'quantity'    => 2,
+        'unit_price'  => 50.0,
+        'subtotal'    => 100.0,
+        'tax_rate'    => 21.0,
+        'tax_amount'  => 21.0,
+        'total'       => 121.0,
     ]);
 
     $item2 = InvoiceItem::create([
         'invoice_id'  => $invoice->id,
         'description' => 'Item 2',
-        'quantity'    => InvoiceItem::quantityToBase100(1),
-        'unit_price'  => InvoiceItem::amountToBase100(100.0),
-        'subtotal'    => InvoiceItem::amountToBase100(100.0),
-        'tax_rate'    => InvoiceItem::percentageToBase100(21.0),
-        'tax_amount'  => InvoiceItem::amountToBase100(21.0),
-        'total'       => InvoiceItem::amountToBase100(121.0),
+        'quantity'    => 1,
+        'unit_price'  => 100.0,
+        'subtotal'    => 100.0,
+        'tax_rate'    => 21.0,
+        'tax_amount'  => 21.0,
+        'total'       => 121.0,
     ]);
 
     // Test relationship
@@ -92,9 +92,9 @@ it('can handle invoice immutability correctly', function () {
         'type'         => 'invoice',
         'status'       => 'draft',
         'user_id'      => 1,
-        'subtotal'     => Invoice::amountToBase100(100.0),
-        'tax_amount'   => Invoice::amountToBase100(21.0),
-        'total'        => Invoice::amountToBase100(121.0),
+        'subtotal'     => 100.0,
+        'tax_amount'   => 21.0,
+        'total'        => 121.0,
         'is_immutable' => false,
     ]);
 
@@ -122,9 +122,9 @@ it('can handle invoice data encryption when immutable', function () {
         'type'          => 'invoice',
         'status'        => 'draft',
         'user_id'       => 1,
-        'subtotal'      => Invoice::amountToBase100(100.0),
-        'tax_amount'    => Invoice::amountToBase100(21.0),
-        'total'         => Invoice::amountToBase100(121.0),
+        'subtotal'      => 100.0,
+        'tax_amount'    => 21.0,
+        'total'         => 121.0,
         'is_immutable'  => false,
         'customer_data' => [
             'name'    => 'John Doe',
@@ -155,9 +155,9 @@ it('can generate PDF for invoice', function () {
         'type'         => 'invoice',
         'status'       => 'draft',
         'user_id'      => 1,
-        'subtotal'     => Invoice::amountToBase100(100.0),
-        'tax_amount'   => Invoice::amountToBase100(21.0),
-        'total'        => Invoice::amountToBase100(121.0),
+        'subtotal'     => 100.0,
+        'tax_amount'   => 21.0,
+        'total'        => 121.0,
         'is_immutable' => false,
     ]);
 
@@ -172,9 +172,9 @@ it('can determine if QR code should be included', function () {
         'type'         => 'invoice',
         'status'       => 'draft',
         'user_id'      => 1,
-        'subtotal'     => Invoice::amountToBase100(100.0),
-        'tax_amount'   => Invoice::amountToBase100(21.0),
-        'total'        => Invoice::amountToBase100(121.0),
+        'subtotal'     => 100.0,
+        'tax_amount'   => 21.0,
+        'total'        => 121.0,
         'is_immutable' => false,
     ]);
 
@@ -186,9 +186,9 @@ it('can determine if QR code should be included', function () {
         'type'         => 'proforma',
         'status'       => 'draft',
         'user_id'      => 1,
-        'subtotal'     => Invoice::amountToBase100(100.0),
-        'tax_amount'   => Invoice::amountToBase100(21.0),
-        'total'        => Invoice::amountToBase100(121.0),
+        'subtotal'     => 100.0,
+        'tax_amount'   => 21.0,
+        'total'        => 121.0,
         'is_immutable' => false,
     ]);
 
@@ -201,9 +201,9 @@ it('can get invoice type correctly', function () {
         'type'         => 'invoice',
         'status'       => 'draft',
         'user_id'      => 1,
-        'subtotal'     => Invoice::amountToBase100(100.0),
-        'tax_amount'   => Invoice::amountToBase100(21.0),
-        'total'        => Invoice::amountToBase100(121.0),
+        'subtotal'     => 100.0,
+        'tax_amount'   => 21.0,
+        'total'        => 121.0,
         'is_immutable' => false,
     ]);
 

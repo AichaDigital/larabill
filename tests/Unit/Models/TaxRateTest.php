@@ -20,7 +20,7 @@ it('can create a tax rate', function () {
     expect($taxRate->country_name)->toBe('Spain');
     expect($taxRate->tax_name)->toBe('IVA');
     expect($taxRate->tax_type)->toBe('VAT');
-    expect($taxRate->rate)->toBe('0.2100');
+    expect($taxRate->rate)->toBe(0.21); // Base100 cast returns float
     expect($taxRate->is_active)->toBeTrue();
     expect($taxRate->applies_to)->toBe('all');
     expect($taxRate->special_conditions)->toBeNull();

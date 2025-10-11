@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
+use AichaDigital\Lara100\Casts\Base100;
 use Illuminate\Database\Eloquent\{Builder, Factories\HasFactory, Model};
 
 /**
@@ -43,72 +44,17 @@ class TaxRate extends Model
     /**
      * Casts for attributes.
      *
-     * Uses integers in base 100 for tax rates (percentages)
-     * Example: 21.50% is stored as 2150, 12.34% as 1234
+     * Uses Base100 cast from lara100 package for tax rate percentages
+     * Automatically handles conversion between decimals and base-100 integers
+     * Example: 21.50% ↔ 2150 (stored as integer, accessed as decimal)
      */
     public function casts(): array
     {
         return [
             'is_active'          => 'boolean',
-            'rate'               => 'integer', // Base 100: 21.50% = 2150
+            'rate'               => Base100::class, // 21.50% ↔ 2150
             'special_conditions' => 'array',
         ];
-    }
-
-    /**
-     * Convert percentage to base 100 integer.
-     */
-    public static function percentageToBase100(float $percentage): int
-    {
-        return (int) ($percentage * 100);
-    }
-
-    /**
-     * Convert base 100 integer to percentage.
-     */
-    public static function base100ToPercentage(int $base100): float
-    {
-        return $base100 / 100.0;
-    }
-
-    /**
-     * Get rate as percentage.
-     */
-    public function getRateAsPercentage(): float
-    {
-        return static::base100ToPercentage($this->getRawOriginal('rate'));
-    }
-
-    /**
-     * Set rate from percentage.
-     */
-    public function setRateFromPercentage(float $percentage): self
-    {
-        $this->update(['rate' => static::percentageToBase100($percentage)]);
-
-        return $this;
-    }
-
-    /**
-     * Accessor for rate to return as formatted string.
-     *
-     * @param  mixed  $value
-     */
-    public function getRateAttribute($value): string
-    {
-        if ($value === null) {
-            return '0.0000';
-        }
-
-        // If value is already a decimal (like 0.21), format it directly
-        if ($value < 1) {
-            return number_format((float) $value, 4, '.', '');
-        }
-
-        // Convert from base-100 integer to decimal format
-        $decimal = ((int) $value) / 10000.0;
-
-        return number_format($decimal, 4, '.', '');
     }
 
     /**

@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('country_name');
             $table->string('tax_name');
             $table->string('tax_type');
-            $table->decimal('rate', 5, 4);
+            $table->integer('rate')->comment('Base-100 integer (e.g., 21.50% => 2150, 0.21% => 21)');
             $table->boolean('is_active')->default(true);
             $table->string('applies_to')->nullable();
             $table->json('special_conditions')->nullable();

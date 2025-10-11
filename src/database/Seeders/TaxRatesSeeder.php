@@ -35,7 +35,7 @@ class TaxRatesSeeder extends Seeder
                 'country_name'       => 'Spain',
                 'tax_name'           => 'IVA General',
                 'tax_type'           => 'standard',
-                'rate'               => TaxRate::percentageToBase100(21.0),
+                'rate'               => 21.0, // Base100 cast handles conversion
                 'is_active'          => true,
                 'applies_to'         => 'general_goods_services',
                 'special_conditions' => null,
@@ -45,7 +45,7 @@ class TaxRatesSeeder extends Seeder
                 'country_name'       => 'Spain',
                 'tax_name'           => 'IVA Reducido',
                 'tax_type'           => 'reduced',
-                'rate'               => TaxRate::percentageToBase100(10.0),
+                'rate'               => 10.0, // Base100 cast handles conversion
                 'is_active'          => true,
                 'applies_to'         => 'reduced_goods_services',
                 'special_conditions' => null,
@@ -55,7 +55,7 @@ class TaxRatesSeeder extends Seeder
                 'country_name'       => 'Spain',
                 'tax_name'           => 'IVA Superreducido',
                 'tax_type'           => 'super_reduced',
-                'rate'               => TaxRate::percentageToBase100(4.0),
+                'rate'               => 4.0, // Base100 cast handles conversion
                 'is_active'          => true,
                 'applies_to'         => 'super_reduced_goods_services',
                 'special_conditions' => null,
@@ -84,7 +84,7 @@ class TaxRatesSeeder extends Seeder
                 'country_name'       => 'Germany',
                 'tax_name'           => 'MwSt',
                 'tax_type'           => 'standard',
-                'rate'               => TaxRate::percentageToBase100(19.0),
+                'rate'               => 19.0, // Base100 cast handles conversion
                 'is_active'          => true,
                 'applies_to'         => 'general_goods_services',
                 'special_conditions' => null,
@@ -94,7 +94,7 @@ class TaxRatesSeeder extends Seeder
                 'country_name'       => 'France',
                 'tax_name'           => 'TVA',
                 'tax_type'           => 'standard',
-                'rate'               => TaxRate::percentageToBase100(20.0),
+                'rate'               => 20.0, // Base100 cast handles conversion
                 'is_active'          => true,
                 'applies_to'         => 'general_goods_services',
                 'special_conditions' => null,
@@ -104,7 +104,7 @@ class TaxRatesSeeder extends Seeder
                 'country_name'       => 'Italy',
                 'tax_name'           => 'IVA',
                 'tax_type'           => 'standard',
-                'rate'               => TaxRate::percentageToBase100(22.0),
+                'rate'               => 22.0, // Base100 cast handles conversion
                 'is_active'          => true,
                 'applies_to'         => 'general_goods_services',
                 'special_conditions' => null,
@@ -114,7 +114,7 @@ class TaxRatesSeeder extends Seeder
                 'country_name'       => 'Netherlands',
                 'tax_name'           => 'BTW',
                 'tax_type'           => 'standard',
-                'rate'               => TaxRate::percentageToBase100(21.0),
+                'rate'               => 21.0, // Base100 cast handles conversion
                 'is_active'          => true,
                 'applies_to'         => 'general_goods_services',
                 'special_conditions' => null,
@@ -124,7 +124,7 @@ class TaxRatesSeeder extends Seeder
                 'country_name'       => 'Portugal',
                 'tax_name'           => 'IVA',
                 'tax_type'           => 'standard',
-                'rate'               => TaxRate::percentageToBase100(23.0),
+                'rate'               => 23.0, // Base100 cast handles conversion
                 'is_active'          => true,
                 'applies_to'         => 'general_goods_services',
                 'special_conditions' => null,
@@ -134,7 +134,7 @@ class TaxRatesSeeder extends Seeder
                 'country_name'       => 'Belgium',
                 'tax_name'           => 'TVA',
                 'tax_type'           => 'standard',
-                'rate'               => TaxRate::percentageToBase100(21.0),
+                'rate'               => 21.0, // Base100 cast handles conversion
                 'is_active'          => true,
                 'applies_to'         => 'general_goods_services',
                 'special_conditions' => null,
@@ -144,7 +144,7 @@ class TaxRatesSeeder extends Seeder
                 'country_name'       => 'Austria',
                 'tax_name'           => 'USt',
                 'tax_type'           => 'standard',
-                'rate'               => TaxRate::percentageToBase100(20.0),
+                'rate'               => 20.0, // Base100 cast handles conversion
                 'is_active'          => true,
                 'applies_to'         => 'general_goods_services',
                 'special_conditions' => null,
@@ -154,7 +154,7 @@ class TaxRatesSeeder extends Seeder
                 'country_name'       => 'Ireland',
                 'tax_name'           => 'VAT',
                 'tax_type'           => 'standard',
-                'rate'               => TaxRate::percentageToBase100(23.0),
+                'rate'               => 23.0, // Base100 cast handles conversion
                 'is_active'          => true,
                 'applies_to'         => 'general_goods_services',
                 'special_conditions' => null,
@@ -164,7 +164,7 @@ class TaxRatesSeeder extends Seeder
                 'country_name'       => 'Finland',
                 'tax_name'           => 'ALV',
                 'tax_type'           => 'standard',
-                'rate'               => TaxRate::percentageToBase100(24.0),
+                'rate'               => 24.0, // Base100 cast handles conversion
                 'is_active'          => true,
                 'applies_to'         => 'general_goods_services',
                 'special_conditions' => null,
@@ -174,7 +174,7 @@ class TaxRatesSeeder extends Seeder
                 'country_name'       => 'Sweden',
                 'tax_name'           => 'Moms',
                 'tax_type'           => 'standard',
-                'rate'               => TaxRate::percentageToBase100(25.0),
+                'rate'               => 25.0, // Base100 cast handles conversion
                 'is_active'          => true,
                 'applies_to'         => 'general_goods_services',
                 'special_conditions' => null,
@@ -203,7 +203,7 @@ class TaxRatesSeeder extends Seeder
                 'country_name'       => 'Canary Islands',
                 'tax_name'           => 'IGIC',
                 'tax_type'           => 'standard',
-                'rate'               => TaxRate::percentageToBase100(7.0),
+                'rate'               => 7.0, // Base100 cast handles conversion
                 'is_active'          => true,
                 'applies_to'         => 'general_goods_services',
                 'special_conditions' => [
@@ -216,7 +216,7 @@ class TaxRatesSeeder extends Seeder
                 'country_name'       => 'Ceuta',
                 'tax_name'           => 'IPSI',
                 'tax_type'           => 'standard',
-                'rate'               => TaxRate::percentageToBase100(0.0),
+                'rate'               => 0.0, // Base100 cast handles conversion
                 'is_active'          => true,
                 'applies_to'         => 'general_goods_services',
                 'special_conditions' => [
@@ -229,7 +229,7 @@ class TaxRatesSeeder extends Seeder
                 'country_name'       => 'Melilla',
                 'tax_name'           => 'IPSI',
                 'tax_type'           => 'standard',
-                'rate'               => TaxRate::percentageToBase100(0.0),
+                'rate'               => 0.0, // Base100 cast handles conversion
                 'is_active'          => true,
                 'applies_to'         => 'general_goods_services',
                 'special_conditions' => [

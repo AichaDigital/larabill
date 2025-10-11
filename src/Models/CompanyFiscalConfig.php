@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
+use AichaDigital\Lara100\Casts\Base100;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\{Builder, Model};
 
@@ -55,8 +56,9 @@ class CompanyFiscalConfig extends Model
     /**
      * Casts for attributes.
      *
-     * Uses integers in base 100 for monetary values (amounts, thresholds)
-     * Example: €12.34 is stored as 1234, €10,000.00 as 1000000
+     * Uses Base100 cast from lara100 package for monetary values
+     * Automatically handles conversion between decimals and base-100 integers
+     * Example: €10,000.00 ↔ 1000000 (stored as integer, accessed as decimal)
      */
     public function casts(): array
     {
@@ -67,66 +69,11 @@ class CompanyFiscalConfig extends Model
             'auto_apply_destination'  => 'boolean',
             'notification_sent'       => 'boolean',
             'threshold_exceeded'      => 'boolean',
-            // Stored as base-100 in DB but exposed as human amounts via accessors
-            'eu_sales_threshold'      => 'integer',
-            'current_eu_sales_amount' => 'integer',
+            'eu_sales_threshold'      => Base100::class, // €10,000.00 ↔ 1000000
+            'current_eu_sales_amount' => Base100::class, // €12.34 ↔ 1234
             'threshold_exceeded_at'   => 'datetime',
             'custom_threshold_rules'  => 'array',
         ];
-    }
-
-
-    /**
-     * Convert monetary amount to base 100 integer.
-     */
-    public static function amountToBase100(float $amount): int
-    {
-        return (int) ($amount * 100);
-    }
-
-    /**
-     * Convert base 100 integer to monetary amount.
-     */
-    public static function base100ToAmount(int|float $base100): float
-    {
-        return (float) $base100 / 100.0;
-    }
-
-    /**
-     * Get EU sales threshold as monetary amount.
-     */
-    public function getEuSalesThresholdAsAmount(): float
-    {
-        return static::base100ToAmount($this->eu_sales_threshold);
-    }
-
-    /**
-     * Get current EU sales amount as monetary amount.
-     */
-    public function getCurrentEuSalesAmountAsAmount(): float
-    {
-        return static::base100ToAmount($this->current_eu_sales_amount);
-    }
-
-
-    /**
-     * Set EU sales threshold from monetary amount.
-     */
-    public function setEuSalesThresholdFromAmount(float $amount): self
-    {
-        $this->update(['eu_sales_threshold' => static::amountToBase100($amount)]);
-
-        return $this;
-    }
-
-    /**
-     * Set current EU sales amount from monetary amount.
-     */
-    public function setCurrentEuSalesAmountFromAmount(float $amount): self
-    {
-        $this->update(['current_eu_sales_amount' => static::amountToBase100($amount)]);
-
-        return $this;
     }
 
     /**
@@ -145,7 +92,7 @@ class CompanyFiscalConfig extends Model
             // Set default threshold if not provided
             if (! $model->eu_sales_threshold) {
                 // Set from human amount; mutator will convert to base-100
-                $model->eu_sales_threshold = config('larabill.destination_vat.default_threshold', 10000);
+                $model->eu_sales_threshold = config('larabill.destination_vat.default_threshold', 10000.0);
             }
 
             // Set default currency if not provided
@@ -227,12 +174,12 @@ class CompanyFiscalConfig extends Model
                 'is_oss'                  => false,
                 'is_roi'                  => false,
                 // Human amount; mutator converts to base-100
-                'eu_sales_threshold'      => config('larabill.destination_vat.default_threshold', 10000),
+                'eu_sales_threshold'      => config('larabill.destination_vat.default_threshold', 10000.0),
                 'currency'                => config('larabill.destination_vat.currency', 'EUR'),
                 'fiscal_year_start'       => config('larabill.destination_vat.fiscal_year_start', '01-01'),
                 'auto_apply_destination'  => config('larabill.destination_vat.auto_apply_destination', true),
                 'apply_destination_iva'   => false,
-                'current_eu_sales_amount' => 0,
+                'current_eu_sales_amount' => 0.0,
                 'threshold_exceeded'      => false,
             ]
         );
@@ -268,13 +215,12 @@ class CompanyFiscalConfig extends Model
     /**
      * Update EU sales amount and check threshold.
      *
-     * @param float $amount The monetary amount to add (e.g., 12.34)
+     * @param  float  $amount  The monetary amount to add (e.g., 12.34)
      */
     public function updateEuSales(float $amount): self
     {
-        // Convert amount to base 100 and add to current amount
-        $amountInBase100 = static::amountToBase100($amount);
-        $this->current_eu_sales_amount = $this->current_eu_sales_amount + $amountInBase100;
+        // Base100 cast handles conversion automatically
+        $this->current_eu_sales_amount = $this->current_eu_sales_amount + $amount;
         $this->save();
 
         $this->checkThreshold();
@@ -288,7 +234,7 @@ class CompanyFiscalConfig extends Model
     public function resetEuSales(): self
     {
         $this->update([
-            'current_eu_sales_amount' => 0,
+            'current_eu_sales_amount' => 0.0,
             'threshold_exceeded_at'   => null,
             'notification_sent'       => false,
         ]);
@@ -459,9 +405,8 @@ class CompanyFiscalConfig extends Model
      */
     public function getRemainingThresholdAmount(): float
     {
-        $remaining = max(0, $this->eu_sales_threshold - $this->current_eu_sales_amount);
-
-        return static::base100ToAmount($remaining);
+        // Base100 cast handles conversion automatically - both values are already floats
+        return max(0.0, $this->eu_sales_threshold - $this->current_eu_sales_amount);
     }
 
     /**
@@ -491,10 +436,10 @@ class CompanyFiscalConfig extends Model
     /**
      * Get default threshold from config.
      */
-    public static function getDefaultThreshold(): int
+    public static function getDefaultThreshold(): float
     {
-        // Human amount; mutator converts where needed
-        return (int) config('larabill.destination_vat.default_threshold', 10000);
+        // Returns decimal amount (Base100 cast will handle DB conversion)
+        return (float) config('larabill.destination_vat.default_threshold', 10000.0);
     }
 
     /**
@@ -512,7 +457,6 @@ class CompanyFiscalConfig extends Model
     {
         return config('larabill.destination_vat.fiscal_year_start', '01-01');
     }
-
 
     /**
      * Enable OSS registration.

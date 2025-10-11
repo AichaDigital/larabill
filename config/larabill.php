@@ -79,4 +79,12 @@ return [
         'enable_php'          => true,
         'enable_remote'       => true,
     ],
+
+    // Destination VAT settings
+    'destination_vat' => [
+        'default_threshold'      => 10000.0, // €10,000.00 (Base100 uses floats)
+        'currency'               => 'EUR',
+        'fiscal_year_start'      => '01-01', // MM-DD format
+        'auto_apply_destination' => true,
+    ],
 ];

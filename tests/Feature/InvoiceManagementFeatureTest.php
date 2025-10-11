@@ -12,9 +12,9 @@ it('can list and filter invoices', function () {
         'type'         => 'invoice',
         'status'       => 'draft',
         'user_id'      => 1,
-        'subtotal'     => Invoice::amountToBase100(100.0),
-        'tax_amount'   => Invoice::amountToBase100(21.0),
-        'total'        => Invoice::amountToBase100(121.0),
+        'subtotal'     => 100.0,
+        'tax_amount'   => 21.0,
+        'total'        => 121.0,
         'is_immutable' => false,
     ]);
 
@@ -23,9 +23,9 @@ it('can list and filter invoices', function () {
         'type'         => 'invoice',
         'status'       => 'sent',
         'user_id'      => 1,
-        'subtotal'     => Invoice::amountToBase100(200.0),
-        'tax_amount'   => Invoice::amountToBase100(42.0),
-        'total'        => Invoice::amountToBase100(242.0),
+        'subtotal'     => 200.0,
+        'tax_amount'   => 42.0,
+        'total'        => 242.0,
         'is_immutable' => false,
     ]);
 
@@ -34,9 +34,9 @@ it('can list and filter invoices', function () {
         'type'         => 'invoice',
         'status'       => 'paid',
         'user_id'      => 1,
-        'subtotal'     => Invoice::amountToBase100(300.0),
-        'tax_amount'   => Invoice::amountToBase100(63.0),
-        'total'        => Invoice::amountToBase100(363.0),
+        'subtotal'     => 300.0,
+        'tax_amount'   => 63.0,
+        'total'        => 363.0,
         'is_immutable' => false,
     ]);
 
@@ -252,8 +252,8 @@ it('can handle invoice with multiple items and complex calculations', function (
     $totalTax      = 0;
 
     foreach ($invoice->items as $item) {
-        $subtotal  = $item->getQuantityAsFloat() * $item->getUnitPriceAsAmount();
-        $taxAmount = $subtotal                   * ($item->getTaxRateAsPercentage() / 100);
+        $subtotal  = $item->quantity             * $item->unit_price;
+        $taxAmount = $subtotal                   * ($item->tax_rate / 100);
 
         $totalSubtotal += $subtotal;
         $totalTax      += $taxAmount;
@@ -261,9 +261,9 @@ it('can handle invoice with multiple items and complex calculations', function (
 
     $expectedTotal = $totalSubtotal + $totalTax;
 
-    expect($invoice->getTotalAsAmount())->toBeFloat();
-    expect($invoice->getTotalAsAmount())->toBeGreaterThan(0);
-    expect($invoice->getTotalAsAmount())->toBeLessThan(1000);
+    expect($invoice->total)->toBeFloat();
+    expect($invoice->total)->toBeGreaterThan(0);
+    expect($invoice->total)->toBeLessThan(1000);
 });
 
 it('can handle invoice with ROI verification', function () {

@@ -16,13 +16,13 @@ it('can create Spanish tax rates with factories', function () {
     expect($spanishRates)->toHaveCount(3);
 
     expect($generalRate->tax_name)->toBe('IVA General');
-    expect($generalRate->rate)->toBe('0.2100');
+    expect($generalRate->rate)->toBe(21.0); // Base100 cast returns float
 
     expect($reducedRate->tax_name)->toBe('IVA Reducido');
-    expect($reducedRate->rate)->toBe('0.1000');
+    expect($reducedRate->rate)->toBe(10.0); // Base100 cast returns float
 
     expect($superReducedRate->tax_name)->toBe('IVA Superreducido');
-    expect($superReducedRate->rate)->toBe('0.0400');
+    expect($superReducedRate->rate)->toBe(4.0); // Base100 cast returns float
 });
 
 it('can create EU tax rates with factories', function () {
@@ -37,11 +37,11 @@ it('can create EU tax rates with factories', function () {
 
     expect($germanRate->country_code)->toBe('DE');
     expect($germanRate->tax_name)->toBe('MwSt');
-    expect($germanRate->rate)->toBe('0.1900');
+    expect($germanRate->rate)->toBe(19.0); // Base100 cast returns float
 
     expect($frenchRate->country_code)->toBe('FR');
     expect($frenchRate->tax_name)->toBe('TVA');
-    expect($frenchRate->rate)->toBe('0.2000');
+    expect($frenchRate->rate)->toBe(20.0); // Base100 cast returns float
 });
 
 it('can create special territories rates with factories', function () {
@@ -57,16 +57,16 @@ it('can create special territories rates with factories', function () {
 
     expect($canaryRate->country_code)->toBe('IC');
     expect($canaryRate->tax_name)->toBe('IGIC');
-    expect($canaryRate->rate)->toBe('0.0700');
+    expect($canaryRate->rate)->toBe(7.0); // Base100 cast returns float
     expect($canaryRate->special_conditions)->toHaveKey('exempt_from_spanish_vat');
 
     expect($ceutaRate->country_code)->toBe('CE');
     expect($ceutaRate->tax_name)->toBe('IPSI');
-    expect($ceutaRate->rate)->toBe('0.0000');
+    expect($ceutaRate->rate)->toBe(0.0); // Base100 cast returns float
     expect($ceutaRate->special_conditions)->toHaveKey('exempt_from_spanish_vat');
 
     expect($melillaRate->country_code)->toBe('ML');
     expect($melillaRate->tax_name)->toBe('IPSI');
-    expect($melillaRate->rate)->toBe('0.0000');
+    expect($melillaRate->rate)->toBe(0.0); // Base100 cast returns float
     expect($melillaRate->special_conditions)->toHaveKey('exempt_from_spanish_vat');
 });

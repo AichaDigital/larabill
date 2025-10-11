@@ -19,9 +19,9 @@ it('can create an invoice', function () {
     expect($invoice->type)->toBe('invoice');
     expect($invoice->status)->toBe('draft');
     expect($invoice->user_id)->toBe(1);
-    expect($invoice->subtotal)->toBe(100);
-    expect($invoice->tax_amount)->toBe(21);
-    expect($invoice->total)->toBe(121);
+    expect($invoice->subtotal)->toBe(100.0); // Base100 cast returns float
+    expect($invoice->tax_amount)->toBe(21.0); // Base100 cast returns float
+    expect($invoice->total)->toBe(121.0); // Base100 cast returns float
 });
 
 it('can make an invoice immutable', function () {

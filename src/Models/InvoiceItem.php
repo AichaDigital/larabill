@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
+use AichaDigital\Lara100\Casts\Base100;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -42,174 +43,47 @@ class InvoiceItem extends Model
     /**
      * Casts for attributes.
      *
-     * Uses integers in base 100 for monetary values and quantities
-     * Example: €12.34 is stored as 1234, 1.5 quantity as 150
+     * Uses Base100 cast from lara100 package for monetary values, quantities and percentages
+     * Automatically handles conversion between decimals and base-100 integers
+     * Example: €12.34 ↔ 1234, 1.5 ↔ 150, 21.50% ↔ 2150
      */
     public function casts(): array
     {
         return [
-            'quantity'   => 'integer', // Base 100: 1.5 => 150
-            'unit_price' => 'integer', // Base 100: €12.34 => 1234
-            'subtotal'   => 'integer', // Base 100: €12.34 => 1234
-            'tax_rate'   => 'integer', // Base 100: 21.50% => 2150
-            'tax_amount' => 'integer', // Base 100: €12.34 => 1234
-            'total'      => 'integer', // Base 100: €12.34 => 1234
+            'quantity'   => Base100::class, // 1.5 ↔ 150
+            'unit_price' => Base100::class, // €12.34 ↔ 1234
+            'subtotal'   => Base100::class, // €12.34 ↔ 1234
+            'tax_rate'   => Base100::class, // 21.50% ↔ 2150
+            'tax_amount' => Base100::class, // €12.34 ↔ 1234
+            'total'      => Base100::class, // €12.34 ↔ 1234
         ];
     }
 
     /**
-     * Convert monetary amount to base 100 integer.
-     */
-    public static function amountToBase100(float $amount): int
-    {
-        return (int) ($amount * 100);
-    }
-
-    /**
-     * Convert base 100 integer to monetary amount.
-     */
-    public static function base100ToAmount(int $base100): float
-    {
-        return $base100 / 100.0;
-    }
-
-    /**
-     * Convert percentage to base 100 integer.
-     */
-    public static function percentageToBase100(float $percentage): int
-    {
-        return (int) ($percentage * 100);
-    }
-
-    /**
-     * Convert base 100 integer to percentage.
-     */
-    public static function base100ToPercentage(int $base100): float
-    {
-        return $base100 / 100.0;
-    }
-
-    /**
-     * Convert quantity to base 100 integer.
-     */
-    public static function quantityToBase100(float $quantity): int
-    {
-        return (int) ($quantity * 100);
-    }
-
-    /**
-     * Convert base 100 integer to quantity.
-     */
-    public static function base100ToQuantity(int $base100): float
-    {
-        return $base100 / 100.0;
-    }
-
-    // Getters for monetary amounts
-    public function getQuantityAsFloat(): float
-    {
-        return static::base100ToQuantity($this->getRawOriginal('quantity'));
-    }
-
-    public function getUnitPriceAsAmount(): float
-    {
-        return static::base100ToAmount($this->getRawOriginal('unit_price'));
-    }
-
-    public function getSubtotalAsAmount(): float
-    {
-        return static::base100ToAmount($this->getRawOriginal('subtotal'));
-    }
-
-    public function getTaxRateAsPercentage(): float
-    {
-        return static::base100ToPercentage($this->getRawOriginal('tax_rate'));
-    }
-
-    public function getTaxAmountAsAmount(): float
-    {
-        return static::base100ToAmount($this->getRawOriginal('tax_amount'));
-    }
-
-    public function getTotalAsAmount(): float
-    {
-        return static::base100ToAmount($this->getRawOriginal('total'));
-    }
-
-    // Setters from monetary amounts
-    public function setQuantityFromFloat(float $quantity): self
-    {
-        $this->update(['quantity' => static::quantityToBase100($quantity)]);
-
-        return $this;
-    }
-
-    public function setUnitPriceFromAmount(float $amount): self
-    {
-        $this->update(['unit_price' => static::amountToBase100($amount)]);
-
-        return $this;
-    }
-
-    public function setSubtotalFromAmount(float $amount): self
-    {
-        $this->update(['subtotal' => static::amountToBase100($amount)]);
-
-        return $this;
-    }
-
-    public function setTaxRateFromPercentage(float $percentage): self
-    {
-        $this->update(['tax_rate' => static::percentageToBase100($percentage)]);
-
-        return $this;
-    }
-
-    public function setTaxAmountFromAmount(float $amount): self
-    {
-        $this->update(['tax_amount' => static::amountToBase100($amount)]);
-
-        return $this;
-    }
-
-    public function setTotalFromAmount(float $amount): self
-    {
-        $this->update(['total' => static::amountToBase100($amount)]);
-
-        return $this;
-    }
-
-    /**
      * Calculate subtotal from quantity and unit price.
+     * Base100 cast handles conversion automatically.
      */
-    public function calculateSubtotal(): int
+    public function calculateSubtotal(): float
     {
-        $quantity  = (int) $this->getAttribute('quantity');
-        $unitPrice = (int) $this->getAttribute('unit_price');
-
-        return (int) (($quantity * $unitPrice) / 100);
+        return $this->quantity * $this->unit_price;
     }
 
     /**
      * Calculate tax amount from subtotal and tax rate.
+     * Base100 cast handles conversion automatically.
      */
-    public function calculateTaxAmount(): int
+    public function calculateTaxAmount(): float
     {
-        $subtotal = (int) $this->getAttribute('subtotal');
-        $taxRate  = (int) $this->getAttribute('tax_rate');
-
-        return (int) (($subtotal * $taxRate) / 10000); // Divide by 10000 because both are base 100
+        return round($this->subtotal * ($this->tax_rate / 100), 2);
     }
 
     /**
      * Calculate total from subtotal and tax amount.
+     * Base100 cast handles conversion automatically.
      */
-    public function calculateTotal(): int
+    public function calculateTotal(): float
     {
-        $subtotal  = (int) $this->getAttribute('subtotal');
-        $taxAmount = (int) $this->getAttribute('tax_amount');
-
-        return $subtotal + $taxAmount;
+        return $this->subtotal + $this->tax_amount;
     }
 
     /**
@@ -223,53 +97,5 @@ class InvoiceItem extends Model
 
         // @phpstan-ignore-next-line return.type,argument.templateType
         return $this->belongsTo($invoiceModel);
-    }
-
-    /**
-     * Accessor for quantity to return as formatted string.
-     */
-    public function getQuantityAttribute(mixed $value): string
-    {
-        return number_format(static::base100ToQuantity((int) $value), 2, '.', '');
-    }
-
-    /**
-     * Accessor for unit_price to return as formatted string.
-     */
-    public function getUnitPriceAttribute(mixed $value): string
-    {
-        return number_format(static::base100ToAmount((int) $value), 2, '.', '');
-    }
-
-    /**
-     * Accessor for subtotal to return as formatted string.
-     */
-    public function getSubtotalAttribute(mixed $value): string
-    {
-        return number_format(static::base100ToAmount((int) $value), 2, '.', '');
-    }
-
-    /**
-     * Accessor for tax_rate to return as formatted string.
-     */
-    public function getTaxRateAttribute(mixed $value): string
-    {
-        return number_format(static::base100ToPercentage((int) $value), 4, '.', '');
-    }
-
-    /**
-     * Accessor for tax_amount to return as formatted string.
-     */
-    public function getTaxAmountAttribute(mixed $value): string
-    {
-        return number_format(static::base100ToAmount((int) $value), 2, '.', '');
-    }
-
-    /**
-     * Accessor for total to return as formatted string.
-     */
-    public function getTotalAttribute(mixed $value): string
-    {
-        return number_format(static::base100ToAmount((int) $value), 2, '.', '');
     }
 }

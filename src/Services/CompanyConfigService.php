@@ -138,7 +138,7 @@ class CompanyConfigService
 
         // Get or create the configuration first
         $config = $this->getOrCreateCompanyConfig($companyId, $fiscalYear);
-        $config->update(['eu_sales_threshold' => CompanyFiscalConfig::amountToBase100((float) $threshold)]);
+        $config->update(['eu_sales_threshold' => (float) $threshold]);
 
         // Clear cache after update
         $this->clearConfigCache();
@@ -156,9 +156,9 @@ class CompanyConfigService
             throw new \Exception("Company configuration not found for {$companyId} in fiscal year {$fiscalYear}");
         }
 
-        $currentAmount = $config->current_eu_sales_amount;
-        $amountInBase100 = CompanyFiscalConfig::amountToBase100((float) $amount);
-        $newAmount = $currentAmount + $amountInBase100;
+        $currentAmount   = $config->current_eu_sales_amount;
+        $amountInBase100 = (float) $amount;
+        $newAmount       = $currentAmount + $amountInBase100;
 
         return $this->updateCompanyConfig($companyId, $fiscalYear, ['current_eu_sales_amount' => $newAmount]);
     }
@@ -173,7 +173,7 @@ class CompanyConfigService
 
         // Get or create the configuration first
         $config = $this->getOrCreateCompanyConfig($companyId, $fiscalYear);
-        $config->update(['current_eu_sales_amount' => CompanyFiscalConfig::amountToBase100((float) $amount)]);
+        $config->update(['current_eu_sales_amount' => (float) $amount]);
 
         // Check threshold after updating amount
         $config->fresh()->checkThreshold();
@@ -388,8 +388,8 @@ class CompanyConfigService
             'is_oss'                  => false,
             'is_roi'                  => false,
             'apply_destination_iva'   => false,
-            'eu_sales_threshold'      => 10000,
-            'current_eu_sales_amount' => 0,
+            'eu_sales_threshold'      => 10000.0, // Base100 expects decimal
+            'current_eu_sales_amount' => 0.0, // Base100 expects decimal
             'threshold_exceeded'      => false,
             'auto_apply_destination'  => true,
             'notification_sent'       => false,
@@ -554,12 +554,12 @@ class CompanyConfigService
     {
         $merged = array_merge($this->getDefaultConfig(), $data);
 
-        // Convert monetary values to integers (factor 100)
+        // Base100 cast handles conversion automatically - keep values as floats
         if (isset($merged['eu_sales_threshold'])) {
-            $merged['eu_sales_threshold'] = (int) $merged['eu_sales_threshold'];
+            $merged['eu_sales_threshold'] = (float) $merged['eu_sales_threshold'];
         }
         if (isset($merged['current_eu_sales_amount'])) {
-            $merged['current_eu_sales_amount'] = (int) $merged['current_eu_sales_amount'];
+            $merged['current_eu_sales_amount'] = (float) $merged['current_eu_sales_amount'];
         }
 
         return $merged;
