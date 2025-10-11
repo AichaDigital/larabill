@@ -20,7 +20,7 @@ it('can create company fiscal configuration', function () {
 
     $config = $service->createCompanyConfig('company-123', 2024, [
         'apply_destination_iva' => true,
-        'eu_sales_threshold'    => 1500000, // €15,000.00 in base 100
+        'eu_sales_threshold'    => 15000.0, // Base100 cast: €15,000.00
         'currency'              => 'USD',
         'fiscal_year_start'     => '04-01',
     ]);
@@ -29,7 +29,7 @@ it('can create company fiscal configuration', function () {
     expect($config->company_id)->toBe('company-123');
     expect($config->fiscal_year)->toBe(2024);
     expect($config->apply_destination_iva)->toBeTrue();
-    expect($config->eu_sales_threshold)->toBe(1500000); // €15,000.00 in base 100
+    expect($config->eu_sales_threshold)->toBe(15000.0); // €15,000.00 in base 100
     expect($config->currency)->toBe('USD');
     expect($config->fiscal_year_start)->toBe('04-01');
 });
@@ -41,7 +41,7 @@ it('can get company fiscal configuration', function () {
         'company_id'            => 'company-123',
         'fiscal_year'           => 2024,
         'apply_destination_iva' => true,
-        'eu_sales_threshold'    => 1000000, // €10,000.00 in base 100
+        'eu_sales_threshold'    => 10000.0, // Base100 cast: €10,000.00
     ]);
 
     $config = $service->getCompanyConfig('company-123', 2024);
@@ -75,17 +75,17 @@ it('can update company fiscal configuration', function () {
         'company_id'            => 'company-123',
         'fiscal_year'           => 2024,
         'apply_destination_iva' => false,
-        'eu_sales_threshold'    => 1000000, // €10,000.00 in base 100
+        'eu_sales_threshold'    => 10000.0, // Base100 cast: €10,000.00
     ]);
 
     $updated = $service->updateCompanyConfig('company-123', 2024, [
         'apply_destination_iva' => true,
-        'eu_sales_threshold'    => 1500000, // €15,000.00 in base 100
+        'eu_sales_threshold'    => 15000.0, // Base100 cast: €15,000.00
         'currency'              => 'USD',
     ]);
 
     expect($updated->apply_destination_iva)->toBeTrue();
-    expect($updated->eu_sales_threshold)->toBe(1500000); // €15,000.00 in base 100
+    expect($updated->eu_sales_threshold)->toBe(15000.0); // €15,000.00 in base 100
     expect($updated->currency)->toBe('USD');
 });
 
@@ -101,7 +101,7 @@ it('can delete company fiscal configuration', function () {
     $deleted = $service->deleteCompanyConfig('company-123', 2024);
 
     expect($deleted)->toBeTrue();
-    expect(CompanyFiscalConfig::where('company_id', 'company-123')->count())->toBe(0);
+    expect(CompanyFiscalConfig::where('company_id', 'company-123')->count())->toBe(0); // count() returns int, not float
 });
 
 it('can check if company configuration exists', function () {
@@ -201,7 +201,7 @@ it('can get company configurations by threshold status', function () {
     CompanyFiscalConfig::create([
         'company_id'              => 'company-123',
         'fiscal_year'             => 2024,
-        'eu_sales_threshold'      => 1000000, // €10,000.00 in base 100
+        'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
         'current_eu_sales_amount' => 12000.00,
         'threshold_exceeded'      => true,
     ]);
@@ -209,7 +209,7 @@ it('can get company configurations by threshold status', function () {
     CompanyFiscalConfig::create([
         'company_id'              => 'company-456',
         'fiscal_year'             => 2024,
-        'eu_sales_threshold'      => 1000000, // €10,000.00 in base 100
+        'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
         'current_eu_sales_amount' => 5000.00,
         'threshold_exceeded'      => false,
     ]);
@@ -229,7 +229,7 @@ it('can get company configurations needing notification', function () {
     CompanyFiscalConfig::create([
         'company_id'              => 'company-123',
         'fiscal_year'             => 2024,
-        'eu_sales_threshold'      => 1000000, // €10,000.00 in base 100
+        'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
         'current_eu_sales_amount' => 12000.00,
         'threshold_exceeded'      => true,
         'notification_sent'       => false,
@@ -238,7 +238,7 @@ it('can get company configurations needing notification', function () {
     CompanyFiscalConfig::create([
         'company_id'              => 'company-456',
         'fiscal_year'             => 2024,
-        'eu_sales_threshold'      => 1000000, // €10,000.00 in base 100
+        'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
         'current_eu_sales_amount' => 12000.00,
         'threshold_exceeded'      => true,
         'notification_sent'       => true,
@@ -284,12 +284,12 @@ it('can update EU sales threshold for company', function () {
     $config = CompanyFiscalConfig::create([
         'company_id'         => 'company-123',
         'fiscal_year'        => 2024,
-        'eu_sales_threshold' => 1000000, // €10,000.00 in base 100
+        'eu_sales_threshold' => 10000.0, // Base100 cast: €10,000.00
     ]);
 
-    $updated = $service->updateEuSalesThreshold('company-123', 2024, 1500000); // €15,000.00 in base 100
+    $updated = $service->updateEuSalesThreshold('company-123', 2024, 15000.0); // €15,000.00
 
-    expect($updated->eu_sales_threshold)->toBe(1500000); // €15,000.00 in base 100
+    expect($updated->eu_sales_threshold)->toBe(15000.0); // €15,000.00 (Base100 returns float)
 });
 
 it('can update EU sales amount for company', function () {
@@ -298,12 +298,12 @@ it('can update EU sales amount for company', function () {
     $config = CompanyFiscalConfig::create([
         'company_id'              => 'company-123',
         'fiscal_year'             => 2024,
-        'current_eu_sales_amount' => 500000, // €5,000.00 in base 100
+        'current_eu_sales_amount' => 5000.0, // Base100 cast: €5,000.00
     ]);
 
     $updated = $service->updateEuSalesAmount('company-123', 2024, 2000.00); // €2,000.00
 
-    expect($updated->current_eu_sales_amount)->toBe(700000); // €7,000.00 in base 100
+    expect($updated->current_eu_sales_amount)->toBe(7000.0); // €7,000.00 (Base100 returns float)
 });
 
 it('can reset EU sales for company', function () {
@@ -319,7 +319,7 @@ it('can reset EU sales for company', function () {
 
     $reset = $service->resetEuSales('company-123', 2024);
 
-    expect($reset->current_eu_sales_amount)->toBe(0);
+    expect($reset->current_eu_sales_amount)->toBe(0.0);
     expect($reset->threshold_exceeded)->toBeFalse();
     expect($reset->notification_sent)->toBeFalse();
 });
@@ -345,8 +345,8 @@ it('can get company configuration statistics', function () {
         'company_id'              => 'company-123',
         'fiscal_year'             => 2024,
         'apply_destination_iva'   => true,
-        'eu_sales_threshold'      => 1000000, // €10,000.00 in base 100
-        'current_eu_sales_amount' => 1200000, // €12,000.00 in base 100
+        'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
+        'current_eu_sales_amount' => 12000.0, // Base100 cast: €12,000.00
         'threshold_exceeded'      => true,
     ]);
 
@@ -354,8 +354,8 @@ it('can get company configuration statistics', function () {
         'company_id'              => 'company-456',
         'fiscal_year'             => 2024,
         'apply_destination_iva'   => false,
-        'eu_sales_threshold'      => 1000000, // €10,000.00 in base 100
-        'current_eu_sales_amount' => 500000, // €5,000.00 in base 100
+        'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
+        'current_eu_sales_amount' => 5000.0, // Base100 cast: €5,000.00
         'threshold_exceeded'      => false,
     ]);
 
@@ -365,7 +365,7 @@ it('can get company configuration statistics', function () {
     expect($stats['total_companies'])->toBe(2);
     expect($stats['companies_using_destination_vat'])->toBe(1);
     expect($stats['companies_exceeding_threshold'])->toBe(1);
-    expect($stats['total_eu_sales'])->toBe(1700000); // €17,000.00 in base 100
+    expect($stats['total_eu_sales'])->toBe(17000.0); // €17,000.00 (Base100 returns float)
     expect($stats['average_threshold_percentage'])->toBe(85.0);
 });
 
@@ -374,7 +374,7 @@ it('can validate company configuration data', function () {
 
     $validData = [
         'apply_destination_iva' => true,
-        'eu_sales_threshold'    => 1000000, // €10,000.00 in base 100
+        'eu_sales_threshold'    => 10000.0, // Base100 cast: €10,000.00
         'currency'              => 'EUR',
         'fiscal_year_start'     => '01-01',
     ];
@@ -397,11 +397,11 @@ it('can get default company configuration', function () {
 
     expect($defaults)->toBeArray();
     expect($defaults['apply_destination_iva'])->toBeFalse();
-    expect($defaults['eu_sales_threshold'])->toBe(10000);
+    expect($defaults['eu_sales_threshold'])->toBe(10000.0); // Base100 uses floats
     expect($defaults['currency'])->toBe('EUR');
     expect($defaults['fiscal_year_start'])->toBe('01-01');
     expect($defaults['auto_apply_destination'])->toBeTrue();
-    expect($defaults['current_eu_sales_amount'])->toBe(0);
+    expect($defaults['current_eu_sales_amount'])->toBe(0.0);
 });
 
 it('can merge company configuration with defaults', function () {
@@ -409,14 +409,14 @@ it('can merge company configuration with defaults', function () {
 
     $userData = [
         'apply_destination_iva' => true,
-        'eu_sales_threshold'    => 1500000, // €15,000.00 in base 100
+        'eu_sales_threshold'    => 15000.0, // Base100 cast: €15,000.00
     ];
 
     $merged = $service->mergeWithDefaults($userData);
 
     expect($merged)->toBeArray();
     expect($merged['apply_destination_iva'])->toBeTrue();
-    expect($merged['eu_sales_threshold'])->toBe(1500000); // €15,000.00 in base 100
+    expect($merged['eu_sales_threshold'])->toBe(15000.0); // €15,000.00 in base 100
     expect($merged['currency'])->toBe('EUR'); // From defaults
     expect($merged['fiscal_year_start'])->toBe('01-01'); // From defaults
     expect($merged['auto_apply_destination'])->toBeTrue(); // From defaults
@@ -436,7 +436,7 @@ it('can get company configuration by custom field mapping', function () {
         'company_id'            => 'company-123',
         'fiscal_year'           => 2024,
         'apply_destination_iva' => true,
-        'eu_sales_threshold'    => 1000000, // €10,000.00 in base 100
+        'eu_sales_threshold'    => 10000.0, // Base100 cast: €10,000.00
     ]);
 
     $config = $service->getCompanyConfigByMapping('company-123', 2024);
@@ -458,14 +458,14 @@ it('can create company configuration with custom field mapping', function () {
 
     $config = $service->createCompanyConfigWithMapping('company-456', 2024, [
         'apply_destination_iva' => true,
-        'eu_sales_threshold'    => 1500000, // €15,000.00 in base 100
+        'eu_sales_threshold'    => 15000.0, // Base100 cast: €15,000.00
     ]);
 
     expect($config)->toBeInstanceOf(CompanyFiscalConfig::class);
     expect($config->company_id)->toBe('company-456');
     expect($config->fiscal_year)->toBe(2024);
     expect($config->apply_destination_iva)->toBeTrue();
-    expect($config->eu_sales_threshold)->toBe(1500000); // €15,000.00 in base 100
+    expect($config->eu_sales_threshold)->toBe(15000.0); // €15,000.00 in base 100
 });
 
 it('can get service configuration', function () {

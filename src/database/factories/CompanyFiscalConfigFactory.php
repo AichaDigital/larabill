@@ -134,7 +134,7 @@ class CompanyFiscalConfigFactory extends Factory
         return $this->state(function (array $attributes) use ($year) {
             return [
                 'fiscal_year'             => $year,
-                'current_eu_sales_amount' => 0, // Reset for new year
+                'current_eu_sales_amount' => 0.0, // Reset for new year
                 'threshold_exceeded_at'   => null,
                 'notification_sent'       => false,
             ];

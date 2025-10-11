@@ -26,7 +26,7 @@ it('can create a basic invoice', function () {
 
     expect($invoice)->toBeInstanceOf(Invoice::class);
     expect($invoice->number)->toStartWith('FAC-');
-    expect($invoice->getTotalAsAmount())->toBe(121.0); // 100 + 21% VAT
+    expect($invoice->total)->toBe(121.0); // 100 + 21% VAT
     expect($invoice->is_immutable)->toBeFalse();
 });
 
@@ -299,14 +299,14 @@ it('can create invoice with multiple items', function () {
     // Check first item
     $item1 = $invoice->items->first();
     expect($item1->description)->toBe('Item 1');
-    expect($item1->getQuantityAsFloat())->toBe(2.0);
-    expect($item1->getUnitPriceAsAmount())->toBe(50.0);
+    expect($item1->quantity)->toBe(2.0);
+    expect($item1->unit_price)->toBe(50.0);
 
     // Check second item
     $item2 = $invoice->items->last();
     expect($item2->description)->toBe('Item 2');
-    expect($item2->getQuantityAsFloat())->toBe(1.0);
-    expect($item2->getUnitPriceAsAmount())->toBe(100.0);
+    expect($item2->quantity)->toBe(1.0);
+    expect($item2->unit_price)->toBe(100.0);
 });
 
 it('can create invoice with custom template', function () {

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
+use AichaDigital\Lara100\Casts\Base100;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
@@ -41,6 +42,7 @@ use Illuminate\Support\Carbon;
 class Invoice extends Model
 {
     use HasFactory;
+
     /**
      * The attributes that are mass assignable.
      */
@@ -69,8 +71,9 @@ class Invoice extends Model
     /**
      * Casts for attributes.
      *
-     * Uses integers in base 100 for monetary values (amounts, prices)
-     * Example: €12.34 is stored as 1234, €1.00 as 100
+     * Uses Base100 cast from lara100 package for monetary values
+     * Automatically handles conversion between decimals and base-100 integers
+     * Example: €12.34 ↔ 1234 (stored as integer, accessed as decimal)
      */
     public function casts(): array
     {
@@ -79,90 +82,14 @@ class Invoice extends Model
             'immutable_at'     => 'datetime',
             'paid_at'          => 'datetime',
             'due_date'         => 'date',
-            'subtotal'         => 'integer', // Base 100: €12.34 = 1234
-            'tax_amount'       => 'integer', // Base 100: €12.34 = 1234
-            'total'            => 'integer', // Base 100: €12.34 = 1234
+            'subtotal'         => Base100::class, // €12.34 ↔ 1234
+            'tax_amount'       => Base100::class, // €12.34 ↔ 1234
+            'total'            => Base100::class, // €12.34 ↔ 1234
             'fiscal_data'      => 'array',
             'vat_verification' => 'array',
             'customer_data'    => 'array',
             'is_roi_taxed'     => 'boolean',
         ];
-    }
-
-    /**
-     * Convert monetary amount to base 100 integer.
-     *
-     * @param  float  $amount  The monetary amount (e.g., 12.34)
-     * @return int The base 100 integer (e.g., 1234)
-     */
-    public static function amountToBase100(float $amount): int
-    {
-        return (int) ($amount * 100);
-    }
-
-    /**
-     * Convert base 100 integer to monetary amount.
-     *
-     * @param  int  $base100  The base 100 integer (e.g., 1234)
-     * @return float The monetary amount (e.g., 12.34)
-     */
-    public static function base100ToAmount(int $base100): float
-    {
-        return $base100 / 100.0;
-    }
-
-    /**
-     * Get subtotal as monetary amount.
-     */
-    public function getSubtotalAsAmount(): float
-    {
-        return static::base100ToAmount($this->subtotal);
-    }
-
-    /**
-     * Get tax amount as monetary amount.
-     */
-    public function getTaxAmountAsAmount(): float
-    {
-        return static::base100ToAmount($this->tax_amount);
-    }
-
-    /**
-     * Get total as monetary amount.
-     */
-    public function getTotalAsAmount(): float
-    {
-        return static::base100ToAmount($this->total);
-    }
-
-    /**
-     * Set subtotal from monetary amount.
-     */
-    public function setSubtotalFromAmount(float $amount): self
-    {
-        $this->update(['subtotal' => static::amountToBase100($amount)]);
-
-        return $this;
-    }
-
-    /**
-     * Set tax amount from monetary amount.
-     */
-    public function setTaxAmountFromAmount(float $amount): self
-    {
-        $this->update(['tax_amount' => static::amountToBase100($amount)]);
-
-        return $this;
-    }
-
-    /**
-     * Set total from monetary amount.
-     */
-    public function setTotalFromAmount(float $amount): self
-    {
-        $this->update(['total' => static::amountToBase100($amount)]);
-
-        return $this;
     }
 
     /**

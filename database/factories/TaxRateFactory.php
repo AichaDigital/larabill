@@ -31,7 +31,7 @@ class TaxRateFactory extends Factory
             'country_name'       => 'Spain',
             'tax_name'           => 'IVA General',
             'tax_type'           => 'standard',
-            'rate'               => TaxRate::percentageToBase100(21.0), // 2100
+            'rate'               => 21.0, // Base100 cast handles conversion automatically
             'is_active'          => true,
             'applies_to'         => 'general_goods_services',
             'special_conditions' => null,
@@ -57,7 +57,7 @@ class TaxRateFactory extends Factory
         return $this->spanish()->state(fn (array $attributes) => [
             'tax_name'   => 'IVA General',
             'tax_type'   => 'standard',
-            'rate'       => TaxRate::percentageToBase100(21.0),
+            'rate'       => 21.0, // Base100 cast handles conversion
             'applies_to' => 'general_goods_services',
         ]);
     }
@@ -70,7 +70,7 @@ class TaxRateFactory extends Factory
         return $this->spanish()->state(fn (array $attributes) => [
             'tax_name'   => 'IVA Reducido',
             'tax_type'   => 'reduced',
-            'rate'       => TaxRate::percentageToBase100(10.0),
+            'rate'       => 10.0, // Base100 cast handles conversion
             'applies_to' => 'reduced_goods_services',
         ]);
     }
@@ -83,7 +83,7 @@ class TaxRateFactory extends Factory
         return $this->spanish()->state(fn (array $attributes) => [
             'tax_name'   => 'IVA Superreducido',
             'tax_type'   => 'super_reduced',
-            'rate'       => TaxRate::percentageToBase100(4.0),
+            'rate'       => 4.0, // Base100 cast handles conversion
             'applies_to' => 'super_reduced_goods_services',
         ]);
     }
@@ -98,7 +98,7 @@ class TaxRateFactory extends Factory
             'country_name' => 'Germany',
             'tax_name'     => 'MwSt',
             'tax_type'     => 'standard',
-            'rate'         => TaxRate::percentageToBase100(19.0),
+            'rate'         => 19.0, // Base100 cast handles conversion
             'applies_to'   => 'general_goods_services',
         ]);
     }
@@ -113,7 +113,7 @@ class TaxRateFactory extends Factory
             'country_name' => 'France',
             'tax_name'     => 'TVA',
             'tax_type'     => 'standard',
-            'rate'         => TaxRate::percentageToBase100(20.0),
+            'rate'         => 20.0, // Base100 cast handles conversion
             'applies_to'   => 'general_goods_services',
         ]);
     }
@@ -128,7 +128,7 @@ class TaxRateFactory extends Factory
             'country_name'       => 'Canary Islands',
             'tax_name'           => 'IGIC',
             'tax_type'           => 'standard',
-            'rate'               => TaxRate::percentageToBase100(7.0),
+            'rate'               => 7.0, // Base100 cast handles conversion
             'applies_to'         => 'general_goods_services',
             'special_conditions' => ['exempt_from_spanish_vat' => true],
         ]);
@@ -144,7 +144,7 @@ class TaxRateFactory extends Factory
             'country_name'       => 'Ceuta',
             'tax_name'           => 'IPSI',
             'tax_type'           => 'special',
-            'rate'               => TaxRate::percentageToBase100(0.0),
+            'rate'               => 0.0, // Base100 cast handles conversion
             'applies_to'         => 'special_territory',
             'special_conditions' => ['exempt_from_spanish_vat' => true],
         ]);
@@ -160,7 +160,7 @@ class TaxRateFactory extends Factory
             'country_name'       => 'Melilla',
             'tax_name'           => 'IPSI',
             'tax_type'           => 'special',
-            'rate'               => TaxRate::percentageToBase100(0.0),
+            'rate'               => 0.0, // Base100 cast handles conversion
             'applies_to'         => 'special_territory',
             'special_conditions' => ['exempt_from_spanish_vat' => true],
         ]);

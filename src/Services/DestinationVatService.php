@@ -284,7 +284,7 @@ class DestinationVatService
             // Sum using accessors to avoid base-100 inflation
             $totalEuSales = 0.0;
             foreach ($configs as $cfg) {
-                $totalEuSales += $cfg->getCurrentEuSalesAmountAsAmount();
+                $totalEuSales += $cfg->current_eu_sales_amount;
             }
 
             // Calculate average threshold percentage
@@ -292,9 +292,9 @@ class DestinationVatService
             $count           = 0;
             foreach ($configs as $config) {
                 if ($config->eu_sales_threshold > 0) {
-                    $currentAmount = $config->getCurrentEuSalesAmountAsAmount();
-                    $thresholdAmount = $config->getEuSalesThresholdAsAmount();
-                    $percentage = ($currentAmount / $thresholdAmount) * 100;
+                    $currentAmount   = $config->current_eu_sales_amount;
+                    $thresholdAmount = $config->eu_sales_threshold;
+                    $percentage      = ($currentAmount / $thresholdAmount) * 100;
                     $totalPercentage += $percentage;
                     $count++;
                 }
@@ -409,9 +409,8 @@ class DestinationVatService
     {
         $config = CompanyFiscalConfig::getOrCreateForCompany($companyId, $fiscalYear);
 
-        // Convert amount to base 100 and add to current amount
-        $amountInBase100 = CompanyFiscalConfig::amountToBase100($amount);
-        $config->current_eu_sales_amount = $config->current_eu_sales_amount + $amountInBase100;
+        // Base100 cast handles conversion automatically
+        $config->current_eu_sales_amount = $config->current_eu_sales_amount + $amount;
 
         if ($config->current_eu_sales_amount >= $config->eu_sales_threshold) {
             $config->apply_destination_iva = true;
@@ -442,8 +441,8 @@ class DestinationVatService
     public function getEuSalesThresholdStatus(string $companyId, int $fiscalYear): array
     {
         $config    = CompanyFiscalConfig::getOrCreateForCompany($companyId, $fiscalYear);
-        $threshold = $config->getEuSalesThresholdAsAmount();
-        $current   = $config->getCurrentEuSalesAmountAsAmount();
+        $threshold = $config->eu_sales_threshold;
+        $current   = $config->current_eu_sales_amount;
 
         $remaining = max(0, $threshold - $current);
 

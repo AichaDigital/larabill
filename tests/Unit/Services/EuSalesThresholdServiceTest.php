@@ -126,8 +126,8 @@ it('can get threshold status', function () {
 
     // Assert
     expect($result)->toBe([
-        'current_amount'     => 8000,
-        'threshold'          => 10000,
+        'current_amount'     => 8000.0, // Base100 returns float
+        'threshold'          => 10000.0, // Base100 returns float
         'percentage'         => 80.0,
         'exceeded'           => false,
         'needs_notification' => false,

@@ -17,12 +17,12 @@ return new class extends Migration
             $table->id();
             $table->foreignId('invoice_id')->constrained()->onDelete('cascade');
             $table->string('description');
-            $table->decimal('quantity', 10, 2)->default(1);
-            $table->decimal('unit_price', 10, 2);
-            $table->decimal('subtotal', 10, 2);
-            $table->decimal('tax_rate', 5, 4)->default(0);
-            $table->decimal('tax_amount', 10, 2)->default(0);
-            $table->decimal('total', 10, 2);
+            $table->integer('quantity')->default(100)->comment('Base-100 integer (e.g., 1.5 => 150, 1.0 => 100)');
+            $table->integer('unit_price')->comment('Base-100 integer (e.g., €12.34 => 1234)');
+            $table->integer('subtotal')->comment('Base-100 integer (e.g., €12.34 => 1234)');
+            $table->integer('tax_rate')->default(0)->comment('Base-100 integer (e.g., 21.50% => 2150)');
+            $table->integer('tax_amount')->default(0)->comment('Base-100 integer (e.g., €12.34 => 1234)');
+            $table->integer('total')->comment('Base-100 integer (e.g., €12.34 => 1234)');
             $table->timestamps();
 
             // Indexes

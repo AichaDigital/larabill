@@ -96,7 +96,7 @@ class CompanyConfig extends Model
             'is_oss'                  => false,
             'is_roi'                  => false,
             'eu_sales_threshold'      => static::amountToBase100(10000.0), // €10,000 default
-            'current_eu_sales_amount' => 0,
+            'current_eu_sales_amount' => 0.0,
             'threshold_exceeded'      => false,
             'fiscal_year'             => now()->year,
             'auto_apply_destination'  => true,
@@ -199,7 +199,7 @@ class CompanyConfig extends Model
     public function resetEuSales(): self
     {
         $this->update([
-            'current_eu_sales_amount' => 0,
+            'current_eu_sales_amount' => 0.0,
             'threshold_exceeded_at'   => null,
             'notification_sent'       => false,
         ]);
@@ -363,7 +363,7 @@ class CompanyConfig extends Model
     {
         $this->update([
             'fiscal_year'             => $newYear,
-            'current_eu_sales_amount' => 0,
+            'current_eu_sales_amount' => 0.0,
             'threshold_exceeded'      => false,
             'threshold_exceeded_at'   => null,
             'notification_sent'       => false,

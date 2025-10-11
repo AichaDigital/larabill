@@ -145,7 +145,7 @@ class EuSalesThreshold extends Model
         static::creating(function ($model) {
             // Set default threshold amount if not provided
             if (! $model->threshold_amount) {
-                $model->threshold_amount = config('larabill.destination_vat.default_threshold', 10000);
+                $model->threshold_amount = config('larabill.destination_vat.default_threshold', 10000.0);
             }
 
             // Set default currency if not provided
@@ -216,7 +216,7 @@ class EuSalesThreshold extends Model
                 'threshold_exceeded'   => false,
                 'notification_sent'    => false,
                 'breakdown_by_country' => [],
-                'threshold_amount'     => config('larabill.destination_vat.default_threshold', 10000),
+                'threshold_amount'     => config('larabill.destination_vat.default_threshold', 10000.0),
                 'currency'             => config('larabill.destination_vat.currency', 'EUR'),
             ]
         );

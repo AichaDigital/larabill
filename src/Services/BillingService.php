@@ -81,9 +81,9 @@ class BillingService
             'type'        => $invoiceType,
             'status'      => $invoiceData['status'] ?? 'draft',
             'user_id'     => $userId,
-            'subtotal'    => Invoice::amountToBase100($taxCalculation['amount']),
-            'tax_amount'  => Invoice::amountToBase100($taxCalculation['tax_amount']),
-            'total'       => Invoice::amountToBase100($taxCalculation['total']),
+            'subtotal'    => $taxCalculation['amount'], // Base100 cast handles conversion
+            'tax_amount'  => $taxCalculation['tax_amount'], // Base100 cast handles conversion
+            'total'       => $taxCalculation['total'], // Base100 cast handles conversion
             'fiscal_data' => [
                 'tax_rate'           => $taxCalculation['tax_rate'],
                 'tax_type'           => $taxCalculation['tax_type'],
@@ -237,12 +237,12 @@ class BillingService
         return InvoiceItem::create([
             'invoice_id'  => $invoice->id,
             'description' => $itemData['description'] ?? '',
-            'quantity'    => Invoice::amountToBase100($quantity),
-            'unit_price'  => Invoice::amountToBase100($unitPrice),
-            'subtotal'    => Invoice::amountToBase100($subtotal),
-            'tax_rate'    => Invoice::amountToBase100($taxRate),
-            'tax_amount'  => Invoice::amountToBase100($taxAmount),
-            'total'       => Invoice::amountToBase100($total),
+            'quantity'    => $quantity, // Base100 cast handles conversion
+            'unit_price'  => $unitPrice, // Base100 cast handles conversion
+            'subtotal'    => $subtotal, // Base100 cast handles conversion
+            'tax_rate'    => $taxRate, // Base100 cast handles conversion
+            'tax_amount'  => $taxAmount, // Base100 cast handles conversion
+            'total'       => $total, // Base100 cast handles conversion
         ]);
     }
 
@@ -259,9 +259,9 @@ class BillingService
         return $items->map(function (InvoiceItem $item): array {
             return [
                 'description' => $item->description,
-                'quantity'    => Invoice::base100ToAmount((int) $item->quantity),
-                'unit_price'  => Invoice::base100ToAmount((int) $item->unit_price),
-                'tax_rate'    => Invoice::base100ToAmount((int) $item->tax_rate),
+                'quantity'    => $item->quantity,    // Base100 cast already returns float
+                'unit_price'  => $item->unit_price,  // Base100 cast already returns float
+                'tax_rate'    => $item->tax_rate,    // Base100 cast already returns float
             ];
         })->toArray();
     }

@@ -10,29 +10,29 @@ it('can create an invoice item', function () {
         'type'       => 'invoice',
         'status'     => 'draft',
         'user_id'    => 1,
-        'subtotal'   => Invoice::amountToBase100(100.0),
-        'tax_amount' => Invoice::amountToBase100(21.0),
-        'total'      => Invoice::amountToBase100(121.0),
+        'subtotal'   => 100.0, // Base100 cast handles conversion
+        'tax_amount' => 21.0,
+        'total'      => 121.0,
     ]);
 
     $item = InvoiceItem::create([
         'invoice_id'  => $invoice->id,
         'description' => 'Test Service',
-        'quantity'    => Invoice::amountToBase100(1.0),
-        'unit_price'  => Invoice::amountToBase100(100.0),
-        'subtotal'    => Invoice::amountToBase100(100.0),
-        'tax_rate'    => Invoice::amountToBase100(21.0), // 21% in base-100
-        'tax_amount'  => Invoice::amountToBase100(21.0),
-        'total'       => Invoice::amountToBase100(121.0),
+        'quantity'    => 1.0, // Base100 cast handles conversion
+        'unit_price'  => 100.0,
+        'subtotal'    => 100.0,
+        'tax_rate'    => 21.0, // 21% in base-100
+        'tax_amount'  => 21.0,
+        'total'       => 121.0,
     ]);
 
     expect($item->description)->toBe('Test Service');
-    expect($item->quantity)->toBe('1.00');
-    expect($item->unit_price)->toBe('100.00');
-    expect($item->subtotal)->toBe('100.00');
-    expect($item->tax_rate)->toBe('21.0000');
-    expect($item->tax_amount)->toBe('21.00');
-    expect($item->total)->toBe('121.00');
+    expect($item->quantity)->toBe(1.0); // Base100 cast returns float
+    expect($item->unit_price)->toBe(100.0);
+    expect($item->subtotal)->toBe(100.0);
+    expect($item->tax_rate)->toBe(21.0);
+    expect($item->tax_amount)->toBe(21.0);
+    expect($item->total)->toBe(121.0);
 });
 
 it('belongs to an invoice', function () {
@@ -41,20 +41,20 @@ it('belongs to an invoice', function () {
         'type'       => 'invoice',
         'status'     => 'draft',
         'user_id'    => 1,
-        'subtotal'   => Invoice::amountToBase100(100.0),
-        'tax_amount' => Invoice::amountToBase100(21.0),
-        'total'      => Invoice::amountToBase100(121.0),
+        'subtotal'   => 100.0, // Base100 cast handles conversion
+        'tax_amount' => 21.0,
+        'total'      => 121.0,
     ]);
 
     $item = InvoiceItem::create([
         'invoice_id'  => $invoice->id,
         'description' => 'Test Service',
-        'quantity'    => Invoice::amountToBase100(1.0),
-        'unit_price'  => Invoice::amountToBase100(100.0),
-        'subtotal'    => Invoice::amountToBase100(100.0),
-        'tax_rate'    => Invoice::amountToBase100(21.0),
-        'tax_amount'  => Invoice::amountToBase100(21.0),
-        'total'       => Invoice::amountToBase100(121.0),
+        'quantity'    => 1.0, // Base100 cast handles conversion
+        'unit_price'  => 100.0,
+        'subtotal'    => 100.0,
+        'tax_rate'    => 21.0,
+        'tax_amount'  => 21.0,
+        'total'       => 121.0,
     ]);
 
     expect($item->invoice)->toBeInstanceOf(Invoice::class);

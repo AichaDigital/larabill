@@ -695,6 +695,8 @@
 - [ ] **Excluir config/** (archivos de configuración)
 - [ ] **Configurar umbral mínimo** (80% para CI/CD)
 
+## Todos sin asignación
+- Agnostico para si user_id es integer, ULID, UULID, etc.
 ---
 
 **Última actualización:** 2025-01-05  
