@@ -430,3 +430,247 @@ it('can get category statistics', function () {
     expect($stats['by_country']['ES'])->toBe(2);
     expect($stats['by_country']['FR'])->toBe(1);
 });
+
+it('can convert percentage to base 100', function () {
+    expect(VatCategory::percentageToBase100(21.00))->toBe(2100);
+    expect(VatCategory::percentageToBase100(10.50))->toBe(1050);
+    expect(VatCategory::percentageToBase100(0.00))->toBe(0);
+});
+
+it('can convert base 100 to percentage', function () {
+    expect(VatCategory::base100ToPercentage(2100))->toBe(21.00);
+    expect(VatCategory::base100ToPercentage(1050))->toBe(10.50);
+    expect(VatCategory::base100ToPercentage(0))->toBe(0.00);
+});
+
+it('can get VAT rate as percentage', function () {
+    $category = VatCategory::create([
+        'name'          => 'Test Category',
+        'country_code'  => 'ES',
+        'vat_rate'      => 21.00,
+        'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
+    ]);
+
+    expect($category->getVatRateAsPercentage())->toBe(21.00);
+});
+
+it('can set VAT rate from percentage', function () {
+    $category = VatCategory::create([
+        'name'          => 'Test Category',
+        'country_code'  => 'ES',
+        'vat_rate'      => 21.00,
+        'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
+    ]);
+
+    $updated = $category->setVatRateFromPercentage(15.50);
+
+    expect($updated->vat_rate)->toBe(1550);
+    expect($updated->getVatRateAsPercentage())->toBe(15.50);
+});
+
+it('can handle integer vat_rate assignment', function () {
+    $category = new VatCategory;
+    $category->fill([
+        'name'          => 'Test Category',
+        'country_code'  => 'ES',
+        'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
+    ]);
+
+    // Test direct integer assignment
+    $category->vat_rate = 2100;
+
+    expect($category->vat_rate)->toBe(2100);
+});
+
+it('can get categories by country', function () {
+    VatCategory::create([
+        'name'          => 'ES Standard',
+        'country_code'  => 'ES',
+        'vat_rate'      => 21.00,
+        'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
+        'is_active'     => true,
+        'sort_order'    => 1,
+    ]);
+
+    VatCategory::create([
+        'name'          => 'ES Reduced',
+        'country_code'  => 'ES',
+        'vat_rate'      => 10.00,
+        'category_type' => VatCategory::CATEGORY_TYPE_REDUCED,
+        'is_active'     => true,
+        'sort_order'    => 2,
+    ]);
+
+    VatCategory::create([
+        'name'          => 'ES Inactive',
+        'country_code'  => 'ES',
+        'vat_rate'      => 4.00,
+        'category_type' => VatCategory::CATEGORY_TYPE_SUPER_REDUCED,
+        'is_active'     => false,
+        'sort_order'    => 3,
+    ]);
+
+    VatCategory::create([
+        'name'          => 'FR Standard',
+        'country_code'  => 'FR',
+        'vat_rate'      => 20.00,
+        'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
+        'is_active'     => true,
+        'sort_order'    => 1,
+    ]);
+
+    $esCategories = VatCategory::getByCountry('ES');
+
+    expect($esCategories)->toHaveCount(2);
+    expect($esCategories->first()->name)->toBe('ES Standard');
+    expect($esCategories->last()->name)->toBe('ES Reduced');
+});
+
+it('can get categories by category type', function () {
+    VatCategory::create([
+        'name'          => 'ES Standard',
+        'country_code'  => 'ES',
+        'vat_rate'      => 21.00,
+        'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
+        'is_active'     => true,
+        'sort_order'    => 1,
+    ]);
+
+    VatCategory::create([
+        'name'          => 'FR Standard',
+        'country_code'  => 'FR',
+        'vat_rate'      => 20.00,
+        'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
+        'is_active'     => true,
+        'sort_order'    => 2,
+    ]);
+
+    VatCategory::create([
+        'name'          => 'ES Reduced',
+        'country_code'  => 'ES',
+        'vat_rate'      => 10.00,
+        'category_type' => VatCategory::CATEGORY_TYPE_REDUCED,
+        'is_active'     => true,
+        'sort_order'    => 1,
+    ]);
+
+    $standardCategories = VatCategory::getByCategoryType(VatCategory::CATEGORY_TYPE_STANDARD);
+
+    expect($standardCategories)->toHaveCount(2);
+    expect($standardCategories->pluck('category_type')->unique()->first())->toBe(VatCategory::CATEGORY_TYPE_STANDARD);
+});
+
+it('can get categories by country and type', function () {
+    VatCategory::create([
+        'name'          => 'ES Standard',
+        'country_code'  => 'ES',
+        'vat_rate'      => 21.00,
+        'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
+        'is_active'     => true,
+        'sort_order'    => 1,
+    ]);
+
+    VatCategory::create([
+        'name'          => 'ES Reduced',
+        'country_code'  => 'ES',
+        'vat_rate'      => 10.00,
+        'category_type' => VatCategory::CATEGORY_TYPE_REDUCED,
+        'is_active'     => true,
+        'sort_order'    => 2,
+    ]);
+
+    VatCategory::create([
+        'name'          => 'FR Standard',
+        'country_code'  => 'FR',
+        'vat_rate'      => 20.00,
+        'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
+        'is_active'     => true,
+        'sort_order'    => 1,
+    ]);
+
+    $esStandard = VatCategory::getByCountryAndType('ES', VatCategory::CATEGORY_TYPE_STANDARD);
+
+    expect($esStandard)->toHaveCount(1);
+    expect($esStandard->first()->name)->toBe('ES Standard');
+    expect($esStandard->first()->country_code)->toBe('ES');
+    expect($esStandard->first()->category_type)->toBe(VatCategory::CATEGORY_TYPE_STANDARD);
+});
+
+it('can get VAT rate by category name and country', function () {
+    VatCategory::create([
+        'name'          => 'Standard Goods',
+        'country_code'  => 'ES',
+        'vat_rate'      => 21.00,
+        'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
+    ]);
+
+    $rate            = VatCategory::getVatRate('Standard Goods', 'ES');
+    $nonExistentRate = VatCategory::getVatRate('Nonexistent', 'ES');
+
+    expect($rate)->toBe(2100.0); // Returns float due to method signature
+    expect($nonExistentRate)->toBeNull();
+});
+
+it('can get standard rate for a country', function () {
+    VatCategory::create([
+        'name'          => 'Standard',
+        'country_code'  => 'ES',
+        'vat_rate'      => 21.00,
+        'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
+        'is_active'     => true,
+    ]);
+
+    VatCategory::create([
+        'name'          => 'Reduced',
+        'country_code'  => 'ES',
+        'vat_rate'      => 10.00,
+        'category_type' => VatCategory::CATEGORY_TYPE_REDUCED,
+        'is_active'     => true,
+    ]);
+
+    $rate            = VatCategory::getStandardRate('ES');
+    $nonExistentRate = VatCategory::getStandardRate('FR');
+
+    expect($rate)->toBe(2100.0); // Returns float due to method signature
+    expect($nonExistentRate)->toBeNull();
+});
+
+it('can get reduced rate for a country', function () {
+    VatCategory::create([
+        'name'          => 'Standard',
+        'country_code'  => 'ES',
+        'vat_rate'      => 21.00,
+        'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
+        'is_active'     => true,
+    ]);
+
+    VatCategory::create([
+        'name'          => 'Reduced',
+        'country_code'  => 'ES',
+        'vat_rate'      => 10.00,
+        'category_type' => VatCategory::CATEGORY_TYPE_REDUCED,
+        'is_active'     => true,
+    ]);
+
+    $rate            = VatCategory::getReducedRate('ES');
+    $nonExistentRate = VatCategory::getReducedRate('FR');
+
+    expect($rate)->toBe(1000.0); // Returns float due to method signature
+    expect($nonExistentRate)->toBeNull();
+});
+
+it('can get super reduced rate for a country', function () {
+    VatCategory::create([
+        'name'          => 'Super Reduced',
+        'country_code'  => 'ES',
+        'vat_rate'      => 4.00,
+        'category_type' => VatCategory::CATEGORY_TYPE_SUPER_REDUCED,
+        'is_active'     => true,
+    ]);
+
+    $rate            = VatCategory::getSuperReducedRate('ES');
+    $nonExistentRate = VatCategory::getSuperReducedRate('FR');
+
+    expect($rate)->toBe(400.0); // Returns float due to method signature
+    expect($nonExistentRate)->toBeNull();
+});
