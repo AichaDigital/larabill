@@ -71,6 +71,26 @@ class VatVerification extends Model
     }
 
     /**
+     * Find verification by VAT number and country (backward compatibility alias).
+     *
+     * @deprecated Use findByVatCode() instead
+     */
+    public static function findByVatNumber(string $vatCode, string $countryCode): ?self
+    {
+        return static::findByVatCode($vatCode, $countryCode);
+    }
+
+    /**
+     * Find verification by VAT number and country (backward compatibility alias).
+     *
+     * @deprecated Use findByVatCodeAndCountry() instead
+     */
+    public static function findByVatNumberAndCountry(string $vatCode, string $countryCode): ?self
+    {
+        return static::findByVatCode($vatCode, $countryCode);
+    }
+
+    /**
      * Get tax profiles that use this VAT code.
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany<UserTaxProfile, $this>

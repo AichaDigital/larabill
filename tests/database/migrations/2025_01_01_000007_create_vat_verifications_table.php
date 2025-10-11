@@ -13,9 +13,14 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Skip if table already exists (created by package migrations)
+        if (Schema::hasTable('vat_verifications')) {
+            return;
+        }
+
         Schema::create('vat_verifications', function (Blueprint $table) {
             $table->id();
-            $table->string('vat_number');
+            $table->string('vat_code');
             $table->string('country_code', 2);
             $table->boolean('is_valid');
             $table->string('company_name')->nullable();
@@ -27,8 +32,8 @@ return new class extends Migration
             $table->timestamps();
 
             // Indexes
-            $table->index(['vat_number', 'is_valid']);
-            $table->unique(['vat_number', 'country_code']);
+            $table->index(['vat_code', 'is_valid']);
+            $table->unique(['vat_code', 'country_code']);
         });
     }
 

@@ -16,7 +16,7 @@ return new class extends Migration
 
             // User and VAT identification
             $table->string('user_id');
-            $table->string('vat_number');
+            $table->string('vat_code');
             $table->string('country_code', 2);
 
             // ROI verification data
@@ -37,7 +37,7 @@ return new class extends Migration
             $table->timestamps();
 
             // Indexes
-            $table->unique(['user_id', 'vat_number', 'country_code'], 'unique_user_vat_country');
+            $table->unique(['user_id', 'vat_code', 'country_code'], 'unique_user_vat_country');
             $table->index('expired_at');
             $table->index('last_check');
             $table->index(['user_id', 'country_code']);

@@ -16,7 +16,7 @@ it('can store and retrieve ROI verification cache', function () {
 
     $data = [
         'user_id'      => 'user-123',
-        'vat_number'   => 'ESB12345678',
+        'vat_code'   => 'ESB12345678',
         'is_roi'       => true,
         'company_name' => 'Test Company',
     ];
@@ -239,7 +239,7 @@ it('can store and retrieve complex data structures', function () {
 
     $complexData = [
         'user_id'         => 'user-123',
-        'vat_number'      => 'ESB12345678',
+        'vat_code'      => 'ESB12345678',
         'is_roi'          => true,
         'company_name'    => 'Test Company S.L.',
         'company_address' => [
@@ -252,7 +252,7 @@ it('can store and retrieve complex data structures', function () {
             'valid'      => true,
             'company'    => 'Test Company S.L.',
             'address'    => 'Test Street 123, Madrid, 28001, ES',
-            'vat_number' => 'ESB12345678',
+            'vat_code' => 'ESB12345678',
         ],
         'metadata' => [
             'api_source' => 'abstractapi',

@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Models\CompanyFiscalConfig;
+use AichaDigital\Larabill\Models\FiscalSettings;
 use AichaDigital\Larabill\Services\CompanyConfigService;
 use Illuminate\Support\Facades\Cache;
 
 beforeEach(function () {
     // Clear any existing company config
-    CompanyFiscalConfig::truncate();
+    FiscalSettings::truncate();
 });
 
 it('can get current company configuration', function () {
@@ -16,7 +16,7 @@ it('can get current company configuration', function () {
 
     $config = $service->getCurrentConfig();
 
-    expect($config)->toBeInstanceOf(CompanyFiscalConfig::class);
+    expect($config)->toBeInstanceOf(FiscalSettings::class);
     expect($config->is_oss)->toBeFalse();
     expect($config->is_roi)->toBeFalse();
     expect($config->eu_sales_threshold)->toBe(10000.0);
@@ -202,7 +202,7 @@ it('can get companies needing notification', function () {
     $companies = $service->getCompaniesNeedingNotification();
 
     expect($companies)->toHaveCount(1);
-    expect($companies[0])->toBeInstanceOf(CompanyFiscalConfig::class);
+    expect($companies[0])->toBeInstanceOf(FiscalSettings::class);
 });
 
 it('can get company statistics', function () {

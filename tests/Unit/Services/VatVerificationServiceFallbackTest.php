@@ -15,7 +15,7 @@ it('uses primary API when it works correctly', function () {
         ->once()
         ->andReturn([
             'is_valid'        => true,
-            'vat_number'      => 'ESB12345678',
+            'vat_code'      => 'ESB12345678',
             'country_code'    => 'ES',
             'company_name'    => 'Test Company S.L.',
             'company_address' => 'Test Address 123',
@@ -31,7 +31,7 @@ it('uses primary API when it works correctly', function () {
     $result = $service->verifyVatNumber('ESB12345678', 'ES');
 
     expect($result['is_valid'])->toBeTrue();
-    expect($result['vat_number'])->toBe('ESB12345678');
+    expect($result['vat_code'])->toBe('ESB12345678');
     expect($result['country_code'])->toBe('ES');
     expect($result['api_source'])->toBe('abstractapi');
     expect($result)->not->toHaveKey('fallback_used');
@@ -53,7 +53,7 @@ it('falls back to secondary API when primary fails', function () {
         ->once()
         ->andReturn([
             'is_valid'        => true,
-            'vat_number'      => 'ESB12345678',
+            'vat_code'      => 'ESB12345678',
             'country_code'    => 'ES',
             'company_name'    => 'Test Company S.L.',
             'company_address' => 'Test Address 123',
@@ -113,7 +113,7 @@ it('accepts mock responses as valid when no API keys configured', function () {
         ->once()
         ->andReturn([
             'is_valid'        => true,
-            'vat_number'      => 'ESB12345678',
+            'vat_code'      => 'ESB12345678',
             'country_code'    => 'ES',
             'company_name'    => 'Test Company S.L.',
             'company_address' => 'Test Address 123',
@@ -150,7 +150,7 @@ it('caches fallback results correctly', function () {
         ->once()
         ->andReturn([
             'is_valid'        => true,
-            'vat_number'      => 'ESB12345678',
+            'vat_code'      => 'ESB12345678',
             'country_code'    => 'ES',
             'company_name'    => 'Test Company S.L.',
             'company_address' => 'Test Address 123',
@@ -194,7 +194,7 @@ it('handles different primary API configurations', function () {
         ->once()
         ->andReturn([
             'is_valid'        => true,
-            'vat_number'      => 'DE123456789',
+            'vat_code'      => 'DE123456789',
             'country_code'    => 'DE',
             'company_name'    => 'German Company GmbH',
             'company_address' => 'German Address 123',

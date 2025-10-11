@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Models\CompanyFiscalConfig;
+use AichaDigital\Larabill\Models\FiscalSettings;
 use Carbon\Carbon;
 
 it('can create a company fiscal config', function () {
-    $config = CompanyFiscalConfig::create([
-        'company_id'              => 'company-123',
+    $config = FiscalSettings::create([
+        'user_id'              => 'company-123',
         'fiscal_year'             => 2024,
         'apply_destination_iva'   => false,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
@@ -17,44 +17,44 @@ it('can create a company fiscal config', function () {
         'fiscal_year_start'       => '01-01',
     ]);
 
-    expect($config)->toBeInstanceOf(CompanyFiscalConfig::class);
-    expect($config->company_id)->toBe('company-123');
+    expect($config)->toBeInstanceOf(FiscalSettings::class);
+    expect($config->user_id)->toBe('company-123');
     expect($config->fiscal_year)->toBe(2024);
     expect($config->eu_sales_threshold)->toBe(10000.0); // Base100 cast returns float
     expect($config->current_eu_sales_amount)->toBe(5000.0); // Base100 cast returns float
 });
 
 it('can find fiscal config by company and year', function () {
-    CompanyFiscalConfig::create([
-        'company_id'         => 'company-123',
+    FiscalSettings::create([
+        'user_id'         => 'company-123',
         'fiscal_year'        => 2024,
         'eu_sales_threshold' => 10000.0, // €10,000.00 in decimal format
     ]);
 
-    $found = CompanyFiscalConfig::findByCompanyAndYear('company-123', 2024);
+    $found = FiscalSettings::findByUserAndYear('company-123', 2024);
 
     expect($found)->not->toBeNull();
-    expect($found->company_id)->toBe('company-123');
+    expect($found->user_id)->toBe('company-123');
     expect($found->fiscal_year)->toBe(2024);
 });
 
 it('can get or create fiscal config for company', function () {
     // First call should create
-    $config1 = CompanyFiscalConfig::getOrCreateForCompany('company-456', 2024);
+    $config1 = FiscalSettings::getOrCreateForUser('company-456', 2024);
 
-    expect($config1)->toBeInstanceOf(CompanyFiscalConfig::class);
-    expect($config1->company_id)->toBe('company-456');
+    expect($config1)->toBeInstanceOf(FiscalSettings::class);
+    expect($config1->user_id)->toBe('company-456');
     expect($config1->fiscal_year)->toBe(2024);
 
     // Second call should return existing
-    $config2 = CompanyFiscalConfig::getOrCreateForCompany('company-456', 2024);
+    $config2 = FiscalSettings::getOrCreateForUser('company-456', 2024);
 
     expect($config2->id)->toBe($config1->id);
 });
 
 it('can check if threshold has been exceeded', function () {
-    $config = CompanyFiscalConfig::create([
-        'company_id'              => 'company-123',
+    $config = FiscalSettings::create([
+        'user_id'              => 'company-123',
         'fiscal_year'             => 2024,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
         'current_eu_sales_amount' => 5000.0, // Base100 cast: €5,000.00
@@ -70,8 +70,8 @@ it('can check if threshold has been exceeded', function () {
 });
 
 it('can update EU sales amount', function () {
-    $config = CompanyFiscalConfig::create([
-        'company_id'              => 'company-123',
+    $config = FiscalSettings::create([
+        'user_id'              => 'company-123',
         'fiscal_year'             => 2024,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
         'current_eu_sales_amount' => 5000.0, // Base100 cast: €5,000.00
@@ -90,8 +90,8 @@ it('can update EU sales amount', function () {
 });
 
 it('can reset EU sales amount', function () {
-    $config = CompanyFiscalConfig::create([
-        'company_id'              => 'company-123',
+    $config = FiscalSettings::create([
+        'user_id'              => 'company-123',
         'fiscal_year'             => 2024,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
         'current_eu_sales_amount' => 15000.0, // Base100 cast: €15,000.00
@@ -108,8 +108,8 @@ it('can reset EU sales amount', function () {
 
 it('can check if destination VAT should be applied', function () {
     // Test with apply_destination_iva = true
-    $config1 = CompanyFiscalConfig::create([
-        'company_id'              => 'company-123',
+    $config1 = FiscalSettings::create([
+        'user_id'              => 'company-123',
         'fiscal_year'             => 2024,
         'apply_destination_iva'   => true,
         'auto_apply_destination'  => false,
@@ -120,8 +120,8 @@ it('can check if destination VAT should be applied', function () {
     expect($config1->shouldApplyDestinationVat())->toBeTrue();
 
     // Test with auto_apply_destination = true and threshold exceeded
-    $config2 = CompanyFiscalConfig::create([
-        'company_id'              => 'company-456',
+    $config2 = FiscalSettings::create([
+        'user_id'              => 'company-456',
         'fiscal_year'             => 2024,
         'apply_destination_iva'   => false,
         'auto_apply_destination'  => true,
@@ -132,8 +132,8 @@ it('can check if destination VAT should be applied', function () {
     expect($config2->shouldApplyDestinationVat())->toBeTrue();
 
     // Test with auto_apply_destination = true but threshold not exceeded
-    $config3 = CompanyFiscalConfig::create([
-        'company_id'              => 'company-789',
+    $config3 = FiscalSettings::create([
+        'user_id'              => 'company-789',
         'fiscal_year'             => 2024,
         'apply_destination_iva'   => false,
         'auto_apply_destination'  => true,
@@ -145,8 +145,8 @@ it('can check if destination VAT should be applied', function () {
 });
 
 it('can enable destination VAT', function () {
-    $config = CompanyFiscalConfig::create([
-        'company_id'              => 'company-123',
+    $config = FiscalSettings::create([
+        'user_id'              => 'company-123',
         'fiscal_year'             => 2024,
         'apply_destination_iva'   => false,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
@@ -161,8 +161,8 @@ it('can enable destination VAT', function () {
 });
 
 it('can disable destination VAT', function () {
-    $config = CompanyFiscalConfig::create([
-        'company_id'              => 'company-123',
+    $config = FiscalSettings::create([
+        'user_id'              => 'company-123',
         'fiscal_year'             => 2024,
         'apply_destination_iva'   => true,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
@@ -175,8 +175,8 @@ it('can disable destination VAT', function () {
 });
 
 it('can mark notification as sent', function () {
-    $config = CompanyFiscalConfig::create([
-        'company_id'        => 'company-123',
+    $config = FiscalSettings::create([
+        'user_id'        => 'company-123',
         'fiscal_year'       => 2024,
         'notification_sent' => false,
     ]);
@@ -187,24 +187,24 @@ it('can mark notification as sent', function () {
 });
 
 it('can use scopes correctly', function () {
-    CompanyFiscalConfig::create([
-        'company_id'              => 'company-123',
+    FiscalSettings::create([
+        'user_id'              => 'company-123',
         'fiscal_year'             => 2024,
         'apply_destination_iva'   => true,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
         'current_eu_sales_amount' => 12000.0, // Base100 cast: €12,000.00
     ]);
 
-    CompanyFiscalConfig::create([
-        'company_id'              => 'company-456',
+    FiscalSettings::create([
+        'user_id'              => 'company-456',
         'fiscal_year'             => 2024,
         'apply_destination_iva'   => false,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
         'current_eu_sales_amount' => 5000.0, // Base100 cast: €5,000.00
     ]);
 
-    CompanyFiscalConfig::create([
-        'company_id'              => 'company-789',
+    FiscalSettings::create([
+        'user_id'              => 'company-789',
         'fiscal_year'             => 2023,
         'apply_destination_iva'   => true,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
@@ -212,33 +212,33 @@ it('can use scopes correctly', function () {
     ]);
 
     // Test by fiscal year scope
-    $configs2024 = CompanyFiscalConfig::byFiscalYear(2024)->get();
+    $configs2024 = FiscalSettings::byFiscalYear(2024)->get();
     expect($configs2024)->toHaveCount(2);
 
     // Test threshold exceeded scope
-    $exceededConfigs = CompanyFiscalConfig::thresholdExceeded()->get();
+    $exceededConfigs = FiscalSettings::thresholdExceeded()->get();
     expect($exceededConfigs)->toHaveCount(2);
 
     // Test by company scope
-    $companyConfigs = CompanyFiscalConfig::byCompany('company-123')->get();
+    $companyConfigs = FiscalSettings::byCompany('company-123')->get();
     expect($companyConfigs)->toHaveCount(1);
 
     // Test apply destination VAT scope
-    $destinationVatConfigs = CompanyFiscalConfig::applyDestinationVat()->get();
+    $destinationVatConfigs = FiscalSettings::applyDestinationVat()->get();
     expect($destinationVatConfigs)->toHaveCount(2);
 
     // Test auto apply enabled scope
-    $autoApplyConfigs = CompanyFiscalConfig::autoApplyEnabled()->get();
+    $autoApplyConfigs = FiscalSettings::autoApplyEnabled()->get();
     expect($autoApplyConfigs)->toHaveCount(3); // All have auto_apply_destination = true by default
 
     // Test needs notification scope
-    $needsNotificationConfigs = CompanyFiscalConfig::needsNotification()->get();
+    $needsNotificationConfigs = FiscalSettings::needsNotification()->get();
     expect($needsNotificationConfigs)->toHaveCount(2); // Two that exceeded threshold
 });
 
 it('can get fiscal year dates', function () {
-    $config = CompanyFiscalConfig::create([
-        'company_id'        => 'company-123',
+    $config = FiscalSettings::create([
+        'user_id'        => 'company-123',
         'fiscal_year'       => 2024,
         'fiscal_year_start' => '01-01',
     ]);
@@ -253,8 +253,8 @@ it('can get fiscal year dates', function () {
 });
 
 it('can check if date is within fiscal year', function () {
-    $config = CompanyFiscalConfig::create([
-        'company_id'        => 'company-123',
+    $config = FiscalSettings::create([
+        'user_id'        => 'company-123',
         'fiscal_year'       => 2024,
         'fiscal_year_start' => '01-01',
     ]);
@@ -265,8 +265,8 @@ it('can check if date is within fiscal year', function () {
 });
 
 it('can get threshold percentage', function () {
-    $config = CompanyFiscalConfig::create([
-        'company_id'              => 'company-123',
+    $config = FiscalSettings::create([
+        'user_id'              => 'company-123',
         'fiscal_year'             => 2024,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
         'current_eu_sales_amount' => 7500.0, // Base100 cast: €7,500.00
@@ -280,8 +280,8 @@ it('can get threshold percentage', function () {
 });
 
 it('can get remaining threshold amount', function () {
-    $config = CompanyFiscalConfig::create([
-        'company_id'              => 'company-123',
+    $config = FiscalSettings::create([
+        'user_id'              => 'company-123',
         'fiscal_year'             => 2024,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
         'current_eu_sales_amount' => 7500.0, // Base100 cast: €7,500.00
@@ -295,8 +295,8 @@ it('can get remaining threshold amount', function () {
 });
 
 it('can manage custom threshold rules', function () {
-    $config = CompanyFiscalConfig::create([
-        'company_id'             => 'company-123',
+    $config = FiscalSettings::create([
+        'user_id'             => 'company-123',
         'fiscal_year'            => 2024,
         'custom_threshold_rules' => [
             'DE' => ['threshold' => 15000, 'special_rate' => 19],
@@ -317,9 +317,9 @@ it('can get default values from config', function () {
     config(['larabill.destination_vat.currency' => 'USD']);
     config(['larabill.destination_vat.fiscal_year_start' => '04-01']);
 
-    expect(CompanyFiscalConfig::getDefaultThreshold())->toBe(15000.0); // €15,000.00 in base 100
-    expect(CompanyFiscalConfig::getDefaultCurrency())->toBe('USD');
-    expect(CompanyFiscalConfig::getDefaultFiscalYearStart())->toBe('04-01');
+    expect(FiscalSettings::getDefaultThreshold())->toBe(15000.0); // €15,000.00 in base 100
+    expect(FiscalSettings::getDefaultCurrency())->toBe('USD');
+    expect(FiscalSettings::getDefaultFiscalYearStart())->toBe('04-01');
 });
 
 it('sets default values on creation', function () {
@@ -327,8 +327,8 @@ it('sets default values on creation', function () {
     config(['larabill.destination_vat.currency' => 'USD']);
     config(['larabill.destination_vat.fiscal_year_start' => '04-01']);
 
-    $config = CompanyFiscalConfig::create([
-        'company_id'             => 'company-123',
+    $config = FiscalSettings::create([
+        'user_id'             => 'company-123',
         'fiscal_year'            => 2024,
         'auto_apply_destination' => true, // Explicitly set to ensure it's not null
     ]);

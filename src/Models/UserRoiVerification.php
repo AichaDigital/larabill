@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *
  * @property int $id
  * @property string|int $user_id
- * @property string $vat_number
+ * @property string $vat_code
  * @property string $country_code
  * @property bool $is_roi
  * @property bool $cache_hit
@@ -35,7 +35,7 @@ class UserRoiVerification extends Model
      */
     protected $fillable = [
         'user_id',
-        'vat_number',
+        'vat_code',
         'country_code',
         'is_roi',
         'company_name',
@@ -116,7 +116,7 @@ class UserRoiVerification extends Model
     public static function findByUserAndVat(string $userId, string $vatNumber, string $countryCode): ?self
     {
         return static::where('user_id', $userId)
-            ->where('vat_number', $vatNumber)
+            ->where('vat_code', $vatNumber)
             ->where('country_code', $countryCode)
             ->first();
     }
@@ -127,7 +127,7 @@ class UserRoiVerification extends Model
     public static function findValidByUserAndVat(string $userId, string $vatNumber, string $countryCode): ?self
     {
         return static::where('user_id', $userId)
-            ->where('vat_number', $vatNumber)
+            ->where('vat_code', $vatNumber)
             ->where('country_code', $countryCode)
             ->where('expired_at', '>', now())
             ->first();
@@ -214,7 +214,7 @@ class UserRoiVerification extends Model
         return static::updateOrCreate(
             [
                 'user_id'      => $data['user_id'],
-                'vat_number'   => $data['vat_number'],
+                'vat_code'   => $data['vat_code'],
                 'country_code' => $data['country_code'],
             ],
             array_merge($data, [

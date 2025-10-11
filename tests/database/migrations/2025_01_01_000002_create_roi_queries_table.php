@@ -16,7 +16,7 @@ return new class extends Migration
 
             // User and VAT identification
             $table->string('user_id');
-            $table->string('vat_number');
+            $table->string('vat_code');
             $table->string('country_code', 2);
 
             // Query information
@@ -34,7 +34,7 @@ return new class extends Migration
             $table->index(['user_id', 'queried_at']);
             $table->index('query_type');
             $table->index('legal_retention_until');
-            $table->index(['vat_number', 'country_code']);
+            $table->index(['vat_code', 'country_code']);
             $table->index('api_source');
             $table->index('cache_used');
 

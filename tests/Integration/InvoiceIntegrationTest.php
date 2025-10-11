@@ -248,7 +248,7 @@ it('can handle invoice with ROI verification integration', function () {
         'customer_country' => 'DE',
         'customer_type'    => 'business',
         'vat_verification' => [
-            'vat_number'   => 'DE123456789',
+            'vat_code'   => 'DE123456789',
             'country_code' => 'DE',
         ],
         'items' => [

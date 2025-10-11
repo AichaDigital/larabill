@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Models\{Invoice, UserTaxInfo};
+use AichaDigital\Larabill\Models\{Invoice, UserTaxProfile};
 use AichaDigital\Larabill\Tests\Models\CustomUser;
 
 it('can configure custom user model mapping', function () {
@@ -30,17 +30,17 @@ it('can configure custom user model mapping', function () {
 
 it('can configure custom user tax info model mapping', function () {
     // Set custom user tax info model in config
-    config(['larabill.models.user_tax_info' => \AichaDigital\Larabill\Tests\Models\CustomUserTaxInfo::class]);
+    config(['larabill.models.user_tax_profile' => \AichaDigital\Larabill\Tests\Models\CustomUserTaxProfile::class]);
 
     // Test the model mapping service
-    $userTaxInfoModel = \AichaDigital\Larabill\Services\ModelMappingService::getModelClass('user_tax_info');
-    expect($userTaxInfoModel)->toBe(\AichaDigital\Larabill\Tests\Models\CustomUserTaxInfo::class);
+    $userTaxInfoModel = \AichaDigital\Larabill\Services\ModelMappingService::getModelClass('user_tax_profile');
+    expect($userTaxInfoModel)->toBe(\AichaDigital\Larabill\Tests\Models\CustomUserTaxProfile::class);
 
     // Create a user tax info
-    $taxInfo = UserTaxInfo::create([
+    $taxInfo = UserTaxProfile::create([
         'user_id'      => 1,
         'is_current'   => true,
-        'tax_id'       => 'ESB12345678',
+        'tax_code'       => 'ESB12345678',
         'company_name' => 'Test Company S.L.',
         'address'      => 'Calle Test 123',
         'city'         => 'Madrid',
@@ -57,9 +57,9 @@ it('can configure custom user tax info model mapping', function () {
 it('can configure custom field mappings for user tax info', function () {
     // Set custom field mappings in config
     config([
-        'larabill.field_mappings.user_tax_info' => [
+        'larabill.field_mappings.user_tax_profile' => [
             'user_id'      => 'customer_id',
-            'tax_id'       => 'fiscal_id',
+            'tax_code'       => 'fiscal_id',
             'company_name' => 'business_name',
             'address'      => 'street_address',
             'city'         => 'municipality',
@@ -81,10 +81,10 @@ it('can configure custom field mappings for user tax info', function () {
         'country_code'   => 'ES',
         'region'         => 'Madrid',
         'contact_phone'  => '+34 600 000 000',
-    ], 'user_tax_info');
+    ], 'user_tax_profile');
 
     expect($mappedData['user_id'])->toBe(1);
-    expect($mappedData['tax_id'])->toBe('ESB12345678');
+    expect($mappedData['tax_code'])->toBe('ESB12345678');
     expect($mappedData['company_name'])->toBe('Test Company S.L.');
     expect($mappedData['address'])->toBe('Calle Test 123');
     expect($mappedData['city'])->toBe('Madrid');

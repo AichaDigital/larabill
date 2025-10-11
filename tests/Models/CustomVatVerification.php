@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 class CustomVatVerification extends Model
 {
     protected $fillable = [
-        'vat_number',
+        'vat_code',
         'country_code',
         'is_valid',
         'company_name',

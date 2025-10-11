@@ -22,7 +22,7 @@ it('returns error when all apis fail', function () {
     $result = $service->verifyVatNumber('ESB12345678', 'ES');
 
     expect($result)->toBeArray();
-    expect($result)->toHaveKey('vat_number');
+    expect($result)->toHaveKey('vat_code');
     expect($result)->toHaveKey('country_code');
     expect($result)->toHaveKey('is_valid');
     expect($result)->toHaveKey('all_apis_failed');
@@ -31,7 +31,7 @@ it('returns error when all apis fail', function () {
 
     expect($result['is_valid'])->toBeFalse();
     expect($result['all_apis_failed'])->toBeTrue();
-    expect($result['vat_number'])->toBe('ESB12345678');
+    expect($result['vat_code'])->toBe('ESB12345678');
     expect($result['country_code'])->toBe('ES');
     expect($result['error'])->toContain('HTTP error or exception');
     expect($result['cached'])->toBeFalse();
@@ -47,7 +47,7 @@ it('returns error when primary api fails but fallback succeeds', function () {
         'https://vat.abstractapi.com/v1/validate/*' => Http::response([], 500),
         'http://apilayer.net/api/validate*'         => Http::response([
             'valid'           => true,
-            'vat_number'      => 'ESB12345678',
+            'vat_code'      => 'ESB12345678',
             'company_name'    => 'Test Company S.L.',
             'company_address' => 'Test Address',
         ], 200),

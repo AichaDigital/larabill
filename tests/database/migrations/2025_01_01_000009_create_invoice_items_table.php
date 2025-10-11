@@ -11,11 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Skip if table already exists (created by package migrations)
+        if (Schema::hasTable('invoice_items')) {
+            return;
+        }
+
         Schema::create('invoice_items', function (Blueprint $table) {
             $table->id();
 
-            // Invoice reference
-            $table->unsignedBigInteger('invoice_id');
+            // Invoice reference (UUID)
+            $table->uuid('invoice_id');
 
             // Item details
             $table->string('description');

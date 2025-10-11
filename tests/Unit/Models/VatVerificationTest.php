@@ -6,7 +6,7 @@ use AichaDigital\Larabill\Models\VatVerification;
 
 it('can create a VAT verification record', function () {
     $verification = new VatVerification([
-        'vat_number'      => 'ESB12345678',
+        'vat_code'      => 'ESB12345678',
         'country_code'    => 'ES',
         'is_valid'        => true,
         'company_name'    => 'Test Company S.L.',
@@ -19,7 +19,7 @@ it('can create a VAT verification record', function () {
         ],
     ]);
 
-    expect($verification->vat_number)->toBe('ESB12345678');
+    expect($verification->vat_code)->toBe('ESB12345678');
     expect($verification->country_code)->toBe('ES');
     expect($verification->is_valid)->toBeTrue();
     expect($verification->company_name)->toBe('Test Company S.L.');
@@ -31,7 +31,7 @@ it('can create a VAT verification record', function () {
 
 it('can scope valid VAT verifications', function () {
     VatVerification::create([
-        'vat_number'      => 'ESB11111111',
+        'vat_code'      => 'ESB11111111',
         'country_code'    => 'ES',
         'is_valid'        => true,
         'company_name'    => 'Valid Company',
@@ -41,7 +41,7 @@ it('can scope valid VAT verifications', function () {
     ]);
 
     VatVerification::create([
-        'vat_number'      => 'ESB22222222',
+        'vat_code'      => 'ESB22222222',
         'country_code'    => 'ES',
         'is_valid'        => false,
         'company_name'    => null,
@@ -53,12 +53,12 @@ it('can scope valid VAT verifications', function () {
     $validVerifications = VatVerification::valid()->get();
 
     expect($validVerifications)->toHaveCount(1);
-    expect($validVerifications->first()->vat_number)->toBe('ESB11111111');
+    expect($validVerifications->first()->vat_code)->toBe('ESB11111111');
 });
 
 it('can find verification by VAT number and country', function () {
     $verification = VatVerification::create([
-        'vat_number'      => 'ESB12345678',
+        'vat_code'      => 'ESB12345678',
         'country_code'    => 'ES',
         'is_valid'        => true,
         'company_name'    => 'Test Company S.L.',

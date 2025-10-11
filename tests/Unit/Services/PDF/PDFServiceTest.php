@@ -67,9 +67,8 @@ it('can register new connector', function () {
 });
 
 it('can generate PDF for invoice', function () {
-    // Create a test invoice
+    // Create a test invoice (id will be auto-generated as UUID)
     $invoice             = new Invoice;
-    $invoice->id         = 1;
     $invoice->number     = 'TEST-001';
     $invoice->type       = 'invoice';
     $invoice->status     = 'draft';
@@ -90,8 +89,7 @@ it('can generate PDF for invoice', function () {
 it('can handle PDF generation errors gracefully', function () {
     // Create an invalid invoice (missing required fields)
     $invoice     = new Invoice;
-    $invoice->id = 999;
-    // Don't set required fields
+    // Don't set required fields - ID will be auto-generated
 
     $result = $this->pdfService->generatePDF($invoice);
 
@@ -103,7 +101,6 @@ it('can handle PDF generation errors gracefully', function () {
 
 it('can cache PDF results', function () {
     $invoice             = new Invoice;
-    $invoice->id         = 2;
     $invoice->number     = 'TEST-002';
     $invoice->type       = 'invoice';
     $invoice->status     = 'draft';
@@ -123,7 +120,6 @@ it('can cache PDF results', function () {
 
 it('can clear PDF cache', function () {
     $invoice             = new Invoice;
-    $invoice->id         = 3;
     $invoice->number     = 'TEST-003';
     $invoice->type       = 'invoice';
     $invoice->status     = 'draft';

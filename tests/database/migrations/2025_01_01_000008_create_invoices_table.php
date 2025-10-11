@@ -11,8 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Skip if table already exists (created by package migrations)
+        if (Schema::hasTable('invoices')) {
+            return;
+        }
+
         Schema::create('invoices', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();
 
             // Invoice identification
             $table->string('number')->unique();

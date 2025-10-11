@@ -21,7 +21,7 @@ describe('VatApiIntegrationService', function () {
             Http::fake([
                 'https://vat.abstractapi.com/v1/validate/*' => Http::response([
                     'valid'      => true,
-                    'vat_number' => 'ESB12345678',
+                    'vat_code' => 'ESB12345678',
                     'country'    => [
                         'code' => 'ES',
                         'name' => 'Spain',
@@ -39,7 +39,7 @@ describe('VatApiIntegrationService', function () {
 
             expect($result)->toBeArray();
             expect($result['is_valid'])->toBeTrue();
-            expect($result['vat_number'])->toBe('ESB12345678');
+            expect($result['vat_code'])->toBe('ESB12345678');
             expect($result['country_code'])->toBe('ES');
             expect($result['company_name'])->toBe('Test Company S.L.');
             expect($result['company_address'])->toBe('Calle Test 123, 41001 Sevilla, España');
@@ -49,7 +49,7 @@ describe('VatApiIntegrationService', function () {
             Http::assertSent(function ($request) {
                 return str_starts_with($request->url(), 'https://vat.abstractapi.com/v1/validate/') &&
                        $request['api_key']      === 'test_abstractapi_key'                          &&
-                       $request['vat_number']   === 'ESB12345678'                                   &&
+                       $request['vat_code']   === 'ESB12345678'                                   &&
                        $request['country_code'] === 'ES';
             });
         });
@@ -60,7 +60,7 @@ describe('VatApiIntegrationService', function () {
             Http::fake([
                 'https://vat.abstractapi.com/v1/validate/*' => Http::response([
                     'valid'      => false,
-                    'vat_number' => 'INVALID123',
+                    'vat_code' => 'INVALID123',
                     'country'    => [
                         'code' => 'ES',
                         'name' => 'Spain',
@@ -75,7 +75,7 @@ describe('VatApiIntegrationService', function () {
 
             expect($result)->toBeArray();
             expect($result['is_valid'])->toBeFalse();
-            expect($result['vat_number'])->toBe('ESINVALID123');
+            expect($result['vat_code'])->toBe('ESINVALID123');
             expect($result['country_code'])->toBe('ES');
             expect($result['company_name'])->toBeNull();
             expect($result['company_address'])->toBeNull();
@@ -142,7 +142,7 @@ describe('VatApiIntegrationService', function () {
             Http::fake([
                 'http://apilayer.net/api/validate*' => Http::response([
                     'valid'           => true,
-                    'vat_number'      => 'FRB87654321',
+                    'vat_code'      => 'FRB87654321',
                     'country_code'    => 'FR',
                     'company_name'    => 'French Company SARL',
                     'company_address' => '123 Rue de la Paix, 75001 Paris, France',
@@ -153,7 +153,7 @@ describe('VatApiIntegrationService', function () {
 
             expect($result)->toBeArray();
             expect($result['is_valid'])->toBeTrue();
-            expect($result['vat_number'])->toBe('FRB87654321');
+            expect($result['vat_code'])->toBe('FRB87654321');
             expect($result['country_code'])->toBe('FR');
             expect($result['company_name'])->toBe('French Company SARL');
             expect($result['company_address'])->toBe('123 Rue de la Paix, 75001 Paris, France');
@@ -163,7 +163,7 @@ describe('VatApiIntegrationService', function () {
             Http::assertSent(function ($request) {
                 return str_starts_with($request->url(), 'http://apilayer.net/api/validate') &&
                        $request['access_key']   === 'test_apilayer_key'                     &&
-                       $request['vat_number']   === 'FRB87654321'                           &&
+                       $request['vat_code']   === 'FRB87654321'                           &&
                        $request['country_code'] === 'FR';
             });
         });
@@ -174,7 +174,7 @@ describe('VatApiIntegrationService', function () {
             Http::fake([
                 'http://apilayer.net/api/validate*' => Http::response([
                     'valid'           => false,
-                    'vat_number'      => 'INVALID456',
+                    'vat_code'      => 'INVALID456',
                     'country_code'    => 'FR',
                     'company_name'    => null,
                     'company_address' => null,
@@ -185,7 +185,7 @@ describe('VatApiIntegrationService', function () {
 
             expect($result)->toBeArray();
             expect($result['is_valid'])->toBeFalse();
-            expect($result['vat_number'])->toBe('FRINVALID456');
+            expect($result['vat_code'])->toBe('FRINVALID456');
             expect($result['country_code'])->toBe('FR');
             expect($result['company_name'])->toBeNull();
             expect($result['company_address'])->toBeNull();
@@ -291,7 +291,7 @@ describe('VatApiIntegrationService', function () {
 
             expect($result)->toBeArray();
             expect($result['is_valid'])->toBeTrue();
-            expect($result['vat_number'])->toBe('ESB12345678');
+            expect($result['vat_code'])->toBe('ESB12345678');
             expect($result['country_code'])->toBe('ES');
             expect($result['company_name'])->toBe('Test Company S.L.');
             expect($result['api_source'])->toBe('abstractapi');
@@ -306,7 +306,7 @@ describe('VatApiIntegrationService', function () {
 
             expect($result)->toBeArray();
             expect($result['is_valid'])->toBeTrue();
-            expect($result['vat_number'])->toBe('FRB87654321');
+            expect($result['vat_code'])->toBe('FRB87654321');
             expect($result['country_code'])->toBe('FR');
             expect($result['company_name'])->toBe('Updated Company S.L.');
             expect($result['api_source'])->toBe('apilayer');

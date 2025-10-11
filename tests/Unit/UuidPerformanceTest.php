@@ -122,8 +122,8 @@ test('invoice can be found by uuid', function () {
         ->and($found->id)->toBe($invoice->id)
         ->and($found->number)->toBe('TEST-006');
 
-    // Also works with find()
-    $foundById = Invoice::find($invoice->id);
+    // Also works with whereUuid (recommended for UUID keys)
+    $foundById = Invoice::whereUuid($invoice->id)->first();
     expect($foundById)->not->toBeNull()
         ->and($foundById->id)->toBe($invoice->id);
 });

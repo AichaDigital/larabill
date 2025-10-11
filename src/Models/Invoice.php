@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Models;
 
 use AichaDigital\Lara100\Casts\Base100;
-use Dyrynda\Database\Casts\EfficientUuid;
 use Dyrynda\Database\Support\{BindsOnUuid, GeneratesUuid};
+use Dyrynda\Database\Support\Casts\EfficientUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
@@ -84,6 +84,15 @@ class Invoice extends Model
     ];
 
     /**
+     * Specify the column name for UUID generation.
+     * Dyrynda package defaults to 'uuid', but we use 'id'.
+     */
+    public function uuidColumn(): string
+    {
+        return 'id';
+    }
+
+    /**
      * UUID version to use for invoice IDs.
      * Uses 'ordered' for better MySQL index performance.
      */
@@ -103,7 +112,7 @@ class Invoice extends Model
     public function casts(): array
     {
         return [
-            'id'               => EfficientUuid::class, // Binary UUID storage
+            'id'               => EfficientUuid::class, // Binary UUID storage (16 bytes)
             'is_immutable'     => 'boolean',
             'immutable_at'     => 'datetime',
             'paid_at'          => 'datetime',

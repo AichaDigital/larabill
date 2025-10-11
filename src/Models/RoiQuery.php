@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *
  * @property int $id
  * @property string $user_id
- * @property string $vat_number
+ * @property string $vat_code
  * @property string $country_code
  * @property string $query_type
  * @property string|null $api_source
@@ -41,7 +41,7 @@ class RoiQuery extends Model
      */
     protected $fillable = [
         'user_id',
-        'vat_number',
+        'vat_code',
         'country_code',
         'query_type',
         'api_source',
@@ -121,7 +121,7 @@ class RoiQuery extends Model
     {
         /** @var Builder<RoiQuery> */
         return static::where('user_id', $userId)
-            ->where('vat_number', $vatNumber)
+            ->where('vat_code', $vatNumber)
             ->where('country_code', $countryCode)
             ->orderBy('queried_at', 'desc');
     }
@@ -249,7 +249,7 @@ class RoiQuery extends Model
     {
         return static::createQuery([
             'user_id'       => $userId,
-            'vat_number'    => $vatNumber,
+            'vat_code'    => $vatNumber,
             'country_code'  => $countryCode,
             'query_type'    => self::QUERY_TYPE_API,
             'api_source'    => $apiSource,
@@ -267,7 +267,7 @@ class RoiQuery extends Model
     {
         return static::createQuery([
             'user_id'       => $userId,
-            'vat_number'    => $vatNumber,
+            'vat_code'    => $vatNumber,
             'country_code'  => $countryCode,
             'query_type'    => self::QUERY_TYPE_CACHE,
             'api_source'    => 'cache',

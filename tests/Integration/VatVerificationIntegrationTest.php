@@ -25,7 +25,7 @@ describe('VatVerification Integration Tests', function () {
             Http::fake([
                 'https://vat.abstractapi.com/v1/validate/*' => Http::response([
                     'valid'      => true,
-                    'vat_number' => 'ESB12345678',
+                    'vat_code' => 'ESB12345678',
                     'country'    => [
                         'code' => 'ES',
                         'name' => 'Spain',
@@ -62,7 +62,7 @@ describe('VatVerification Integration Tests', function () {
                 'https://vat.abstractapi.com/v1/validate/*' => Http::response([], 500),
                 'http://apilayer.net/api/validate*'         => Http::response([
                     'valid'           => true,
-                    'vat_number'      => 'ESB12345678',
+                    'vat_code'      => 'ESB12345678',
                     'country_code'    => 'ES',
                     'company_name'    => 'Test Company S.L.',
                     'company_address' => 'Calle Test 123, 41001 Sevilla, España',
@@ -97,7 +97,7 @@ describe('VatVerification Integration Tests', function () {
                 ], 401),
                 'http://apilayer.net/api/validate*' => Http::response([
                     'valid'           => true,
-                    'vat_number'      => 'ESB12345678',
+                    'vat_code'      => 'ESB12345678',
                     'country_code'    => 'ES',
                     'company_name'    => 'Test Company S.L.',
                     'company_address' => 'Calle Test 123, 41001 Sevilla, España',
@@ -132,7 +132,7 @@ describe('VatVerification Integration Tests', function () {
 
             expect($result)->toBeArray();
             expect($result['is_valid'])->toBeFalse(); // Both APIs failed
-            expect($result['vat_number'])->toBe('ESB12345678');
+            expect($result['vat_code'])->toBe('ESB12345678');
             expect($result['country_code'])->toBe('ES');
             expect($result['company_name'])->toBeNull();
             expect($result['api_source'])->toBe('apilayer'); // Fallback API was used
@@ -150,7 +150,7 @@ describe('VatVerification Integration Tests', function () {
             Http::fake([
                 'https://vat.abstractapi.com/v1/validate/*' => Http::response([
                     'valid'      => true,
-                    'vat_number' => 'ESB12345678',
+                    'vat_code' => 'ESB12345678',
                     'country'    => [
                         'code' => 'ES',
                         'name' => 'Spain',
@@ -186,7 +186,7 @@ describe('VatVerification Integration Tests', function () {
                 'https://vat.abstractapi.com/v1/validate/*' => Http::response([], 500),
                 'http://apilayer.net/api/validate*'         => Http::response([
                     'valid'           => true,
-                    'vat_number'      => 'ESB12345678',
+                    'vat_code'      => 'ESB12345678',
                     'country_code'    => 'ES',
                     'company_name'    => 'Test Company S.L.',
                     'company_address' => 'Calle Test 123, 41001 Sevilla, España',
@@ -218,7 +218,7 @@ describe('VatVerification Integration Tests', function () {
             Http::fake([
                 'http://apilayer.net/api/validate*' => Http::response([
                     'valid'           => true,
-                    'vat_number'      => 'ESB12345678',
+                    'vat_code'      => 'ESB12345678',
                     'country_code'    => 'ES',
                     'company_name'    => 'Test Company S.L.',
                     'company_address' => 'Calle Test 123, 41001 Sevilla, España',
@@ -247,7 +247,7 @@ describe('VatVerification Integration Tests', function () {
                 'http://apilayer.net/api/validate*'         => Http::response([], 500),
                 'https://vat.abstractapi.com/v1/validate/*' => Http::response([
                     'valid'      => true,
-                    'vat_number' => 'ESB12345678',
+                    'vat_code' => 'ESB12345678',
                     'country'    => [
                         'code' => 'ES',
                         'name' => 'Spain',

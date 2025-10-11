@@ -27,7 +27,7 @@ it('can perform complete ROI verification workflow', function () {
             'valid'      => true,
             'company'    => 'Test Company S.L.',
             'address'    => 'Test Address 123, Madrid, 28001, ES',
-            'vat_number' => 'ESB12345678',
+            'vat_code' => 'ESB12345678',
         ], 200),
     ]);
 
@@ -46,14 +46,14 @@ it('can perform complete ROI verification workflow', function () {
 
     // Step 3: Verify database records
     $verification = UserRoiVerification::where('user_id', 'user-123')
-        ->where('vat_number', 'ESB12345678')
+        ->where('vat_code', 'ESB12345678')
         ->first();
 
     expect($verification)->not->toBeNull();
     expect($verification->is_roi)->toBeTrue();
 
     $query = RoiQuery::where('user_id', 'user-123')
-        ->where('vat_number', 'ESB12345678')
+        ->where('vat_code', 'ESB12345678')
         ->first();
 
     expect($query)->not->toBeNull();
@@ -259,7 +259,7 @@ it('can perform complete legal compliance workflow', function () {
         'https://vat.abstractapi.com/v1/validate/*' => Http::response([
             'valid'      => true,
             'company'    => 'Test Company S.L.',
-            'vat_number' => 'ESB12345678',
+            'vat_code' => 'ESB12345678',
         ], 200),
     ]);
 
@@ -285,7 +285,7 @@ it('can perform complete legal compliance workflow', function () {
     // Step 4: Create expired query for cleanup test
     RoiQuery::create([
         'user_id'               => 'user-old',
-        'vat_number'            => 'ESB99999999',
+        'vat_code'            => 'ESB99999999',
         'country_code'          => 'ES',
         'query_type'            => RoiQuery::QUERY_TYPE_API,
         'queried_at'            => now()->subDays(3000), // 8+ years ago
@@ -372,7 +372,7 @@ it('can handle error scenarios gracefully', function () {
         'https://vat.abstractapi.com/v1/validate/*' => Http::response([], 500),
         'http://apilayer.net/api/validate*'         => Http::response([
             'valid'        => false,
-            'vat_number'   => 'ESINVALID1',
+            'vat_code'   => 'ESINVALID1',
             'company_name' => null,
         ], 200),
     ]);

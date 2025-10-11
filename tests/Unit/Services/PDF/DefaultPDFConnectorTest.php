@@ -60,7 +60,7 @@ it('returns metadata', function () {
 
 it('can validate valid invoice', function () {
     $invoice             = new Invoice;
-    $invoice->id         = 1;
+    // ID auto-generated as UUID
     $invoice->number     = 'TEST-001';
     $invoice->type       = 'invoice';
     $invoice->status     = 'draft';
@@ -74,15 +74,14 @@ it('can validate valid invoice', function () {
 
 it('rejects invalid invoice', function () {
     $invoice     = new Invoice;
-    $invoice->id = 999;
-    // Missing required fields
+    // Missing required fields - ID will be auto-generated
 
     expect($this->connector->validateInvoice($invoice))->toBeFalse();
 });
 
 it('can generate QR for valid invoice', function () {
     $invoice             = new Invoice;
-    $invoice->id         = 1;
+    // ID auto-generated as UUID
     $invoice->number     = 'TEST-001';
     $invoice->type       = 'invoice';
     $invoice->status     = 'draft';
@@ -103,8 +102,7 @@ it('can generate QR for valid invoice', function () {
 
 it('handles QR generation errors gracefully', function () {
     $invoice     = new Invoice;
-    $invoice->id = 999;
-    // Missing required fields
+    // Missing required fields - ID will be auto-generated
 
     $result = $this->connector->generateQR($invoice);
 
@@ -116,7 +114,7 @@ it('handles QR generation errors gracefully', function () {
 
 it('includes invoice data in QR', function () {
     $invoice             = new Invoice;
-    $invoice->id         = 1;
+    // ID auto-generated as UUID
     $invoice->number     = 'TEST-001';
     $invoice->type       = 'invoice';
     $invoice->status     = 'draft';
@@ -153,7 +151,7 @@ it('generates QR URL with custom base URL', function () {
     $connector = new DefaultPDFConnector($config);
 
     $invoice             = new Invoice;
-    $invoice->id         = 1;
+    // ID auto-generated as UUID
     $invoice->number     = 'TEST-001';
     $invoice->type       = 'invoice';
     $invoice->status     = 'draft';
@@ -178,7 +176,7 @@ it('returns false when validating invoice if connector is not available', functi
     };
 
     $invoice             = new Invoice;
-    $invoice->id         = 1;
+    // ID auto-generated as UUID
     $invoice->number     = 'TEST-001';
     $invoice->type       = 'invoice';
     $invoice->status     = 'draft';

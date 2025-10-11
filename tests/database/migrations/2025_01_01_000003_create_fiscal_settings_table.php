@@ -11,6 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Skip if table already exists (created by package migrations)
+        if (Schema::hasTable('fiscal_settings')) {
+            return;
+        }
+
         Schema::create('fiscal_settings', function (Blueprint $table) {
             $table->id();
 

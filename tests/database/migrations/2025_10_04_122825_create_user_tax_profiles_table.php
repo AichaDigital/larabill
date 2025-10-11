@@ -11,11 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('user_tax_infos', function (Blueprint $table) {
+        // Skip if table already exists (created by package migrations)
+        if (Schema::hasTable('user_tax_profiles')) {
+            return;
+        }
+
+        Schema::create('user_tax_profiles', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id');
             $table->boolean('is_current')->default(false);
-            $table->string('tax_id');
+            $table->string('tax_code');
             $table->string('company_name');
             $table->text('address');
             $table->string('city');
@@ -26,7 +31,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['user_id', 'is_current']);
-            $table->index('tax_id');
+            $table->index('tax_code');
         });
     }
 
@@ -35,6 +40,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('user_tax_infos');
+        Schema::dropIfExists('user_tax_profiles');
     }
 };
