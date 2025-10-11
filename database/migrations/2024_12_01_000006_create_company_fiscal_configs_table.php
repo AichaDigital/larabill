@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('company_fiscal_configs', function (Blueprint $table) {
+        Schema::create('fiscal_settings', function (Blueprint $table) {
             $table->id();
-            $table->string('company_id');
+            $table->unsignedBigInteger('user_id');
             $table->boolean('is_oss')->default(false)->comment('Whether the company is registered in OSS (One Stop Shop)');
             $table->boolean('is_roi')->default(false)->comment('Whether the company is a Reverse Charge Operator (ROI)');
             $table->integer('fiscal_year');
@@ -31,8 +31,8 @@ return new class extends Migration
             $table->timestamps();
 
             // Add indexes
-            $table->index(['company_id', 'fiscal_year']);
-            $table->index(['fiscal_year']);
+            $table->index(['user_id', 'fiscal_year']);
+            $table->unique(['user_id', 'fiscal_year']);
             $table->index(['notification_sent']);
         });
     }
@@ -42,6 +42,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('company_fiscal_configs');
+        Schema::dropIfExists('fiscal_settings');
     }
 };

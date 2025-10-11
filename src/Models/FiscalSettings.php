@@ -9,12 +9,13 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\{Builder, Model};
 
 /**
- * CompanyFiscalConfig Model
+ * FiscalSettings Model
  *
- * Represents fiscal configuration for companies, including destination VAT settings and EU sales thresholds.
+ * Represents fiscal configuration for users, including destination VAT settings and EU sales thresholds.
  * All monetary amounts are stored as base-100 integers (e.g., €12.34 => 1234).
  *
- * @property string $company_id
+ * @property int $id
+ * @property string|int $user_id
  * @property bool $is_oss
  * @property bool $is_roi
  * @property bool $apply_destination_iva
@@ -30,13 +31,18 @@ use Illuminate\Database\Eloquent\{Builder, Model};
  * @property string|null $threshold_notification_email
  * @property array<string, mixed>|null $custom_threshold_rules
  */
-class CompanyFiscalConfig extends Model
+class FiscalSettings extends Model
 {
+    /**
+     * The table associated with the model.
+     */
+    protected $table = 'fiscal_settings';
+
     /**
      * The attributes that are mass assignable.
      */
     protected $fillable = [
-        'company_id',
+        'user_id',
         'is_oss',
         'is_roi',
         'apply_destination_iva',
@@ -123,43 +129,43 @@ class CompanyFiscalConfig extends Model
             }
 
             // Apply field mapping when creating
-            $fieldMapping = \AichaDigital\Larabill\Services\ModelMappingService::getFieldMapping('company_fiscal_config');
+            $fieldMapping = \AichaDigital\Larabill\Services\ModelMappingService::getFieldMapping('fiscal_settings');
             if (! empty($fieldMapping)) {
                 $attributes       = $model->getAttributes();
-                $mappedAttributes = \AichaDigital\Larabill\Services\ModelMappingService::reverseMapFields($attributes, 'company_fiscal_config');
+                $mappedAttributes = \AichaDigital\Larabill\Services\ModelMappingService::reverseMapFields($attributes, 'fiscal_settings');
                 $model->setRawAttributes($mappedAttributes);
             }
         });
 
         static::retrieved(function ($model) {
             // Apply field mapping when retrieving
-            $fieldMapping = \AichaDigital\Larabill\Services\ModelMappingService::getFieldMapping('company_fiscal_config');
+            $fieldMapping = \AichaDigital\Larabill\Services\ModelMappingService::getFieldMapping('fiscal_settings');
             if (! empty($fieldMapping)) {
                 $attributes       = $model->getAttributes();
-                $mappedAttributes = \AichaDigital\Larabill\Services\ModelMappingService::mapFields($attributes, 'company_fiscal_config');
+                $mappedAttributes = \AichaDigital\Larabill\Services\ModelMappingService::mapFields($attributes, 'fiscal_settings');
                 $model->setRawAttributes($mappedAttributes);
             }
         });
     }
 
     /**
-     * Find fiscal config by company and fiscal year.
+     * Find fiscal config by user and fiscal year.
      */
-    public static function findByCompanyAndYear(string $companyId, ?int $fiscalYear = null): ?self
+    public static function findByUserAndYear(string|int $userId, ?int $fiscalYear = null): ?self
     {
         if (! $fiscalYear) {
             $fiscalYear = now()->year;
         }
 
-        return static::where('company_id', $companyId)
+        return static::where('user_id', $userId)
             ->where('fiscal_year', $fiscalYear)
             ->first();
     }
 
     /**
-     * Get or create fiscal config for the company (singleton pattern).
+     * Get or create fiscal config for the user (singleton pattern).
      */
-    public static function getOrCreateForCompany(string $companyId = 'default', ?int $fiscalYear = null): self
+    public static function getOrCreateForUser(string|int $userId, ?int $fiscalYear = null): self
     {
         if (! $fiscalYear) {
             $fiscalYear = now()->year;
@@ -167,7 +173,7 @@ class CompanyFiscalConfig extends Model
 
         return static::firstOrCreate(
             [
-                'company_id'  => $companyId,
+                'user_id'     => $userId,
                 'fiscal_year' => $fiscalYear,
             ],
             [
@@ -186,11 +192,16 @@ class CompanyFiscalConfig extends Model
     }
 
     /**
-     * Get current company configuration (singleton pattern).
+     * Get the user that owns the fiscal settings.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<\Illuminate\Foundation\Auth\User, $this>
      */
-    public static function current(): self
+    public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return static::getOrCreateForCompany('default');
+        $userModel = \AichaDigital\Larabill\Services\ModelMappingService::getModelClass('user');
+
+        // @phpstan-ignore-next-line return.type,argument.templateType
+        return $this->belongsTo($userModel);
     }
 
     /**
@@ -313,14 +324,14 @@ class CompanyFiscalConfig extends Model
     }
 
     /**
-     * Scope to get configs by company.
+     * Scope to get configs by user.
      *
      * @param  Builder<static>  $query
      * @return Builder<static>
      */
-    public function scopeByCompany(Builder $query, string $companyId): Builder
+    public function scopeByUser(Builder $query, string|int $userId): Builder
     {
-        return $query->where('company_id', $companyId);
+        return $query->where('user_id', $userId);
     }
 
     /**

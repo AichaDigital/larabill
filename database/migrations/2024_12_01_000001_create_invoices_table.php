@@ -14,11 +14,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('invoices', function (Blueprint $table) {
-            $table->id();
+            // UUID as binary(16) for efficient storage - using Dyrynda's laravel-model-uuid
+            $table->uuid('id')->primary();
             $table->string('number')->unique();
             $table->enum('type', ['invoice', 'proforma'])->default('invoice');
             $table->enum('status', ['draft', 'sent', 'paid', 'overdue', 'cancelled'])->default('draft');
             $table->unsignedBigInteger('user_id');
+            $table->unsignedBigInteger('tax_profile_id')->nullable();
             $table->text('user_tax_info_encrypted')->nullable();
             $table->json('customer_data')->nullable();
             $table->boolean('is_immutable')->default(false);
@@ -36,9 +38,16 @@ return new class extends Migration
             $table->string('template_name')->nullable();
             $table->timestamps();
 
+            // Foreign keys
+            $table->foreign('tax_profile_id')
+                  ->references('id')
+                  ->on('user_tax_profiles')
+                  ->nullOnDelete();
+
             // Indexes
             $table->index(['number']);
             $table->index(['user_id']);
+            $table->index(['user_id', 'tax_profile_id']);
             $table->index(['status']);
             $table->index(['type', 'status']);
             $table->index(['template_name']);

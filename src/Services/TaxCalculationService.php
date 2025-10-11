@@ -375,13 +375,13 @@ class TaxCalculationService
         }
 
         $vatVerification = $options['vat_verification'];
-        if (! is_array($vatVerification) || ! isset($vatVerification['vat_number'])) {
+        if (! is_array($vatVerification) || ! isset($vatVerification['vat_code'])) {
             return false;
         }
 
         $result = $this->roiVerificationService->verifyRoiStatus(
             $options['user_id'] ?? 'unknown',
-            $vatVerification['vat_number'],
+            $vatVerification['vat_code'],
             $vatVerification['country_code'] ?? 'ES'
         );
 

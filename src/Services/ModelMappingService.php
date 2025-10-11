@@ -17,12 +17,13 @@ class ModelMappingService
     public static function getModelClass(string $modelType): string
     {
         $defaultModels = [
-            'user'             => \AichaDigital\Larabill\Tests\Models\User::class,
-            'user_tax_info'    => \AichaDigital\Larabill\Models\UserTaxInfo::class,
-            'invoice'          => \AichaDigital\Larabill\Models\Invoice::class,
-            'invoice_item'     => \AichaDigital\Larabill\Models\InvoiceItem::class,
-            'tax_rate'         => \AichaDigital\Larabill\Models\TaxRate::class,
-            'vat_verification' => \AichaDigital\Larabill\Models\VatVerification::class,
+            'user'              => \AichaDigital\Larabill\Tests\Models\User::class,
+            'user_tax_profile'  => \AichaDigital\Larabill\Models\UserTaxProfile::class,
+            'invoice'           => \AichaDigital\Larabill\Models\Invoice::class,
+            'invoice_item'      => \AichaDigital\Larabill\Models\InvoiceItem::class,
+            'tax_rate'          => \AichaDigital\Larabill\Models\TaxRate::class,
+            'vat_verification'  => \AichaDigital\Larabill\Models\VatVerification::class,
+            'fiscal_settings'   => \AichaDigital\Larabill\Models\FiscalSettings::class,
         ];
 
         $configuredModel = config("larabill.models.{$modelType}");

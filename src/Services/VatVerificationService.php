@@ -32,7 +32,7 @@ class VatVerificationService
 
         if ($cachedVerification && $this->isCacheValid($cachedVerification)) {
             \Log::info('VatVerificationService: Using cached result', [
-                'vat_number'   => $vatNumber,
+                'vat_code'   => $vatNumber,
                 'country_code' => $countryCode,
                 'cached_id'    => $cachedVerification->id,
             ]);
@@ -41,7 +41,7 @@ class VatVerificationService
 
             return [
                 'is_valid'        => $cachedVerification->is_valid,
-                'vat_number'      => $cachedVerification->vat_number,
+                'vat_code'      => $cachedVerification->vat_code,
                 'country_code'    => $cachedVerification->country_code,
                 'company_name'    => $cachedVerification->company_name,
                 'company_address' => $cachedVerification->company_address,
@@ -53,7 +53,7 @@ class VatVerificationService
         }
 
         \Log::info('VatVerificationService: No cached result, calling APIs', [
-            'vat_number'   => $vatNumber,
+            'vat_code'   => $vatNumber,
             'country_code' => $countryCode,
         ]);
 
@@ -61,7 +61,7 @@ class VatVerificationService
         $result = $this->tryApisWithFallback($vatNumber, $countryCode);
 
         \Log::info('VatVerificationService: API result', [
-            'vat_number'   => $vatNumber,
+            'vat_code'   => $vatNumber,
             'country_code' => $countryCode,
             'result'       => $result,
         ]);
@@ -105,7 +105,7 @@ class VatVerificationService
             }
         } catch (\Exception $e) {
             \Log::warning("Primary VAT API ({$primaryApi}) failed, trying fallback", [
-                'vat_number'   => $vatNumber,
+                'vat_code'   => $vatNumber,
                 'country_code' => $countryCode,
                 'error'        => $e->getMessage(),
             ]);
@@ -125,7 +125,7 @@ class VatVerificationService
             }
 
             \Log::info("Using fallback VAT API ({$fallbackApi}) for verification", [
-                'vat_number'   => $vatNumber,
+                'vat_code'   => $vatNumber,
                 'country_code' => $countryCode,
                 'primary_api'  => $primaryApi,
             ]);
@@ -133,7 +133,7 @@ class VatVerificationService
             return $result;
         } catch (\Exception $e) {
             \Log::error('Both VAT APIs failed', [
-                'vat_number'   => $vatNumber,
+                'vat_code'   => $vatNumber,
                 'country_code' => $countryCode,
                 'primary_api'  => $primaryApi,
                 'fallback_api' => $fallbackApi,
@@ -142,7 +142,7 @@ class VatVerificationService
 
             // Return mock response when both APIs fail
             return [
-                'vat_number'      => $vatNumber,
+                'vat_code'      => $vatNumber,
                 'country_code'    => $countryCode,
                 'is_valid'        => true, // Mock responses are considered valid for testing
                 'company_name'    => 'Mock Company',
@@ -219,14 +219,14 @@ class VatVerificationService
 
         return [
             'is_valid'        => $vatNumber !== 'INVALID',
-            'vat_number'      => $vatNumber,
+            'vat_code'      => $vatNumber,
             'country_code'    => $countryCode,
             'company_name'    => $companyName,
             'company_address' => $vatNumber !== 'INVALID' ? 'Test Address 123' : null,
             'api_source'      => $apiName,
             'response_data'   => [
                 'valid'        => $vatNumber !== 'INVALID',
-                'vat_number'   => $vatNumber,
+                'vat_code'   => $vatNumber,
                 'country_code' => $countryCode,
                 'mock'         => true,
                 'error'        => 'All APIs failed, using mock response',
@@ -246,7 +246,7 @@ class VatVerificationService
     {
         VatVerification::updateOrCreate(
             [
-                'vat_number'   => $result['vat_number'],
+                'vat_code'   => $result['vat_code'],
                 'country_code' => $result['country_code'],
             ],
             [

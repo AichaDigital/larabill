@@ -4,27 +4,27 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Database\Factories;
 
-use AichaDigital\Larabill\Models\CompanyFiscalConfig;
+use AichaDigital\Larabill\Models\FiscalSettings;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * CompanyFiscalConfig Factory
+ * FiscalSettings Factory
  *
  * Uses integer base 100 for monetary amounts
  * Example: €1,234.56 is stored as 123456, €100.00 as 10000
  *
- * @extends Factory<CompanyFiscalConfig>
+ * @extends Factory<FiscalSettings>
  */
-class CompanyFiscalConfigFactory extends Factory
+class FiscalSettingsFactory extends Factory
 {
-    protected $model = CompanyFiscalConfig::class;
+    protected $model = FiscalSettings::class;
 
     public function definition(): array
     {
         $currentYear = now()->year;
 
         return [
-            'company_id'                   => $this->faker->uuid(),
+            'user_id'                      => $this->faker->numberBetween(1, 1000),
             'apply_destination_iva'        => $this->faker->boolean(30), // 30% chance of applying destination VAT
             'eu_sales_threshold'           => 1000000, // €10,000.00 in base 100
             'current_eu_sales_amount'      => $this->faker->numberBetween(0, 800000), // €0.00 to €8,000.00 in base 100

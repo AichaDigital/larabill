@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services;
 
-use AichaDigital\Larabill\Models\{CompanyFiscalConfig, CountryVatRate, EuSalesThreshold, VatCategory};
+use AichaDigital\Larabill\Models\{FiscalSettings, CountryVatRate, EuSalesThreshold, VatCategory};
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -28,9 +28,9 @@ class DestinationVatService
     /**
      * Check if destination VAT should be applied for a company.
      */
-    public function shouldApplyDestinationVat(string $companyId, ?int $fiscalYear = null): bool
+    public function shouldApplyDestinationVat(string $userId, ?int $fiscalYear = null): bool
     {
-        $config = CompanyFiscalConfig::getOrCreateForCompany($companyId, $fiscalYear);
+        $config = FiscalSettings::getOrCreateForUser($userId, $fiscalYear);
 
         return $config->shouldApplyDestinationVat();
     }
@@ -90,18 +90,18 @@ class DestinationVatService
     /**
      * Update EU sales amount for a company.
      */
-    public function updateEuSales(string $companyId, string $countryCode, float $amount, ?int $fiscalYear = null): void
+    public function updateEuSales(string $userId, string $countryCode, float $amount, ?int $fiscalYear = null): void
     {
         if (! $fiscalYear) {
             $fiscalYear = now()->year;
         }
 
         // Update company fiscal config
-        $config = CompanyFiscalConfig::getOrCreateForCompany($companyId, $fiscalYear);
+        $config = FiscalSettings::getOrCreateForUser($userId, $fiscalYear);
         $config->updateEuSales($amount);
 
         // Update EU sales threshold
-        $threshold = EuSalesThreshold::getOrCreateForCompany($companyId, $fiscalYear);
+        $threshold = EuSalesThreshold::getOrCreateForUser($userId, $fiscalYear);
         $threshold->addSalesForCountry($countryCode, $amount);
 
         // Check if threshold exceeded and send notification
@@ -110,15 +110,15 @@ class DestinationVatService
         }
 
         // Clear cache for this company
-        $this->clearCompanyCache($companyId);
+        $this->clearCompanyCache($userId);
     }
 
     /**
      * Check threshold for a company.
      */
-    public function checkThreshold(string $companyId, ?int $fiscalYear = null): bool
+    public function checkThreshold(string $userId, ?int $fiscalYear = null): bool
     {
-        $config = CompanyFiscalConfig::getOrCreateForCompany($companyId, $fiscalYear);
+        $config = FiscalSettings::getOrCreateForUser($userId, $fiscalYear);
 
         return $config->checkThreshold();
     }
@@ -128,13 +128,13 @@ class DestinationVatService
      *
      * @return array<string, mixed>
      */
-    public function getThresholdStatistics(string $companyId, ?int $fiscalYear = null): array
+    public function getThresholdStatistics(string $userId, ?int $fiscalYear = null): array
     {
-        $config    = CompanyFiscalConfig::getOrCreateForCompany($companyId, $fiscalYear);
-        $threshold = EuSalesThreshold::getOrCreateForCompany($companyId, $fiscalYear);
+        $config    = FiscalSettings::getOrCreateForUser($userId, $fiscalYear);
+        $threshold = EuSalesThreshold::getOrCreateForUser($userId, $fiscalYear);
 
         return [
-            'company_id'              => $companyId,
+            'user_id'              => $userId,
             'fiscal_year'             => $fiscalYear ?: now()->year,
             'current_amount'          => $config->current_eu_sales_amount,
             'threshold_amount'        => $config->eu_sales_threshold,
@@ -151,15 +151,15 @@ class DestinationVatService
     /**
      * Enable destination VAT for a company.
      */
-    public function enableDestinationVat(string $companyId, ?int $fiscalYear = null): CompanyFiscalConfig
+    public function enableDestinationVat(string $userId, ?int $fiscalYear = null): FiscalSettings
     {
-        $config = CompanyFiscalConfig::getOrCreateForCompany($companyId, $fiscalYear);
+        $config = FiscalSettings::getOrCreateForUser($userId, $fiscalYear);
         $config->enableDestinationVat();
 
-        $this->clearCompanyCache($companyId);
+        $this->clearCompanyCache($userId);
 
         Log::info('Destination VAT enabled for company', [
-            'company_id'  => $companyId,
+            'user_id'  => $userId,
             'fiscal_year' => $fiscalYear ?: now()->year,
         ]);
 
@@ -169,15 +169,15 @@ class DestinationVatService
     /**
      * Disable destination VAT for a company.
      */
-    public function disableDestinationVat(string $companyId, ?int $fiscalYear = null): CompanyFiscalConfig
+    public function disableDestinationVat(string $userId, ?int $fiscalYear = null): FiscalSettings
     {
-        $config = CompanyFiscalConfig::getOrCreateForCompany($companyId, $fiscalYear);
+        $config = FiscalSettings::getOrCreateForUser($userId, $fiscalYear);
         $config->disableDestinationVat();
 
-        $this->clearCompanyCache($companyId);
+        $this->clearCompanyCache($userId);
 
         Log::info('Destination VAT disabled for company', [
-            'company_id'  => $companyId,
+            'user_id'  => $userId,
             'fiscal_year' => $fiscalYear ?: now()->year,
         ]);
 
@@ -187,18 +187,18 @@ class DestinationVatService
     /**
      * Reset EU sales for new fiscal year.
      */
-    public function resetEuSalesForNewYear(string $companyId, int $newFiscalYear): void
+    public function resetEuSalesForNewYear(string $userId, int $newFiscalYear): void
     {
-        $config = CompanyFiscalConfig::getOrCreateForCompany($companyId, $newFiscalYear);
+        $config = FiscalSettings::getOrCreateForUser($userId, $newFiscalYear);
         $config->resetEuSales();
 
-        $threshold = EuSalesThreshold::getOrCreateForCompany($companyId, $newFiscalYear);
+        $threshold = EuSalesThreshold::getOrCreateForUser($userId, $newFiscalYear);
         $threshold->resetForNewYear($newFiscalYear);
 
-        $this->clearCompanyCache($companyId);
+        $this->clearCompanyCache($userId);
 
         Log::info('EU sales reset for new fiscal year', [
-            'company_id'      => $companyId,
+            'user_id'      => $userId,
             'new_fiscal_year' => $newFiscalYear,
         ]);
     }
@@ -206,7 +206,7 @@ class DestinationVatService
     /**
      * Clear cache for a company.
      */
-    private function clearCompanyCache(string $companyId): void
+    private function clearCompanyCache(string $userId): void
     {
         $this->cacheService->clearByTag('company');
     }
@@ -269,7 +269,7 @@ class DestinationVatService
         $cacheKey = 'destination_vat_statistics';
 
         return $this->cacheService->remember($cacheKey, function () use ($fiscalYear) {
-            $query = CompanyFiscalConfig::query();
+            $query = FiscalSettings::query();
             if ($fiscalYear) {
                 $query->where('fiscal_year', $fiscalYear);
             }
@@ -405,9 +405,9 @@ class DestinationVatService
     /**
      * Update EU sales amount for a company.
      */
-    public function updateEuSalesAmount(string $companyId, int $fiscalYear, string $countryCode, float $amount): CompanyFiscalConfig
+    public function updateEuSalesAmount(string $userId, int $fiscalYear, string $countryCode, float $amount): FiscalSettings
     {
-        $config = CompanyFiscalConfig::getOrCreateForCompany($companyId, $fiscalYear);
+        $config = FiscalSettings::getOrCreateForUser($userId, $fiscalYear);
 
         // Base100 cast handles conversion automatically
         $config->current_eu_sales_amount = $config->current_eu_sales_amount + $amount;
@@ -420,7 +420,7 @@ class DestinationVatService
         $config->save();
 
         // Also update EuSalesThreshold for detailed tracking
-        $threshold = EuSalesThreshold::findByCompanyAndYear($companyId, $fiscalYear);
+        $threshold = EuSalesThreshold::findByCompanyAndYear($userId, $fiscalYear);
         if ($threshold) {
             $breakdown                       = $threshold->breakdown_by_country ?? [];
             $currentCountryAmount            = (float) ($breakdown[$countryCode] ?? 0.0);
@@ -438,9 +438,9 @@ class DestinationVatService
      *
      * @return array<string, mixed>
      */
-    public function getEuSalesThresholdStatus(string $companyId, int $fiscalYear): array
+    public function getEuSalesThresholdStatus(string $userId, int $fiscalYear): array
     {
-        $config    = CompanyFiscalConfig::getOrCreateForCompany($companyId, $fiscalYear);
+        $config    = FiscalSettings::getOrCreateForUser($userId, $fiscalYear);
         $threshold = $config->eu_sales_threshold;
         $current   = $config->current_eu_sales_amount;
 
@@ -460,9 +460,9 @@ class DestinationVatService
      *
      * @return array<string, mixed>
      */
-    public function getEuSalesBreakdownByCountry(string $companyId, int $fiscalYear): array
+    public function getEuSalesBreakdownByCountry(string $userId, int $fiscalYear): array
     {
-        $threshold = EuSalesThreshold::findByCompanyAndYear($companyId, $fiscalYear);
+        $threshold = EuSalesThreshold::findByCompanyAndYear($userId, $fiscalYear);
 
         if (! $threshold) {
             return ['total' => 0.0, 'countries' => []];
@@ -490,7 +490,7 @@ class DestinationVatService
      */
     public function getCompaniesExceedingThreshold(int $fiscalYear): \Illuminate\Database\Eloquent\Collection
     {
-        return CompanyFiscalConfig::where('fiscal_year', $fiscalYear)
+        return FiscalSettings::where('fiscal_year', $fiscalYear)
             ->whereColumn('current_eu_sales_amount', '>=', 'eu_sales_threshold')
             ->get();
     }
@@ -502,7 +502,7 @@ class DestinationVatService
      */
     public function getCompaniesNeedingNotification(int $fiscalYear): \Illuminate\Database\Eloquent\Collection
     {
-        return CompanyFiscalConfig::where('fiscal_year', $fiscalYear)
+        return FiscalSettings::where('fiscal_year', $fiscalYear)
             ->where(function ($query) {
                 $query->where('apply_destination_iva', true)
                     ->orWhere('threshold_exceeded', true);
@@ -527,9 +527,9 @@ class DestinationVatService
     /**
      * Reset EU sales for new fiscal year.
      */
-    public function resetEuSalesForNewFiscalYear(string $companyId, int $newFiscalYear): bool
+    public function resetEuSalesForNewFiscalYear(string $userId, int $newFiscalYear): bool
     {
-        $config = CompanyFiscalConfig::getOrCreateForCompany($companyId, $newFiscalYear);
+        $config = FiscalSettings::getOrCreateForUser($userId, $newFiscalYear);
 
         $config->current_eu_sales_amount = 0;
         $config->apply_destination_iva   = false;
@@ -540,10 +540,10 @@ class DestinationVatService
         $config->save();
 
         // Also reset EuSalesThreshold
-        $threshold = EuSalesThreshold::findByCompanyAndYear($companyId, $newFiscalYear);
+        $threshold = EuSalesThreshold::findByCompanyAndYear($userId, $newFiscalYear);
         if (! $threshold) {
             EuSalesThreshold::create([
-                'company_id'           => $companyId,
+                'user_id'           => $userId,
                 'fiscal_year'          => $newFiscalYear,
                 'total_amount'         => 0.0,
                 'threshold_exceeded'   => false,

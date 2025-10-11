@@ -13,12 +13,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('user_tax_infos', function (Blueprint $table) {
+        Schema::create('user_tax_profiles', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id');
             $table->boolean('is_current')->default(false);
-            $table->string('tax_id');
-            $table->string('company_name');
+            $table->string('tax_code');
+            $table->string('business_name');
             $table->text('address');
             $table->string('city');
             $table->string('postal_code');
@@ -40,6 +40,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('user_tax_infos');
+        Schema::dropIfExists('user_tax_profiles');
     }
 };

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Models;
 
 use AichaDigital\Lara100\Casts\Base100;
+use Dyrynda\Database\Casts\EfficientUuid;
+use Dyrynda\Database\Support\{BindsOnUuid, GeneratesUuid};
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
@@ -14,13 +16,15 @@ use Illuminate\Support\Carbon;
  * Invoice Model
  *
  * Represents an invoice with immutability and encryption features.
+ * Uses ordered UUID v4 for efficient binary storage and indexing.
  * All monetary amounts are stored as base-100 integers (e.g., €12.34 => 1234).
  *
- * @property int $id
+ * @property string $id UUID stored as binary(16)
  * @property string $number
  * @property string $type
  * @property string $status
  * @property int|string $user_id
+ * @property int|null $tax_profile_id
  * @property string|null $user_tax_info_encrypted
  * @property array<string, mixed>|null $customer_data
  * @property bool $is_immutable
@@ -41,7 +45,17 @@ use Illuminate\Support\Carbon;
  */
 class Invoice extends Model
 {
-    use HasFactory;
+    use HasFactory, GeneratesUuid, BindsOnUuid;
+
+    /**
+     * Indicates if the IDs are auto-incrementing.
+     */
+    public $incrementing = false;
+
+    /**
+     * The data type of the auto-incrementing ID.
+     */
+    protected $keyType = 'string';
 
     /**
      * The attributes that are mass assignable.
@@ -51,6 +65,7 @@ class Invoice extends Model
         'type',
         'status',
         'user_id',
+        'tax_profile_id',
         'user_tax_info_encrypted',
         'customer_data',
         'is_immutable',
@@ -69,15 +84,26 @@ class Invoice extends Model
     ];
 
     /**
+     * UUID version to use for invoice IDs.
+     * Uses 'ordered' for better MySQL index performance.
+     */
+    public function uuidVersion(): string
+    {
+        return 'ordered'; // Laravel's ordered UUID v4 for better performance
+    }
+
+    /**
      * Casts for attributes.
      *
      * Uses Base100 cast from lara100 package for monetary values
+     * Uses EfficientUuid cast for binary UUID storage (16 bytes vs 36 bytes)
      * Automatically handles conversion between decimals and base-100 integers
      * Example: €12.34 ↔ 1234 (stored as integer, accessed as decimal)
      */
     public function casts(): array
     {
         return [
+            'id'               => EfficientUuid::class, // Binary UUID storage
             'is_immutable'     => 'boolean',
             'immutable_at'     => 'datetime',
             'paid_at'          => 'datetime',
@@ -141,6 +167,17 @@ class Invoice extends Model
 
         // @phpstan-ignore-next-line return.type,argument.templateType
         return $this->belongsTo($userModel);
+    }
+
+    /**
+     * Get the tax profile snapshot for this invoice.
+     * This maintains a reference to the user's tax information at invoice creation time.
+     *
+     * @return BelongsTo<UserTaxProfile, $this>
+     */
+    public function taxProfile(): BelongsTo
+    {
+        return $this->belongsTo(UserTaxProfile::class, 'tax_profile_id');
     }
 
     /**

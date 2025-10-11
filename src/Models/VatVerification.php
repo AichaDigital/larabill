@@ -9,10 +9,11 @@ use Illuminate\Database\Eloquent\{Builder, Model};
 /**
  * VatVerification Model
  *
- * Represents VAT number verification results from external APIs.
+ * Represents VAT code verification results from external APIs.
+ * Stores verification data for international tax codes (VAT/IVA/Sales Tax/etc).
  *
  * @property int $id
- * @property string $vat_number
+ * @property string $vat_code
  * @property string $country_code
  * @property bool $is_valid
  * @property string|null $company_name
@@ -30,7 +31,7 @@ class VatVerification extends Model
      * The attributes that are mass assignable.
      */
     protected $fillable = [
-        'vat_number',
+        'vat_code',
         'country_code',
         'is_valid',
         'company_name',
@@ -52,21 +53,39 @@ class VatVerification extends Model
     ];
 
     /**
-     * Find verification by VAT number and country code.
+     * Find verification by VAT code and country code.
      */
-    public static function findByVatNumber(string $vatNumber, string $countryCode): ?self
+    public static function findByVatCode(string $vatCode, string $countryCode): ?self
     {
-        return static::where('vat_number', $vatNumber)
+        return static::where('vat_code', $vatCode)
             ->where('country_code', $countryCode)
             ->first();
     }
 
     /**
-     * Find verification by VAT number and country code (alias).
+     * Find verification by VAT code and country code (alias).
      */
-    public static function findByVatNumberAndCountry(string $vatNumber, string $countryCode): ?self
+    public static function findByVatCodeAndCountry(string $vatCode, string $countryCode): ?self
     {
-        return static::findByVatNumber($vatNumber, $countryCode);
+        return static::findByVatCode($vatCode, $countryCode);
+    }
+
+    /**
+     * Get tax profiles that use this VAT code.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<UserTaxProfile, $this>
+     */
+    public function taxProfiles(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(UserTaxProfile::class, 'tax_code', 'vat_code');
+    }
+
+    /**
+     * Check if VAT verification is expired.
+     */
+    public function isExpired(): bool
+    {
+        return $this->expires_at && $this->expires_at->isPast();
     }
 
     /**

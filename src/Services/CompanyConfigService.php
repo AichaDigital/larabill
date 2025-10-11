@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services;
 
-use AichaDigital\Larabill\Models\CompanyFiscalConfig;
+use AichaDigital\Larabill\Models\FiscalSettings;
 use Illuminate\Support\Facades\Log;
 
 /**
  * Company Configuration Service
  *
- * Handles the fiscal configuration for the company using the software.
- * This service works with a singleton CompanyFiscalConfig model.
+ * Handles the fiscal configuration for users using the software.
+ * This service works with FiscalSettings model per user and fiscal year.
+ *
+ * @deprecated Use FiscalSettings model directly. This service will be refactored in future versions.
  */
 class CompanyConfigService
 {
@@ -26,23 +28,28 @@ class CompanyConfigService
     }
 
     /**
-     * Get current company configuration.
+     * Get current user configuration (deprecated - use FiscalSettings directly).
+     *
+     * @deprecated Use FiscalSettings::getOrCreateForUser() directly
      */
-    public function getCurrentConfig(): CompanyFiscalConfig
+    public function getCurrentConfig(): FiscalSettings
     {
         $cacheKey = 'company_config_current';
 
         return $this->cacheService->remember($cacheKey, function () {
-            return CompanyFiscalConfig::getOrCreateForCompany('default-company', 2024);
+            // Fallback to a default user ID - applications should provide their own user ID
+            $defaultUserId = config('larabill.default_user_id', 1);
+
+            return FiscalSettings::getOrCreateForUser($defaultUserId, now()->year);
         });
     }
 
     /**
-     * Update company configuration.
+     * Update user configuration.
      *
      * @param  array<string, mixed>  $data
      */
-    public function updateConfig(array $data): CompanyFiscalConfig
+    public function updateConfig(array $data): FiscalSettings
     {
         $config = $this->getCurrentConfig();
 
@@ -67,7 +74,7 @@ class CompanyConfigService
     /**
      * Enable OSS registration.
      */
-    public function enableOSS(): CompanyFiscalConfig
+    public function enableOSS(): FiscalSettings
     {
         $config = $this->getCurrentConfig();
         $config->enableOSS();
@@ -333,7 +340,7 @@ class CompanyConfigService
     {
         $fiscalYear = $fiscalYear ?? date('Y');
 
-        return CompanyFiscalConfig::where('company_id', $companyId)
+        return FiscalSettings::where('company_id', $companyId)
             ->where('fiscal_year', $fiscalYear)
             ->first();
     }
@@ -366,7 +373,7 @@ class CompanyConfigService
             $configData['current_eu_sales_amount'] = (float) $configData['current_eu_sales_amount'];
         }
 
-        $config = CompanyFiscalConfig::create($configData);
+        $config = FiscalSettings::create($configData);
 
         Log::info('Company configuration created', [
             'company_id'  => $companyId,
@@ -405,7 +412,7 @@ class CompanyConfigService
      */
     public function updateCompanyConfig(string $companyId, int $fiscalYear, array $data): CompanyFiscalConfig
     {
-        $config = CompanyFiscalConfig::where('company_id', $companyId)
+        $config = FiscalSettings::where('company_id', $companyId)
             ->where('fiscal_year', $fiscalYear)
             ->firstOrFail();
 
@@ -425,7 +432,7 @@ class CompanyConfigService
      */
     public function deleteCompanyConfig(string $companyId, int $fiscalYear): bool
     {
-        $deleted = CompanyFiscalConfig::where('company_id', $companyId)
+        $deleted = FiscalSettings::where('company_id', $companyId)
             ->where('fiscal_year', $fiscalYear)
             ->delete();
 
@@ -443,7 +450,7 @@ class CompanyConfigService
      */
     public function hasCompanyConfig(string $companyId, int $fiscalYear): bool
     {
-        return CompanyFiscalConfig::where('company_id', $companyId)
+        return FiscalSettings::where('company_id', $companyId)
             ->where('fiscal_year', $fiscalYear)
             ->exists();
     }
@@ -455,7 +462,7 @@ class CompanyConfigService
      */
     public function getOrCreateCompanyConfig(string $companyId, int $fiscalYear, array $data = []): CompanyFiscalConfig
     {
-        return CompanyFiscalConfig::firstOrCreate(
+        return FiscalSettings::firstOrCreate(
             [
                 'company_id'  => $companyId,
                 'fiscal_year' => $fiscalYear,
@@ -471,7 +478,7 @@ class CompanyConfigService
      */
     public function getAllCompanyConfigs(): \Illuminate\Database\Eloquent\Collection
     {
-        return CompanyFiscalConfig::all();
+        return FiscalSettings::all();
     }
 
     /**
@@ -481,7 +488,7 @@ class CompanyConfigService
      */
     public function getCompanyConfigsByFiscalYear(int $fiscalYear): \Illuminate\Database\Eloquent\Collection
     {
-        return CompanyFiscalConfig::where('fiscal_year', $fiscalYear)->get();
+        return FiscalSettings::where('fiscal_year', $fiscalYear)->get();
     }
 
     /**
@@ -491,7 +498,7 @@ class CompanyConfigService
      */
     public function getCompanyConfigsByDestinationVatStatus(bool $applyDestinationVat): \Illuminate\Database\Eloquent\Collection
     {
-        return CompanyFiscalConfig::where('apply_destination_iva', $applyDestinationVat)->get();
+        return FiscalSettings::where('apply_destination_iva', $applyDestinationVat)->get();
     }
 
     /**
@@ -501,7 +508,7 @@ class CompanyConfigService
      */
     public function getCompanyConfigsByThresholdStatus(bool $thresholdExceeded): \Illuminate\Database\Eloquent\Collection
     {
-        return CompanyFiscalConfig::where('threshold_exceeded', $thresholdExceeded)->get();
+        return FiscalSettings::where('threshold_exceeded', $thresholdExceeded)->get();
     }
 
     /**
@@ -511,7 +518,7 @@ class CompanyConfigService
      */
     public function getCompanyConfigsNeedingNotification(): \Illuminate\Database\Eloquent\Collection
     {
-        return CompanyFiscalConfig::where('threshold_exceeded', true)
+        return FiscalSettings::where('threshold_exceeded', true)
             ->where('notification_sent', false)
             ->get();
     }
@@ -570,7 +577,7 @@ class CompanyConfigService
      */
     public function getCompanyConfigByMapping(string $companyId, int $fiscalYear): ?CompanyFiscalConfig
     {
-        return CompanyFiscalConfig::where('company_id', $companyId)
+        return FiscalSettings::where('company_id', $companyId)
             ->where('fiscal_year', $fiscalYear)
             ->first();
     }
@@ -582,7 +589,7 @@ class CompanyConfigService
      */
     public function getCompanyConfigStatistics(int $fiscalYear): array
     {
-        $configs = CompanyFiscalConfig::where('fiscal_year', $fiscalYear)->get();
+        $configs = FiscalSettings::where('fiscal_year', $fiscalYear)->get();
 
         $totalSales = $configs->sum('current_eu_sales_amount');
 
@@ -613,7 +620,7 @@ class CompanyConfigService
     public function getConfiguration(): array
     {
         return [
-            'model'                  => CompanyFiscalConfig::class,
+            'model'                  => FiscalSettings::class,
             'default_threshold'      => 10000,
             'currency'               => 'EUR',
             'fiscal_year_start'      => '01-01',
@@ -654,7 +661,7 @@ class CompanyConfigService
      */
     public function getCompanyConfigsByFiscalYearRange(string $companyId, int $startYear, int $endYear): \Illuminate\Database\Eloquent\Collection
     {
-        return CompanyFiscalConfig::where('company_id', $companyId)
+        return FiscalSettings::where('company_id', $companyId)
             ->whereBetween('fiscal_year', [$startYear, $endYear])
             ->orderBy('fiscal_year')
             ->get();

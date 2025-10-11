@@ -44,26 +44,33 @@ return [
 
     // Model mappings for extensibility
     'models' => [
-        'user'             => \AichaDigital\Larabill\Tests\Models\User::class, // Your application's User model
-        'user_tax_info'    => \AichaDigital\Larabill\Models\UserTaxInfo::class,
-        'invoice'          => \AichaDigital\Larabill\Models\Invoice::class,
-        'invoice_item'     => \AichaDigital\Larabill\Models\InvoiceItem::class,
-        'tax_rate'         => \AichaDigital\Larabill\Models\TaxRate::class,
-        'vat_verification' => \AichaDigital\Larabill\Models\VatVerification::class,
+        'user'              => \AichaDigital\Larabill\Tests\Models\User::class, // Your application's User model
+        'user_tax_profile'  => \AichaDigital\Larabill\Models\UserTaxProfile::class,
+        'invoice'           => \AichaDigital\Larabill\Models\Invoice::class,
+        'invoice_item'      => \AichaDigital\Larabill\Models\InvoiceItem::class,
+        'tax_rate'          => \AichaDigital\Larabill\Models\TaxRate::class,
+        'vat_verification'  => \AichaDigital\Larabill\Models\VatVerification::class,
+        'fiscal_settings'   => \AichaDigital\Larabill\Models\FiscalSettings::class,
     ],
 
     // Field mappings for custom field names
     'field_mappings' => [
-        'user_tax_info' => [
+        'user_tax_profile' => [
             // 'user_id' => 'customer_id',
-            // 'tax_id' => 'fiscal_id',
-            // 'company_name' => 'business_name',
+            // 'tax_code' => 'fiscal_code',
+            // 'business_name' => 'company_name',
             // 'address' => 'street_address',
             // 'city' => 'municipality',
             // 'postal_code' => 'zip_code',
             // 'country' => 'country_code',
             // 'state' => 'region',
             // 'phone' => 'contact_phone',
+        ],
+        'fiscal_settings' => [
+            // 'user_id' => 'customer_id',
+        ],
+        'vat_verification' => [
+            // 'vat_code' => 'tax_number',
         ],
     ],
 
