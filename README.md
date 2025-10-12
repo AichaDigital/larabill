@@ -36,10 +36,48 @@ Larabill is a professional, agnostic billing and invoicing package for Laravel a
 
 ## Installation
 
-You can install the package via composer:
+### Development Installation (Recommended for Testing)
+
+Since this is a development version (0.1.0), we recommend testing it locally before using from Packagist:
+
+```json
+// composer.json of your Laravel app
+{
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../larabill",
+            "options": {
+                "symlink": true
+            }
+        }
+    ],
+    "require": {
+        "aichadigital/larabill": "@dev"
+    }
+}
+```
+
+Then run:
 
 ```bash
-composer require aichadigital/larabill
+composer update aichadigital/larabill
+```
+
+This will symlink the package, allowing you to:
+- Test in real applications
+- Verify agnostic user models (UUID/ULID/Int)
+- Make changes and see them immediately
+- Report issues before production use
+
+### Production Installation (via Packagist)
+
+**⚠️ Not recommended yet - use development installation above**
+
+Once the package is stable (v1.0.0), install via Packagist:
+
+```bash
+composer require aichadigital/larabill:^0.1
 ```
 
 You can publish and run the migrations with:
