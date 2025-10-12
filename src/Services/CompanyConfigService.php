@@ -130,7 +130,7 @@ class CompanyConfigService
     /**
      * Update EU sales threshold for specific company.
      */
-    public function updateEuSalesThreshold(string $userId, int $fiscalYear, float|string $threshold): FiscalSettings
+    public function updateEuSalesThreshold(string|int $userId, int $fiscalYear, float|string $threshold): FiscalSettings
     {
         return $this->updateCompanyConfig($userId, $fiscalYear, ['eu_sales_threshold' => (float) $threshold]);
     }
@@ -156,7 +156,7 @@ class CompanyConfigService
     /**
      * Update EU sales amount for specific company.
      */
-    public function updateEuSalesAmount(string $userId, int $fiscalYear, float|string $amount): FiscalSettings
+    public function updateEuSalesAmount(string|int $userId, int $fiscalYear, float|string $amount): FiscalSettings
     {
         $config = $this->getCompanyConfig($userId, $fiscalYear);
         if (! $config) {
@@ -334,13 +334,15 @@ class CompanyConfigService
     }
 
     /**
-     * Get company configuration.
+     * Get company configuration (duplicate method - should be removed).
+     *
+     * @deprecated Use getCompanyConfig() with correct signature instead
      */
-    public function getCompanyConfig(string $companyId, ?int $fiscalYear = null): ?CompanyFiscalConfig
+    private function getCompanyConfigLegacy(string|int $userId, ?int $fiscalYear = null): ?FiscalSettings
     {
         $fiscalYear = $fiscalYear ?? date('Y');
 
-        return FiscalSettings::where('company_id', $companyId)
+        return FiscalSettings::where('user_id', $userId)
             ->where('fiscal_year', $fiscalYear)
             ->first();
     }
@@ -350,7 +352,7 @@ class CompanyConfigService
      *
      * @param  array<string, mixed>  $data
      */
-    public function createCompanyConfig(string $userId, int $fiscalYear, array $data = []): FiscalSettings
+    public function createCompanyConfig(string|int $userId, int $fiscalYear, array $data = []): FiscalSettings
     {
         // Merge with default configuration
         $defaultConfig = $this->getDefaultConfig();
@@ -410,7 +412,7 @@ class CompanyConfigService
      *
      * @param  array<string, mixed>  $data
      */
-    public function updateCompanyConfig(string $userId, int $fiscalYear, array $data): FiscalSettings
+    public function updateCompanyConfig(string|int $userId, int $fiscalYear, array $data): FiscalSettings
     {
         $config = FiscalSettings::where('user_id', $userId)
             ->where('fiscal_year', $fiscalYear)
@@ -430,7 +432,7 @@ class CompanyConfigService
     /**
      * Delete company configuration.
      */
-    public function deleteCompanyConfig(string $userId, int $fiscalYear): bool
+    public function deleteCompanyConfig(string|int $userId, int $fiscalYear): bool
     {
         $deleted = FiscalSettings::where('user_id', $userId)
             ->where('fiscal_year', $fiscalYear)
@@ -448,7 +450,7 @@ class CompanyConfigService
     /**
      * Check if company configuration exists.
      */
-    public function hasCompanyConfig(string $userId, int $fiscalYear): bool
+    public function hasCompanyConfig(string|int $userId, int $fiscalYear): bool
     {
         return FiscalSettings::where('user_id', $userId)
             ->where('fiscal_year', $fiscalYear)
@@ -460,7 +462,7 @@ class CompanyConfigService
      *
      * @param  array<string, mixed>  $data
      */
-    public function getOrCreateCompanyConfig(string $userId, int $fiscalYear, array $data = []): FiscalSettings
+    public function getOrCreateCompanyConfig(string|int $userId, int $fiscalYear, array $data = []): FiscalSettings
     {
         return FiscalSettings::firstOrCreate(
             [
@@ -659,7 +661,7 @@ class CompanyConfigService
      *
      * @return \Illuminate\Database\Eloquent\Collection<int, FiscalSettings>
      */
-    public function getCompanyConfigsByFiscalYearRange(string $userId, int $startYear, int $endYear): \Illuminate\Database\Eloquent\Collection
+    public function getCompanyConfigsByFiscalYearRange(string|int $userId, int $startYear, int $endYear): \Illuminate\Database\Eloquent\Collection
     {
         return FiscalSettings::where('user_id', $userId)
             ->whereBetween('fiscal_year', [$startYear, $endYear])
@@ -709,7 +711,7 @@ class CompanyConfigService
      *
      * @param  array<string, mixed>  $data
      */
-    public function createCompanyConfigWithMapping(string $userId, int $fiscalYear, array $data = []): FiscalSettings
+    public function createCompanyConfigWithMapping(string|int $userId, int $fiscalYear, array $data = []): FiscalSettings
     {
         return $this->createCompanyConfig($userId, $fiscalYear, $data);
     }

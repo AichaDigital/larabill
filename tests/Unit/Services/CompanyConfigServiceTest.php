@@ -26,7 +26,7 @@ it('can create company fiscal configuration', function () {
     ]);
 
     expect($config)->toBeInstanceOf(FiscalSettings::class);
-    expect($config->company_id)->toBe('company-123');
+    expect($config->user_id)->toBe('company-123');
     expect($config->fiscal_year)->toBe(2024);
     expect($config->apply_destination_iva)->toBeTrue();
     expect($config->eu_sales_threshold)->toBe(15000.0); // €15,000.00 in base 100
@@ -47,7 +47,7 @@ it('can get company fiscal configuration', function () {
     $config = $service->getCompanyConfig('company-123', 2024);
 
     expect($config)->toBeInstanceOf(FiscalSettings::class);
-    expect($config->company_id)->toBe('company-123');
+    expect($config->user_id)->toBe('company-123');
     expect($config->fiscal_year)->toBe(2024);
     expect($config->apply_destination_iva)->toBeTrue();
 });
@@ -59,7 +59,7 @@ it('can get or create company fiscal configuration', function () {
     $config1 = $service->getOrCreateCompanyConfig('company-456', 2024);
 
     expect($config1)->toBeInstanceOf(FiscalSettings::class);
-    expect($config1->company_id)->toBe('company-456');
+    expect($config1->user_id)->toBe('company-456');
     expect($config1->fiscal_year)->toBe(2024);
 
     // Second call should return existing
@@ -191,8 +191,8 @@ it('can get company configurations by destination VAT status', function () {
 
     expect($destinationVatConfigs)->toHaveCount(1);
     expect($noDestinationVatConfigs)->toHaveCount(1);
-    expect($destinationVatConfigs->first()->company_id)->toBe('company-123');
-    expect($noDestinationVatConfigs->first()->company_id)->toBe('company-456');
+    expect($destinationVatConfigs->first()->user_id)->toBe('company-123');
+    expect($noDestinationVatConfigs->first()->user_id)->toBe('company-456');
 });
 
 it('can get company configurations by threshold status', function () {
@@ -219,8 +219,8 @@ it('can get company configurations by threshold status', function () {
 
     expect($exceededConfigs)->toHaveCount(1);
     expect($notExceededConfigs)->toHaveCount(1);
-    expect($exceededConfigs->first()->company_id)->toBe('company-123');
-    expect($notExceededConfigs->first()->company_id)->toBe('company-456');
+    expect($exceededConfigs->first()->user_id)->toBe('company-123');
+    expect($notExceededConfigs->first()->user_id)->toBe('company-456');
 });
 
 it('can get company configurations needing notification', function () {
@@ -247,7 +247,7 @@ it('can get company configurations needing notification', function () {
     $needsNotification = $service->getCompanyConfigsNeedingNotification();
 
     expect($needsNotification)->toHaveCount(1);
-    expect($needsNotification->first()->company_id)->toBe('company-123');
+    expect($needsNotification->first()->user_id)->toBe('company-123');
 });
 
 it('can enable destination VAT for company', function () {
@@ -442,7 +442,7 @@ it('can get company configuration by custom field mapping', function () {
     $config = $service->getCompanyConfigByMapping('company-123', 2024);
 
     expect($config)->toBeInstanceOf(FiscalSettings::class);
-    expect($config->company_id)->toBe('company-123');
+    expect($config->user_id)->toBe('company-123');
     expect($config->fiscal_year)->toBe(2024);
 });
 
@@ -462,7 +462,7 @@ it('can create company configuration with custom field mapping', function () {
     ]);
 
     expect($config)->toBeInstanceOf(FiscalSettings::class);
-    expect($config->company_id)->toBe('company-456');
+    expect($config->user_id)->toBe('company-456');
     expect($config->fiscal_year)->toBe(2024);
     expect($config->apply_destination_iva)->toBeTrue();
     expect($config->eu_sales_threshold)->toBe(15000.0); // €15,000.00 in base 100
