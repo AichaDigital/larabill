@@ -7,7 +7,7 @@ use Carbon\Carbon;
 
 it('can create an EU sales threshold', function () {
     $threshold = EuSalesThreshold::create([
-        'company_id'           => 'company-123',
+        'user_id'           => 'company-123',
         'fiscal_year'          => 2024,
         'total_amount'         => 5000.00,
         'threshold_exceeded'   => false,
@@ -28,7 +28,7 @@ it('can create an EU sales threshold', function () {
 
 it('can find EU sales threshold by company and year', function () {
     EuSalesThreshold::create([
-        'company_id'   => 'company-123',
+        'user_id'   => 'company-123',
         'fiscal_year'  => 2024,
         'total_amount' => 5000.00,
     ]);
@@ -57,7 +57,7 @@ it('can get or create EU sales threshold for company', function () {
 
 it('can add sales amount', function () {
     $threshold = EuSalesThreshold::create([
-        'company_id'           => 'company-123',
+        'user_id'           => 'company-123',
         'fiscal_year'          => 2024,
         'total_amount'         => 5000.00,
         'breakdown_by_country' => [
@@ -76,7 +76,7 @@ it('can add sales amount', function () {
 
 it('can update existing country amount', function () {
     $threshold = EuSalesThreshold::create([
-        'company_id'           => 'company-123',
+        'user_id'           => 'company-123',
         'fiscal_year'          => 2024,
         'total_amount'         => 5000.00,
         'breakdown_by_country' => [
@@ -94,7 +94,7 @@ it('can update existing country amount', function () {
 
 it('can check if threshold is exceeded', function () {
     $threshold = EuSalesThreshold::create([
-        'company_id'         => 'company-123',
+        'user_id'         => 'company-123',
         'fiscal_year'        => 2024,
         'total_amount'       => 5000.00,
         'threshold_exceeded' => false,
@@ -110,7 +110,7 @@ it('can check if threshold is exceeded', function () {
 
 it('can mark threshold as exceeded', function () {
     $threshold = EuSalesThreshold::create([
-        'company_id'         => 'company-123',
+        'user_id'         => 'company-123',
         'fiscal_year'        => 2024,
         'total_amount'       => 12000.00,
         'threshold_exceeded' => false,
@@ -125,7 +125,7 @@ it('can mark threshold as exceeded', function () {
 
 it('can mark notification as sent', function () {
     $threshold = EuSalesThreshold::create([
-        'company_id'        => 'company-123',
+        'user_id'        => 'company-123',
         'fiscal_year'       => 2024,
         'notification_sent' => false,
     ]);
@@ -137,7 +137,7 @@ it('can mark notification as sent', function () {
 
 it('can get sales amount by country', function () {
     $threshold = EuSalesThreshold::create([
-        'company_id'           => 'company-123',
+        'user_id'           => 'company-123',
         'fiscal_year'          => 2024,
         'total_amount'         => 5000.00,
         'breakdown_by_country' => [
@@ -153,7 +153,7 @@ it('can get sales amount by country', function () {
 
 it('can get all countries with sales', function () {
     $threshold = EuSalesThreshold::create([
-        'company_id'           => 'company-123',
+        'user_id'           => 'company-123',
         'fiscal_year'          => 2024,
         'total_amount'         => 5000.00,
         'breakdown_by_country' => [
@@ -171,7 +171,7 @@ it('can get all countries with sales', function () {
 
 it('can reset sales amounts', function () {
     $threshold = EuSalesThreshold::create([
-        'company_id'           => 'company-123',
+        'user_id'           => 'company-123',
         'fiscal_year'          => 2024,
         'total_amount'         => 12000.00,
         'threshold_exceeded'   => true,
@@ -195,7 +195,7 @@ it('can reset sales amounts', function () {
 
 it('can use scopes correctly', function () {
     EuSalesThreshold::create([
-        'company_id'         => 'company-123',
+        'user_id'         => 'company-123',
         'fiscal_year'        => 2024,
         'total_amount'       => 12000.00,
         'threshold_exceeded' => true,
@@ -203,7 +203,7 @@ it('can use scopes correctly', function () {
     ]);
 
     EuSalesThreshold::create([
-        'company_id'         => 'company-456',
+        'user_id'         => 'company-456',
         'fiscal_year'        => 2024,
         'total_amount'       => 5000.00,
         'threshold_exceeded' => false,
@@ -211,7 +211,7 @@ it('can use scopes correctly', function () {
     ]);
 
     EuSalesThreshold::create([
-        'company_id'         => 'company-789',
+        'user_id'         => 'company-789',
         'fiscal_year'        => 2023,
         'total_amount'       => 15000.00,
         'threshold_exceeded' => true,
@@ -237,7 +237,7 @@ it('can use scopes correctly', function () {
 
 it('can get threshold statistics', function () {
     EuSalesThreshold::create([
-        'company_id'           => 'company-123',
+        'user_id'           => 'company-123',
         'fiscal_year'          => 2024,
         'total_amount'         => 12000.00,
         'threshold_exceeded'   => true,
@@ -248,7 +248,7 @@ it('can get threshold statistics', function () {
     ]);
 
     EuSalesThreshold::create([
-        'company_id'           => 'company-456',
+        'user_id'           => 'company-456',
         'fiscal_year'          => 2024,
         'total_amount'         => 5000.00,
         'threshold_exceeded'   => false,
@@ -269,14 +269,14 @@ it('can get threshold statistics', function () {
 
 it('can get companies exceeding threshold', function () {
     EuSalesThreshold::create([
-        'company_id'         => 'company-123',
+        'user_id'         => 'company-123',
         'fiscal_year'        => 2024,
         'total_amount'       => 12000.00,
         'threshold_exceeded' => true,
     ]);
 
     EuSalesThreshold::create([
-        'company_id'         => 'company-456',
+        'user_id'         => 'company-456',
         'fiscal_year'        => 2024,
         'total_amount'       => 5000.00,
         'threshold_exceeded' => false,
@@ -290,7 +290,7 @@ it('can get companies exceeding threshold', function () {
 
 it('can get companies needing notification', function () {
     EuSalesThreshold::create([
-        'company_id'         => 'company-123',
+        'user_id'         => 'company-123',
         'fiscal_year'        => 2024,
         'total_amount'       => 12000.00,
         'threshold_exceeded' => true,
@@ -298,7 +298,7 @@ it('can get companies needing notification', function () {
     ]);
 
     EuSalesThreshold::create([
-        'company_id'         => 'company-456',
+        'user_id'         => 'company-456',
         'fiscal_year'        => 2024,
         'total_amount'       => 12000.00,
         'threshold_exceeded' => true,
@@ -313,7 +313,7 @@ it('can get companies needing notification', function () {
 
 it('can calculate threshold percentage', function () {
     $threshold = EuSalesThreshold::create([
-        'company_id'   => 'company-123',
+        'user_id'   => 'company-123',
         'fiscal_year'  => 2024,
         'total_amount' => 7500.00,
     ]);
@@ -328,7 +328,7 @@ it('can calculate threshold percentage', function () {
 
 it('can get remaining threshold amount', function () {
     $threshold = EuSalesThreshold::create([
-        'company_id'   => 'company-123',
+        'user_id'   => 'company-123',
         'fiscal_year'  => 2024,
         'total_amount' => 7500.00,
     ]);
@@ -353,7 +353,7 @@ it('can check if company needs threshold monitoring', function () {
 
     // Company with threshold record but not exceeded
     EuSalesThreshold::create([
-        'company_id'         => 'company-123',
+        'user_id'         => 'company-123',
         'fiscal_year'        => 2024,
         'total_amount'       => 5000.00,
         'threshold_exceeded' => false,
@@ -363,7 +363,7 @@ it('can check if company needs threshold monitoring', function () {
 
     // Company with threshold exceeded
     EuSalesThreshold::create([
-        'company_id'         => 'company-456',
+        'user_id'         => 'company-456',
         'fiscal_year'        => 2024,
         'total_amount'       => 12000.00,
         'threshold_exceeded' => true,
@@ -374,7 +374,7 @@ it('can check if company needs threshold monitoring', function () {
 
 it('can get fiscal year dates', function () {
     $threshold = EuSalesThreshold::create([
-        'company_id'  => 'company-123',
+        'user_id'  => 'company-123',
         'fiscal_year' => 2024,
     ]);
 
@@ -389,7 +389,7 @@ it('can get fiscal year dates', function () {
 
 it('can check if date is within fiscal year', function () {
     $threshold = EuSalesThreshold::create([
-        'company_id'  => 'company-123',
+        'user_id'  => 'company-123',
         'fiscal_year' => 2024,
     ]);
 
@@ -400,7 +400,7 @@ it('can check if date is within fiscal year', function () {
 
 it('can get top countries by sales', function () {
     EuSalesThreshold::create([
-        'company_id'           => 'company-123',
+        'user_id'           => 'company-123',
         'fiscal_year'          => 2024,
         'total_amount'         => 15000.00,
         'breakdown_by_country' => [
@@ -422,14 +422,14 @@ it('can get top countries by sales', function () {
 it('can get sales growth by company', function () {
     // Create previous year data
     EuSalesThreshold::create([
-        'company_id'   => 'company-123',
+        'user_id'   => 'company-123',
         'fiscal_year'  => 2023,
         'total_amount' => 8000.00,
     ]);
 
     // Create current year data
     EuSalesThreshold::create([
-        'company_id'   => 'company-123',
+        'user_id'   => 'company-123',
         'fiscal_year'  => 2024,
         'total_amount' => 12000.00,
     ]);
