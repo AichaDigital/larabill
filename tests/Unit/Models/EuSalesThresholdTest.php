@@ -19,7 +19,7 @@ it('can create an EU sales threshold', function () {
     ]);
 
     expect($threshold)->toBeInstanceOf(EuSalesThreshold::class);
-    expect($threshold->company_id)->toBe('company-123');
+    expect($threshold->user_id)->toBe('company-123');
     expect($threshold->fiscal_year)->toBe(2024);
     expect($threshold->total_amount)->toBe(5000.00);
     expect($threshold->threshold_exceeded)->toBeFalse();
@@ -36,7 +36,7 @@ it('can find EU sales threshold by company and year', function () {
     $found = EuSalesThreshold::findByCompanyAndYear('company-123', 2024);
 
     expect($found)->not->toBeNull();
-    expect($found->company_id)->toBe('company-123');
+    expect($found->user_id)->toBe('company-123');
     expect($found->fiscal_year)->toBe(2024);
 });
 
@@ -45,7 +45,7 @@ it('can get or create EU sales threshold for company', function () {
     $threshold1 = EuSalesThreshold::getOrCreateForCompany('company-456', 2024);
 
     expect($threshold1)->toBeInstanceOf(EuSalesThreshold::class);
-    expect($threshold1->company_id)->toBe('company-456');
+    expect($threshold1->user_id)->toBe('company-456');
     expect($threshold1->fiscal_year)->toBe(2024);
     expect($threshold1->total_amount)->toBe(0.00);
 
@@ -285,7 +285,7 @@ it('can get companies exceeding threshold', function () {
     $exceededCompanies = EuSalesThreshold::getCompaniesExceedingThreshold(2024);
 
     expect($exceededCompanies)->toHaveCount(1);
-    expect($exceededCompanies->first()->company_id)->toBe('company-123');
+    expect($exceededCompanies->first()->user_id)->toBe('company-123');
 });
 
 it('can get companies needing notification', function () {
@@ -308,7 +308,7 @@ it('can get companies needing notification', function () {
     $needsNotification = EuSalesThreshold::getCompaniesNeedingNotification(2024);
 
     expect($needsNotification)->toHaveCount(1);
-    expect($needsNotification->first()->company_id)->toBe('company-123');
+    expect($needsNotification->first()->user_id)->toBe('company-123');
 });
 
 it('can calculate threshold percentage', function () {
