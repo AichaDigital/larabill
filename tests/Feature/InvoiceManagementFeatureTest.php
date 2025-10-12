@@ -116,7 +116,7 @@ it('can edit invoices only when not immutable', function () {
         'notes'  => 'Invoice sent to customer',
     ]);
 
-    $updatedInvoice = Invoice::find($mutableInvoice->id);
+    $updatedInvoice = Invoice::whereUuid($mutableInvoice->id);
     expect($updatedInvoice->status)->toBe('sent');
     expect($updatedInvoice->notes)->toBe('Invoice sent to customer');
 

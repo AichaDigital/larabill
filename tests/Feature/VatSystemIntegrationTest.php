@@ -326,8 +326,8 @@ it('can perform complete multi-company workflow', function () {
     // Step 3: Get companies exceeding threshold
     $exceededCompanies = $destinationVatService->getCompaniesExceedingThreshold(2024);
     expect($exceededCompanies)->toHaveCount(2);
-    expect($exceededCompanies->pluck('company_id')->toArray())->toContain('company-123');
-    expect($exceededCompanies->pluck('company_id')->toArray())->toContain('company-789');
+    expect($exceededCompanies->pluck('user_id')->toArray())->toContain('company-123');
+    expect($exceededCompanies->pluck('user_id')->toArray())->toContain('company-789');
 
     // Step 4: Get companies needing notification
     $needsNotification = $destinationVatService->getCompaniesNeedingNotification(2024);
@@ -345,9 +345,9 @@ it('can perform complete multi-company workflow', function () {
     $destinationVatService->resetEuSalesForNewFiscalYear('company-789', 2025);
 
     // Step 7: Verify reset
-    $newConfig1 = FiscalSettings::findByCompanyAndYear('company-123', 2025);
-    $newConfig2 = FiscalSettings::findByCompanyAndYear('company-456', 2025);
-    $newConfig3 = FiscalSettings::findByCompanyAndYear('company-789', 2025);
+    $newConfig1 = FiscalSettings::findByUserAndYear('company-123', 2025);
+    $newConfig2 = FiscalSettings::findByUserAndYear('company-456', 2025);
+    $newConfig3 = FiscalSettings::findByUserAndYear('company-789', 2025);
 
     expect($newConfig1->current_eu_sales_amount)->toBe(0.0);
     expect($newConfig2->current_eu_sales_amount)->toBe(0.0);
@@ -456,8 +456,8 @@ it('can perform complete data consistency workflow', function () {
     $destinationVatService->updateEuSalesAmount('company-123', 2024, 'ES', 5000.00);
 
     // Step 4: Verify data consistency between models
-    $updatedConfig    = FiscalSettings::findByCompanyAndYear('company-123', 2024);
-    $updatedThreshold = EuSalesThreshold::findByCompanyAndYear('company-123', 2024);
+    $updatedConfig    = FiscalSettings::findByUserAndYear('company-123', 2024);
+    $updatedThreshold = EuSalesThreshold::findByUserAndYear('company-123', 2024);
 
     expect($updatedConfig->current_eu_sales_amount)->toBe(5000.0);
     expect($updatedThreshold->total_amount)->toBe(5000.0);
@@ -467,8 +467,8 @@ it('can perform complete data consistency workflow', function () {
     $destinationVatService->updateEuSalesAmount('company-123', 2024, 'FR', 3000.00);
 
     // Step 6: Verify data consistency after second update
-    $finalConfig    = FiscalSettings::findByCompanyAndYear('company-123', 2024);
-    $finalThreshold = EuSalesThreshold::findByCompanyAndYear('company-123', 2024);
+    $finalConfig    = FiscalSettings::findByUserAndYear('company-123', 2024);
+    $finalThreshold = EuSalesThreshold::findByUserAndYear('company-123', 2024);
 
     expect($finalConfig->current_eu_sales_amount)->toBe(8000.0);
     expect($finalThreshold->total_amount)->toBe(8000.0);

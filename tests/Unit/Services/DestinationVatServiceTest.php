@@ -332,12 +332,12 @@ it('can reset EU sales for new fiscal year', function () {
 
     expect($reset)->toBeTrue();
 
-    $newConfig = FiscalSettings::findByCompanyAndYear('company-123', 2025);
+    $newConfig = FiscalSettings::findByUserAndYear('company-123', 2025);
     expect($newConfig->current_eu_sales_amount)->toBe(0.0);
     expect($newConfig->threshold_exceeded)->toBeFalse();
     expect($newConfig->notification_sent)->toBeFalse();
 
-    $newThreshold = EuSalesThreshold::findByCompanyAndYear('company-123', 2025);
+    $newThreshold = EuSalesThreshold::findByUserAndYear('company-123', 2025);
     expect($newThreshold->total_amount)->toBe(0.00);
     expect($newThreshold->threshold_exceeded)->toBeFalse();
     expect($newThreshold->notification_sent)->toBeFalse();
