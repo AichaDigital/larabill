@@ -21,7 +21,7 @@ return new class extends Migration
             $table->unsignedBigInteger('user_id');
             $table->boolean('is_current')->default(false);
             $table->string('tax_code');
-            $table->string('company_name');
+            $table->string('business_name');
             $table->text('address');
             $table->string('city');
             $table->string('postal_code');
