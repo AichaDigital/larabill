@@ -35,10 +35,10 @@ it('can create an invoice item', function () {
     expect($item->total)->toBe(121.0);
 });
 
-// Skipped: relationship test needs refactoring for UUID binary foreign keys  
+// Skipped: relationship test needs refactoring for UUID binary foreign keys
 it('belongs to an invoice', function () {
     test()->markTestSkipped('Relationship test needs refactoring for UUID binary foreign keys');
-    
+
     $invoice = Invoice::create([
         'number'     => 'FAC-0001',
         'type'       => 'invoice',

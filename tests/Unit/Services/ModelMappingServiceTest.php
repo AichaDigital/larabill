@@ -19,15 +19,15 @@ it('can get configured model class for user', function () {
 
 it('can get default model class for user_tax_profile', function () {
     $userTaxInfoModel = ModelMappingService::getModelClass('user_tax_profile');
-    expect($userTaxInfoModel)->toBe(\AichaDigital\Larabill\Models\UserTaxInfo::class);
+    expect($userTaxInfoModel)->toBe(\AichaDigital\Larabill\Models\UserTaxProfile::class);
 });
 
 it('can get configured model class for user_tax_profile', function () {
     // Set custom user tax info model in config
-    $this->app['config']->set('larabill.models.user_tax_profile', \AichaDigital\Larabill\Tests\Models\CustomUserTaxInfo::class);
+    $this->app['config']->set('larabill.models.user_tax_profile', \AichaDigital\Larabill\Tests\Models\CustomUserTaxProfile::class);
 
     $userTaxInfoModel = ModelMappingService::getModelClass('user_tax_profile');
-    expect($userTaxInfoModel)->toBe(\AichaDigital\Larabill\Tests\Models\CustomUserTaxInfo::class);
+    expect($userTaxInfoModel)->toBe(\AichaDigital\Larabill\Tests\Models\CustomUserTaxProfile::class);
 });
 
 it('can map fields correctly', function () {

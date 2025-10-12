@@ -158,7 +158,7 @@ class CompanyConfigService
      */
     public function updateEuSalesAmount(string|int $userId, int $fiscalYear, float|string $amount): FiscalSettings
     {
-        $config = $this->getCompanyConfig($userId, $fiscalYear);
+        $config = $this->getCompanyConfigLegacy($userId, $fiscalYear);
         if (! $config) {
             throw new \Exception("User configuration not found for {$userId} in fiscal year {$fiscalYear}");
         }
@@ -577,7 +577,7 @@ class CompanyConfigService
     /**
      * Get configuration by mapping.
      */
-    public function getCompanyConfigByMapping(string $companyId, int $fiscalYear): ?CompanyFiscalConfig
+    public function getCompanyConfigByMapping(string $companyId, int $fiscalYear): ?FiscalSettings
     {
         return FiscalSettings::where('company_id', $companyId)
             ->where('fiscal_year', $fiscalYear)
