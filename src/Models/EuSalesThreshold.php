@@ -396,9 +396,9 @@ class EuSalesThreshold extends Model
      * @param  Builder<static>  $query
      * @return Builder<static>
      */
-    public function scopeByCompany(Builder $query, string $companyId): Builder
+    public function scopeByUser(Builder $query, string|int $userId): Builder
     {
-        return $query->where('user_id', $companyId);
+        return $query->where('user_id', $userId);
     }
 
     /**
