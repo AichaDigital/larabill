@@ -130,8 +130,8 @@ it('can detect exempt invoice', function () {
 });
 
 it('handles PDF generation errors gracefully', function () {
+    // Create invoice with auto-generated UUID
     $invoice = Invoice::factory()->create([
-        'id' => 999,
         // Missing required fields intentionally for error testing
     ]);
 
