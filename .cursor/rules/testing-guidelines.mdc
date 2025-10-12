@@ -1,5 +1,5 @@
 ---
-description: "Testing guidelines and best practices for Aicha project using Pest PHP", "testing"
+description: "Testing guidelines and best practices for Aicha project using Pest PHP"
 alwaysApply: false
 ---
 # Testing Guidelines - Aicha Project
@@ -14,9 +14,9 @@ alwaysApply: false
 
 ## 🛠️ **Framework y Herramientas**
 
-### **Pest PHP 3.x → 4.x**
-- **Framework principal**: Pest 3.8 (preparado para Pest 4 cuando salga oficialmente)
-- **Sintaxis preferida**: `it()` y `test()` sobre clases PHPUnit
+### **Pest P4.x**
+- **Framework principal**: Pest 4
+- **Sintaxis preferida**: `it()` y `test()`
 - **NO usar** `describe()` - Preferir `group()` para agrupación
 
 ### **Database Testing**

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Database\Factories\{CompanyFiscalConfigFactory, InvoiceFactory};
+use AichaDigital\Larabill\Database\Factories\{FiscalSettingsFactory, InvoiceFactory};
 use AichaDigital\Larabill\Services\{CompanyConfigService, EuSalesThresholdService};
 use Illuminate\Support\Facades\Log;
 
@@ -13,7 +13,7 @@ beforeEach(function () {
 
 it('can determine if notification should be sent', function () {
     // Arrange
-    $config = CompanyFiscalConfigFactory::new()->create([
+    $config = FiscalSettingsFactory::new()->create([
         'is_oss'             => false,
         'notification_sent'  => false,
         'threshold_exceeded' => true,
@@ -32,7 +32,7 @@ it('can determine if notification should be sent', function () {
 
 it('should not send notification if company is OSS registered', function () {
     // Arrange
-    $config = CompanyFiscalConfigFactory::new()->create([
+    $config = FiscalSettingsFactory::new()->create([
         'is_oss'             => true,
         'notification_sent'  => false,
         'threshold_exceeded' => true,
@@ -51,7 +51,7 @@ it('should not send notification if company is OSS registered', function () {
 
 it('should not send notification if already sent', function () {
     // Arrange
-    $config = CompanyFiscalConfigFactory::new()->create([
+    $config = FiscalSettingsFactory::new()->create([
         'is_oss'             => false,
         'notification_sent'  => true,
         'threshold_exceeded' => true,
@@ -70,7 +70,7 @@ it('should not send notification if already sent', function () {
 
 it('should not send notification if threshold not exceeded', function () {
     // Arrange
-    $config = CompanyFiscalConfigFactory::new()->create([
+    $config = FiscalSettingsFactory::new()->create([
         'is_oss'             => false,
         'notification_sent'  => false,
         'threshold_exceeded' => false,
@@ -108,7 +108,7 @@ it('can reset EU sales for new fiscal year', function () {
 
 it('can get threshold status', function () {
     // Arrange
-    $config = CompanyFiscalConfigFactory::new()->create([
+    $config = FiscalSettingsFactory::new()->create([
         'current_eu_sales_amount' => 8000,
         'eu_sales_threshold'      => 10000,
         'threshold_exceeded'      => false,
@@ -221,7 +221,7 @@ it('skips processing when company is already OSS registered', function () {
         'user_tax_info_encrypted' => json_encode(['country_code' => 'DE']),
     ]);
 
-    $config = CompanyFiscalConfigFactory::new()->create([
+    $config = FiscalSettingsFactory::new()->create([
         'is_oss' => true,
     ]);
 
@@ -242,7 +242,7 @@ it('skips processing when company is already OSS registered', function () {
 
 it('can send threshold notification', function () {
     // Arrange
-    $config = CompanyFiscalConfigFactory::new()->create([
+    $config = FiscalSettingsFactory::new()->create([
         'is_oss'                  => false,
         'notification_sent'       => false,
         'threshold_exceeded'      => true,
@@ -270,7 +270,7 @@ it('can send threshold notification', function () {
 
 it('does not send notification when conditions not met', function () {
     // Arrange
-    $config = CompanyFiscalConfigFactory::new()->create([
+    $config = FiscalSettingsFactory::new()->create([
         'is_oss'             => false,
         'notification_sent'  => false,
         'threshold_exceeded' => false,

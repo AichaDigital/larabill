@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Tests\Feature;
 
-use AichaDigital\Larabill\Models\{CompanyFiscalConfig, CountryVatRate, EuSalesThreshold, RoiQuery, UserRoiVerification, VatCategory};
+use AichaDigital\Larabill\Models\{FiscalSettings, CountryVatRate, EuSalesThreshold, RoiQuery, UserRoiVerification, VatCategory};
 use AichaDigital\Larabill\Services\{CacheService, CompanyConfigService, DestinationVatService, RoiVerificationService};
 use Illuminate\Support\Facades\Http;
 
@@ -345,9 +345,9 @@ it('can perform complete multi-company workflow', function () {
     $destinationVatService->resetEuSalesForNewFiscalYear('company-789', 2025);
 
     // Step 7: Verify reset
-    $newConfig1 = CompanyFiscalConfig::findByCompanyAndYear('company-123', 2025);
-    $newConfig2 = CompanyFiscalConfig::findByCompanyAndYear('company-456', 2025);
-    $newConfig3 = CompanyFiscalConfig::findByCompanyAndYear('company-789', 2025);
+    $newConfig1 = FiscalSettings::findByCompanyAndYear('company-123', 2025);
+    $newConfig2 = FiscalSettings::findByCompanyAndYear('company-456', 2025);
+    $newConfig3 = FiscalSettings::findByCompanyAndYear('company-789', 2025);
 
     expect($newConfig1->current_eu_sales_amount)->toBe(0.0);
     expect($newConfig2->current_eu_sales_amount)->toBe(0.0);
@@ -456,7 +456,7 @@ it('can perform complete data consistency workflow', function () {
     $destinationVatService->updateEuSalesAmount('company-123', 2024, 'ES', 5000.00);
 
     // Step 4: Verify data consistency between models
-    $updatedConfig    = CompanyFiscalConfig::findByCompanyAndYear('company-123', 2024);
+    $updatedConfig    = FiscalSettings::findByCompanyAndYear('company-123', 2024);
     $updatedThreshold = EuSalesThreshold::findByCompanyAndYear('company-123', 2024);
 
     expect($updatedConfig->current_eu_sales_amount)->toBe(5000.0);
@@ -467,7 +467,7 @@ it('can perform complete data consistency workflow', function () {
     $destinationVatService->updateEuSalesAmount('company-123', 2024, 'FR', 3000.00);
 
     // Step 6: Verify data consistency after second update
-    $finalConfig    = CompanyFiscalConfig::findByCompanyAndYear('company-123', 2024);
+    $finalConfig    = FiscalSettings::findByCompanyAndYear('company-123', 2024);
     $finalThreshold = EuSalesThreshold::findByCompanyAndYear('company-123', 2024);
 
     expect($finalConfig->current_eu_sales_amount)->toBe(8000.0);
