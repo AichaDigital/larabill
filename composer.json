@@ -30,6 +30,7 @@
         "laravel/pint": "^1.25",
         "matthewbdaly/artisan-standalone": "^0.0.12",
         "nunomaduro/collision": "^8.8",
+        "nunomaduro/phpinsights": "^2.13",
         "orchestra/testbench": "^10.6",
         "pestphp/pest": "^4.0",
         "pestphp/pest-plugin-arch": "^4.0",
@@ -62,11 +63,31 @@
         "test-profile": "vendor/bin/pest --profile",
         "test-coverage": "vendor/bin/pest --coverage",
         "phpstan": "vendor/bin/phpstan analyse --memory-limit=1G",
-        "phpstan-baseline": "vendor/bin/phpstan analyse --generate-baseline --memory-limit=1G"
+        "phpstan-baseline": "vendor/bin/phpstan analyse --generate-baseline --memory-limit=1G",
+        "phpinsights": "vendor/bin/phpinsights",
+        "phpinsights-fix": "vendor/bin/phpinsights fix",
+        "phpinsights-baseline": "vendor/bin/phpinsights baseline",
+        "quality": [
+            "@format",
+            "@phpstan",
+            "@test-coverage"
+        ],
+        "quality-full": [
+            "@format",
+            "@phpstan",
+            "@test-coverage",
+            "@test-mutate"
+        ],
+        "precommit": [
+            "@format",
+            "@phpstan",
+            "@test-parallel"
+        ]
     },
     "config": {
         "sort-packages": true,
         "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true,
             "pestphp/pest-plugin": true,
             "phpstan/extension-installer": true
         }

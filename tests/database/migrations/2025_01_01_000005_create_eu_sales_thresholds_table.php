@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('eu_sales_thresholds', function (Blueprint $table) {
             $table->id();
 
-            // Company identification
-            $table->string('company_id');
+            // User identification
+            $table->string('user_id');
             $table->integer('fiscal_year');
 
             // Sales amounts (using base 100 format: €12.34 = 1234)
@@ -38,7 +38,7 @@ return new class extends Migration
             $table->timestamps();
 
             // Indexes
-            $table->unique(['company_id', 'fiscal_year']);
+            $table->unique(['user_id', 'fiscal_year']);
             $table->index('threshold_exceeded');
             $table->index('exceeded_at');
             $table->index('fiscal_year');

@@ -486,7 +486,7 @@ class DestinationVatService
     /**
      * Get companies exceeding threshold for a fiscal year.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, \AichaDigital\Larabill\Models\CompanyFiscalConfig>
+     * @return \Illuminate\Database\Eloquent\Collection<int, \AichaDigital\Larabill\Models\FiscalSettings>
      */
     public function getCompaniesExceedingThreshold(int $fiscalYear): \Illuminate\Database\Eloquent\Collection
     {
@@ -498,7 +498,7 @@ class DestinationVatService
     /**
      * Get companies needing notification for threshold exceeded.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, \AichaDigital\Larabill\Models\CompanyFiscalConfig>
+     * @return \Illuminate\Database\Eloquent\Collection<int, \AichaDigital\Larabill\Models\FiscalSettings>
      */
     public function getCompaniesNeedingNotification(int $fiscalYear): \Illuminate\Database\Eloquent\Collection
     {
@@ -514,7 +514,7 @@ class DestinationVatService
     /**
      * Send threshold exceeded notification (public method for testing).
      */
-    public function sendThresholdExceededNotification(CompanyFiscalConfig $config): bool
+    public function sendThresholdExceededNotification(FiscalSettings $config): bool
     {
         // This would typically send an email notification
         // For now, we'll just mark it as sent

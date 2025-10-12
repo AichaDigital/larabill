@@ -13,7 +13,7 @@ use Illuminate\Support\Carbon;
  * Represents EU sales thresholds for companies, tracking total sales amounts and threshold exceedance.
  * All monetary amounts are stored as decimal values (e.g., €12.34 => 12.34).
  *
- * @property string $company_id
+ * @property string $user_id
  * @property int $fiscal_year
  * @property float $total_amount Monetary amount (e.g., 12.34 => €12.34)
  * @property float $threshold_amount Monetary amount (e.g., 10000.00 => €10,000.00)
@@ -30,7 +30,7 @@ class EuSalesThreshold extends Model
      * The attributes that are mass assignable.
      */
     protected $fillable = [
-        'company_id',
+        'user_id',
         'fiscal_year',
         'total_amount',
         'threshold_exceeded',
@@ -192,7 +192,7 @@ class EuSalesThreshold extends Model
             $fiscalYear = now()->year;
         }
 
-        return static::where('company_id', $companyId)
+        return static::where('user_id', $companyId)
             ->where('fiscal_year', $fiscalYear)
             ->first();
     }
@@ -208,7 +208,7 @@ class EuSalesThreshold extends Model
 
         return static::firstOrCreate(
             [
-                'company_id'  => $companyId,
+                'user_id'  => $companyId,
                 'fiscal_year' => $fiscalYear,
             ],
             [
@@ -398,7 +398,7 @@ class EuSalesThreshold extends Model
      */
     public function scopeByCompany(Builder $query, string $companyId): Builder
     {
-        return $query->where('company_id', $companyId);
+        return $query->where('user_id', $companyId);
     }
 
     /**
@@ -600,7 +600,7 @@ class EuSalesThreshold extends Model
         }
 
         // Company needs monitoring if it doesn't have a threshold record yet
-        return ! static::where('company_id', $companyId)
+        return ! static::where('user_id', $companyId)
             ->where('fiscal_year', $fiscalYear)
             ->exists();
     }
@@ -683,11 +683,11 @@ class EuSalesThreshold extends Model
      */
     public static function getSalesGrowthByCompany(string $companyId, int $fiscalYear): array
     {
-        $current = static::where('company_id', $companyId)
+        $current = static::where('user_id', $companyId)
             ->where('fiscal_year', $fiscalYear)
             ->first();
 
-        $previous = static::where('company_id', $companyId)
+        $previous = static::where('user_id', $companyId)
             ->where('fiscal_year', $fiscalYear - 1)
             ->first();
 
@@ -698,7 +698,7 @@ class EuSalesThreshold extends Model
         $growthPercentage = $previousAmount > 0 ? (($currentAmount - $previousAmount) / $previousAmount) * 100 : 0;
 
         return [
-            'company_id'        => $companyId,
+            'user_id'        => $companyId,
             'current_year'      => $fiscalYear,
             'current_amount'    => $currentAmount,
             'previous_year'     => $fiscalYear - 1,
