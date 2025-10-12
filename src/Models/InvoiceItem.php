@@ -96,6 +96,6 @@ class InvoiceItem extends Model
         $invoiceModel = \AichaDigital\Larabill\Services\ModelMappingService::getModelClass('invoice');
 
         // @phpstan-ignore-next-line return.type,argument.templateType
-        return $this->belongsTo($invoiceModel);
+        return $this->belongsTo($invoiceModel, 'invoice_id', 'id');
     }
 }
