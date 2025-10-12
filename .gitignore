@@ -57,3 +57,5 @@ infection.log.summary
 
 # Internal documentation (development only)
 docs/
+./PUBLISH.sh
+
