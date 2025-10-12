@@ -59,15 +59,17 @@ it('returns metadata', function () {
 });
 
 it('can validate valid invoice', function () {
-    $invoice             = new Invoice;
-    // ID auto-generated as UUID
-    $invoice->number     = 'TEST-001';
-    $invoice->type       = 'invoice';
-    $invoice->status     = 'draft';
-    $invoice->user_id    = 'test-user';
-    $invoice->subtotal   = 10000;
-    $invoice->tax_amount = 2100;
-    $invoice->total      = 12100;
+    $invoice = Invoice::factory()->make([
+        'number'     => 'TEST-001',
+        'type'       => 'invoice',
+        'status'     => 'draft',
+        'user_id'    => 1,
+        'subtotal'   => 100.0,
+        'tax_amount' => 21.0,
+        'total'      => 121.0,
+    ]);
+    // Save to generate UUID
+    $invoice->save();
 
     expect($this->connector->validateInvoice($invoice))->toBeTrue();
 });
@@ -80,15 +82,15 @@ it('rejects invalid invoice', function () {
 });
 
 it('can generate QR for valid invoice', function () {
-    $invoice             = new Invoice;
-    // ID auto-generated as UUID
-    $invoice->number     = 'TEST-001';
-    $invoice->type       = 'invoice';
-    $invoice->status     = 'draft';
-    $invoice->user_id    = 'test-user';
-    $invoice->subtotal   = 10000;
-    $invoice->tax_amount = 2100;
-    $invoice->total      = 12100;
+    $invoice = Invoice::factory()->create([
+        'number'     => 'TEST-001',
+        'type'       => 'invoice',
+        'status'     => 'draft',
+        'user_id'    => 1,
+        'subtotal'   => 100.0,
+        'tax_amount' => 21.0,
+        'total'      => 121.0,
+    ]);
 
     $result = $this->connector->generateQR($invoice);
 
@@ -113,15 +115,15 @@ it('handles QR generation errors gracefully', function () {
 });
 
 it('includes invoice data in QR', function () {
-    $invoice             = new Invoice;
-    // ID auto-generated as UUID
-    $invoice->number     = 'TEST-001';
-    $invoice->type       = 'invoice';
-    $invoice->status     = 'draft';
-    $invoice->user_id    = 'test-user';
-    $invoice->subtotal   = 10000;
-    $invoice->tax_amount = 2100;
-    $invoice->total      = 12100;
+    $invoice = Invoice::factory()->create([
+        'number'     => 'TEST-001',
+        'type'       => 'invoice',
+        'status'     => 'draft',
+        'user_id'    => 1,
+        'subtotal'   => 100.0,
+        'tax_amount' => 21.0,
+        'total'      => 121.0,
+    ]);
 
     $result = $this->connector->generateQR($invoice);
 
