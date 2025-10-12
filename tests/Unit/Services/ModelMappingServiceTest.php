@@ -17,21 +17,21 @@ it('can get configured model class for user', function () {
     expect($userModel)->toBe(\AichaDigital\Larabill\Tests\Models\CustomUser::class);
 });
 
-it('can get default model class for user_tax_info', function () {
-    $userTaxInfoModel = ModelMappingService::getModelClass('user_tax_info');
+it('can get default model class for user_tax_profile', function () {
+    $userTaxInfoModel = ModelMappingService::getModelClass('user_tax_profile');
     expect($userTaxInfoModel)->toBe(\AichaDigital\Larabill\Models\UserTaxInfo::class);
 });
 
-it('can get configured model class for user_tax_info', function () {
+it('can get configured model class for user_tax_profile', function () {
     // Set custom user tax info model in config
-    $this->app['config']->set('larabill.models.user_tax_info', \AichaDigital\Larabill\Tests\Models\CustomUserTaxInfo::class);
+    $this->app['config']->set('larabill.models.user_tax_profile', \AichaDigital\Larabill\Tests\Models\CustomUserTaxInfo::class);
 
-    $userTaxInfoModel = ModelMappingService::getModelClass('user_tax_info');
+    $userTaxInfoModel = ModelMappingService::getModelClass('user_tax_profile');
     expect($userTaxInfoModel)->toBe(\AichaDigital\Larabill\Tests\Models\CustomUserTaxInfo::class);
 });
 
 it('can map fields correctly', function () {
-    $this->app['config']->set('larabill.field_mappings.user_tax_info', [
+    $this->app['config']->set('larabill.field_mappings.user_tax_profile', [
         'user_id'      => 'customer_id',
         'tax_id'       => 'fiscal_id',
         'company_name' => 'business_name',
@@ -43,7 +43,7 @@ it('can map fields correctly', function () {
         'business_name' => 'Test Company S.L.',
     ];
 
-    $mappedData = ModelMappingService::mapFields($data, 'user_tax_info');
+    $mappedData = ModelMappingService::mapFields($data, 'user_tax_profile');
 
     expect($mappedData['user_id'])->toBe(1);
     expect($mappedData['tax_id'])->toBe('ESB12345678');
@@ -51,7 +51,7 @@ it('can map fields correctly', function () {
 });
 
 it('can reverse map fields correctly', function () {
-    $this->app['config']->set('larabill.field_mappings.user_tax_info', [
+    $this->app['config']->set('larabill.field_mappings.user_tax_profile', [
         'user_id'      => 'customer_id',
         'tax_id'       => 'fiscal_id',
         'company_name' => 'business_name',
@@ -63,7 +63,7 @@ it('can reverse map fields correctly', function () {
         'company_name' => 'Test Company S.L.',
     ];
 
-    $reverseMappedData = ModelMappingService::reverseMapFields($data, 'user_tax_info');
+    $reverseMappedData = ModelMappingService::reverseMapFields($data, 'user_tax_profile');
 
     expect($reverseMappedData['customer_id'])->toBe(1);
     expect($reverseMappedData['fiscal_id'])->toBe('ESB12345678');

@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\{Builder, Model};
  * Manages company-specific template settings, notes, and payment terms.
  *
  * @property int $id
- * @property string $company_id
+ * @property string $user_id
  * @property string $setting_type
  * @property string $invoice_type
  * @property string $scope
@@ -26,7 +26,7 @@ class CompanyTemplateSettings extends Model
      * The attributes that are mass assignable.
      */
     protected $fillable = [
-        'company_id',
+        'user_id',
         'setting_type',
         'invoice_type',
         'scope',
@@ -68,7 +68,7 @@ class CompanyTemplateSettings extends Model
      */
     public function scopeForCompany(Builder $query, string $companyId): Builder
     {
-        return $query->where('company_id', $companyId);
+        return $query->where('user_id', $companyId);
     }
 
     /**
@@ -163,7 +163,7 @@ class CompanyTemplateSettings extends Model
     ): self {
         return static::updateOrCreate(
             [
-                'company_id'   => $companyId,
+                'user_id'   => $companyId,
                 'setting_type' => $settingType,
                 'invoice_type' => $invoiceType,
                 'scope'        => $scope,
