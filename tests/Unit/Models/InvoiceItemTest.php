@@ -57,6 +57,9 @@ it('belongs to an invoice', function () {
         'total'       => 121.0,
     ]);
 
+    // Refresh to load relationships
+    $item = $item->fresh(['invoice']);
+
     expect($item->invoice)->toBeInstanceOf(Invoice::class);
     expect($item->invoice->id)->toBe($invoice->id);
 });

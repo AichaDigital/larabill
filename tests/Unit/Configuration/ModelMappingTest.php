@@ -41,7 +41,7 @@ it('can configure custom user tax info model mapping', function () {
         'user_id'      => 1,
         'is_current'   => true,
         'tax_code'       => 'ESB12345678',
-        'company_name' => 'Test Company S.L.',
+        'business_name' => 'Test Company S.L.',
         'address'      => 'Calle Test 123',
         'city'         => 'Madrid',
         'postal_code'  => '28001',

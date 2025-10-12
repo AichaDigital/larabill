@@ -7,9 +7,9 @@ namespace AichaDigital\Larabill\Tests\Models;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * CustomUserTaxInfo Model for testing model mapping
+ * CustomUserTaxProfile Model for testing model mapping
  */
-class CustomUserTaxInfo extends Model
+class CustomUserTaxProfile extends Model
 {
     protected $fillable = [
         'customer_id',

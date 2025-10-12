@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 use AichaDigital\Larabill\Models\UserTaxProfile;
 
-it('can create a user tax info record', function () {
-    $taxInfo = new UserTaxInfo([
-        'user_id'      => 1,
-        'is_current'   => true,
-        'tax_code'       => 'ESB12345678',
-        'company_name' => 'Test Company S.L.',
+it('can create a user tax profile record', function () {
+    $taxProfile = new UserTaxProfile([
+        'user_id'       => 1,
+        'is_current'    => true,
+        'tax_code'      => 'ESB12345678',
+        'business_name' => 'Test Company S.L.',
         'address'      => 'Calle Test 123',
         'city'         => 'Madrid',
         'postal_code'  => '28001',
@@ -18,24 +18,24 @@ it('can create a user tax info record', function () {
         'phone'        => '+34 600 000 000',
     ]);
 
-    expect($taxInfo->user_id)->toBe(1);
-    expect($taxInfo->is_current)->toBeTrue();
-    expect($taxInfo->tax_code)->toBe('ESB12345678');
-    expect($taxInfo->company_name)->toBe('Test Company S.L.');
-    expect($taxInfo->address)->toBe('Calle Test 123');
-    expect($taxInfo->city)->toBe('Madrid');
-    expect($taxInfo->postal_code)->toBe('28001');
-    expect($taxInfo->country)->toBe('ES');
-    expect($taxInfo->state)->toBe('Madrid');
-    expect($taxInfo->phone)->toBe('+34 600 000 000');
+    expect($taxProfile->user_id)->toBe(1);
+    expect($taxProfile->is_current)->toBeTrue();
+    expect($taxProfile->tax_code)->toBe('ESB12345678');
+    expect($taxProfile->business_name)->toBe('Test Company S.L.');
+    expect($taxProfile->address)->toBe('Calle Test 123');
+    expect($taxProfile->city)->toBe('Madrid');
+    expect($taxProfile->postal_code)->toBe('28001');
+    expect($taxProfile->country)->toBe('ES');
+    expect($taxProfile->state)->toBe('Madrid');
+    expect($taxProfile->phone)->toBe('+34 600 000 000');
 });
 
 it('can make a tax info current', function () {
-    $taxInfo = UserTaxProfile::create([
+    $taxProfile = UserTaxProfile::create([
         'user_id'      => 1,
         'is_current'   => false,
         'tax_code'       => 'ESB12345678',
-        'company_name' => 'Test Company S.L.',
+        'business_name' => 'Test Company S.L.',
         'address'      => 'Calle Test 123',
         'city'         => 'Madrid',
         'postal_code'  => '28001',
@@ -44,9 +44,9 @@ it('can make a tax info current', function () {
         'phone'        => '+34 600 000 000',
     ]);
 
-    $taxInfo->makeCurrent();
+    $taxProfile->makeCurrent();
 
-    expect($taxInfo->is_current)->toBeTrue();
+    expect($taxProfile->is_current)->toBeTrue();
 });
 
 it('can scope current tax info', function () {
@@ -55,7 +55,7 @@ it('can scope current tax info', function () {
         'user_id'      => 1,
         'is_current'   => false,
         'tax_code'       => 'ESB11111111',
-        'company_name' => 'Old Company',
+        'business_name' => 'Old Company',
         'address'      => 'Old Address',
         'city'         => 'Barcelona',
         'postal_code'  => '08001',
@@ -68,7 +68,7 @@ it('can scope current tax info', function () {
         'user_id'      => 1,
         'is_current'   => true,
         'tax_code'       => 'ESB12345678',
-        'company_name' => 'Current Company',
+        'business_name' => 'Current Company',
         'address'      => 'Current Address',
         'city'         => 'Madrid',
         'postal_code'  => '28001',
