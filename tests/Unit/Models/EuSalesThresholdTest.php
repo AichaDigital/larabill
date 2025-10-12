@@ -227,7 +227,7 @@ it('can use scopes correctly', function () {
     expect($exceededThresholds)->toHaveCount(2);
 
     // Test by company scope
-    $companyThresholds = EuSalesThreshold::byCompany('company-123')->get();
+    $companyThresholds = EuSalesThreshold::byUser('company-123')->get();
     expect($companyThresholds)->toHaveCount(1);
 
     // Test needs notification scope

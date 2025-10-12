@@ -220,7 +220,7 @@ it('can use scopes correctly', function () {
     expect($exceededConfigs)->toHaveCount(2);
 
     // Test by company scope
-    $companyConfigs = FiscalSettings::byCompany('company-123')->get();
+    $companyConfigs = FiscalSettings::byUser('company-123')->get();
     expect($companyConfigs)->toHaveCount(1);
 
     // Test apply destination VAT scope
