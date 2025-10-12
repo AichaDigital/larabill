@@ -1,10 +1,20 @@
 {
     "name": "aichadigital/larabill",
-    "description": "Agnostic Billing Package for Laravel",
+    "description": "Professional billing & invoicing package for Laravel with UUID binary storage, VAT verification, EU compliance, and agnostic user models (UUID/ULID/Int)",
     "keywords": [
-        "AichaDigital",
         "laravel",
-        "larabill"
+        "billing",
+        "invoicing",
+        "vat",
+        "tax",
+        "fiscal",
+        "uuid",
+        "spain",
+        "eu",
+        "b2b",
+        "reverse-charge",
+        "larabill",
+        "aichadigital"
     ],
     "homepage": "https://github.com/aichadigital/larabill",
     "license": "MIT",
@@ -101,6 +111,10 @@
             "aliases": {
                 "Larabill": "AichaDigital\\Larabill\\Facades\\Larabill"
             }
+        },
+        "branch-alias": {
+            "dev-main": "0.1.x-dev",
+            "dev-refactor/agnostic": "0.1.x-dev"
         }
     },
     "minimum-stability": "dev",
