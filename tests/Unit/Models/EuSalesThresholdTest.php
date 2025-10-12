@@ -33,7 +33,7 @@ it('can find EU sales threshold by company and year', function () {
         'total_amount' => 5000.00,
     ]);
 
-    $found = EuSalesThreshold::findByCompanyAndYear('company-123', 2024);
+    $found = EuSalesThreshold::findByUserAndYear('company-123', 2024);
 
     expect($found)->not->toBeNull();
     expect($found->user_id)->toBe('company-123');
@@ -42,7 +42,7 @@ it('can find EU sales threshold by company and year', function () {
 
 it('can get or create EU sales threshold for company', function () {
     // First call should create
-    $threshold1 = EuSalesThreshold::getOrCreateForCompany('company-456', 2024);
+    $threshold1 = EuSalesThreshold::getOrCreateForUser('company-456', 2024);
 
     expect($threshold1)->toBeInstanceOf(EuSalesThreshold::class);
     expect($threshold1->user_id)->toBe('company-456');
@@ -50,7 +50,7 @@ it('can get or create EU sales threshold for company', function () {
     expect($threshold1->total_amount)->toBe(0.00);
 
     // Second call should return existing
-    $threshold2 = EuSalesThreshold::getOrCreateForCompany('company-456', 2024);
+    $threshold2 = EuSalesThreshold::getOrCreateForUser('company-456', 2024);
 
     expect($threshold2->id)->toBe($threshold1->id);
 });

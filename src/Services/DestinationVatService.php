@@ -420,7 +420,7 @@ class DestinationVatService
         $config->save();
 
         // Also update EuSalesThreshold for detailed tracking
-        $threshold = EuSalesThreshold::findByCompanyAndYear($userId, $fiscalYear);
+        $threshold = EuSalesThreshold::findByUserAndYear($userId, $fiscalYear);
         if ($threshold) {
             $breakdown                       = $threshold->breakdown_by_country ?? [];
             $currentCountryAmount            = (float) ($breakdown[$countryCode] ?? 0.0);
@@ -462,7 +462,7 @@ class DestinationVatService
      */
     public function getEuSalesBreakdownByCountry(string $userId, int $fiscalYear): array
     {
-        $threshold = EuSalesThreshold::findByCompanyAndYear($userId, $fiscalYear);
+        $threshold = EuSalesThreshold::findByUserAndYear($userId, $fiscalYear);
 
         if (! $threshold) {
             return ['total' => 0.0, 'countries' => []];
@@ -540,7 +540,7 @@ class DestinationVatService
         $config->save();
 
         // Also reset EuSalesThreshold
-        $threshold = EuSalesThreshold::findByCompanyAndYear($userId, $newFiscalYear);
+        $threshold = EuSalesThreshold::findByUserAndYear($userId, $newFiscalYear);
         if (! $threshold) {
             EuSalesThreshold::create([
                 'user_id'           => $userId,

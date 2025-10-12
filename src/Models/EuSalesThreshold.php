@@ -186,13 +186,13 @@ class EuSalesThreshold extends Model
     /**
      * Find threshold by company and fiscal year.
      */
-    public static function findByCompanyAndYear(string $companyId, ?int $fiscalYear = null): ?self
+    public static function findByUserAndYear(string|int $userId, ?int $fiscalYear = null): ?self
     {
         if (! $fiscalYear) {
             $fiscalYear = now()->year;
         }
 
-        return static::where('user_id', $companyId)
+        return static::where('user_id', $userId)
             ->where('fiscal_year', $fiscalYear)
             ->first();
     }
@@ -200,7 +200,7 @@ class EuSalesThreshold extends Model
     /**
      * Get or create threshold for company and year.
      */
-    public static function getOrCreateForCompany(string $companyId, ?int $fiscalYear = null): self
+    public static function getOrCreateForUser(string|int $userId, ?int $fiscalYear = null): self
     {
         if (! $fiscalYear) {
             $fiscalYear = now()->year;
@@ -208,7 +208,7 @@ class EuSalesThreshold extends Model
 
         return static::firstOrCreate(
             [
-                'user_id'  => $companyId,
+                'user_id'  => $userId,
                 'fiscal_year' => $fiscalYear,
             ],
             [
