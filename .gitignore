@@ -54,4 +54,6 @@ infection.log.html
 infection.log.summary
 infection.log.text
 infection.log.summary
-EXECUTIVE_SUMMARY.md
+
+# Internal documentation (development only)
+docs/
