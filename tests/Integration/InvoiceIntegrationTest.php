@@ -22,7 +22,7 @@ it('can perform complete CRUD operations on invoices', function () {
     expect($invoice->id)->not->toBeNull();
 
     // Read
-    $foundInvoice = Invoice::find($invoice->id);
+    $foundInvoice = Invoice::whereUuid($invoice->id)->first();
     expect($foundInvoice->number)->toBe('FAC-0001');
     expect($foundInvoice->total)->toBe(121.0);
 
@@ -32,13 +32,13 @@ it('can perform complete CRUD operations on invoices', function () {
         'notes'  => 'Invoice sent to customer',
     ]);
 
-    $updatedInvoice = Invoice::find($invoice->id);
+    $updatedInvoice = Invoice::whereUuid($invoice->id)->first();
     expect($updatedInvoice->status)->toBe('sent');
     expect($updatedInvoice->notes)->toBe('Invoice sent to customer');
 
     // Delete
     $updatedInvoice->delete();
-    expect(Invoice::find($invoice->id))->toBeNull();
+    expect(Invoice::whereUuid($invoice->id)->first())->toBeNull();
 });
 
 it('can handle invoice with items relationship', function () {
@@ -76,12 +76,17 @@ it('can handle invoice with items relationship', function () {
         'total'       => 121.0,
     ]);
 
+    // Refresh invoice to load items
+    $invoice->refresh();
+
     // Test relationship
     expect($invoice->items)->toHaveCount(2);
     expect($invoice->items->first()->description)->toBe('Item 1');
     expect($invoice->items->last()->description)->toBe('Item 2');
 
-    // Test inverse relationship
+    // Test inverse relationship (refresh items to load invoice)
+    $item1->refresh();
+    $item2->refresh();
     expect($item1->invoice->id)->toBe($invoice->id);
     expect($item2->invoice->number)->toBe('FAC-0002');
 });
@@ -141,8 +146,8 @@ it('can handle invoice data encryption when immutable', function () {
     $invoice->makeImmutable();
 
     // After immutability - data should remain the same
-    $immutableInvoice = Invoice::find($invoice->id);
-    expect($immutableInvoice->customer_data)->toBe([
+    $invoice->refresh();
+    expect($invoice->customer_data)->toBe([
         'name'    => 'John Doe',
         'email'   => 'john@example.com',
         'address' => '123 Main St',
