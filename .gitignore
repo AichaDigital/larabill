@@ -45,3 +45,13 @@ phpstan-baseline-level6.neon
 invoice*.pdf
 PHPSTAN_LEVEL6_REPORT.md
 PHPSTAN_LEVEL6_SUMMARY.md
+MUTa
+MUTATION_SUMMARY.md
+infection.json5
+infection.json
+infection.log
+infection.log.html
+infection.log.summary
+infection.log.text
+infection.log.summary
+EXECUTIVE_SUMMARY.md
