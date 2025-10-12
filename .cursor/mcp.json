@@ -8,6 +8,14 @@
       ],
       "description": "Archivos del proyecto larabill"
     },
+    "lara100-files": {
+      "command": "npx",
+      "args": [
+        "@modelcontextprotocol/server-filesystem",
+        "/Users/abkrim/development/packages/aichadigital/lara100"
+      ],
+      "description": "Archivos del proyecto lara100"
+    },
     "aicha-files": {
       "command": "npx",
       "args": [
