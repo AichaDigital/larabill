@@ -30,8 +30,7 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->timestamps();
 
-            // Indexes
-            $table->index(['user_id']);
+            // Indexes (user_id index added automatically by MigrationHelper)
             $table->index(['is_current']);
             $table->index(['user_id', 'is_current']);
             $table->unique(['user_id', 'is_current']);

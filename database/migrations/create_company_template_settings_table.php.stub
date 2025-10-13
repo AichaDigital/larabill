@@ -17,10 +17,10 @@ return new class extends Migration
 
             // Agnostic user_id - auto-detects User model ID type (for multi-user support)
             MigrationHelper::userIdColumn($table);
-            $table->string('setting_type'); // 'template', 'notes', 'payment_terms'
-            $table->string('invoice_type')->default('fiscal'); // 'fiscal', 'proforma', 'reverse-charge', 'exempt'
-            $table->string('scope')->default('global'); // 'global', 'client', 'individual'
-            $table->string('client_id')->nullable(); // For client-specific settings
+            $table->string('setting_type', 50); // 'template', 'notes', 'payment_terms'
+            $table->string('invoice_type', 50)->default('fiscal'); // 'fiscal', 'proforma', 'reverse-charge', 'exempt'
+            $table->string('scope', 50)->default('global'); // 'global', 'client', 'individual'
+            $table->string('client_id', 100)->nullable(); // For client-specific settings
             $table->text('value'); // Setting value
             $table->boolean('is_active')->default(true);
             $table->timestamps();

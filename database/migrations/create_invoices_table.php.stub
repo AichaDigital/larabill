@@ -34,9 +34,8 @@ return new class extends Migration
             $table->timestamp('paid_at')->nullable();
             $table->timestamps();
 
-            // Indexes
+            // Indexes (user_id index added automatically by MigrationHelper)
             $table->index(['number']);
-            $table->index(['user_id']);
             $table->index(['status']);
             $table->index(['type', 'status']);
         });
