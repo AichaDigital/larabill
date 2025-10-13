@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use AichaDigital\Larabill\Support\MigrationHelper;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -18,7 +19,9 @@ return new class extends Migration
             $table->string('number')->unique();
             $table->enum('type', ['invoice', 'proforma'])->default('invoice');
             $table->enum('status', ['draft', 'sent', 'paid', 'overdue', 'cancelled'])->default('draft');
-            $table->unsignedBigInteger('user_id');
+            
+            // Agnostic user_id - auto-detects User model ID type
+            MigrationHelper::userIdColumn($table);
             $table->text('user_tax_info_encrypted')->nullable();
             $table->boolean('is_immutable')->default(false);
             $table->timestamp('immutable_at')->nullable();

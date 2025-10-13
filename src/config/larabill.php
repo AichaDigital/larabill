@@ -15,6 +15,26 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | User ID Type Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Larabill supports different User ID types to be agnostic to your User model.
+    | Auto-detection runs on first migration if not set.
+    |
+    | Supported types:
+    | - 'int'         : unsignedBigInteger (default for Laravel)
+    | - 'uuid'        : UUID string (char 36)
+    | - 'uuid_binary' : UUID as binary(16) - most efficient
+    | - 'ulid'        : ULID string (char 26)
+    | - 'ulid_binary' : ULID as binary(26)
+    |
+    | Auto-detect with: php artisan larabill:detect-user-id
+    |
+    */
+    'user_id_type' => env('LARABILL_USER_ID_TYPE', 'int'),
+
+    /*
+    |--------------------------------------------------------------------------
     | Model Configuration
     |--------------------------------------------------------------------------
     |

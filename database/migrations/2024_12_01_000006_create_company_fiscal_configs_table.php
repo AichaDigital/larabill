@@ -1,5 +1,6 @@
 <?php
 
+use AichaDigital\Larabill\Support\MigrationHelper;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -13,7 +14,9 @@ return new class extends Migration
     {
         Schema::create('fiscal_settings', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id');
+
+            // Agnostic user_id - auto-detects User model ID type
+            MigrationHelper::userIdColumn($table);
             $table->boolean('is_oss')->default(false)->comment('Whether the company is registered in OSS (One Stop Shop)');
             $table->boolean('is_roi')->default(false)->comment('Whether the company is a Reverse Charge Operator (ROI)');
             $table->integer('fiscal_year');

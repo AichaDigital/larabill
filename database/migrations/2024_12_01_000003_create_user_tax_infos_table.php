@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use AichaDigital\Larabill\Support\MigrationHelper;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -15,7 +16,9 @@ return new class extends Migration
     {
         Schema::create('user_tax_profiles', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id');
+
+            // Agnostic user_id - auto-detects User model ID type
+            MigrationHelper::userIdColumn($table);
             $table->boolean('is_current')->default(false);
             $table->string('tax_code');
             $table->string('business_name');
@@ -27,8 +30,7 @@ return new class extends Migration
             $table->string('phone')->nullable();
             $table->timestamps();
 
-            // Indexes
-            $table->index(['user_id']);
+            // Indexes (user_id index added by MigrationHelper)
             $table->index(['is_current']);
             $table->index(['user_id', 'is_current']);
             $table->unique(['user_id', 'is_current']);

@@ -18,6 +18,7 @@ class LarabillServiceProvider extends PackageServiceProvider
             ->name('larabill')
             ->hasConfigFile()
             ->hasViews()
+            ->hasCommand(\AichaDigital\Larabill\Console\DetectUserIdTypeCommand::class)
             ->hasMigrations([
                 // Core tables
                 'create_invoices_table',
@@ -33,7 +34,6 @@ class LarabillServiceProvider extends PackageServiceProvider
         // Note: Without ->runsMigrations(), migrations are only published
         // Users must manually run: php artisan migrate
         // This gives full control over billing schema changes
-        // Commands removed as they don't exist yet
     }
 
     /**

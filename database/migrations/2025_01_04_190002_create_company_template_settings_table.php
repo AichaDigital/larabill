@@ -1,5 +1,6 @@
 <?php
 
+use AichaDigital\Larabill\Support\MigrationHelper;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -13,7 +14,9 @@ return new class extends Migration
     {
         Schema::create('company_template_settings', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id')->index(); // For multi-user support
+
+            // Agnostic user_id - auto-detects User model ID type (for multi-user support)
+            MigrationHelper::userIdColumn($table);
             $table->string('setting_type'); // 'template', 'notes', 'payment_terms'
             $table->string('invoice_type')->default('fiscal'); // 'fiscal', 'proforma', 'reverse-charge', 'exempt'
             $table->string('scope')->default('global'); // 'global', 'client', 'individual'
