@@ -9,13 +9,14 @@
 
 Larabill is a professional, agnostic billing and invoicing package for Laravel applications. It provides comprehensive VAT verification, tax calculation for Spain/EU/worldwide, and flexible invoice generation with immutability and encryption features.
 
-## ✨ **New Architecture (v0.1.0)**
+## ✨ **New Architecture (v0.3.x)**
 
-- **UUID Binary Storage**: Efficient invoice IDs using binary UUID (55% storage savings)
+- **Invoices with UUID Binary**: Efficient invoice IDs using binary(16) UUID (55% storage savings, non-sequential for security)
+- **User Agnostic**: Works with ANY user ID type (int, UUID, ULID, binary variants) - auto-detected
+- **Ordered UUID v4**: Performance-optimized for MySQL B-tree indexes
 - **SOLID Nomenclature**: `tax_code`, `vat_code` for international compatibility
-- **User Agnostic**: Works with any user model (User, Customer, Client)
 - **Tax Profile Snapshots**: Immutable fiscal data per invoice
-- **Performance Optimized**: Ordered UUIDs for better MySQL indexing
+- **Base-100 Integers**: Precise monetary calculations (no floating-point errors)
 
 ## 🎯 Features
 
@@ -88,6 +89,11 @@ Larabill supports **two installation scenarios** to fit your needs:
 
 **Use this when**: Starting fresh or can create new billing tables.
 
+**What you get**: 
+- ✅ Invoices with UUID binary(16) IDs (efficient, secure, scalable)
+- ✅ Works with ANY User ID type (int, UUID, ULID, binary variants)
+- ✅ Auto-detects your User model configuration
+
 #### 1. Install the package
 ```bash
 composer require aichadigital/larabill
@@ -98,29 +104,56 @@ composer require aichadigital/larabill
 php artisan vendor:publish --tag="larabill-config"
 ```
 
-#### 3. Publish and review migrations
+#### 3. 🔍 Detect your User ID type (CRITICAL STEP)
 ```bash
-php artisan vendor:publish --tag="larabill-migrations"
+php artisan larabill:detect-user-id --update-env
 ```
 
-**⚠️ IMPORTANT**: Review the published migrations in `database/migrations/` before running them. This is critical for billing systems.
+**This command**:
+- Inspects your `users` table structure
+- Auto-detects ID type: `int`, `uuid`, `uuid_binary`, `ulid`, `ulid_binary`
+- Updates `.env` with `LARABILL_USER_ID_TYPE=xxx`
+- Ensures migrations use correct foreign key type
 
-#### 4. Run migrations
+**Example output**:
+```
+🔍 Detecting User ID type...
+
+Detected User ID Type    uuid_binary
+Description              UUID as binary(16) - most efficient
+Current Config           int (needs update)
+
+✅ Updated .env file with LARABILL_USER_ID_TYPE=uuid_binary
+```
+
+**⚠️ IMPORTANT**: Run this BEFORE publishing migrations!
+
+#### 4. Publish and review migrations
+```bash
+php artisan vendor:publish --tag="larabill-migrations" --force
+```
+
+**⚠️ CRITICAL**: Review the published migrations in `database/migrations/` before running them. Billing data is sensitive!
+
+#### 5. Run migrations
 ```bash
 php artisan migrate
 ```
 
 This creates optimized tables with:
-- ✅ UUID binary storage for invoices (efficient)
-- ✅ Base-100 integer amounts (precise)
-- ✅ Immutability and encryption features
-- ✅ Full fiscal compliance schema
+- ✅ **Invoices**: UUID binary(16) IDs (16 bytes vs 36 bytes = 55% savings)
+- ✅ **User Foreign Keys**: Auto-matched to your User ID type
+- ✅ **Base-100 Integers**: Precise monetary amounts (no floating-point errors)
+- ✅ **Immutability**: Invoice protection after sending
+- ✅ **Encryption**: Sensitive fiscal data encrypted
+- ✅ **Full EU Compliance**: OSS, ROI, destination VAT, thresholds
 
 **Benefits:**
 - Clean, optimized database schema
-- Best practices built-in
+- Best practices built-in (UUID for invoices, optimized FKs)
 - Ready to use immediately
 - Full control over migration customization
+- Works with ANY User model (int, UUID, ULID, etc.)
 
 ---
 
@@ -174,6 +207,53 @@ return [
 - Use Larabill's services (VAT verification, tax calculation, PDF generation)
 - Keep your existing data and schema
 - Gradual migration possible
+
+---
+
+## 🔧 User ID Type Compatibility
+
+Larabill is **completely agnostic** to your User model's ID type. It auto-detects and adapts:
+
+| Your User ID Type | Config Value | Larabill Uses | Performance |
+|-------------------|--------------|---------------|-------------|
+| `id` (BigInt) | `int` | `unsignedBigInteger` | ⭐⭐⭐⭐⭐ Best for joins |
+| `uuid` (char 36) | `uuid` | `char(36)` | ⭐⭐⭐ Good |
+| `uuid` (binary 16) | `uuid_binary` | `binary(16)` | ⭐⭐⭐⭐⭐ Best storage + joins |
+| `ulid` (char 26) | `ulid` | `char(26)` | ⭐⭐⭐⭐ Good |
+| `ulid` (binary 26) | `ulid_binary` | `binary(26)` | ⭐⭐⭐⭐ Good |
+
+**How it works**:
+
+```php
+// MigrationHelper::userIdColumn($table) inspects your User model and:
+// - If User uses int → creates unsignedBigInteger foreign key
+// - If User uses uuid binary → creates binary(16) foreign key
+// - If User uses ulid string → creates char(26) foreign key
+// etc.
+
+// Example invoice migration:
+Schema::create('invoices', function (Blueprint $table) {
+    $table->uuid('id')->primary(); // ← Invoice always uses UUID
+    
+    // Foreign key automatically matches User ID type:
+    MigrationHelper::userIdColumn($table); // ← Adapts to your User!
+    
+    // ... rest of columns
+});
+```
+
+**Your scenario (Larafactu)**:
+- ✅ User model: UUID binary(16)
+- ✅ Invoice model: UUID binary(16)
+- ✅ Foreign keys: binary(16) → Perfect match!
+- ✅ Storage: 16 bytes per ID (optimal)
+- ✅ Performance: Excellent for joins and indexes
+
+**Detection command**:
+```bash
+php artisan larabill:detect-user-id --update-env
+# Outputs: LARABILL_USER_ID_TYPE=uuid_binary
+```
 
 ---
 
