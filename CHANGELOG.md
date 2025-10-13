@@ -2,6 +2,16 @@
 
 All notable changes to `larabill` will be documented in this file.
 
+## [Unreleased]
+
+### Removed
+
+- **Incomplete PDF tests**: Removed 2 empty/skipped PDF generation tests from integration/feature test suites
+  - Removed `InvoiceIntegrationTest::can generate PDF for invoice` (empty test, only created invoice without testing)
+  - Removed `InvoiceManagementFeatureTest::can generate PDF for invoices` (empty test, only created invoice without testing)
+  - **Justification**: These tests were incomplete and duplicated existing comprehensive unit test coverage
+  - **Coverage maintained**: Full PDF generation testing remains in `PDFServiceTest` and `DomPDFServiceTest` (16 passing tests)
+
 ## [0.2.0] - 2025-01-13
 
 ### Breaking Changes

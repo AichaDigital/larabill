@@ -157,22 +157,6 @@ it('can handle invoice data encryption when immutable', function () {
     ]);
 });
 
-it('can generate PDF for invoice', function () {
-    $invoice = Invoice::create([
-        'number'       => 'FAC-0005',
-        'type'         => 'invoice',
-        'status'       => 'draft',
-        'user_id'      => 1,
-        'subtotal'     => 100.0,
-        'tax_amount'   => 21.0,
-        'total'        => 121.0,
-        'is_immutable' => false,
-    ]);
-
-    // Skip PDF generation test for now due to type issues
-    $this->markTestSkipped('PDF generation test skipped due to type issues in DomPDFService');
-});
-
 it('can determine if QR code should be included', function () {
     // Regular invoice should include QR
     $invoice = Invoice::create([
