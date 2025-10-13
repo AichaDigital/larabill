@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Models\{FiscalSettings, CountryVatRate, EuSalesThreshold, VatCategory};
+use AichaDigital\Larabill\Models\{CountryVatRate, EuSalesThreshold, FiscalSettings, VatCategory};
 use AichaDigital\Larabill\Services\DestinationVatService;
 
 beforeEach(function () {
@@ -22,7 +22,7 @@ it('can determine if destination VAT should be applied', function () {
 
     // Company with destination VAT enabled
     FiscalSettings::create([
-        'user_id'              => 'company-123',
+        'user_id'                 => 'company-123',
         'fiscal_year'             => 2024,
         'apply_destination_iva'   => true,
         'auto_apply_destination'  => false,
@@ -40,7 +40,7 @@ it('can determine if destination VAT should not be applied', function () {
 
     // Company with destination VAT disabled and threshold not exceeded
     FiscalSettings::create([
-        'user_id'              => 'company-123',
+        'user_id'                 => 'company-123',
         'fiscal_year'             => 2024,
         'apply_destination_iva'   => false,
         'auto_apply_destination'  => true,
@@ -58,7 +58,7 @@ it('can apply destination VAT automatically when threshold is exceeded', functio
 
     // Company with auto-apply enabled and threshold exceeded
     FiscalSettings::create([
-        'user_id'              => 'company-123',
+        'user_id'                 => 'company-123',
         'fiscal_year'             => 2024,
         'apply_destination_iva'   => false,
         'auto_apply_destination'  => true,
@@ -160,7 +160,7 @@ it('can update EU sales amount', function () {
     $service = new DestinationVatService;
 
     FiscalSettings::create([
-        'user_id'              => 'company-123',
+        'user_id'                 => 'company-123',
         'fiscal_year'             => 2024,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
         'current_eu_sales_amount' => 5000.0, // Base100 cast: €5,000.00
@@ -176,7 +176,7 @@ it('can update EU sales amount and exceed threshold', function () {
     $service = new DestinationVatService;
 
     FiscalSettings::create([
-        'user_id'              => 'company-123',
+        'user_id'                 => 'company-123',
         'fiscal_year'             => 2024,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
         'current_eu_sales_amount' => 5000.0, // Base100 cast: €5,000.00
@@ -194,7 +194,7 @@ it('can get EU sales threshold status', function () {
     $service = new DestinationVatService;
 
     FiscalSettings::create([
-        'user_id'              => 'company-123',
+        'user_id'                 => 'company-123',
         'fiscal_year'             => 2024,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
         'current_eu_sales_amount' => 7500.0, // Base100 cast: €7,500.00
@@ -214,7 +214,7 @@ it('can get EU sales breakdown by country', function () {
     $service = new DestinationVatService;
 
     EuSalesThreshold::create([
-        'user_id'           => 'company-123',
+        'user_id'              => 'company-123',
         'fiscal_year'          => 2024,
         'total_amount'         => 15000.00,
         'breakdown_by_country' => [
@@ -237,7 +237,7 @@ it('can get companies exceeding threshold', function () {
     $service = new DestinationVatService;
 
     FiscalSettings::create([
-        'user_id'              => 'company-123',
+        'user_id'                 => 'company-123',
         'fiscal_year'             => 2024,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
         'current_eu_sales_amount' => 1200000, // €12,000.00 in base 100
@@ -245,7 +245,7 @@ it('can get companies exceeding threshold', function () {
     ]);
 
     FiscalSettings::create([
-        'user_id'              => 'company-456',
+        'user_id'                 => 'company-456',
         'fiscal_year'             => 2024,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
         'current_eu_sales_amount' => 5000.0, // Base100 cast: €5,000.00
@@ -262,7 +262,7 @@ it('can get companies needing notification', function () {
     $service = new DestinationVatService;
 
     FiscalSettings::create([
-        'user_id'              => 'company-123',
+        'user_id'                 => 'company-123',
         'fiscal_year'             => 2024,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
         'current_eu_sales_amount' => 12000.00,
@@ -271,7 +271,7 @@ it('can get companies needing notification', function () {
     ]);
 
     FiscalSettings::create([
-        'user_id'              => 'company-456',
+        'user_id'                 => 'company-456',
         'fiscal_year'             => 2024,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
         'current_eu_sales_amount' => 12000.00,
@@ -289,7 +289,7 @@ it('can send threshold exceeded notification', function () {
     $service = new DestinationVatService;
 
     $config = FiscalSettings::create([
-        'user_id'                   => 'company-123',
+        'user_id'                      => 'company-123',
         'fiscal_year'                  => 2024,
         'eu_sales_threshold'           => 10000.0, // Base100 cast: €10,000.00
         'current_eu_sales_amount'      => 12000.00,
@@ -308,7 +308,7 @@ it('can reset EU sales for new fiscal year', function () {
     $service = new DestinationVatService;
 
     FiscalSettings::create([
-        'user_id'              => 'company-123',
+        'user_id'                 => 'company-123',
         'fiscal_year'             => 2024,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
         'current_eu_sales_amount' => 15000.00,
@@ -317,7 +317,7 @@ it('can reset EU sales for new fiscal year', function () {
     ]);
 
     EuSalesThreshold::create([
-        'user_id'           => 'company-123',
+        'user_id'              => 'company-123',
         'fiscal_year'          => 2024,
         'total_amount'         => 15000.00,
         'threshold_exceeded'   => true,
@@ -348,7 +348,7 @@ it('can get destination VAT statistics', function () {
     $service = new DestinationVatService;
 
     FiscalSettings::create([
-        'user_id'              => 'company-123',
+        'user_id'                 => 'company-123',
         'fiscal_year'             => 2024,
         'apply_destination_iva'   => true,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
@@ -357,7 +357,7 @@ it('can get destination VAT statistics', function () {
     ]);
 
     FiscalSettings::create([
-        'user_id'              => 'company-456',
+        'user_id'                 => 'company-456',
         'fiscal_year'             => 2024,
         'apply_destination_iva'   => false,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00

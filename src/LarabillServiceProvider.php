@@ -19,16 +19,20 @@ class LarabillServiceProvider extends PackageServiceProvider
             ->hasConfigFile()
             ->hasViews()
             ->hasMigrations([
+                // Core tables
                 'create_invoices_table',
                 'create_invoice_items_table',
                 'create_user_tax_infos_table',
                 'create_tax_rates_table',
                 'create_vat_verifications_table',
                 'create_company_fiscal_configs_table',
-                'add_oss_and_roi_fields_to_company_fiscal_configs',
-                'add_is_roi_taxed_to_invoices_table',
-            ])
-            ->runsMigrations();
+                // Template system
+                'create_invoice_templates_table',
+                'create_company_template_settings_table',
+            ]);
+        // Note: Without ->runsMigrations(), migrations are only published
+        // Users must manually run: php artisan migrate
+        // This gives full control over billing schema changes
         // Commands removed as they don't exist yet
     }
 

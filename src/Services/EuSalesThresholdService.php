@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services;
 
-use AichaDigital\Larabill\Models\Invoice;
+use AichaDigital\Larabill\Models\{FiscalSettings, Invoice};
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -15,14 +15,12 @@ use Illuminate\Support\Facades\Log;
  */
 class EuSalesThresholdService
 {
-    private CompanyConfigService $companyConfigService;
-
     /**
      * Constructor.
      */
-    public function __construct(?CompanyConfigService $companyConfigService = null)
+    public function __construct()
     {
-        $this->companyConfigService = $companyConfigService ?? app(CompanyConfigService::class);
+        //
     }
 
     /**
@@ -49,7 +47,9 @@ class EuSalesThresholdService
         }
 
         // Get company configuration
-        $config = $this->companyConfigService->getCurrentConfig();
+        $companyId  = (string) ($invoice->company_id ?? config('larabill.company.id', '1'));
+        $fiscalYear = (int) ($invoice->fiscal_year ?? date('Y'));
+        $config     = FiscalSettings::getOrCreateForUser($companyId, $fiscalYear);
 
         // If company is already registered in OSS, no need to track threshold
         if ($config->is_oss) {
@@ -62,9 +62,7 @@ class EuSalesThresholdService
 
         // Add invoice amount to EU sales counter
         $invoiceAmount = $invoice->subtotal; // Use subtotal (base amount without tax)
-        $companyId     = (string) ($invoice->company_id ?? config('larabill.company.id', '1'));
-        $fiscalYear    = (int) ($invoice->fiscal_year ?? date('Y'));
-        $this->companyConfigService->updateEuSalesAmount($companyId, $fiscalYear, (float) $invoiceAmount);
+        $config->incrementEuSales((float) $invoiceAmount);
 
         Log::info('EU sales threshold updated', [
             'invoice_number' => $invoice->number,
@@ -89,7 +87,9 @@ class EuSalesThresholdService
         }
 
         // Get company configuration
-        $config = $this->companyConfigService->getCurrentConfig();
+        $companyId  = (string) ($invoice->company_id ?? config('larabill.company.id', '1'));
+        $fiscalYear = (int) ($invoice->fiscal_year ?? date('Y'));
+        $config     = FiscalSettings::getOrCreateForUser($companyId, $fiscalYear);
 
         // If company is already registered in OSS, no need to track threshold
         if ($config->is_oss) {
@@ -98,9 +98,7 @@ class EuSalesThresholdService
 
         // Subtract invoice amount from EU sales counter (refund)
         $invoiceAmount = $invoice->subtotal;
-        $companyId     = (string) ($invoice->company_id ?? config('larabill.company.id', '1'));
-        $fiscalYear    = (int) ($invoice->fiscal_year ?? date('Y'));
-        $this->companyConfigService->updateEuSalesAmount($companyId, $fiscalYear, (float) -$invoiceAmount);
+        $config->incrementEuSales((float) -$invoiceAmount);
 
         Log::info('EU sales threshold updated (refund)', [
             'invoice_number' => $invoice->number,
@@ -152,9 +150,9 @@ class EuSalesThresholdService
     /**
      * Check if company should receive threshold notification.
      */
-    public function shouldSendNotification(): bool
+    public function shouldSendNotification(string $userId, int $fiscalYear): bool
     {
-        $config = $this->companyConfigService->getCurrentConfig();
+        $config = FiscalSettings::getOrCreateForUser($userId, $fiscalYear);
 
         // Don't send notification if company is already OSS registered
         if ($config->is_oss) {
@@ -173,35 +171,47 @@ class EuSalesThresholdService
     /**
      * Send threshold notification.
      */
-    public function sendThresholdNotification(): void
+    public function sendThresholdNotification(string $userId, int $fiscalYear): void
     {
-        if (! $this->shouldSendNotification()) {
+        if (! $this->shouldSendNotification($userId, $fiscalYear)) {
             return;
         }
 
-        $config = $this->companyConfigService->getCurrentConfig();
+        $config = FiscalSettings::getOrCreateForUser($userId, $fiscalYear);
 
         // Here you would implement your notification logic
         // For example: send email, create notification record, etc.
 
         Log::warning('EU Sales Threshold Exceeded - OSS Registration Required', [
+            'user_id'        => $userId,
+            'fiscal_year'    => $fiscalYear,
             'current_amount' => $config->current_eu_sales_amount,
             'threshold'      => $config->eu_sales_threshold,
             'percentage'     => $config->getThresholdPercentage(),
         ]);
 
         // Mark notification as sent
-        $this->companyConfigService->markNotificationSent();
+        $config->update(['notification_sent' => true]);
     }
 
     /**
      * Reset EU sales for new fiscal year.
      */
-    public function resetForNewFiscalYear(int $newYear): void
+    public function resetForNewFiscalYear(string $userId, int $oldYear, int $newYear): void
     {
-        $this->companyConfigService->resetEuSalesForNewYear($newYear);
+        $oldConfig = FiscalSettings::getOrCreateForUser($userId, $oldYear);
+        $newConfig = FiscalSettings::getOrCreateForUser($userId, $newYear);
+
+        // Reset the new year config
+        $newConfig->update([
+            'current_eu_sales_amount' => 0,
+            'threshold_exceeded'      => false,
+            'notification_sent'       => false,
+        ]);
 
         Log::info('EU sales threshold reset for new fiscal year', [
+            'user_id'  => $userId,
+            'old_year' => $oldYear,
             'new_year' => $newYear,
         ]);
     }
@@ -211,16 +221,16 @@ class EuSalesThresholdService
      *
      * @return array<string, mixed>
      */
-    public function getThresholdStatus(): array
+    public function getThresholdStatus(string $userId, int $fiscalYear): array
     {
-        $config = $this->companyConfigService->getCurrentConfig();
+        $config = FiscalSettings::getOrCreateForUser($userId, $fiscalYear);
 
         return [
             'current_amount'     => $config->current_eu_sales_amount,
             'threshold'          => $config->eu_sales_threshold,
             'percentage'         => $config->getThresholdPercentage(),
             'exceeded'           => $config->threshold_exceeded,
-            'needs_notification' => $this->shouldSendNotification(),
+            'needs_notification' => $this->shouldSendNotification($userId, $fiscalYear),
             'is_oss_registered'  => $config->is_oss,
             'fiscal_year'        => $config->fiscal_year,
         ];
@@ -250,18 +260,19 @@ class EuSalesThresholdService
     /**
      * Update EU sales counter from database calculation.
      */
-    public function updateEuSalesFromDatabase(int $fiscalYear): void
+    public function updateEuSalesFromDatabase(string $userId, int $fiscalYear): void
     {
         $calculatedTotal = $this->recalculateEuSales($fiscalYear);
 
-        $config = $this->companyConfigService->getCurrentConfig();
+        $config = FiscalSettings::getOrCreateForUser($userId, $fiscalYear);
 
         // Only update if fiscal year matches
         if ($config->fiscal_year === $fiscalYear) {
-            $config->update(['current_eu_sales_amount' => $calculatedTotal]);
+            $config->update(['current_eu_sales_amount' => (int) $calculatedTotal]);
             $config->checkThreshold();
 
             Log::info('EU sales updated from database calculation', [
+                'user_id'            => $userId,
                 'fiscal_year'        => $fiscalYear,
                 'calculated_total'   => $calculatedTotal,
                 'threshold_exceeded' => $config->threshold_exceeded,

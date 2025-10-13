@@ -69,7 +69,7 @@ class BillingService
         if ($roiVerification && $vatVerification) {
             $roiData = $this->roiVerificationService->verifyRoiStatus(
                 userId: (string) $userId,
-                vatNumber: $vatVerification['vat_code']     ?? '',
+                vatNumber: $vatVerification['vat_code']       ?? '',
                 countryCode: $vatVerification['country_code'] ?? $customerCountry
             );
         }

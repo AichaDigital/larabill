@@ -151,4 +151,3 @@ class UserTaxProfile extends Model
         return $this->hasMany($invoiceModel, 'tax_profile_id');
     }
 }
-

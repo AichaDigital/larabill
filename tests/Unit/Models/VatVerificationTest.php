@@ -6,7 +6,7 @@ use AichaDigital\Larabill\Models\VatVerification;
 
 it('can create a VAT verification record', function () {
     $verification = new VatVerification([
-        'vat_code'      => 'ESB12345678',
+        'vat_code'        => 'ESB12345678',
         'country_code'    => 'ES',
         'is_valid'        => true,
         'company_name'    => 'Test Company S.L.',
@@ -31,7 +31,7 @@ it('can create a VAT verification record', function () {
 
 it('can scope valid VAT verifications', function () {
     VatVerification::create([
-        'vat_code'      => 'ESB11111111',
+        'vat_code'        => 'ESB11111111',
         'country_code'    => 'ES',
         'is_valid'        => true,
         'company_name'    => 'Valid Company',
@@ -41,7 +41,7 @@ it('can scope valid VAT verifications', function () {
     ]);
 
     VatVerification::create([
-        'vat_code'      => 'ESB22222222',
+        'vat_code'        => 'ESB22222222',
         'country_code'    => 'ES',
         'is_valid'        => false,
         'company_name'    => null,
@@ -58,7 +58,7 @@ it('can scope valid VAT verifications', function () {
 
 it('can find verification by VAT number and country', function () {
     $verification = VatVerification::create([
-        'vat_code'      => 'ESB12345678',
+        'vat_code'        => 'ESB12345678',
         'country_code'    => 'ES',
         'is_valid'        => true,
         'company_name'    => 'Test Company S.L.',
@@ -67,7 +67,7 @@ it('can find verification by VAT number and country', function () {
         'response_data'   => ['valid' => true],
     ]);
 
-    $found = VatVerification::findByVatNumber('ESB12345678', 'ES');
+    $found = VatVerification::findByVatCodeAndCountry('ESB12345678', 'ES');
 
     expect($found)->not->toBeNull();
     expect($found->id)->toBe($verification->id);

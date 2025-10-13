@@ -249,7 +249,7 @@ class RoiQuery extends Model
     {
         return static::createQuery([
             'user_id'       => $userId,
-            'vat_code'    => $vatNumber,
+            'vat_code'      => $vatNumber,
             'country_code'  => $countryCode,
             'query_type'    => self::QUERY_TYPE_API,
             'api_source'    => $apiSource,
@@ -267,7 +267,7 @@ class RoiQuery extends Model
     {
         return static::createQuery([
             'user_id'       => $userId,
-            'vat_code'    => $vatNumber,
+            'vat_code'      => $vatNumber,
             'country_code'  => $countryCode,
             'query_type'    => self::QUERY_TYPE_CACHE,
             'api_source'    => 'cache',

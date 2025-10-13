@@ -214,7 +214,7 @@ class UserRoiVerification extends Model
         return static::updateOrCreate(
             [
                 'user_id'      => $data['user_id'],
-                'vat_code'   => $data['vat_code'],
+                'vat_code'     => $data['vat_code'],
                 'country_code' => $data['country_code'],
             ],
             array_merge($data, [

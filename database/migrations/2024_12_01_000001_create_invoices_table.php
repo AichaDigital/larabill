@@ -40,9 +40,9 @@ return new class extends Migration
 
             // Foreign keys
             $table->foreign('tax_profile_id')
-                  ->references('id')
-                  ->on('user_tax_profiles')
-                  ->nullOnDelete();
+                ->references('id')
+                ->on('user_tax_profiles')
+                ->nullOnDelete();
 
             // Indexes
             $table->index(['number']);

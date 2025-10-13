@@ -15,7 +15,8 @@ return new class extends Migration
     {
         Schema::create('invoice_items', function (Blueprint $table) {
             $table->id();
-            $table->uuid('invoice_id');
+            // Use binary(16) to match Invoice UUID storage (dyrynda/laravel-model-uuid)
+            $table->binary('invoice_id', 16);
             $table->foreign('invoice_id')->references('id')->on('invoices')->onDelete('cascade');
             $table->string('description');
             $table->integer('quantity')->default(100)->comment('Base-100 integer (e.g., 1.5 => 150, 1.0 => 100)');

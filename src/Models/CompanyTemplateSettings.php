@@ -163,7 +163,7 @@ class CompanyTemplateSettings extends Model
     ): self {
         return static::updateOrCreate(
             [
-                'user_id'   => $companyId,
+                'user_id'      => $companyId,
                 'setting_type' => $settingType,
                 'invoice_type' => $invoiceType,
                 'scope'        => $scope,

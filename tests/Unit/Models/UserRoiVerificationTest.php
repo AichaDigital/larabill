@@ -8,7 +8,7 @@ use Carbon\Carbon;
 it('can create a user ROI verification', function () {
     $verification = UserRoiVerification::create([
         'user_id'         => '1',
-        'vat_code'      => 'ESB12345678',
+        'vat_code'        => 'ESB12345678',
         'country_code'    => 'ES',
         'is_roi'          => true,
         'company_name'    => 'Test Company S.L.',
@@ -29,7 +29,7 @@ it('can create a user ROI verification', function () {
 it('can check if cache is expired', function () {
     $verification = UserRoiVerification::create([
         'user_id'      => '1',
-        'vat_code'   => 'ESB12345678',
+        'vat_code'     => 'ESB12345678',
         'country_code' => 'ES',
         'is_roi'       => true,
         'last_check'   => now()->subDays(20),
@@ -43,7 +43,7 @@ it('can check if cache is expired', function () {
 it('can check if cache is valid', function () {
     $verification = UserRoiVerification::create([
         'user_id'      => '1',
-        'vat_code'   => 'ESB12345678',
+        'vat_code'     => 'ESB12345678',
         'country_code' => 'ES',
         'is_roi'       => true,
         'last_check'   => now(),
@@ -58,7 +58,7 @@ it('can check if cache is valid', function () {
 it('can find ROI verification by user and VAT', function () {
     UserRoiVerification::create([
         'user_id'      => '1',
-        'vat_code'   => 'ESB12345678',
+        'vat_code'     => 'ESB12345678',
         'country_code' => 'ES',
         'is_roi'       => true,
         'last_check'   => now(),
@@ -75,7 +75,7 @@ it('can find ROI verification by user and VAT', function () {
 it('can find valid ROI verification', function () {
     UserRoiVerification::create([
         'user_id'      => '1',
-        'vat_code'   => 'ESB12345678',
+        'vat_code'     => 'ESB12345678',
         'country_code' => 'ES',
         'is_roi'       => true,
         'last_check'   => now(),
@@ -84,7 +84,7 @@ it('can find valid ROI verification', function () {
 
     UserRoiVerification::create([
         'user_id'      => '1',
-        'vat_code'   => 'ESB87654321',
+        'vat_code'     => 'ESB87654321',
         'country_code' => 'ES',
         'is_roi'       => true,
         'last_check'   => now()->subDays(20),
@@ -101,7 +101,7 @@ it('can find valid ROI verification', function () {
 it('can create or update ROI verification', function () {
     $data = [
         'user_id'         => '1',
-        'vat_code'      => 'ESB12345678',
+        'vat_code'        => 'ESB12345678',
         'country_code'    => 'ES',
         'is_roi'          => true,
         'company_name'    => 'Test Company S.L.',
@@ -127,7 +127,7 @@ it('can create or update ROI verification', function () {
 it('can mark as cache hit', function () {
     $verification = UserRoiVerification::create([
         'user_id'      => '1',
-        'vat_code'   => 'ESB12345678',
+        'vat_code'     => 'ESB12345678',
         'country_code' => 'ES',
         'is_roi'       => true,
         'last_check'   => now(),
@@ -143,7 +143,7 @@ it('can mark as cache hit', function () {
 it('can use scopes correctly', function () {
     UserRoiVerification::create([
         'user_id'      => '1',
-        'vat_code'   => 'ESB12345678',
+        'vat_code'     => 'ESB12345678',
         'country_code' => 'ES',
         'is_roi'       => true,
         'last_check'   => now(),
@@ -152,7 +152,7 @@ it('can use scopes correctly', function () {
 
     UserRoiVerification::create([
         'user_id'      => '2',
-        'vat_code'   => 'ESB87654321',
+        'vat_code'     => 'ESB87654321',
         'country_code' => 'ES',
         'is_roi'       => false,
         'last_check'   => now()->subDays(20),
@@ -161,7 +161,7 @@ it('can use scopes correctly', function () {
 
     UserRoiVerification::create([
         'user_id'      => '3',
-        'vat_code'   => 'FRB12345678',
+        'vat_code'     => 'FRB12345678',
         'country_code' => 'FR',
         'is_roi'       => true,
         'last_check'   => now(),

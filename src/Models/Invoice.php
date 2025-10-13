@@ -43,9 +43,12 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
+/**
+ * @phpstan-use HasFactory<\Database\Factories\InvoiceFactory>
+ */
 class Invoice extends Model
 {
-    use HasFactory, GeneratesUuid, BindsOnUuid;
+    use BindsOnUuid, GeneratesUuid, HasFactory;
 
     /**
      * Indicates if the IDs are auto-incrementing.
@@ -150,6 +153,19 @@ class Invoice extends Model
         }
 
         return parent::update($attributes, $options);
+    }
+
+    /**
+     * Create a new Eloquent query builder for the model.
+     *
+     * Uses custom BinaryUuidBuilder to handle UUID binary conversions in relationships.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @return \AichaDigital\Larabill\Database\Query\BinaryUuidBuilder
+     */
+    public function newEloquentBuilder($query)
+    {
+        return new \AichaDigital\Larabill\Database\Query\BinaryUuidBuilder($query);
     }
 
     /**

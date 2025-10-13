@@ -7,7 +7,7 @@ use Carbon\Carbon;
 
 it('can create a company fiscal config', function () {
     $config = FiscalSettings::create([
-        'user_id'              => 'company-123',
+        'user_id'                 => 'company-123',
         'fiscal_year'             => 2024,
         'apply_destination_iva'   => false,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
@@ -26,7 +26,7 @@ it('can create a company fiscal config', function () {
 
 it('can find fiscal config by company and year', function () {
     FiscalSettings::create([
-        'user_id'         => 'company-123',
+        'user_id'            => 'company-123',
         'fiscal_year'        => 2024,
         'eu_sales_threshold' => 10000.0, // €10,000.00 in decimal format
     ]);
@@ -54,7 +54,7 @@ it('can get or create fiscal config for company', function () {
 
 it('can check if threshold has been exceeded', function () {
     $config = FiscalSettings::create([
-        'user_id'              => 'company-123',
+        'user_id'                 => 'company-123',
         'fiscal_year'             => 2024,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
         'current_eu_sales_amount' => 5000.0, // Base100 cast: €5,000.00
@@ -71,7 +71,7 @@ it('can check if threshold has been exceeded', function () {
 
 it('can update EU sales amount', function () {
     $config = FiscalSettings::create([
-        'user_id'              => 'company-123',
+        'user_id'                 => 'company-123',
         'fiscal_year'             => 2024,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
         'current_eu_sales_amount' => 5000.0, // Base100 cast: €5,000.00
@@ -91,7 +91,7 @@ it('can update EU sales amount', function () {
 
 it('can reset EU sales amount', function () {
     $config = FiscalSettings::create([
-        'user_id'              => 'company-123',
+        'user_id'                 => 'company-123',
         'fiscal_year'             => 2024,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
         'current_eu_sales_amount' => 15000.0, // Base100 cast: €15,000.00
@@ -109,7 +109,7 @@ it('can reset EU sales amount', function () {
 it('can check if destination VAT should be applied', function () {
     // Test with apply_destination_iva = true
     $config1 = FiscalSettings::create([
-        'user_id'              => 'company-123',
+        'user_id'                 => 'company-123',
         'fiscal_year'             => 2024,
         'apply_destination_iva'   => true,
         'auto_apply_destination'  => false,
@@ -121,7 +121,7 @@ it('can check if destination VAT should be applied', function () {
 
     // Test with auto_apply_destination = true and threshold exceeded
     $config2 = FiscalSettings::create([
-        'user_id'              => 'company-456',
+        'user_id'                 => 'company-456',
         'fiscal_year'             => 2024,
         'apply_destination_iva'   => false,
         'auto_apply_destination'  => true,
@@ -133,7 +133,7 @@ it('can check if destination VAT should be applied', function () {
 
     // Test with auto_apply_destination = true but threshold not exceeded
     $config3 = FiscalSettings::create([
-        'user_id'              => 'company-789',
+        'user_id'                 => 'company-789',
         'fiscal_year'             => 2024,
         'apply_destination_iva'   => false,
         'auto_apply_destination'  => true,
@@ -146,7 +146,7 @@ it('can check if destination VAT should be applied', function () {
 
 it('can enable destination VAT', function () {
     $config = FiscalSettings::create([
-        'user_id'              => 'company-123',
+        'user_id'                 => 'company-123',
         'fiscal_year'             => 2024,
         'apply_destination_iva'   => false,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
@@ -162,7 +162,7 @@ it('can enable destination VAT', function () {
 
 it('can disable destination VAT', function () {
     $config = FiscalSettings::create([
-        'user_id'              => 'company-123',
+        'user_id'                 => 'company-123',
         'fiscal_year'             => 2024,
         'apply_destination_iva'   => true,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
@@ -176,7 +176,7 @@ it('can disable destination VAT', function () {
 
 it('can mark notification as sent', function () {
     $config = FiscalSettings::create([
-        'user_id'        => 'company-123',
+        'user_id'           => 'company-123',
         'fiscal_year'       => 2024,
         'notification_sent' => false,
     ]);
@@ -188,7 +188,7 @@ it('can mark notification as sent', function () {
 
 it('can use scopes correctly', function () {
     FiscalSettings::create([
-        'user_id'              => 'company-123',
+        'user_id'                 => 'company-123',
         'fiscal_year'             => 2024,
         'apply_destination_iva'   => true,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
@@ -196,7 +196,7 @@ it('can use scopes correctly', function () {
     ]);
 
     FiscalSettings::create([
-        'user_id'              => 'company-456',
+        'user_id'                 => 'company-456',
         'fiscal_year'             => 2024,
         'apply_destination_iva'   => false,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
@@ -204,7 +204,7 @@ it('can use scopes correctly', function () {
     ]);
 
     FiscalSettings::create([
-        'user_id'              => 'company-789',
+        'user_id'                 => 'company-789',
         'fiscal_year'             => 2023,
         'apply_destination_iva'   => true,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
@@ -238,7 +238,7 @@ it('can use scopes correctly', function () {
 
 it('can get fiscal year dates', function () {
     $config = FiscalSettings::create([
-        'user_id'        => 'company-123',
+        'user_id'           => 'company-123',
         'fiscal_year'       => 2024,
         'fiscal_year_start' => '01-01',
     ]);
@@ -254,7 +254,7 @@ it('can get fiscal year dates', function () {
 
 it('can check if date is within fiscal year', function () {
     $config = FiscalSettings::create([
-        'user_id'        => 'company-123',
+        'user_id'           => 'company-123',
         'fiscal_year'       => 2024,
         'fiscal_year_start' => '01-01',
     ]);
@@ -266,7 +266,7 @@ it('can check if date is within fiscal year', function () {
 
 it('can get threshold percentage', function () {
     $config = FiscalSettings::create([
-        'user_id'              => 'company-123',
+        'user_id'                 => 'company-123',
         'fiscal_year'             => 2024,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
         'current_eu_sales_amount' => 7500.0, // Base100 cast: €7,500.00
@@ -281,7 +281,7 @@ it('can get threshold percentage', function () {
 
 it('can get remaining threshold amount', function () {
     $config = FiscalSettings::create([
-        'user_id'              => 'company-123',
+        'user_id'                 => 'company-123',
         'fiscal_year'             => 2024,
         'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
         'current_eu_sales_amount' => 7500.0, // Base100 cast: €7,500.00
@@ -296,7 +296,7 @@ it('can get remaining threshold amount', function () {
 
 it('can manage custom threshold rules', function () {
     $config = FiscalSettings::create([
-        'user_id'             => 'company-123',
+        'user_id'                => 'company-123',
         'fiscal_year'            => 2024,
         'custom_threshold_rules' => [
             'DE' => ['threshold' => 15000, 'special_rate' => 19],
@@ -328,7 +328,7 @@ it('sets default values on creation', function () {
     config(['larabill.destination_vat.fiscal_year_start' => '04-01']);
 
     $config = FiscalSettings::create([
-        'user_id'             => 'company-123',
+        'user_id'                => 'company-123',
         'fiscal_year'            => 2024,
         'auto_apply_destination' => true, // Explicitly set to ensure it's not null
     ]);

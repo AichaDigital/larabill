@@ -41,9 +41,7 @@ it('can perform complete CRUD operations on invoices', function () {
     expect(Invoice::whereUuid($invoice->id)->first())->toBeNull();
 });
 
-it('can handle invoice with items relationship', function () {
-    test()->markTestSkipped('Inverse relationship with UUID binary needs refactoring');
-
+it('can handle invoice with items relationship using binary UUID', function () {
     $invoice = Invoice::create([
         'number'       => 'FAC-0002',
         'type'         => 'invoice',
@@ -56,7 +54,7 @@ it('can handle invoice with items relationship', function () {
     ]);
 
     // Create invoice items
-    $item1 = InvoiceItem::create([
+    InvoiceItem::create([
         'invoice_id'  => $invoice->id,
         'description' => 'Item 1',
         'quantity'    => 2,
@@ -67,7 +65,7 @@ it('can handle invoice with items relationship', function () {
         'total'       => 121.0,
     ]);
 
-    $item2 = InvoiceItem::create([
+    InvoiceItem::create([
         'invoice_id'  => $invoice->id,
         'description' => 'Item 2',
         'quantity'    => 1,
@@ -86,11 +84,14 @@ it('can handle invoice with items relationship', function () {
     expect($invoice->items->first()->description)->toBe('Item 1');
     expect($invoice->items->last()->description)->toBe('Item 2');
 
-    // Test inverse relationship (refresh items to load invoice)
-    $item1->refresh();
-    $item2->refresh();
-    expect($item1->invoice->id)->toBe($invoice->id);
-    expect($item2->invoice->number)->toBe('FAC-0002');
+    // Test inverse relationship
+    $items = InvoiceItem::where('invoice_id', $invoice->id)->get();
+    expect($items)->toHaveCount(2);
+
+    $items->each(function ($item) use ($invoice) {
+        expect($item->invoice->id)->toBe($invoice->id);
+        expect($item->invoice->number)->toBe('FAC-0002');
+    });
 });
 
 it('can handle invoice immutability correctly', function () {
@@ -255,7 +256,7 @@ it('can handle invoice with ROI verification integration', function () {
         'customer_country' => 'DE',
         'customer_type'    => 'business',
         'vat_verification' => [
-            'vat_code'   => 'DE123456789',
+            'vat_code'     => 'DE123456789',
             'country_code' => 'DE',
         ],
         'items' => [

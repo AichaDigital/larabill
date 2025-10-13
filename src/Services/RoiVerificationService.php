@@ -38,7 +38,7 @@ class RoiVerificationService
         // Log verification start
         Log::info('ROI verification started', [
             'user_id'    => $userId,
-            'vat_code' => $vatNumber,
+            'vat_code'   => $vatNumber,
         ]);
 
         // Validate VAT number format
@@ -46,7 +46,7 @@ class RoiVerificationService
             // Create ROI verification record for invalid format
             $roiVerification = UserRoiVerification::createOrUpdateRoiVerification([
                 'user_id'         => $userId,
-                'vat_code'      => $vatNumber,
+                'vat_code'        => $vatNumber,
                 'country_code'    => $countryCode,
                 'is_roi'          => false,
                 'company_name'    => null,
@@ -64,7 +64,7 @@ class RoiVerificationService
 
             $result = [
                 'is_roi'       => false,
-                'vat_code'   => $vatNumber,
+                'vat_code'     => $vatNumber,
                 'country_code' => $countryCode,
                 'error'        => 'Invalid VAT number format',
                 'cache_hit'    => false,
@@ -73,7 +73,7 @@ class RoiVerificationService
 
             Log::info('ROI verification completed', [
                 'user_id'    => $userId,
-                'vat_code' => $vatNumber,
+                'vat_code'   => $vatNumber,
                 'is_roi'     => $result['is_roi'],
             ]);
 
@@ -99,7 +99,7 @@ class RoiVerificationService
 
             $result = [
                 'is_roi'          => $cachedVerification->is_roi,
-                'vat_code'      => $cachedVerification->vat_code,
+                'vat_code'        => $cachedVerification->vat_code,
                 'country_code'    => $cachedVerification->country_code,
                 'company_name'    => $cachedVerification->company_name,
                 'company_address' => $cachedVerification->company_address,
@@ -111,7 +111,7 @@ class RoiVerificationService
 
             Log::info('ROI verification completed', [
                 'user_id'    => $userId,
-                'vat_code' => $vatNumber,
+                'vat_code'   => $vatNumber,
                 'is_roi'     => $result['is_roi'],
             ]);
 
@@ -152,7 +152,7 @@ class RoiVerificationService
                 // Create ROI verification record for failed verification
                 $roiVerification = UserRoiVerification::createOrUpdateRoiVerification([
                     'user_id'         => $userId,
-                    'vat_code'      => $vatNumber,
+                    'vat_code'        => $vatNumber,
                     'country_code'    => $countryCode,
                     'is_roi'          => false,
                     'company_name'    => null,
@@ -167,7 +167,7 @@ class RoiVerificationService
 
                 $result = [
                     'is_roi'       => false,
-                    'vat_code'   => $vatNumber,
+                    'vat_code'     => $vatNumber,
                     'country_code' => $countryCode,
                     'error'        => 'API verification failed',
                     'cache_hit'    => false,
@@ -176,7 +176,7 @@ class RoiVerificationService
 
                 Log::info('ROI verification completed with API failure', [
                     'user_id'    => $userId,
-                    'vat_code' => $vatNumber,
+                    'vat_code'   => $vatNumber,
                     'is_roi'     => $result['is_roi'],
                 ]);
 
@@ -186,7 +186,7 @@ class RoiVerificationService
             // Create or update ROI verification
             $roiVerification = UserRoiVerification::createOrUpdateRoiVerification([
                 'user_id'         => $userId,
-                'vat_code'      => $vatNumber,
+                'vat_code'        => $vatNumber,
                 'country_code'    => $countryCode,
                 'is_roi'          => $isRoi,
                 'company_name'    => $vatResult['company_name']    ?? '',
@@ -204,7 +204,7 @@ class RoiVerificationService
 
             $result = [
                 'is_roi'          => $isRoi,
-                'vat_code'      => $vatNumber,
+                'vat_code'        => $vatNumber,
                 'country_code'    => $countryCode,
                 'company_name'    => $vatResult['company_name']    ?? '',
                 'company_address' => $vatResult['company_address'] ?? null,
@@ -216,7 +216,7 @@ class RoiVerificationService
 
             Log::info('ROI verification completed', [
                 'user_id'    => $userId,
-                'vat_code' => $vatNumber,
+                'vat_code'   => $vatNumber,
                 'is_roi'     => $result['is_roi'],
             ]);
 
@@ -224,7 +224,7 @@ class RoiVerificationService
         } catch (\Exception $e) {
             Log::error('ROI verification from API failed', [
                 'user_id'      => $userId,
-                'vat_code'   => $vatNumber,
+                'vat_code'     => $vatNumber,
                 'country_code' => $countryCode,
                 'error'        => $e->getMessage(),
             ]);
@@ -237,7 +237,7 @@ class RoiVerificationService
 
             $result = [
                 'is_roi'       => false,
-                'vat_code'   => $vatNumber,
+                'vat_code'     => $vatNumber,
                 'country_code' => $countryCode,
                 'error'        => 'API verification failed: '.$e->getMessage(),
                 'cache_hit'    => false,
@@ -246,7 +246,7 @@ class RoiVerificationService
 
             Log::info('ROI verification completed', [
                 'user_id'    => $userId,
-                'vat_code' => $vatNumber,
+                'vat_code'   => $vatNumber,
                 'is_roi'     => $result['is_roi'],
             ]);
 
@@ -269,7 +269,7 @@ class RoiVerificationService
     {
         $cacheData = [
             'is_roi'          => $verification->is_roi,
-            'vat_code'      => $verification->vat_code,
+            'vat_code'        => $verification->vat_code,
             'country_code'    => $verification->country_code,
             'company_name'    => $verification->company_name,
             'company_address' => $verification->company_address,
@@ -301,7 +301,7 @@ class RoiVerificationService
         } catch (\Exception $e) {
             Log::error('Failed to log ROI query', [
                 'user_id'      => $userId,
-                'vat_code'   => $vatNumber,
+                'vat_code'     => $vatNumber,
                 'country_code' => $countryCode,
                 'query_type'   => $queryType,
                 'error'        => $e->getMessage(),
@@ -553,7 +553,7 @@ class RoiVerificationService
             $result    = $this->verifyRoiStatus($userId, $vatNumber, $countryCode);
             $results[] = array_merge($result, [
                 'user_id'    => $userId,
-                'vat_code' => $vatNumber,
+                'vat_code'   => $vatNumber,
             ]);
         }
 

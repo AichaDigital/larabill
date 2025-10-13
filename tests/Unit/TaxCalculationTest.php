@@ -27,7 +27,7 @@ it('can calculate reverse charge for EU B2B transactions', function () {
     $options = [
         'user_id'          => 'test-user',
         'vat_verification' => [
-            'vat_code'   => 'DE123456789',
+            'vat_code'     => 'DE123456789',
             'country_code' => 'DE',
         ],
     ];

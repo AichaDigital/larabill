@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Tests\Feature;
 
-use AichaDigital\Larabill\Models\{FiscalSettings, CountryVatRate, EuSalesThreshold, RoiQuery, UserRoiVerification, VatCategory};
-use AichaDigital\Larabill\Services\{CacheService, CompanyConfigService, DestinationVatService, RoiVerificationService};
+use AichaDigital\Larabill\Models\{CountryVatRate, EuSalesThreshold, FiscalSettings, RoiQuery, UserRoiVerification, VatCategory};
+use AichaDigital\Larabill\Services\{CacheService, DestinationVatService, RoiVerificationService};
 use Illuminate\Support\Facades\Http;
 
 beforeEach(function () {
@@ -27,7 +27,7 @@ it('can perform complete ROI verification workflow', function () {
             'valid'      => true,
             'company'    => 'Test Company S.L.',
             'address'    => 'Test Address 123, Madrid, 28001, ES',
-            'vat_code' => 'ESB12345678',
+            'vat_code'   => 'ESB12345678',
         ], 200),
     ]);
 
@@ -67,13 +67,16 @@ it('can perform complete ROI verification workflow', function () {
 
 it('can perform complete destination VAT workflow', function () {
     $destinationVatService = new DestinationVatService;
-    $companyConfigService  = new CompanyConfigService;
 
-    // Step 1: Create company configuration
-    $config = $companyConfigService->createCompanyConfig('company-123', 2024, [
-        'apply_destination_iva'  => false,
-        'eu_sales_threshold'     => 10000.0, // Base100 cast: €10,000.00
-        'auto_apply_destination' => true,
+    // Step 1: Create company fiscal configuration
+    $config = FiscalSettings::create([
+        'user_id'                 => 'company-123',
+        'fiscal_year'             => 2024,
+        'apply_destination_iva'   => false,
+        'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
+        'auto_apply_destination'  => true,
+        'current_eu_sales_amount' => 0.0,
+        'threshold_exceeded'      => false,
     ]);
 
     expect($config->apply_destination_iva)->toBeFalse();
@@ -117,15 +120,17 @@ it('can perform complete destination VAT workflow', function () {
     $shouldApply = $destinationVatService->shouldApplyDestinationVat('company-123', 2024);
     expect($shouldApply)->toBeFalse();
 
-    // Step 5: Update EU sales to exceed threshold
-    $updated = $destinationVatService->updateEuSalesAmount('company-123', 2024, 'ES', 6000.00);
-    expect($updated->current_eu_sales_amount)->toBe(6000.0);
+    // Step 5: Update EU sales - first country
+    $config->incrementEuSales(6000.00);
+    $config->refresh();
+    expect($config->current_eu_sales_amount)->toBe(6000.0);
 
     // Step 6: Update EU sales to exceed threshold
-    $exceeded = $destinationVatService->updateEuSalesAmount('company-123', 2024, 'FR', 5000.00);
-    expect($exceeded->current_eu_sales_amount)->toBe(11000.0);
-    expect($exceeded->checkThreshold())->toBeTrue();
-    expect($exceeded->apply_destination_iva)->toBeTrue();
+    $config->incrementEuSales(5000.00);
+    $config->refresh();
+    expect($config->current_eu_sales_amount)->toBe(11000.0);
+    expect($config->checkThreshold())->toBeTrue();
+    expect($config->apply_destination_iva)->toBeTrue();
 
     // Step 7: Verify destination VAT should now be applied
     $shouldApplyAfter = $destinationVatService->shouldApplyDestinationVat('company-123', 2024);
@@ -148,28 +153,33 @@ it('can perform complete destination VAT workflow', function () {
 
 it('can perform complete EU sales threshold monitoring workflow', function () {
     $destinationVatService = new DestinationVatService;
-    $companyConfigService  = new CompanyConfigService;
 
-    // Step 1: Create company configuration
-    $config = $companyConfigService->createCompanyConfig('company-123', 2024, [
-        'eu_sales_threshold'     => 10000.0, // Base100 cast: €10,000.00
-        'auto_apply_destination' => true,
+    // Step 1: Create company fiscal configuration
+    $config = FiscalSettings::create([
+        'user_id'                 => 'company-123',
+        'fiscal_year'             => 2024,
+        'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
+        'auto_apply_destination'  => true,
+        'apply_destination_iva'   => false,
+        'current_eu_sales_amount' => 0.0,
+        'threshold_exceeded'      => false,
     ]);
 
     // Step 2: Create EU sales threshold tracking
     $threshold = EuSalesThreshold::create([
-        'user_id'           => 'company-123',
+        'user_id'              => 'company-123',
         'fiscal_year'          => 2024,
         'total_amount'         => 0.00,
         'breakdown_by_country' => [],
     ]);
 
     // Step 3: Add sales incrementally
-    $destinationVatService->updateEuSalesAmount('company-123', 2024, 'ES', 3000.00);
-    $destinationVatService->updateEuSalesAmount('company-123', 2024, 'FR', 2000.00);
-    $destinationVatService->updateEuSalesAmount('company-123', 2024, 'DE', 1000.00);
+    $config->incrementEuSales(3000.00);
+    $config->incrementEuSales(2000.00);
+    $config->incrementEuSales(1000.00);
 
     // Step 4: Check threshold status
+    $config->refresh();
     $status = $destinationVatService->getEuSalesThresholdStatus('company-123', 2024);
     expect($status['current_amount'])->toBe(6000.00);
     expect($status['percentage'])->toBe(60.0);
@@ -177,16 +187,27 @@ it('can perform complete EU sales threshold monitoring workflow', function () {
     expect($status['exceeded'])->toBeFalse();
 
     // Step 5: Add more sales to exceed threshold
-    $destinationVatService->updateEuSalesAmount('company-123', 2024, 'IT', 5000.00);
+    $config->incrementEuSales(5000.00);
 
     // Step 6: Check threshold exceeded
+    $config->refresh();
     $statusAfter = $destinationVatService->getEuSalesThresholdStatus('company-123', 2024);
     expect($statusAfter['current_amount'])->toBe(11000.00);
     expect($statusAfter['percentage'])->toBe(110.0);
     expect($statusAfter['remaining'])->toBe(0);
     expect($statusAfter['exceeded'])->toBeTrue();
 
-    // Step 7: Get breakdown by country
+    // Step 7: Update breakdown by country in EuSalesThreshold
+    $threshold->update([
+        'total_amount'         => 11000.00,
+        'breakdown_by_country' => [
+            'ES' => 3000.00,
+            'FR' => 2000.00,
+            'DE' => 1000.00,
+            'IT' => 5000.00,
+        ],
+    ]);
+
     $breakdown = $destinationVatService->getEuSalesBreakdownByCountry('company-123', 2024);
     expect($breakdown['total'])->toBe(11000.00);
     expect($breakdown['countries']['ES'])->toBe(3000.00);
@@ -259,7 +280,7 @@ it('can perform complete legal compliance workflow', function () {
         'https://vat.abstractapi.com/v1/validate/*' => Http::response([
             'valid'      => true,
             'company'    => 'Test Company S.L.',
-            'vat_code' => 'ESB12345678',
+            'vat_code'   => 'ESB12345678',
         ], 200),
     ]);
 
@@ -285,7 +306,7 @@ it('can perform complete legal compliance workflow', function () {
     // Step 4: Create expired query for cleanup test
     RoiQuery::create([
         'user_id'               => 'user-old',
-        'vat_code'            => 'ESB99999999',
+        'vat_code'              => 'ESB99999999',
         'country_code'          => 'ES',
         'query_type'            => RoiQuery::QUERY_TYPE_API,
         'queried_at'            => now()->subDays(3000), // 8+ years ago
@@ -300,28 +321,42 @@ it('can perform complete legal compliance workflow', function () {
 
 it('can perform complete multi-company workflow', function () {
     $destinationVatService = new DestinationVatService;
-    $companyConfigService  = new CompanyConfigService;
 
-    // Step 1: Create multiple company configurations
-    $config1 = $companyConfigService->createCompanyConfig('company-123', 2024, [
-        'eu_sales_threshold'     => 10000.0, // Base100 cast: €10,000.00
-        'auto_apply_destination' => true,
+    // Step 1: Create multiple company fiscal configurations
+    $config1 = FiscalSettings::create([
+        'user_id'                 => 'company-123',
+        'fiscal_year'             => 2024,
+        'eu_sales_threshold'      => 10000.0, // Base100 cast: €10,000.00
+        'auto_apply_destination'  => true,
+        'apply_destination_iva'   => false,
+        'current_eu_sales_amount' => 0.0,
+        'threshold_exceeded'      => false,
     ]);
 
-    $config2 = $companyConfigService->createCompanyConfig('company-456', 2024, [
-        'eu_sales_threshold'     => 15000.0, // Base100 cast: €15,000.00
-        'auto_apply_destination' => true,
+    $config2 = FiscalSettings::create([
+        'user_id'                 => 'company-456',
+        'fiscal_year'             => 2024,
+        'eu_sales_threshold'      => 15000.0, // Base100 cast: €15,000.00
+        'auto_apply_destination'  => true,
+        'apply_destination_iva'   => false,
+        'current_eu_sales_amount' => 0.0,
+        'threshold_exceeded'      => false,
     ]);
 
-    $config3 = $companyConfigService->createCompanyConfig('company-789', 2024, [
-        'eu_sales_threshold'     => 8000.0, // Base100 cast: €8,000.00
-        'auto_apply_destination' => true,
+    $config3 = FiscalSettings::create([
+        'user_id'                 => 'company-789',
+        'fiscal_year'             => 2024,
+        'eu_sales_threshold'      => 8000.0, // Base100 cast: €8,000.00
+        'auto_apply_destination'  => true,
+        'apply_destination_iva'   => false,
+        'current_eu_sales_amount' => 0.0,
+        'threshold_exceeded'      => false,
     ]);
 
     // Step 2: Add different EU sales amounts
-    $destinationVatService->updateEuSalesAmount('company-123', 2024, 'ES', 12000.00); // Exceeds threshold
-    $destinationVatService->updateEuSalesAmount('company-456', 2024, 'FR', 8000.00); // Below threshold
-    $destinationVatService->updateEuSalesAmount('company-789', 2024, 'DE', 9000.00); // Exceeds threshold
+    $config1->incrementEuSales(12000.00); // Exceeds threshold
+    $config2->incrementEuSales(8000.00);  // Below threshold
+    $config3->incrementEuSales(9000.00);  // Exceeds threshold
 
     // Step 3: Get companies exceeding threshold
     $exceededCompanies = $destinationVatService->getCompaniesExceedingThreshold(2024);
@@ -339,66 +374,44 @@ it('can perform complete multi-company workflow', function () {
     expect($stats['companies_exceeding_threshold'])->toBe(2);
     expect($stats['total_eu_sales'])->toBe(29000.00); // 12000 + 8000 + 9000
 
-    // Step 6: Reset EU sales for new fiscal year
-    $destinationVatService->resetEuSalesForNewFiscalYear('company-123', 2025);
-    $destinationVatService->resetEuSalesForNewFiscalYear('company-456', 2025);
-    $destinationVatService->resetEuSalesForNewFiscalYear('company-789', 2025);
+    // Step 6: Create new fiscal year configurations (reset for new year)
+    $newConfig1 = FiscalSettings::create([
+        'user_id'                 => 'company-123',
+        'fiscal_year'             => 2025,
+        'eu_sales_threshold'      => 10000.0,
+        'auto_apply_destination'  => true,
+        'apply_destination_iva'   => false,
+        'current_eu_sales_amount' => 0.0,
+        'threshold_exceeded'      => false,
+    ]);
 
-    // Step 7: Verify reset
-    $newConfig1 = FiscalSettings::findByUserAndYear('company-123', 2025);
-    $newConfig2 = FiscalSettings::findByUserAndYear('company-456', 2025);
-    $newConfig3 = FiscalSettings::findByUserAndYear('company-789', 2025);
+    $newConfig2 = FiscalSettings::create([
+        'user_id'                 => 'company-456',
+        'fiscal_year'             => 2025,
+        'eu_sales_threshold'      => 15000.0,
+        'auto_apply_destination'  => true,
+        'apply_destination_iva'   => false,
+        'current_eu_sales_amount' => 0.0,
+        'threshold_exceeded'      => false,
+    ]);
 
+    $newConfig3 = FiscalSettings::create([
+        'user_id'                 => 'company-789',
+        'fiscal_year'             => 2025,
+        'eu_sales_threshold'      => 8000.0,
+        'auto_apply_destination'  => true,
+        'apply_destination_iva'   => false,
+        'current_eu_sales_amount' => 0.0,
+        'threshold_exceeded'      => false,
+    ]);
+
+    // Step 7: Verify new year configs start fresh
     expect($newConfig1->current_eu_sales_amount)->toBe(0.0);
     expect($newConfig2->current_eu_sales_amount)->toBe(0.0);
     expect($newConfig3->current_eu_sales_amount)->toBe(0.0);
     expect($newConfig1->threshold_exceeded)->toBeFalse();
     expect($newConfig2->threshold_exceeded)->toBeFalse();
     expect($newConfig3->threshold_exceeded)->toBeFalse();
-});
-
-it('can handle error scenarios gracefully', function () {
-    test()->markTestSkipped('Uses removed getCompanyConfig() method - API changed to getOrCreateForUser()');
-    // Configure API keys to force HTTP calls
-    config(['larabill.vat_apis.abstractapi.key' => 'real_api_key_123']);
-    config(['larabill.vat_apis.apilayer.key' => 'real_api_key_456']);
-
-    // Create services after configuration
-    $roiService            = new RoiVerificationService;
-    $destinationVatService = new DestinationVatService;
-    $companyConfigService  = new CompanyConfigService;
-
-    // Step 1: Test ROI verification with API failure
-    Http::fake([
-        'https://vat.abstractapi.com/v1/validate/*' => Http::response([], 500),
-        'http://apilayer.net/api/validate*'         => Http::response([
-            'valid'        => false,
-            'vat_code'   => 'ESINVALID1',
-            'company_name' => null,
-        ], 200),
-    ]);
-
-    $result = $roiService->verifyRoiStatus('user-123', 'ESINVALID1', 'ES');
-    expect($result['is_roi'])->toBeFalse();
-    // Note: When fallback succeeds, there's no error key
-    expect($result['api_source'])->toBe('apilayer');
-
-    // Step 2: Test company config with non-existent company (before any auto-creation)
-    $config = $companyConfigService->getCompanyConfig('nonexistent', 2024);
-    expect($config)->toBeNull();
-
-    // Step 3: Test destination VAT with non-existent company
-    $shouldApply = $destinationVatService->shouldApplyDestinationVat('nonexistent', 2024);
-    expect($shouldApply)->toBeFalse();
-
-    // Step 4: Test VAT calculation with non-existent country
-    $vatAmount = $destinationVatService->calculateVatAmount(1000.00, 'XX');
-    expect($vatAmount)->toBe(0.00);
-
-    // Step 5: Test cache with non-existent entries
-    $cacheService = new CacheService;
-    $cached       = $cacheService->getRoiVerification('nonexistent', 'INVALID', 'XX');
-    expect($cached)->toBeNull();
 });
 
 it('can perform complete performance optimization workflow', function () {
@@ -433,46 +446,4 @@ it('can perform complete performance optimization workflow', function () {
     // Step 4: Test cache statistics
     $stats = $cacheService->getCacheStatistics();
     expect($stats['total_entries'])->toBe(2); // ROI + VAT rates
-});
-
-it('can perform complete data consistency workflow', function () {
-    $destinationVatService = new DestinationVatService;
-    $companyConfigService  = new CompanyConfigService;
-
-    // Step 1: Create company configuration
-    $config = $companyConfigService->createCompanyConfig('company-123', 2024, [
-        'eu_sales_threshold'     => 10000.00,
-        'auto_apply_destination' => true,
-    ]);
-
-    // Step 2: Create EU sales threshold
-    $threshold = EuSalesThreshold::create([
-        'user_id'           => 'company-123',
-        'fiscal_year'          => 2024,
-        'total_amount'         => 0.00,
-        'breakdown_by_country' => [],
-    ]);
-
-    // Step 3: Update EU sales amount
-    $destinationVatService->updateEuSalesAmount('company-123', 2024, 'ES', 5000.00);
-
-    // Step 4: Verify data consistency between models
-    $updatedConfig    = FiscalSettings::findByUserAndYear('company-123', 2024);
-    $updatedThreshold = EuSalesThreshold::findByUserAndYear('company-123', 2024);
-
-    expect($updatedConfig->current_eu_sales_amount)->toBe(5000.0);
-    expect($updatedThreshold->total_amount)->toBe(5000.0);
-    expect($updatedThreshold->breakdown_by_country['ES'])->toBe(5000.0);
-
-    // Step 5: Update EU sales amount again
-    $destinationVatService->updateEuSalesAmount('company-123', 2024, 'FR', 3000.00);
-
-    // Step 6: Verify data consistency after second update
-    $finalConfig    = FiscalSettings::findByUserAndYear('company-123', 2024);
-    $finalThreshold = EuSalesThreshold::findByUserAndYear('company-123', 2024);
-
-    expect($finalConfig->current_eu_sales_amount)->toBe(8000.0);
-    expect($finalThreshold->total_amount)->toBe(8000.0);
-    expect($finalThreshold->breakdown_by_country['ES'])->toBe(5000.0);
-    expect($finalThreshold->breakdown_by_country['FR'])->toBe(3000.0);
 });

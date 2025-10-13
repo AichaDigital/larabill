@@ -21,7 +21,7 @@ test('binary uuid is more efficient than string uuid', function () {
     $stringUuidSize = 36; // bytes
 
     // Calculate storage savings
-    $savingsPerRecord = $stringUuidSize - $binaryUuidSize;
+    $savingsPerRecord  = $stringUuidSize - $binaryUuidSize;
     $savingsPercentage = ($savingsPerRecord / $stringUuidSize) * 100;
 
     // Assert storage efficiency
@@ -31,10 +31,10 @@ test('binary uuid is more efficient than string uuid', function () {
         ->and($savingsPercentage)->toBeGreaterThan(55); // >55% savings
 
     // Calculate savings for 1 million invoices
-    $totalRecords = 1000000;
+    $totalRecords    = 1000000;
     $binaryTotalSize = ($binaryUuidSize * $totalRecords) / (1024 * 1024); // MB
     $stringTotalSize = ($stringUuidSize * $totalRecords) / (1024 * 1024); // MB
-    $totalSavings = $stringTotalSize - $binaryTotalSize;
+    $totalSavings    = $stringTotalSize - $binaryTotalSize;
 
     // Assert significant savings at scale
     expect($totalSavings)->toBeGreaterThan(19); // >19MB savings for 1M records
@@ -44,7 +44,7 @@ test('binary uuid is more efficient than string uuid', function () {
         "- Per record: %d bytes vs %d bytes (%.1f%% savings)\n".
         "- 1M records: %.2f MB vs %.2f MB (%.2f MB savings)\n".
         "- Index size: ~%d%% smaller\n".
-        "- Query performance: Improved due to smaller index size",
+        '- Query performance: Improved due to smaller index size',
         $binaryUuidSize,
         $stringUuidSize,
         $savingsPercentage,
@@ -57,7 +57,7 @@ test('binary uuid is more efficient than string uuid', function () {
 
 test('invoice uses uuid with ordered generation', function () {
     $invoice = Invoice::factory()->create([
-        'number' => 'TEST-001',
+        'number'  => 'TEST-001',
         'user_id' => 1,
     ]);
 
@@ -76,7 +76,7 @@ test('invoice uses uuid with ordered generation', function () {
 
 test('invoice uuid is stored as binary in database', function () {
     $invoice = Invoice::factory()->create([
-        'number' => 'TEST-002',
+        'number'  => 'TEST-002',
         'user_id' => 1,
     ]);
 
@@ -111,7 +111,7 @@ test('multiple invoices have unique ordered uuids', function () {
 
 test('invoice can be found by uuid', function () {
     $invoice = Invoice::factory()->create([
-        'number' => 'TEST-006',
+        'number'  => 'TEST-006',
         'user_id' => 1,
     ]);
 
@@ -141,8 +141,8 @@ test('binary uuid performance characteristics', function () {
     // Benchmark insights (for documentation)
     $benchmarkData = [
         'storage' => [
-            'binary' => '16 bytes',
-            'string' => '36 bytes',
+            'binary'  => '16 bytes',
+            'string'  => '36 bytes',
             'savings' => '55.6%',
         ],
         'index_size' => [
@@ -151,8 +151,8 @@ test('binary uuid performance characteristics', function () {
         ],
         'mysql_optimization' => [
             'ordered_uuid' => 'Reduces page splits in B-tree indexes',
-            'random_uuid' => 'Can cause fragmentation',
-            'benefit' => 'Better INSERT performance with ordered',
+            'random_uuid'  => 'Can cause fragmentation',
+            'benefit'      => 'Better INSERT performance with ordered',
         ],
     ];
 
@@ -161,4 +161,3 @@ test('binary uuid performance characteristics', function () {
 
     $this->assertTrue(true, 'Binary UUID with ordered generation is optimal for MySQL');
 });
-

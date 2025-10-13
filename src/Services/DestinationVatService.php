@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services;
 
-use AichaDigital\Larabill\Models\{FiscalSettings, CountryVatRate, EuSalesThreshold, VatCategory};
+use AichaDigital\Larabill\Models\{CountryVatRate, EuSalesThreshold, FiscalSettings, VatCategory};
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -134,7 +134,7 @@ class DestinationVatService
         $threshold = EuSalesThreshold::getOrCreateForUser($userId, $fiscalYear);
 
         return [
-            'user_id'              => $userId,
+            'user_id'                 => $userId,
             'fiscal_year'             => $fiscalYear ?: now()->year,
             'current_amount'          => $config->current_eu_sales_amount,
             'threshold_amount'        => $config->eu_sales_threshold,
@@ -159,7 +159,7 @@ class DestinationVatService
         $this->clearCompanyCache($userId);
 
         Log::info('Destination VAT enabled for company', [
-            'user_id'  => $userId,
+            'user_id'     => $userId,
             'fiscal_year' => $fiscalYear ?: now()->year,
         ]);
 
@@ -177,7 +177,7 @@ class DestinationVatService
         $this->clearCompanyCache($userId);
 
         Log::info('Destination VAT disabled for company', [
-            'user_id'  => $userId,
+            'user_id'     => $userId,
             'fiscal_year' => $fiscalYear ?: now()->year,
         ]);
 
@@ -198,7 +198,7 @@ class DestinationVatService
         $this->clearCompanyCache($userId);
 
         Log::info('EU sales reset for new fiscal year', [
-            'user_id'      => $userId,
+            'user_id'         => $userId,
             'new_fiscal_year' => $newFiscalYear,
         ]);
     }
@@ -410,7 +410,8 @@ class DestinationVatService
         $config = FiscalSettings::getOrCreateForUser($userId, $fiscalYear);
 
         // Base100 cast handles conversion automatically
-        $config->current_eu_sales_amount = $config->current_eu_sales_amount + $amount;
+        $newAmount                           = $config->current_eu_sales_amount + $amount;
+        $config->current_eu_sales_amount     = $newAmount;
 
         if ($config->current_eu_sales_amount >= $config->eu_sales_threshold) {
             $config->apply_destination_iva = true;
@@ -543,7 +544,7 @@ class DestinationVatService
         $threshold = EuSalesThreshold::findByUserAndYear($userId, $newFiscalYear);
         if (! $threshold) {
             EuSalesThreshold::create([
-                'user_id'           => $userId,
+                'user_id'              => $userId,
                 'fiscal_year'          => $newFiscalYear,
                 'total_amount'         => 0.0,
                 'threshold_exceeded'   => false,

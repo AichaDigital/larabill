@@ -231,7 +231,7 @@ it('can create invoice with encrypted customer data when immutable', function ()
             'name'       => 'John Doe',
             'email'      => 'john@example.com',
             'address'    => '123 Main St, Madrid',
-            'vat_code' => 'ESB12345678',
+            'vat_code'   => 'ESB12345678',
         ],
         'items' => [
             [
@@ -263,7 +263,7 @@ it('can create invoice with ROI verification', function () {
         'customer_country' => 'DE',
         'customer_type'    => 'business',
         'vat_verification' => [
-            'vat_code'   => 'DE123456789',
+            'vat_code'     => 'DE123456789',
             'country_code' => 'DE',
         ],
         'items' => [

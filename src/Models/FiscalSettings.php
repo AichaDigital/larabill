@@ -206,15 +206,23 @@ class FiscalSettings extends Model
 
     /**
      * Check if threshold has been exceeded.
+     * If auto_apply_destination is enabled, automatically enables apply_destination_iva.
      */
     public function checkThreshold(): bool
     {
         if ($this->current_eu_sales_amount >= $this->eu_sales_threshold) {
             if (! $this->threshold_exceeded_at) {
-                $this->update([
+                $updateData = [
                     'threshold_exceeded_at' => now(),
                     'threshold_exceeded'    => true,
-                ]);
+                ];
+
+                // Auto-apply destination VAT if enabled
+                if ($this->auto_apply_destination && ! $this->apply_destination_iva) {
+                    $updateData['apply_destination_iva'] = true;
+                }
+
+                $this->update($updateData);
             }
 
             return true;
@@ -224,19 +232,30 @@ class FiscalSettings extends Model
     }
 
     /**
-     * Update EU sales amount and check threshold.
+     * Increment EU sales amount and check threshold.
      *
-     * @param  float  $amount  The monetary amount to add (e.g., 12.34)
+     * @param  float  $amount  The monetary amount to add (can be negative for refunds)
      */
-    public function updateEuSales(float $amount): self
+    public function incrementEuSales(float $amount): self
     {
         // Base100 cast handles conversion automatically
-        $this->current_eu_sales_amount = $this->current_eu_sales_amount + $amount;
+        $newAmount                     = $this->current_eu_sales_amount + $amount;
+        $this->current_eu_sales_amount = $newAmount;
         $this->save();
 
         $this->checkThreshold();
 
         return $this;
+    }
+
+    /**
+     * Update EU sales amount and check threshold (alias).
+     *
+     * @param  float  $amount  The monetary amount to add (e.g., 12.34)
+     */
+    public function updateEuSales(float $amount): self
+    {
+        return $this->incrementEuSales($amount);
     }
 
     /**

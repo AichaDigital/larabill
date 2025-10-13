@@ -77,21 +77,128 @@ This will symlink the package, allowing you to:
 Once the package is stable (v1.0.0), install via Packagist:
 
 ```bash
-composer require aichadigital/larabill:^0.1
+composer require aichadigital/larabill
 ```
 
-You can publish and run the migrations with:
+## 📋 Installation Scenarios
 
+Larabill supports **two installation scenarios** to fit your needs:
+
+### Scenario A: Clean Installation (New Projects)
+
+**Use this when**: Starting fresh or can create new billing tables.
+
+#### 1. Install the package
 ```bash
-php artisan vendor:publish --tag="larabill-migrations"
-php artisan migrate
+composer require aichadigital/larabill
 ```
 
-You can publish the config file with:
-
+#### 2. Publish configuration
 ```bash
 php artisan vendor:publish --tag="larabill-config"
 ```
+
+#### 3. Publish and review migrations
+```bash
+php artisan vendor:publish --tag="larabill-migrations"
+```
+
+**⚠️ IMPORTANT**: Review the published migrations in `database/migrations/` before running them. This is critical for billing systems.
+
+#### 4. Run migrations
+```bash
+php artisan migrate
+```
+
+This creates optimized tables with:
+- ✅ UUID binary storage for invoices (efficient)
+- ✅ Base-100 integer amounts (precise)
+- ✅ Immutability and encryption features
+- ✅ Full fiscal compliance schema
+
+**Benefits:**
+- Clean, optimized database schema
+- Best practices built-in
+- Ready to use immediately
+- Full control over migration customization
+
+---
+
+### Scenario B: Existing Schema (Legacy Projects)
+
+**Use this when**: You already have invoicing tables and want to use Larabill's business logic without changing your schema.
+
+#### 1. Install the package
+```bash
+composer require aichadigital/larabill
+```
+
+#### 2. Publish configuration
+```bash
+php artisan vendor:publish --tag="larabill-config"
+```
+
+#### 3. Configure model and field mapping
+
+**DO NOT publish or run migrations**. Instead, map Larabill to your existing schema:
+
+```php
+// config/larabill.php
+return [
+    'models' => [
+        'user' => \App\Models\Customer::class, // Your existing user model
+        'invoice' => \App\Models\Order::class, // Your existing invoice model
+        'invoice_item' => \App\Models\OrderItem::class, // Your existing items
+    ],
+    
+    'field_mappings' => [
+        'invoice' => [
+            'number' => 'order_number', // Maps Invoice::$number to Order::$order_number
+            'total' => 'total_amount',
+            'status' => 'order_status',
+            'user_id' => 'customer_id',
+            // ... map all required fields
+        ],
+        'invoice_item' => [
+            'description' => 'product_name',
+            'quantity' => 'qty',
+            'unit_price' => 'price',
+            // ... map all required fields
+        ],
+    ],
+];
+```
+
+**Benefits:**
+- No database changes needed
+- Use Larabill's services (VAT verification, tax calculation, PDF generation)
+- Keep your existing data and schema
+- Gradual migration possible
+
+---
+
+### ⚠️ Migration Updates & Maintenance
+
+**Larabill migrations are designed to be published and owned by your application.**
+
+When updating the package:
+
+1. **Review CHANGELOG** for migration changes
+2. **Compare** your published migrations with package migrations:
+   ```bash
+   diff database/migrations/2024_12_01_000001_create_invoices_table.php \
+        vendor/aichadigital/larabill/database/migrations/2024_12_01_000001_create_invoices_table.php
+   ```
+3. **Apply changes manually** if needed
+4. **Test thoroughly** before deploying
+
+**Why manual updates?**
+- ✅ Billing data is critical - no automatic changes
+- ✅ You maintain full control over your schema
+- ✅ Explicit updates prevent accidental data loss
+- ✅ Company-specific customizations are preserved
+
+**Critical changes will be clearly announced in release notes.**
 
 ## 🏗️ Architecture
 

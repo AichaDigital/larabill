@@ -38,7 +38,7 @@ class InvoiceFactory extends Factory
             'total'                   => $total,
             'fiscal_data'             => [
                 'company_name' => $this->faker->company(),
-                'vat_code'   => $this->faker->optional()->numerify('ES##########'),
+                'vat_code'     => $this->faker->optional()->numerify('ES##########'),
                 'address'      => $this->faker->address(),
             ],
             'vat_verification' => [

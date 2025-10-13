@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Models;
 
 use AichaDigital\Lara100\Casts\Base100;
+use Dyrynda\Database\Support\Casts\EfficientUuid;
+use Dyrynda\Database\Support\GeneratesUuid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -15,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * All monetary amounts are stored as base-100 integers (e.g., €12.34 => 1234).
  * Tax rates are stored as base-100 integers (e.g., 21.50% => 2150).
  *
- * @property int $invoice_id
+ * @property string $invoice_id UUID foreign key to invoices table
  * @property string $description
  * @property int $quantity Base-100 integer for fractional quantities (e.g., 1.5 => 150)
  * @property int $unit_price Base-100 integer (e.g., 1234 => €12.34)
@@ -26,6 +28,22 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class InvoiceItem extends Model
 {
+    use GeneratesUuid;
+
+    /**
+     * Indicates if the IDs are auto-incrementing.
+     */
+    public $incrementing = true;
+
+    /**
+     * The UUID columns for this model.
+     * Including foreign key to enable proper UUID binary conversions in queries.
+     */
+    public function uuidColumns(): array
+    {
+        return ['invoice_id'];
+    }
+
     /**
      * The attributes that are mass assignable.
      */
@@ -50,6 +68,7 @@ class InvoiceItem extends Model
     public function casts(): array
     {
         return [
+            'invoice_id' => EfficientUuid::class, // UUID binary(16)
             'quantity'   => Base100::class, // 1.5 ↔ 150
             'unit_price' => Base100::class, // €12.34 ↔ 1234
             'subtotal'   => Base100::class, // €12.34 ↔ 1234
@@ -84,6 +103,19 @@ class InvoiceItem extends Model
     public function calculateTotal(): float
     {
         return $this->subtotal + $this->tax_amount;
+    }
+
+    /**
+     * Create a new Eloquent query builder for the model.
+     *
+     * Uses custom BinaryUuidBuilder to handle UUID binary conversions in relationships.
+     *
+     * @param  \Illuminate\Database\Query\Builder  $query
+     * @return \AichaDigital\Larabill\Database\Query\BinaryUuidBuilder
+     */
+    public function newEloquentBuilder($query)
+    {
+        return new \AichaDigital\Larabill\Database\Query\BinaryUuidBuilder($query);
     }
 
     /**

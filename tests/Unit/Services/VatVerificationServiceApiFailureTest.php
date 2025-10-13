@@ -47,7 +47,7 @@ it('returns error when primary api fails but fallback succeeds', function () {
         'https://vat.abstractapi.com/v1/validate/*' => Http::response([], 500),
         'http://apilayer.net/api/validate*'         => Http::response([
             'valid'           => true,
-            'vat_code'      => 'ESB12345678',
+            'vat_code'        => 'ESB12345678',
             'company_name'    => 'Test Company S.L.',
             'company_address' => 'Test Address',
         ], 200),

@@ -12,7 +12,7 @@ it('can verify a valid Spanish VAT number', function () {
             'valid'      => true,
             'company'    => 'Test Company S.L.',
             'address'    => 'Test Address 123, Madrid, 28001, ES',
-            'vat_code' => 'ESB12345678',
+            'vat_code'   => 'ESB12345678',
         ], 200),
     ]);
 
@@ -52,7 +52,7 @@ it('caches verification results', function () {
             'valid'      => true,
             'company'    => 'Test Company S.L.',
             'address'    => 'Test Address 123, Madrid, 28001, ES',
-            'vat_code' => 'ESB12345678',
+            'vat_code'   => 'ESB12345678',
         ], 200),
     ]);
 
@@ -78,7 +78,7 @@ it('saves verification to database', function () {
             'valid'      => true,
             'company'    => 'Test Company S.L.',
             'address'    => 'Test Address 123, Madrid, 28001, ES',
-            'vat_code' => 'ESB12345678',
+            'vat_code'   => 'ESB12345678',
         ], 200),
     ]);
 
@@ -88,7 +88,7 @@ it('saves verification to database', function () {
     $result = $service->verifyVatNumber('ESB12345678', 'ES');
 
     // Check if verification was saved to database
-    $verification = VatVerification::findByVatNumberAndCountry('ESB12345678', 'ES');
+    $verification = VatVerification::findByVatCodeAndCountry('ESB12345678', 'ES');
     expect($verification)->not->toBeNull();
     expect($verification->is_valid)->toBeTrue();
     expect($verification->vat_code)->toBe('ESB12345678');
@@ -106,7 +106,7 @@ it('uses preferred API from configuration', function () {
             'valid'           => true,
             'company_name'    => 'German Company GmbH',
             'company_address' => 'Test Address 123, Berlin, 10115, DE',
-            'vat_code'      => 'DE123456789',
+            'vat_code'        => 'DE123456789',
         ], 200),
     ]);
 

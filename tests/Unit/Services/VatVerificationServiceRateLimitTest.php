@@ -18,7 +18,7 @@ it('handles rate limiting from AbstractAPI', function () {
         ], 429),
         'http://apilayer.net/api/validate*' => Http::response([
             'valid'           => true,
-            'vat_code'      => 'ESB12345678',
+            'vat_code'        => 'ESB12345678',
             'company_name'    => 'Test Company S.L.',
             'company_address' => 'Test Address',
         ], 200),
@@ -79,7 +79,7 @@ it('handles rate limiting with cache fallback', function () {
 
     // Create a cached verification first with rate limiting info
     $cachedVerification = \AichaDigital\Larabill\Models\VatVerification::create([
-        'vat_code'      => 'ESB12345678',
+        'vat_code'        => 'ESB12345678',
         'country_code'    => 'ES',
         'is_valid'        => true,
         'company_name'    => 'Cached Company S.L.',
@@ -123,7 +123,7 @@ it('handles rate limiting with expired cache', function () {
 
     // Create an expired cached verification
     $expiredVerification = \AichaDigital\Larabill\Models\VatVerification::create([
-        'vat_code'      => 'ESB12345678',
+        'vat_code'        => 'ESB12345678',
         'country_code'    => 'ES',
         'is_valid'        => true,
         'company_name'    => 'Expired Company S.L.',

@@ -46,7 +46,7 @@ class VatApiIntegrationService
 
         Log::info('Proceeding with HTTP call to AbstractAPI', [
             'api_key'      => $apiKey,
-            'vat_code'   => $vatNumber,
+            'vat_code'     => $vatNumber,
             'country_code' => $countryCode,
         ]);
 
@@ -54,7 +54,7 @@ class VatApiIntegrationService
             $url    = $this->config['abstractapi']['url'];
             $params = [
                 'api_key'      => $apiKey,
-                'vat_code'   => $vatNumber,
+                'vat_code'     => $vatNumber,
                 'country_code' => $countryCode,
             ];
 
@@ -69,14 +69,14 @@ class VatApiIntegrationService
             return $this->processAbstractApiResponse($response, $vatNumber, $countryCode);
         } catch (\Exception $e) {
             Log::error('AbstractAPI VAT verification failed', [
-                'vat_code'   => $vatNumber,
+                'vat_code'     => $vatNumber,
                 'country_code' => $countryCode,
                 'error'        => $e->getMessage(),
             ]);
 
             $result = [
                 'is_valid'        => false,
-                'vat_code'      => $vatNumber,
+                'vat_code'        => $vatNumber,
                 'country_code'    => $countryCode,
                 'company_name'    => null,
                 'company_address' => null,
@@ -108,21 +108,21 @@ class VatApiIntegrationService
             $response = Http::timeout($this->config['apilayer']['timeout'] ?? 10)
                 ->get($this->config['apilayer']['url'], [
                     'access_key'   => $apiKey,
-                    'vat_code'   => $vatNumber,
+                    'vat_code'     => $vatNumber,
                     'country_code' => $countryCode,
                 ]);
 
             return $this->processApiLayerResponse($response, $vatNumber, $countryCode);
         } catch (\Exception $e) {
             Log::error('API Layer VAT verification failed', [
-                'vat_code'   => $vatNumber,
+                'vat_code'     => $vatNumber,
                 'country_code' => $countryCode,
                 'error'        => $e->getMessage(),
             ]);
 
             $result = [
                 'is_valid'        => false,
-                'vat_code'      => $vatNumber,
+                'vat_code'        => $vatNumber,
                 'country_code'    => $countryCode,
                 'company_name'    => null,
                 'company_address' => null,
@@ -149,7 +149,7 @@ class VatApiIntegrationService
             if ($response->status() === 429) {
                 $result = [
                     'is_valid'        => false,
-                    'vat_code'      => $vatNumber,
+                    'vat_code'        => $vatNumber,
                     'country_code'    => $countryCode,
                     'company_name'    => null,
                     'company_address' => null,
@@ -182,7 +182,7 @@ class VatApiIntegrationService
 
         return [
             'is_valid'        => $data['valid'] ?? false,
-            'vat_code'      => $returnedVatNumber,
+            'vat_code'        => $returnedVatNumber,
             'country_code'    => $data['country']['code']    ?? $countryCode,
             'company_name'    => $data['company']['name']    ?? $data['company'] ?? null,
             'company_address' => $data['company']['address'] ?? $data['address'] ?? null,
@@ -205,7 +205,7 @@ class VatApiIntegrationService
             if ($response->status() === 429) {
                 $result = [
                     'is_valid'        => false,
-                    'vat_code'      => $vatNumber,
+                    'vat_code'        => $vatNumber,
                     'country_code'    => $countryCode,
                     'company_name'    => null,
                     'company_address' => null,
@@ -244,7 +244,7 @@ class VatApiIntegrationService
 
         return [
             'is_valid'        => $data['valid'] ?? false,
-            'vat_code'      => $returnedVatNumber,
+            'vat_code'        => $returnedVatNumber,
             'country_code'    => $data['country_code']    ?? $countryCode,
             'company_name'    => $data['company_name']    ?? null,
             'company_address' => $data['company_address'] ?? null,
@@ -274,14 +274,14 @@ class VatApiIntegrationService
         // Default mock response
         return [
             'is_valid'        => $vatNumber !== 'INVALID',
-            'vat_code'      => $vatNumber,
+            'vat_code'        => $vatNumber,
             'country_code'    => $countryCode,
             'company_name'    => $vatNumber !== 'INVALID' ? 'Test Company S.L.' : null,
             'company_address' => $vatNumber !== 'INVALID' ? 'Test Address 123' : null,
             'api_source'      => $apiSource,
             'response_data'   => [
                 'valid'        => $vatNumber !== 'INVALID',
-                'vat_code'   => $vatNumber,
+                'vat_code'     => $vatNumber,
                 'country_code' => $countryCode,
             ],
             'all_apis_failed' => false, // Mock responses are considered successful for testing
@@ -298,13 +298,13 @@ class VatApiIntegrationService
         return [
             'es_esb12345678' => [
                 'is_valid'        => true,
-                'vat_code'      => 'ESB12345678',
+                'vat_code'        => 'ESB12345678',
                 'country_code'    => 'ES',
                 'company_name'    => 'Test Company S.L.',
                 'company_address' => 'Calle Test 123, 41001 Sevilla, España',
                 'response_data'   => [
                     'valid'        => true,
-                    'vat_code'   => 'ESB12345678',
+                    'vat_code'     => 'ESB12345678',
                     'country_code' => 'ES',
                     'company'      => 'Test Company S.L.',
                     'address'      => 'Calle Test 123, 41001 Sevilla, España',
@@ -314,13 +314,13 @@ class VatApiIntegrationService
             ],
             'de_de123456789' => [
                 'is_valid'        => true,
-                'vat_code'      => 'DE123456789',
+                'vat_code'        => 'DE123456789',
                 'country_code'    => 'DE',
                 'company_name'    => 'German Company GmbH',
                 'company_address' => 'Musterstraße 123, 10115 Berlin, Deutschland',
                 'response_data'   => [
                     'valid'           => true,
-                    'vat_code'      => 'DE123456789',
+                    'vat_code'        => 'DE123456789',
                     'country_code'    => 'DE',
                     'company_name'    => 'German Company GmbH',
                     'company_address' => 'Musterstraße 123, 10115 Berlin, Deutschland',
@@ -330,13 +330,13 @@ class VatApiIntegrationService
             ],
             'fr_fr12345678901' => [
                 'is_valid'        => true,
-                'vat_code'      => 'FR12345678901',
+                'vat_code'        => 'FR12345678901',
                 'country_code'    => 'FR',
                 'company_name'    => 'Société Française S.A.S.',
                 'company_address' => '123 Rue de la Paix, 75001 Paris, France',
                 'response_data'   => [
                     'valid'        => true,
-                    'vat_code'   => 'FR12345678901',
+                    'vat_code'     => 'FR12345678901',
                     'country_code' => 'FR',
                     'company'      => 'Société Française S.A.S.',
                     'address'      => '123 Rue de la Paix, 75001 Paris, France',
@@ -346,13 +346,13 @@ class VatApiIntegrationService
             ],
             'fr_frb87654321' => [
                 'is_valid'        => true,
-                'vat_code'      => 'FRB87654321',
+                'vat_code'        => 'FRB87654321',
                 'country_code'    => 'FR',
                 'company_name'    => 'Updated Company S.L.',
                 'company_address' => '123 Rue de la Paix, 75001 Paris, France',
                 'response_data'   => [
                     'valid'           => true,
-                    'vat_code'      => 'FRB87654321',
+                    'vat_code'        => 'FRB87654321',
                     'country_code'    => 'FR',
                     'company_name'    => 'Updated Company S.L.',
                     'company_address' => '123 Rue de la Paix, 75001 Paris, France',
@@ -362,13 +362,13 @@ class VatApiIntegrationService
             ],
             'gb_gb123456789' => [
                 'is_valid'        => true,
-                'vat_code'      => 'GB123456789',
+                'vat_code'        => 'GB123456789',
                 'country_code'    => 'GB',
                 'company_name'    => 'British Company Ltd.',
                 'company_address' => '123 Test Street, London SW1A 1AA, United Kingdom',
                 'response_data'   => [
                     'valid'           => true,
-                    'vat_code'      => 'GB123456789',
+                    'vat_code'        => 'GB123456789',
                     'country_code'    => 'GB',
                     'company_name'    => 'British Company Ltd.',
                     'company_address' => '123 Test Street, London SW1A 1AA, United Kingdom',
@@ -378,13 +378,13 @@ class VatApiIntegrationService
             ],
             'invalid_test' => [
                 'is_valid'        => false,
-                'vat_code'      => 'INVALID',
+                'vat_code'        => 'INVALID',
                 'country_code'    => 'ES',
                 'company_name'    => null,
                 'company_address' => null,
                 'response_data'   => [
                     'valid'        => false,
-                    'vat_code'   => 'INVALID',
+                    'vat_code'     => 'INVALID',
                     'country_code' => 'ES',
                     'format_valid' => false,
                     'query'        => 'INVALID',

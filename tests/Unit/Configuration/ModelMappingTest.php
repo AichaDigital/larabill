@@ -38,16 +38,16 @@ it('can configure custom user tax info model mapping', function () {
 
     // Create a user tax info
     $taxInfo = UserTaxProfile::create([
-        'user_id'      => 1,
-        'is_current'   => true,
+        'user_id'        => 1,
+        'is_current'     => true,
         'tax_code'       => 'ESB12345678',
-        'business_name' => 'Test Company S.L.',
-        'address'      => 'Calle Test 123',
-        'city'         => 'Madrid',
-        'postal_code'  => '28001',
-        'country'      => 'ES',
-        'state'        => 'Madrid',
-        'phone'        => '+34 600 000 000',
+        'business_name'  => 'Test Company S.L.',
+        'address'        => 'Calle Test 123',
+        'city'           => 'Madrid',
+        'postal_code'    => '28001',
+        'country'        => 'ES',
+        'state'          => 'Madrid',
+        'phone'          => '+34 600 000 000',
     ]);
 
     // The relationship should use the configured model
@@ -58,15 +58,15 @@ it('can configure custom field mappings for user tax info', function () {
     // Set custom field mappings in config
     config([
         'larabill.field_mappings.user_tax_profile' => [
-            'user_id'      => 'customer_id',
+            'user_id'        => 'customer_id',
             'tax_code'       => 'fiscal_id',
-            'company_name' => 'business_name',
-            'address'      => 'street_address',
-            'city'         => 'municipality',
-            'postal_code'  => 'zip_code',
-            'country'      => 'country_code',
-            'state'        => 'region',
-            'phone'        => 'contact_phone',
+            'company_name'   => 'business_name',
+            'address'        => 'street_address',
+            'city'           => 'municipality',
+            'postal_code'    => 'zip_code',
+            'country'        => 'country_code',
+            'state'          => 'region',
+            'phone'          => 'contact_phone',
         ],
     ]);
 

@@ -208,7 +208,7 @@ class EuSalesThreshold extends Model
 
         return static::firstOrCreate(
             [
-                'user_id'  => $userId,
+                'user_id'     => $userId,
                 'fiscal_year' => $fiscalYear,
             ],
             [
@@ -698,7 +698,7 @@ class EuSalesThreshold extends Model
         $growthPercentage = $previousAmount > 0 ? (($currentAmount - $previousAmount) / $previousAmount) * 100 : 0;
 
         return [
-            'user_id'        => $companyId,
+            'user_id'           => $companyId,
             'current_year'      => $fiscalYear,
             'current_amount'    => $currentAmount,
             'previous_year'     => $fiscalYear - 1,
