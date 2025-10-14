@@ -48,7 +48,7 @@ it('can generate PDF for fiscal invoice', function () {
     $invoice = Invoice::factory()->create([
         'fiscal_number' => 'FAC-001',
         'serie' => InvoiceSerieType::INVOICE->value,
-        'status'     => 'paid',
+        'status' => InvoiceStatus::PAID->value,
         'user_id'    => 'test-user',
         'taxable_amount'   => 10000,
         'tax_amount' => 2100,
@@ -96,7 +96,7 @@ it('can detect reverse charge invoice', function () {
     $invoice = Invoice::factory()->create([
         'fiscal_number' => 'FAC-003',
         'serie' => InvoiceSerieType::INVOICE->value,
-        'status'      => 'paid',
+        'status' => InvoiceStatus::PAID->value,
         'user_id'     => 'test-user',
         'taxable_amount'    => 10000,
         'tax_amount'  => 0,
@@ -115,7 +115,7 @@ it('can detect exempt invoice', function () {
     $invoice = Invoice::factory()->create([
         'fiscal_number' => 'FAC-004',
         'serie' => InvoiceSerieType::INVOICE->value,
-        'status'      => 'paid',
+        'status' => InvoiceStatus::PAID->value,
         'user_id'     => 'test-user',
         'taxable_amount'    => 10000,
         'tax_amount'  => 0,

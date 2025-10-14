@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Models\InvoiceTemplate;
 
 it('can create an invoice template', function () {
@@ -36,7 +37,7 @@ it('can scope templates by type', function () {
     InvoiceTemplate::create([
         'name'          => 'proforma-1',
         'display_name'  => 'Proforma Template',
-        'serie' => InvoiceSerieType::PROFORMA->value,
+        'type' => InvoiceSerieType::PROFORMA->label(),
         'template_path' => 'pdf.proforma',
         'is_active'     => true,
     ]);
@@ -108,7 +109,7 @@ it('can get default template for a specific type', function () {
     InvoiceTemplate::create([
         'name'          => 'proforma-default',
         'display_name'  => 'Proforma Default',
-        'serie' => InvoiceSerieType::PROFORMA->value,
+        'type' => InvoiceSerieType::PROFORMA->label(),
         'template_path' => 'pdf.proforma-default',
         'is_default'    => true,
         'is_active'     => true,
@@ -300,7 +301,7 @@ it('can get template statistics', function () {
     InvoiceTemplate::create([
         'name'          => 'proforma-1',
         'display_name'  => 'Proforma 1',
-        'serie' => InvoiceSerieType::PROFORMA->value,
+        'type'          => InvoiceSerieType::PROFORMA->label(),
         'template_path' => 'pdf.proforma-1',
         'is_default'    => true,
         'is_active'     => true,
