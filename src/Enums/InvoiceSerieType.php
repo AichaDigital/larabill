@@ -17,8 +17,8 @@ namespace AichaDigital\Larabill\Enums;
  */
 enum InvoiceSerieType: int
 {
-    case PROFORMA = 0;
-    case INVOICE = 1;
+    case PROFORMA      = 0;
+    case INVOICE       = 1;
     case RECTIFICATIVE = 2;
 
     /**
@@ -27,8 +27,8 @@ enum InvoiceSerieType: int
     public function label(): string
     {
         return match ($this) {
-            self::PROFORMA => 'proforma',
-            self::INVOICE => 'invoice',
+            self::PROFORMA      => 'proforma',
+            self::INVOICE       => 'invoice',
             self::RECTIFICATIVE => 'rectificative',
         };
     }
@@ -49,8 +49,8 @@ enum InvoiceSerieType: int
     public function defaultPrefix(): string
     {
         return match ($this) {
-            self::PROFORMA => 'PRO',
-            self::INVOICE => 'FAC',
+            self::PROFORMA      => 'PRO',
+            self::INVOICE       => 'FAC',
             self::RECTIFICATIVE => 'RECT',
         };
     }
@@ -63,10 +63,9 @@ enum InvoiceSerieType: int
     public static function toArray(): array
     {
         return [
-            self::PROFORMA->value => self::PROFORMA->label(),
-            self::INVOICE->value => self::INVOICE->label(),
+            self::PROFORMA->value      => self::PROFORMA->label(),
+            self::INVOICE->value       => self::INVOICE->label(),
             self::RECTIFICATIVE->value => self::RECTIFICATIVE->label(),
         ];
     }
 }
-

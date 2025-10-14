@@ -16,7 +16,7 @@ namespace AichaDigital\Larabill\Enums;
  */
 enum ItemType: int
 {
-    case GOOD = 0;
+    case GOOD    = 0;
     case SERVICE = 1;
 
     /**
@@ -25,7 +25,7 @@ enum ItemType: int
     public function label(): string
     {
         return match ($this) {
-            self::GOOD => __('larabill::enums.item_type.good'),
+            self::GOOD    => __('larabill::enums.item_type.good'),
             self::SERVICE => __('larabill::enums.item_type.service'),
         };
     }
@@ -46,9 +46,8 @@ enum ItemType: int
     public static function toArray(): array
     {
         return [
-            self::GOOD->value => self::GOOD->label(),
+            self::GOOD->value    => self::GOOD->label(),
             self::SERVICE->value => self::SERVICE->label(),
         ];
     }
 }
-

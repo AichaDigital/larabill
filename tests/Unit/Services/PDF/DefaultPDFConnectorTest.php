@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 use AichaDigital\Larabill\Enums\{InvoiceSerieType, InvoiceStatus};
-
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Services\PDF\DefaultPDFConnector;
 
@@ -61,13 +60,13 @@ it('returns metadata', function () {
 
 it('can validate valid invoice', function () {
     $invoice = Invoice::factory()->make([
-        'fiscal_number' => 'TEST-001',
-        'serie' => InvoiceSerieType::INVOICE->value,
-        'status' => InvoiceStatus::DRAFT->value,
-        'user_id'    => 1,
+        'fiscal_number'    => 'TEST-001',
+        'serie'            => InvoiceSerieType::INVOICE->value,
+        'status'           => InvoiceStatus::DRAFT->value,
+        'user_id'          => 1,
         'taxable_amount'   => 100.0,
-        'tax_amount' => 21.0,
-        'total_amount' => 121.0,
+        'tax_amount'       => 21.0,
+        'total_amount'     => 121.0,
     ]);
     // Save to generate UUID
     $invoice->save();
@@ -84,13 +83,13 @@ it('rejects invalid invoice', function () {
 
 it('can generate QR for valid invoice', function () {
     $invoice = Invoice::factory()->create([
-        'fiscal_number' => 'TEST-001',
-        'serie' => InvoiceSerieType::INVOICE->value,
-        'status' => InvoiceStatus::DRAFT->value,
-        'user_id'    => 1,
+        'fiscal_number'    => 'TEST-001',
+        'serie'            => InvoiceSerieType::INVOICE->value,
+        'status'           => InvoiceStatus::DRAFT->value,
+        'user_id'          => 1,
         'taxable_amount'   => 100.0,
-        'tax_amount' => 21.0,
-        'total_amount' => 121.0,
+        'tax_amount'       => 21.0,
+        'total_amount'     => 121.0,
     ]);
 
     $result = $this->connector->generateQR($invoice);
@@ -117,13 +116,13 @@ it('handles QR generation errors gracefully', function () {
 
 it('includes invoice data in QR', function () {
     $invoice = Invoice::factory()->create([
-        'fiscal_number' => 'TEST-001',
-        'serie' => InvoiceSerieType::INVOICE->value,
-        'status' => InvoiceStatus::DRAFT->value,
-        'user_id'    => 1,
+        'fiscal_number'    => 'TEST-001',
+        'serie'            => InvoiceSerieType::INVOICE->value,
+        'status'           => InvoiceStatus::DRAFT->value,
+        'user_id'          => 1,
         'taxable_amount'   => 100.0,
-        'tax_amount' => 21.0,
-        'total_amount' => 121.0,
+        'tax_amount'       => 21.0,
+        'total_amount'     => 121.0,
     ]);
 
     $result = $this->connector->generateQR($invoice);
@@ -154,13 +153,13 @@ it('generates QR URL with custom base URL', function () {
     $connector = new DefaultPDFConnector($config);
 
     $invoice = Invoice::factory()->create([
-        'fiscal_number' => 'TEST-001',
-        'serie' => InvoiceSerieType::INVOICE->value,
-        'status' => InvoiceStatus::DRAFT->value,
-        'user_id'    => 1,
+        'fiscal_number'    => 'TEST-001',
+        'serie'            => InvoiceSerieType::INVOICE->value,
+        'status'           => InvoiceStatus::DRAFT->value,
+        'user_id'          => 1,
         'taxable_amount'   => 100.0,
-        'tax_amount' => 21.0,
-        'total_amount' => 121.0,
+        'tax_amount'       => 21.0,
+        'total_amount'     => 121.0,
     ]);
 
     $result = $connector->generateQR($invoice);

@@ -231,7 +231,7 @@ it('can handle invoice with multiple items and complex calculations', function (
 
     foreach ($invoice->items as $item) {
         $subtotal  = $item->quantity * $item->unit_price;
-        $taxAmount = $subtotal * ($item->tax_rate / 100);
+        $taxAmount = $subtotal       * ($item->tax_rate / 100);
 
         $totalSubtotal += $subtotal;
         $totalTax      += $taxAmount;

@@ -4,31 +4,30 @@ declare(strict_types=1);
 
 return [
     'item_type' => [
-        'good' => 'Bien',
+        'good'    => 'Bien',
         'service' => 'Servicio',
     ],
 
     'serie' => [
-        'proforma' => 'Proforma',
-        'invoice' => 'Factura',
+        'proforma'      => 'Proforma',
+        'invoice'       => 'Factura',
         'rectificative' => 'Rectificativa',
     ],
 
     'status' => [
-        'draft' => 'Borrador',
-        'sent' => 'Enviada',
-        'paid' => 'Pagada',
-        'overdue' => 'Vencida',
+        'draft'     => 'Borrador',
+        'sent'      => 'Enviada',
+        'paid'      => 'Pagada',
+        'overdue'   => 'Vencida',
         'cancelled' => 'Cancelada',
     ],
 
     'unit_category' => [
-        'count' => 'Unidad',
+        'count'  => 'Unidad',
         'weight' => 'Peso',
         'volume' => 'Volumen',
         'length' => 'Longitud',
-        'area' => 'Área',
-        'time' => 'Tiempo',
+        'area'   => 'Área',
+        'time'   => 'Tiempo',
     ],
 ];
-

@@ -37,7 +37,7 @@ it('can scope templates by type', function () {
     InvoiceTemplate::create([
         'name'          => 'proforma-1',
         'display_name'  => 'Proforma Template',
-        'type' => InvoiceSerieType::PROFORMA->label(),
+        'type'          => InvoiceSerieType::PROFORMA->label(),
         'template_path' => 'pdf.proforma',
         'is_active'     => true,
     ]);
@@ -109,7 +109,7 @@ it('can get default template for a specific type', function () {
     InvoiceTemplate::create([
         'name'          => 'proforma-default',
         'display_name'  => 'Proforma Default',
-        'type' => InvoiceSerieType::PROFORMA->label(),
+        'type'          => InvoiceSerieType::PROFORMA->label(),
         'template_path' => 'pdf.proforma-default',
         'is_default'    => true,
         'is_active'     => true,

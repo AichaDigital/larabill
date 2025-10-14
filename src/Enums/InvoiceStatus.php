@@ -15,10 +15,10 @@ namespace AichaDigital\Larabill\Enums;
  */
 enum InvoiceStatus: int
 {
-    case DRAFT = 0;
-    case SENT = 1;
-    case PAID = 2;
-    case OVERDUE = 3;
+    case DRAFT     = 0;
+    case SENT      = 1;
+    case PAID      = 2;
+    case OVERDUE   = 3;
     case CANCELLED = 4;
 
     /**
@@ -27,10 +27,10 @@ enum InvoiceStatus: int
     public function label(): string
     {
         return match ($this) {
-            self::DRAFT => __('larabill::enums.status.draft'),
-            self::SENT => __('larabill::enums.status.sent'),
-            self::PAID => __('larabill::enums.status.paid'),
-            self::OVERDUE => __('larabill::enums.status.overdue'),
+            self::DRAFT     => __('larabill::enums.status.draft'),
+            self::SENT      => __('larabill::enums.status.sent'),
+            self::PAID      => __('larabill::enums.status.paid'),
+            self::OVERDUE   => __('larabill::enums.status.overdue'),
             self::CANCELLED => __('larabill::enums.status.cancelled'),
         };
     }
@@ -52,12 +52,11 @@ enum InvoiceStatus: int
     public static function toArray(): array
     {
         return [
-            self::DRAFT->value => self::DRAFT->label(),
-            self::SENT->value => self::SENT->label(),
-            self::PAID->value => self::PAID->label(),
-            self::OVERDUE->value => self::OVERDUE->label(),
+            self::DRAFT->value     => self::DRAFT->label(),
+            self::SENT->value      => self::SENT->label(),
+            self::PAID->value      => self::PAID->label(),
+            self::OVERDUE->value   => self::OVERDUE->label(),
             self::CANCELLED->value => self::CANCELLED->label(),
         ];
     }
 }
-

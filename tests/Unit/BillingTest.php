@@ -227,9 +227,9 @@ it('can create invoice with encrypted customer data when immutable', function ()
         'customer_country' => 'ES',
         'customer_type'    => 'individual',
         'customer_data'    => [
-            'name'    => 'John Doe',
-            'email'   => 'john@example.com',
-            'address' => '123 Main St, Madrid',
+            'name'     => 'John Doe',
+            'email'    => 'john@example.com',
+            'address'  => '123 Main St, Madrid',
             'vat_code' => 'ESB12345678',
         ],
         'items' => [

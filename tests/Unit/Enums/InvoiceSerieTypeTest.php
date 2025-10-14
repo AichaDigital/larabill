@@ -39,4 +39,3 @@ describe('InvoiceSerieType Enum', function () {
         expect($array)->toHaveKey(2);
     });
 });
-

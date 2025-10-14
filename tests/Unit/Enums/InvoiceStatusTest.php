@@ -35,4 +35,3 @@ describe('InvoiceStatus Enum', function () {
         expect($array)->toHaveKeys([0, 1, 2, 3, 4]);
     });
 });
-

@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 use AichaDigital\Larabill\Enums\{InvoiceSerieType, InvoiceStatus};
-
 use AichaDigital\Larabill\Models\{Invoice, UserTaxProfile};
 use AichaDigital\Larabill\Tests\Models\CustomUser;
 

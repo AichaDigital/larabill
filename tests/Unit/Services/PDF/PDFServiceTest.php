@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 use AichaDigital\Larabill\Enums\{InvoiceSerieType, InvoiceStatus};
-
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Services\PDF\{DefaultPDFConnector, PDFService};
 
@@ -70,13 +69,13 @@ it('can register new connector', function () {
 it('can generate PDF for invoice', function () {
     // Create a test invoice with factory
     $invoice = Invoice::factory()->create([
-        'fiscal_number' => 'TEST-001',
-        'serie' => InvoiceSerieType::INVOICE->value,
-        'status' => InvoiceStatus::DRAFT->value,
-        'user_id'    => 1,
+        'fiscal_number'    => 'TEST-001',
+        'serie'            => InvoiceSerieType::INVOICE->value,
+        'status'           => InvoiceStatus::DRAFT->value,
+        'user_id'          => 1,
         'taxable_amount'   => 100.0,
-        'tax_amount' => 21.0,
-        'total_amount' => 121.0,
+        'tax_amount'       => 21.0,
+        'total_amount'     => 121.0,
     ]);
 
     $result = $this->pdfService->generatePDF($invoice);
@@ -110,13 +109,13 @@ it('can handle PDF generation errors gracefully', function () {
 
 it('can cache PDF results', function () {
     $invoice = Invoice::factory()->create([
-        'fiscal_number' => 'TEST-002',
-        'serie' => InvoiceSerieType::INVOICE->value,
-        'status' => InvoiceStatus::DRAFT->value,
-        'user_id'    => 1,
+        'fiscal_number'    => 'TEST-002',
+        'serie'            => InvoiceSerieType::INVOICE->value,
+        'status'           => InvoiceStatus::DRAFT->value,
+        'user_id'          => 1,
         'taxable_amount'   => 100.0,
-        'tax_amount' => 21.0,
-        'total_amount' => 121.0,
+        'tax_amount'       => 21.0,
+        'total_amount'     => 121.0,
     ]);
 
     $result = $this->pdfService->generatePDF($invoice);

@@ -41,4 +41,3 @@ describe('ItemType Enum', function () {
         expect($cases[1])->toBeInstanceOf(ItemType::class);
     });
 });
-

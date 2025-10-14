@@ -8,7 +8,7 @@ use AichaDigital\Larabill\Services\InvoiceNumberingService;
 use Illuminate\Support\Facades\DB;
 
 beforeEach(function () {
-    $this->service = new InvoiceNumberingService();
+    $this->service = new InvoiceNumberingService;
 });
 
 describe('InvoiceNumberingService', function () {
@@ -42,9 +42,9 @@ describe('InvoiceNumberingService', function () {
     });
 
     it('maintains separate sequences per serie', function () {
-        $invoice1 = $this->service->generateNumber('FAC', InvoiceSerieType::INVOICE->value);
+        $invoice1  = $this->service->generateNumber('FAC', InvoiceSerieType::INVOICE->value);
         $proforma1 = $this->service->generateNumber('PRO', InvoiceSerieType::PROFORMA->value);
-        $invoice2 = $this->service->generateNumber('FAC', InvoiceSerieType::INVOICE->value);
+        $invoice2  = $this->service->generateNumber('FAC', InvoiceSerieType::INVOICE->value);
 
         expect($invoice1)->toContain('FAC-');
         expect($proforma1)->toContain('PRO-');
@@ -72,16 +72,16 @@ describe('InvoiceNumberingService', function () {
     it('uses custom number format if provided', function () {
         // Create custom series control with custom format
         InvoiceSeriesControl::create([
-            'prefix' => 'CUSTOM',
-            'serie' => InvoiceSerieType::INVOICE->value,
-            'fiscal_year' => now()->year,
+            'prefix'            => 'CUSTOM',
+            'serie'             => InvoiceSerieType::INVOICE->value,
+            'fiscal_year'       => now()->year,
             'fiscal_year_start' => now()->startOfYear(),
-            'fiscal_year_end' => now()->endOfYear(),
-            'last_number' => 0,
-            'start_number' => 1,
-            'reset_annually' => true,
-            'number_format' => '{{PREFIX}}-{{NUMBER}}', // Custom format without year
-            'is_active' => true,
+            'fiscal_year_end'   => now()->endOfYear(),
+            'last_number'       => 0,
+            'start_number'      => 1,
+            'reset_annually'    => true,
+            'number_format'     => '{{PREFIX}}-{{NUMBER}}', // Custom format without year
+            'is_active'         => true,
         ]);
 
         $number = $this->service->generateNumber('CUSTOM', InvoiceSerieType::INVOICE->value);
@@ -99,16 +99,16 @@ describe('InvoiceNumberingService', function () {
 
     it('respects custom start_number', function () {
         InvoiceSeriesControl::create([
-            'prefix' => 'START100',
-            'serie' => InvoiceSerieType::INVOICE->value,
-            'fiscal_year' => now()->year,
+            'prefix'            => 'START100',
+            'serie'             => InvoiceSerieType::INVOICE->value,
+            'fiscal_year'       => now()->year,
             'fiscal_year_start' => now()->startOfYear(),
-            'fiscal_year_end' => now()->endOfYear(),
-            'last_number' => 99, // Simulate starting from 100
-            'start_number' => 100,
-            'reset_annually' => true,
-            'number_format' => '{{PREFIX}}-{{YEAR}}-{{NUMBER}}',
-            'is_active' => true,
+            'fiscal_year_end'   => now()->endOfYear(),
+            'last_number'       => 99, // Simulate starting from 100
+            'start_number'      => 100,
+            'reset_annually'    => true,
+            'number_format'     => '{{PREFIX}}-{{YEAR}}-{{NUMBER}}',
+            'is_active'         => true,
         ]);
 
         $number = $this->service->generateNumber('START100', InvoiceSerieType::INVOICE->value);
@@ -148,7 +148,7 @@ describe('InvoiceNumberingService', function () {
         config(['larabill.fiscal_year.start_month' => 7]);
         config(['larabill.fiscal_year.start_day' => 1]);
 
-        $dateInFirstHalf = \Carbon\Carbon::create(2025, 3, 15); // Before July 1, 2025
+        $dateInFirstHalf  = \Carbon\Carbon::create(2025, 3, 15); // Before July 1, 2025
         $dateInSecondHalf = \Carbon\Carbon::create(2025, 9, 15); // After July 1, 2025
 
         // March 2025 should be fiscal year 2024
@@ -162,4 +162,3 @@ describe('InvoiceNumberingService', function () {
         config(['larabill.fiscal_year.start_day' => 1]);
     });
 });
-
