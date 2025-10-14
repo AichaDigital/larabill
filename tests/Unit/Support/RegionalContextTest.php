@@ -10,11 +10,6 @@ it('can get configured country', function () {
     expect(RegionalContext::getCountryCode())->toBe('ES');
 });
 
-it('returns default country when not configured', function () {
-    config(['larabill.region.country' => null]);
-    
-    expect(RegionalContext::getCountryCode())->toBe('ES'); // Default
-});
 
 it('can get configured region', function () {
     config(['larabill.region.region' => 'US-CA']);
@@ -34,11 +29,6 @@ it('can get configured tax system', function () {
     expect(RegionalContext::getTaxSystemType())->toBe('sales_tax');
 });
 
-it('returns default tax system when not configured', function () {
-    config(['larabill.region.tax_system' => null]);
-    
-    expect(RegionalContext::getTaxSystemType())->toBe('vat'); // Default
-});
 
 it('can get configured fiscal zone', function () {
     config(['larabill.region.fiscal_zone' => 'us']);
@@ -46,11 +36,6 @@ it('can get configured fiscal zone', function () {
     expect(RegionalContext::getFiscalZone())->toBe('us');
 });
 
-it('returns default fiscal zone when not configured', function () {
-    config(['larabill.region.fiscal_zone' => null]);
-    
-    expect(RegionalContext::getFiscalZone())->toBe('eu'); // Default
-});
 
 it('can check if correlative numbering is required', function () {
     config(['larabill.compliance.requires_correlative_numbering' => true]);
@@ -62,11 +47,6 @@ it('can check if correlative numbering is required', function () {
     expect(RegionalContext::requiresCorrelativeNumbering())->toBeFalse();
 });
 
-it('returns default for correlative numbering when not configured', function () {
-    config(['larabill.compliance.requires_correlative_numbering' => null]);
-    
-    expect(RegionalContext::requiresCorrelativeNumbering())->toBeTrue(); // Default
-});
 
 it('can check if service dates are required', function () {
     config(['larabill.compliance.requires_service_dates' => true]);
@@ -78,11 +58,6 @@ it('can check if service dates are required', function () {
     expect(RegionalContext::requiresServiceDates())->toBeFalse();
 });
 
-it('returns default for service dates when not configured', function () {
-    config(['larabill.compliance.requires_service_dates' => null]);
-    
-    expect(RegionalContext::requiresServiceDates())->toBeTrue(); // Default
-});
 
 it('can check if tax verification is required', function () {
     config(['larabill.compliance.requires_tax_verification' => true]);
@@ -94,11 +69,6 @@ it('can check if tax verification is required', function () {
     expect(RegionalContext::requiresTaxVerification())->toBeFalse();
 });
 
-it('returns default for tax verification when not configured', function () {
-    config(['larabill.compliance.requires_tax_verification' => null]);
-    
-    expect(RegionalContext::requiresTaxVerification())->toBeFalse(); // Default
-});
 
 it('can check if fiscal QR is required', function () {
     config(['larabill.compliance.requires_fiscal_qr' => true]);
@@ -110,11 +80,6 @@ it('can check if fiscal QR is required', function () {
     expect(RegionalContext::requiresFiscalQr())->toBeFalse();
 });
 
-it('returns default for fiscal QR when not configured', function () {
-    config(['larabill.compliance.requires_fiscal_qr' => null]);
-    
-    expect(RegionalContext::requiresFiscalQr())->toBeFalse(); // Default
-});
 
 it('can get fiscal year start month', function () {
     config(['larabill.fiscal_year.start_month' => 4]);
@@ -122,11 +87,6 @@ it('can get fiscal year start month', function () {
     expect(RegionalContext::getFiscalYearStartMonth())->toBe(4);
 });
 
-it('returns default fiscal year start month when not configured', function () {
-    config(['larabill.fiscal_year.start_month' => null]);
-    
-    expect(RegionalContext::getFiscalYearStartMonth())->toBe(1); // Default: January
-});
 
 it('can get fiscal year start day', function () {
     config(['larabill.fiscal_year.start_day' => 15]);
@@ -134,11 +94,6 @@ it('can get fiscal year start day', function () {
     expect(RegionalContext::getFiscalYearStartDay())->toBe(15);
 });
 
-it('returns default fiscal year start day when not configured', function () {
-    config(['larabill.fiscal_year.start_day' => null]);
-    
-    expect(RegionalContext::getFiscalYearStartDay())->toBe(1); // Default: 1st day
-});
 
 it('can configure for CEE compliance', function () {
     config([

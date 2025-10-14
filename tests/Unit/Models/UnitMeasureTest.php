@@ -7,98 +7,78 @@ use AichaDigital\Larabill\Models\UnitMeasure;
 
 it('can create a unit measure', function () {
     $unitMeasure = UnitMeasure::create([
-        'name'          => 'Kilograms',
-        'symbol'        => 'kg',
-        'category'      => UnitMeasureCategory::WEIGHT,
-        'is_fractional' => true,
-        'is_active'     => true,
+        'code'     => 'kg',
+        'symbol'   => 'kg',
+        'name'     => 'Kilograms',
+        'category' => UnitMeasureCategory::WEIGHT,
+        'is_active' => true,
     ]);
 
     expect($unitMeasure->exists)->toBeTrue();
-    expect($unitMeasure->name)->toBe('Kilograms');
+    expect($unitMeasure->code)->toBe('kg');
     expect($unitMeasure->symbol)->toBe('kg');
+    expect($unitMeasure->name)->toBe('Kilograms');
     expect($unitMeasure->category)->toBe(UnitMeasureCategory::WEIGHT);
-    expect($unitMeasure->is_fractional)->toBeTrue();
     expect($unitMeasure->is_active)->toBeTrue();
 });
 
 it('can scope active unit measures', function () {
     UnitMeasure::create([
-        'name'      => 'Active Unit',
+        'code'      => 'au',
         'symbol'    => 'au',
+        'name'      => 'Active Unit',
         'category'  => UnitMeasureCategory::COUNT,
         'is_active' => true,
     ]);
 
     UnitMeasure::create([
-        'name'      => 'Inactive Unit',
+        'code'      => 'iu',
         'symbol'    => 'iu',
+        'name'      => 'Inactive Unit',
         'category'  => UnitMeasureCategory::COUNT,
         'is_active' => false,
     ]);
 
     $active = UnitMeasure::where('is_active', true)->get();
     expect($active)->toHaveCount(1);
-    expect($active->first()->symbol)->toBe('au');
+    expect($active->first()->code)->toBe('au');
 });
 
 it('can filter by category', function () {
     UnitMeasure::create([
-        'name'     => 'Units',
+        'code'     => 'unit',
         'symbol'   => 'u.',
+        'name'     => 'Units',
         'category' => UnitMeasureCategory::COUNT,
     ]);
 
     UnitMeasure::create([
-        'name'     => 'Kilograms',
+        'code'     => 'kg',
         'symbol'   => 'kg',
+        'name'     => 'Kilograms',
         'category' => UnitMeasureCategory::WEIGHT,
     ]);
 
     UnitMeasure::create([
-        'name'     => 'Liters',
+        'code'     => 'liter',
         'symbol'   => 'L',
+        'name'     => 'Liters',
         'category' => UnitMeasureCategory::VOLUME,
     ]);
 
     $weightUnits = UnitMeasure::where('category', UnitMeasureCategory::WEIGHT)->get();
     expect($weightUnits)->toHaveCount(1);
-    expect($weightUnits->first()->symbol)->toBe('kg');
-});
-
-it('can handle fractional and non-fractional units', function () {
-    UnitMeasure::create([
-        'name'          => 'Units',
-        'symbol'        => 'u.',
-        'category'      => UnitMeasureCategory::COUNT,
-        'is_fractional' => false,
-    ]);
-
-    UnitMeasure::create([
-        'name'          => 'Kilograms',
-        'symbol'        => 'kg',
-        'category'      => UnitMeasureCategory::WEIGHT,
-        'is_fractional' => true,
-    ]);
-
-    $fractional = UnitMeasure::where('is_fractional', true)->get();
-    $nonFractional = UnitMeasure::where('is_fractional', false)->get();
-
-    expect($fractional)->toHaveCount(1);
-    expect($fractional->first()->symbol)->toBe('kg');
-    expect($nonFractional)->toHaveCount(1);
-    expect($nonFractional->first()->symbol)->toBe('u.');
+    expect($weightUnits->first()->code)->toBe('kg');
 });
 
 it('can store all unit measure categories', function () {
     $units = [
-        ['name' => 'Units', 'symbol' => 'u.', 'category' => UnitMeasureCategory::COUNT, 'is_fractional' => false],
-        ['name' => 'Kilograms', 'symbol' => 'kg', 'category' => UnitMeasureCategory::WEIGHT, 'is_fractional' => true],
-        ['name' => 'Liters', 'symbol' => 'L', 'category' => UnitMeasureCategory::VOLUME, 'is_fractional' => true],
-        ['name' => 'Meters', 'symbol' => 'm', 'category' => UnitMeasureCategory::LENGTH, 'is_fractional' => true],
-        ['name' => 'Hours', 'symbol' => 'hr', 'category' => UnitMeasureCategory::TIME, 'is_fractional' => true],
-        ['name' => 'Square Meters', 'symbol' => 'm²', 'category' => UnitMeasureCategory::AREA, 'is_fractional' => true],
-        ['name' => 'Services', 'symbol' => 'svc', 'category' => UnitMeasureCategory::OTHER, 'is_fractional' => false],
+        ['code' => 'unit', 'symbol' => 'u.', 'name' => 'Units', 'category' => UnitMeasureCategory::COUNT],
+        ['code' => 'kg', 'symbol' => 'kg', 'name' => 'Kilograms', 'category' => UnitMeasureCategory::WEIGHT],
+        ['code' => 'liter', 'symbol' => 'L', 'name' => 'Liters', 'category' => UnitMeasureCategory::VOLUME],
+        ['code' => 'meter', 'symbol' => 'm', 'name' => 'Meters', 'category' => UnitMeasureCategory::LENGTH],
+        ['code' => 'hour', 'symbol' => 'hr', 'name' => 'Hours', 'category' => UnitMeasureCategory::TIME],
+        ['code' => 'm2', 'symbol' => 'm²', 'name' => 'Square Meters', 'category' => UnitMeasureCategory::AREA],
     ];
 
     foreach ($units as $unit) {
@@ -111,20 +91,21 @@ it('can store all unit measure categories', function () {
     expect(UnitMeasure::where('category', UnitMeasureCategory::LENGTH)->count())->toBe(1);
     expect(UnitMeasure::where('category', UnitMeasureCategory::TIME)->count())->toBe(1);
     expect(UnitMeasure::where('category', UnitMeasureCategory::AREA)->count())->toBe(1);
-    expect(UnitMeasure::where('category', UnitMeasureCategory::OTHER)->count())->toBe(1);
 });
 
 it('can get units by category and active status', function () {
     UnitMeasure::create([
-        'name'      => 'Kilograms',
+        'code'      => 'kg',
         'symbol'    => 'kg',
+        'name'      => 'Kilograms',
         'category'  => UnitMeasureCategory::WEIGHT,
         'is_active' => true,
     ]);
 
     UnitMeasure::create([
-        'name'      => 'Pounds',
+        'code'      => 'lb',
         'symbol'    => 'lb',
+        'name'      => 'Pounds',
         'category'  => UnitMeasureCategory::WEIGHT,
         'is_active' => false,
     ]);
@@ -134,40 +115,34 @@ it('can get units by category and active status', function () {
         ->get();
 
     expect($activeWeightUnits)->toHaveCount(1);
-    expect($activeWeightUnits->first()->symbol)->toBe('kg');
+    expect($activeWeightUnits->first()->code)->toBe('kg');
 });
 
-it('enforces unique name per category', function () {
+it('enforces unique code constraint', function () {
     UnitMeasure::create([
-        'name'     => 'Units',
-        'symbol'   => 'u.',
+        'code'   => 'unit',
+        'symbol' => 'u.',
+        'name'   => 'Units',
         'category' => UnitMeasureCategory::COUNT,
     ]);
 
-    // This should fail due to unique constraint on (name, category)
+    // This should fail due to unique constraint on code
     expect(function () {
         UnitMeasure::create([
-            'name'     => 'Units',
-            'symbol'   => 'u2',
+            'code'   => 'unit',
+            'symbol' => 'u2',
+            'name'   => 'Units 2',
             'category' => UnitMeasureCategory::COUNT,
         ]);
     })->toThrow(\Exception::class);
 });
 
-it('allows same name in different categories', function () {
-    UnitMeasure::create([
-        'name'     => 'Standard',
-        'symbol'   => 'std',
-        'category' => UnitMeasureCategory::COUNT,
-    ]);
+it('can order by sort_order', function () {
+    UnitMeasure::create(['code' => 'c', 'symbol' => 'c', 'name' => 'Third', 'category' => UnitMeasureCategory::COUNT, 'sort_order' => 3]);
+    UnitMeasure::create(['code' => 'a', 'symbol' => 'a', 'name' => 'First', 'category' => UnitMeasureCategory::COUNT, 'sort_order' => 1]);
+    UnitMeasure::create(['code' => 'b', 'symbol' => 'b', 'name' => 'Second', 'category' => UnitMeasureCategory::COUNT, 'sort_order' => 2]);
 
-    UnitMeasure::create([
-        'name'     => 'Standard',
-        'symbol'   => 'std2',
-        'category' => UnitMeasureCategory::WEIGHT,
-    ]);
-
-    $standards = UnitMeasure::where('name', 'Standard')->get();
-    expect($standards)->toHaveCount(2);
+    $ordered = UnitMeasure::orderBy('sort_order')->get();
+    expect($ordered->first()->code)->toBe('a');
+    expect($ordered->last()->code)->toBe('c');
 });
-
