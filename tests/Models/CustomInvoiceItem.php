@@ -16,7 +16,7 @@ class CustomInvoiceItem extends Model
         'description',
         'quantity',
         'unit_price',
-        'subtotal',
+        'taxable_amount',
         'tax_rate',
         'tax_amount',
         'total',

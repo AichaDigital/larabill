@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use AichaDigital\Larabill\Enums\{InvoiceSerieType, InvoiceStatus};
 
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Services\BillingService;
@@ -8,35 +9,35 @@ use AichaDigital\Larabill\Services\BillingService;
 it('can list and filter invoices', function () {
     // Create test invoices with different statuses
     $draftInvoice = Invoice::create([
-        'number'       => 'FAC-0001',
-        'type'         => 'invoice',
-        'status'       => 'draft',
+        'fiscal_number' => 'FAC-0001',
+        'serie' => InvoiceSerieType::INVOICE->value,
+        'status' => InvoiceStatus::DRAFT->value,
         'user_id'      => 1,
-        'subtotal'     => 100.0,
+        'taxable_amount'     => 100.0,
         'tax_amount'   => 21.0,
-        'total'        => 121.0,
+        'total_amount' => 121.0,
         'is_immutable' => false,
     ]);
 
     $sentInvoice = Invoice::create([
-        'number'       => 'FAC-0002',
-        'type'         => 'invoice',
-        'status'       => 'sent',
+        'fiscal_number' => 'FAC-0002',
+        'serie' => InvoiceSerieType::INVOICE->value,
+        'status' => InvoiceStatus::SENT->value,
         'user_id'      => 1,
-        'subtotal'     => 200.0,
+        'taxable_amount'     => 200.0,
         'tax_amount'   => 42.0,
-        'total'        => 242.0,
+        'total_amount' => 242.0,
         'is_immutable' => false,
     ]);
 
     $paidInvoice = Invoice::create([
-        'number'       => 'FAC-0003',
-        'type'         => 'invoice',
+        'fiscal_number' => 'FAC-0003',
+        'serie' => InvoiceSerieType::INVOICE->value,
         'status'       => 'paid',
         'user_id'      => 1,
-        'subtotal'     => 300.0,
+        'taxable_amount'     => 300.0,
         'tax_amount'   => 63.0,
-        'total'        => 363.0,
+        'total_amount' => 363.0,
         'is_immutable' => false,
     ]);
 
@@ -112,7 +113,7 @@ it('can edit invoices only when not immutable', function () {
 
     // Can edit mutable invoice
     $mutableInvoice->update([
-        'status' => 'sent',
+        'status' => InvoiceStatus::SENT->value,
         'notes'  => 'Invoice sent to customer',
     ]);
 
@@ -153,7 +154,7 @@ it('can handle email sending for invoices', function () {
     expect($invoice->exists)->toBeTrue();
 
     // Mark as sent (simulating email sending)
-    $invoice->update(['status' => 'sent']);
+    $invoice->update(['status' => InvoiceStatus::SENT->value]);
     expect($invoice->status)->toBe('sent');
 });
 

@@ -16,7 +16,7 @@ class CustomInvoice extends Model
         'type',
         'status',
         'user_id',
-        'subtotal',
+        'taxable_amount',
         'tax_amount',
         'total',
     ];

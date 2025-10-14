@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use AichaDigital\Larabill\Enums\{InvoiceSerieType, InvoiceStatus};
 
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Services\PDF\DomPDFService;
@@ -45,13 +46,13 @@ it('can update configuration', function () {
 
 it('can generate PDF for fiscal invoice', function () {
     $invoice = Invoice::factory()->create([
-        'number'     => 'FAC-001',
-        'type'       => 'invoice',
+        'fiscal_number' => 'FAC-001',
+        'serie' => InvoiceSerieType::INVOICE->value,
         'status'     => 'paid',
         'user_id'    => 'test-user',
-        'subtotal'   => 10000,
+        'taxable_amount'   => 10000,
         'tax_amount' => 2100,
-        'total'      => 12100,
+        'total_amount' => 12100,
     ]);
 
     $qrData = [
@@ -72,13 +73,13 @@ it('can generate PDF for fiscal invoice', function () {
 
 it('can generate PDF for proforma invoice without QR', function () {
     $invoice = Invoice::factory()->create([
-        'number'     => 'PRO-001',
-        'type'       => 'proforma',
-        'status'     => 'draft',
+        'fiscal_number' => 'PRO-001',
+        'serie' => InvoiceSerieType::PROFORMA->value,
+        'status' => InvoiceStatus::DRAFT->value,
         'user_id'    => 'test-user',
-        'subtotal'   => 10000,
+        'taxable_amount'   => 10000,
         'tax_amount' => 2100,
-        'total'      => 12100,
+        'total_amount' => 12100,
     ]);
 
     $result = $this->dompdfService->generatePDF($invoice);
@@ -93,13 +94,13 @@ it('can generate PDF for proforma invoice without QR', function () {
 
 it('can detect reverse charge invoice', function () {
     $invoice = Invoice::factory()->create([
-        'number'      => 'FAC-003',
-        'type'        => 'invoice',
+        'fiscal_number' => 'FAC-003',
+        'serie' => InvoiceSerieType::INVOICE->value,
         'status'      => 'paid',
         'user_id'     => 'test-user',
-        'subtotal'    => 10000,
+        'taxable_amount'    => 10000,
         'tax_amount'  => 0,
-        'total'       => 10000,
+        'total_amount' => 10000,
         'fiscal_data' => ['reverse_charge' => true],
     ]);
 
@@ -112,13 +113,13 @@ it('can detect reverse charge invoice', function () {
 
 it('can detect exempt invoice', function () {
     $invoice = Invoice::factory()->create([
-        'number'      => 'FAC-004',
-        'type'        => 'invoice',
+        'fiscal_number' => 'FAC-004',
+        'serie' => InvoiceSerieType::INVOICE->value,
         'status'      => 'paid',
         'user_id'     => 'test-user',
-        'subtotal'    => 10000,
+        'taxable_amount'    => 10000,
         'tax_amount'  => 0,
-        'total'       => 10000,
+        'total_amount' => 10000,
         'fiscal_data' => ['exempt' => true],
     ]);
 
