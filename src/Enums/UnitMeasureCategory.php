@@ -11,7 +11,7 @@ namespace AichaDigital\Larabill\Enums;
  * Used to group unit measures logically (weight, volume, etc.)
  *
  * @method string label() Get human-readable label
- * @method static array toArray() Get all cases as [value => label] array
+ * @method static array<int, string> toArray() Get all cases as [value => label] array
  */
 enum UnitMeasureCategory: int
 {

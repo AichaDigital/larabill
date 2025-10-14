@@ -1,19 +1,73 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Property AichaDigital\\Larabill\\Models\\FiscalSettings\:\:\$current_eu_sales_amount \(int\) does not accept float\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: src/Models/FiscalSettings.php
-
-		-
-			message: '#^Class AichaDigital\\Larabill\\Models\\Invoice uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
+			message: '#^Method AichaDigital\\Larabill\\Models\\Invoice\:\:scopeFinal\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
 			identifier: missingType.generics
 			count: 1
 			path: src/Models/Invoice.php
 
 		-
-			message: '#^Method AichaDigital\\Larabill\\Models\\Invoice\:\:newEloquentBuilder\(\) return type with generic class AichaDigital\\Larabill\\Database\\Query\\BinaryUuidBuilder does not specify its types\: TModel$#'
+			message: '#^Method AichaDigital\\Larabill\\Models\\Invoice\:\:scopeFinal\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/Invoice.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\Invoice\:\:scopeFiscalYear\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/Invoice.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\Invoice\:\:scopeFiscalYear\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/Invoice.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\Invoice\:\:scopeProformas\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/Invoice.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\Invoice\:\:scopeProformas\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/Invoice.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\Invoice\:\:scopeRectificatives\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/Invoice.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\Invoice\:\:scopeRectificatives\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/Invoice.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\Invoice\:\:scopeSerie\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/Invoice.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\Invoice\:\:scopeSerie\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/Invoice.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\Invoice\:\:scopeStatus\(\) has parameter \$query with generic class Illuminate\\Database\\Eloquent\\Builder but does not specify its types\: TModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/Invoice.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\Invoice\:\:scopeStatus\(\) return type with generic class Illuminate\\Database\\Eloquent\\Builder does not specify its types\: TModel$#'
 			identifier: missingType.generics
 			count: 1
 			path: src/Models/Invoice.php
@@ -21,12 +75,6 @@ parameters:
 		-
 			message: '#^Class AichaDigital\\Larabill\\Models\\InvoiceItem has PHPDoc tag @property for property \$metadata with no value type specified in iterable type array\.$#'
 			identifier: missingType.iterableValue
-			count: 1
-			path: src/Models/InvoiceItem.php
-
-		-
-			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceItem\:\:newEloquentBuilder\(\) return type with generic class AichaDigital\\Larabill\\Database\\Query\\BinaryUuidBuilder does not specify its types\: TModel$#'
-			identifier: missingType.generics
 			count: 1
 			path: src/Models/InvoiceItem.php
 
@@ -63,12 +111,6 @@ parameters:
 		-
 			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceItem\:\:scopeWithServiceDates\(\) has parameter \$query with no type specified\.$#'
 			identifier: missingType.parameter
-			count: 1
-			path: src/Models/InvoiceItem.php
-
-		-
-			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceItem\:\:uuidColumns\(\) return type has no value type specified in iterable type array\.$#'
-			identifier: missingType.iterableValue
 			count: 1
 			path: src/Models/InvoiceItem.php
 
@@ -275,63 +317,3 @@ parameters:
 			identifier: missingType.parameter
 			count: 1
 			path: src/Models/UnitMeasure.php
-
-		-
-			message: '#^Unable to resolve the template type TCacheValue in call to method Illuminate\\Cache\\Repository\:\:remember\(\)$#'
-			identifier: argument.templateType
-			count: 1
-			path: src/Services/CacheService.php
-
-		-
-			message: '#^Unable to resolve the template type TCacheValue in call to method Illuminate\\Cache\\Repository\:\:rememberForever\(\)$#'
-			identifier: argument.templateType
-			count: 1
-			path: src/Services/CacheService.php
-
-		-
-			message: '#^Property AichaDigital\\Larabill\\Models\\FiscalSettings\:\:\$current_eu_sales_amount \(int\) does not accept float\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: src/Services/DestinationVatService.php
-
-		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$subtotal\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Services/PDF/DomPDFService.php
-
-		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$total\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Services/PDF/DomPDFService.php
-
-		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$type\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Services/PDF/DomPDFService.php
-
-		-
-			message: '#^Method AichaDigital\\Larabill\\Database\\Query\\BinaryUuidBuilder\:\:where\(\) should return \$this\(AichaDigital\\Larabill\\Database\\Query\\BinaryUuidBuilder\<TModel of Illuminate\\Database\\Eloquent\\Model\>\) but returns static\(AichaDigital\\Larabill\\Database\\Query\\BinaryUuidBuilder\<TModel of Illuminate\\Database\\Eloquent\\Model\>\)\.$#'
-			identifier: return.type
-			count: 3
-			path: src/database/Query/BinaryUuidBuilder.php
-
-		-
-			message: '#^Method AichaDigital\\Larabill\\Database\\Query\\BinaryUuidBuilder\:\:whereIn\(\) should return \$this\(AichaDigital\\Larabill\\Database\\Query\\BinaryUuidBuilder\<TModel of Illuminate\\Database\\Eloquent\\Model\>\) but returns Illuminate\\Database\\Eloquent\\Builder\<TModel of Illuminate\\Database\\Eloquent\\Model\>\.$#'
-			identifier: return.type
-			count: 1
-			path: src/database/Query/BinaryUuidBuilder.php
-
-		-
-			message: '#^Unable to resolve the template type TKey in call to function collect$#'
-			identifier: argument.templateType
-			count: 1
-			path: src/database/Query/BinaryUuidBuilder.php
-
-		-
-			message: '#^Unable to resolve the template type TValue in call to function collect$#'
-			identifier: argument.templateType
-			count: 1
-			path: src/database/Query/BinaryUuidBuilder.php

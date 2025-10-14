@@ -47,7 +47,7 @@ class EuSalesThresholdService
         }
 
         // Get user configuration
-        $userId  = (string) ($invoice->user_id ?? config('larabill.company.id', '1'));
+        $userId     = (string) ($invoice->user_id ?? config('larabill.company.id', '1'));
         $fiscalYear = (int) ($invoice->fiscal_year ?? date('Y'));
         $config     = FiscalSettings::getOrCreateForUser($userId, $fiscalYear);
 
@@ -87,7 +87,7 @@ class EuSalesThresholdService
         }
 
         // Get user configuration
-        $userId  = (string) ($invoice->user_id ?? config('larabill.company.id', '1'));
+        $userId     = (string) ($invoice->user_id ?? config('larabill.company.id', '1'));
         $fiscalYear = (int) ($invoice->fiscal_year ?? date('Y'));
         $config     = FiscalSettings::getOrCreateForUser($userId, $fiscalYear);
 

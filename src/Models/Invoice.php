@@ -8,6 +8,7 @@ use AichaDigital\Lara100\Casts\Base100;
 use AichaDigital\Larabill\Enums\{InvoiceSerieType, InvoiceStatus};
 use Dyrynda\Database\Support\{BindsOnUuid, GeneratesUuid};
 use Dyrynda\Database\Support\Casts\EfficientUuid;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
@@ -354,48 +355,66 @@ class Invoice extends Model
 
     /**
      * Scope for specific serie
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeSerie($query, InvoiceSerieType $serie)
+    public function scopeSerie(Builder $query, InvoiceSerieType $serie): Builder
     {
         return $query->where('serie', $serie->value);
     }
 
     /**
      * Scope for specific fiscal year
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeFiscalYear($query, int $year)
+    public function scopeFiscalYear(Builder $query, int $year): Builder
     {
         return $query->where('fiscal_year', $year);
     }
 
     /**
      * Scope for specific status
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeStatus($query, InvoiceStatus $status)
+    public function scopeStatus(Builder $query, InvoiceStatus $status): Builder
     {
         return $query->where('status', $status->value);
     }
 
     /**
      * Scope for proforma invoices
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeProformas($query)
+    public function scopeProformas(Builder $query): Builder
     {
         return $query->where('serie', InvoiceSerieType::PROFORMA->value);
     }
 
     /**
      * Scope for final invoices (not proformas or rectificatives)
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeFinal($query)
+    public function scopeFinal(Builder $query): Builder
     {
         return $query->where('serie', InvoiceSerieType::INVOICE->value);
     }
 
     /**
      * Scope for rectificative invoices
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeRectificatives($query)
+    public function scopeRectificatives(Builder $query): Builder
     {
         return $query->where('serie', InvoiceSerieType::RECTIFICATIVE->value);
     }

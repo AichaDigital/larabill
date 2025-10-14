@@ -12,7 +12,7 @@ namespace AichaDigital\Larabill\Enums;
  *
  * @method string label() Get human-readable label
  * @method bool requiresServiceDates() Check if service dates are required
- * @method static array toArray() Get all cases as [value => label] array
+ * @method static array<int, string> toArray() Get all cases as [value => label] array
  */
 enum ItemType: int
 {

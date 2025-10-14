@@ -7,10 +7,10 @@ use AichaDigital\Larabill\Models\UnitMeasure;
 
 it('can create a unit measure', function () {
     $unitMeasure = UnitMeasure::create([
-        'code'     => 'kg',
-        'symbol'   => 'kg',
-        'name'     => 'Kilograms',
-        'category' => UnitMeasureCategory::WEIGHT,
+        'code'      => 'kg',
+        'symbol'    => 'kg',
+        'name'      => 'Kilograms',
+        'category'  => UnitMeasureCategory::WEIGHT,
         'is_active' => true,
     ]);
 
@@ -120,18 +120,18 @@ it('can get units by category and active status', function () {
 
 it('enforces unique code constraint', function () {
     UnitMeasure::create([
-        'code'   => 'unit',
-        'symbol' => 'u.',
-        'name'   => 'Units',
+        'code'     => 'unit',
+        'symbol'   => 'u.',
+        'name'     => 'Units',
         'category' => UnitMeasureCategory::COUNT,
     ]);
 
     // This should fail due to unique constraint on code
     expect(function () {
         UnitMeasure::create([
-            'code'   => 'unit',
-            'symbol' => 'u2',
-            'name'   => 'Units 2',
+            'code'     => 'unit',
+            'symbol'   => 'u2',
+            'name'     => 'Units 2',
             'category' => UnitMeasureCategory::COUNT,
         ]);
     })->toThrow(\Exception::class);

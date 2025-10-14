@@ -11,7 +11,7 @@ namespace AichaDigital\Larabill\Enums;
  *
  * @method string label() Get human-readable label
  * @method bool canBeEdited() Check if invoice can be edited in this status
- * @method static array toArray() Get all cases as [value => label] array
+ * @method static array<int, string> toArray() Get all cases as [value => label] array
  */
 enum InvoiceStatus: int
 {

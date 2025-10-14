@@ -13,7 +13,7 @@ namespace AichaDigital\Larabill\Enums;
  * @method string label() Get human-readable label
  * @method bool requiresCorrelation() Check if requires correlative numbering
  * @method string defaultPrefix() Get default prefix for this type
- * @method static array toArray() Get all cases as [value => label] array
+ * @method static array<int, string> toArray() Get all cases as [value => label] array
  */
 enum InvoiceSerieType: int
 {

@@ -19,7 +19,7 @@ it('processes EU sale invoice and updates threshold', function () {
         'fiscal_year'             => now()->year,
     ]);
 
-    $userId = (string) ($invoice->user_id ?? config('larabill.company.id', '1'));
+    $userId         = (string) ($invoice->user_id ?? config('larabill.company.id', '1'));
     $fiscalSettings = FiscalSettings::getOrCreateForUser($userId, now()->year);
     expect($fiscalSettings->current_eu_sales_amount)->toBe(0.0);
 
@@ -38,7 +38,7 @@ it('skips ROI taxed invoices', function () {
     ]);
 
     $fiscalSettings = FiscalSettings::getOrCreateForUser((string) ($invoice->user_id ?? '1'), now()->year);
-    $initialAmount = $fiscalSettings->current_eu_sales_amount;
+    $initialAmount  = $fiscalSettings->current_eu_sales_amount;
 
     $this->service->processInvoice($invoice);
 
@@ -54,7 +54,7 @@ it('skips non-EU invoices', function () {
     ]);
 
     $fiscalSettings = FiscalSettings::getOrCreateForUser((string) ($invoice->user_id ?? '1'), now()->year);
-    $initialAmount = $fiscalSettings->current_eu_sales_amount;
+    $initialAmount  = $fiscalSettings->current_eu_sales_amount;
 
     $this->service->processInvoice($invoice);
 
@@ -70,7 +70,7 @@ it('skips domestic (Spain) invoices', function () {
     ]);
 
     $fiscalSettings = FiscalSettings::getOrCreateForUser((string) ($invoice->user_id ?? '1'), now()->year);
-    $initialAmount = $fiscalSettings->current_eu_sales_amount;
+    $initialAmount  = $fiscalSettings->current_eu_sales_amount;
 
     $this->service->processInvoice($invoice);
 
@@ -117,7 +117,7 @@ it('processes invoice refund and decreases EU sales', function () {
 });
 
 it('should send notification when threshold exceeded', function () {
-    $userId = '1';
+    $userId     = '1';
     $fiscalYear = now()->year;
 
     $fiscalSettings = FiscalSettings::getOrCreateForUser($userId, $fiscalYear);
@@ -133,7 +133,7 @@ it('should send notification when threshold exceeded', function () {
 });
 
 it('should not send notification when already sent', function () {
-    $userId = '1';
+    $userId     = '1';
     $fiscalYear = now()->year;
 
     $fiscalSettings = FiscalSettings::getOrCreateForUser($userId, $fiscalYear);
@@ -148,7 +148,7 @@ it('should not send notification when already sent', function () {
 });
 
 it('should not send notification when OSS registered', function () {
-    $userId = '1';
+    $userId     = '1';
     $fiscalYear = now()->year;
 
     $fiscalSettings = FiscalSettings::getOrCreateForUser($userId, $fiscalYear);
@@ -163,7 +163,7 @@ it('should not send notification when OSS registered', function () {
 });
 
 it('should not send notification when threshold not exceeded', function () {
-    $userId = '1';
+    $userId     = '1';
     $fiscalYear = now()->year;
 
     $fiscalSettings = FiscalSettings::getOrCreateForUser($userId, $fiscalYear);
@@ -178,7 +178,7 @@ it('should not send notification when threshold not exceeded', function () {
 });
 
 it('sends threshold notification and marks as sent', function () {
-    $userId = '1';
+    $userId     = '1';
     $fiscalYear = now()->year;
 
     $fiscalSettings = FiscalSettings::getOrCreateForUser($userId, $fiscalYear);
@@ -193,14 +193,14 @@ it('sends threshold notification and marks as sent', function () {
 
     $fiscalSettings->refresh();
     expect($fiscalSettings->notification_sent)->toBeTrue();
-    
+
     Log::shouldHaveReceived('warning')
         ->once()
         ->with('EU Sales Threshold Exceeded - OSS Registration Required', \Mockery::type('array'));
 });
 
 it('does not send notification if should not send', function () {
-    $userId = '1';
+    $userId     = '1';
     $fiscalYear = now()->year;
 
     $fiscalSettings = FiscalSettings::getOrCreateForUser($userId, $fiscalYear);
@@ -225,7 +225,7 @@ it('handles invoice without user tax info', function () {
     ]);
 
     $fiscalSettings = FiscalSettings::getOrCreateForUser((string) ($invoice->user_id ?? '1'), now()->year);
-    $initialAmount = $fiscalSettings->current_eu_sales_amount;
+    $initialAmount  = $fiscalSettings->current_eu_sales_amount;
 
     $this->service->processInvoice($invoice);
 
@@ -235,7 +235,7 @@ it('handles invoice without user tax info', function () {
 
 it('recognizes various EU countries', function () {
     $euCountries = ['DE', 'FR', 'IT', 'NL', 'BE'];
-    $testUserId = 999; // Fixed user ID for all invoices
+    $testUserId  = 999; // Fixed user ID for all invoices
 
     foreach ($euCountries as $index => $country) {
         $invoice = Invoice::factory()->create([
@@ -284,4 +284,3 @@ it('logs refund processing', function () {
         ->once()
         ->with('EU sales threshold updated (refund)', \Mockery::type('array'));
 });
-

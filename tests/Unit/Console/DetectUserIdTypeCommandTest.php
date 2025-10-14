@@ -32,4 +32,3 @@ it('displays the command description', function () {
     expect($command->getDescription())->toContain('detect');
     expect($command->getName())->toBe('larabill:detect-user-id');
 });
-
