@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services;
 
+use AichaDigital\Larabill\Enums\{InvoiceSerieType, InvoiceStatus};
 use AichaDigital\Larabill\Models\{Invoice, InvoiceItem};
 
 /**
@@ -75,16 +76,25 @@ class BillingService
         }
 
         // Create invoice
+        // TODO v0.3.3: Refactor to use InvoiceNumberingService + new fiscal fields
         $invoiceType = $invoiceData['type'] ?? 'invoice';
-        $invoice     = Invoice::create([
-            'number'      => $this->generateInvoiceNumber($invoiceType, $options),
-            'type'        => $invoiceType,
-            'status'      => $invoiceData['status'] ?? 'draft',
-            'user_id'     => $userId,
-            'subtotal'    => $taxCalculation['amount'], // Base100 cast handles conversion
-            'tax_amount'  => $taxCalculation['tax_amount'], // Base100 cast handles conversion
-            'total'       => $taxCalculation['total'], // Base100 cast handles conversion
-            'fiscal_data' => [
+        $serie       = $invoiceType === 'proforma' ? InvoiceSerieType::PROFORMA->value : InvoiceSerieType::INVOICE->value;
+        $status      = isset($invoiceData['status']) ? $this->mapStatusToEnum($invoiceData['status']) : InvoiceStatus::DRAFT->value;
+
+        $invoice = Invoice::create([
+            'fiscal_number'  => $this->generateInvoiceNumber($invoiceType, $options), // TODO: usar InvoiceNumberingService
+            'prefix'         => $invoiceType === 'proforma' ? 'PRO' : 'FAC',
+            'serie'          => $serie,
+            'series_number'  => 1, // TODO: usar InvoiceNumberingService para correlativo real
+            'fiscal_year'    => now()->year,
+            'invoice_date'   => now()->toDateString(),
+            'issued_at'      => now(),
+            'status'         => $status,
+            'user_id'        => $userId,
+            'taxable_amount' => $taxCalculation['amount'], // Base100 cast handles conversion
+            'tax_amount'     => $taxCalculation['tax_amount'], // Base100 cast handles conversion
+            'total_amount'   => $taxCalculation['total'], // Base100 cast handles conversion
+            'fiscal_data'    => [
                 'tax_rate'           => $taxCalculation['tax_rate'],
                 'tax_type'           => $taxCalculation['tax_type'],
                 'tax_name'           => $taxCalculation['tax_name'],
@@ -121,8 +131,8 @@ class BillingService
      */
     public function createProforma(array $invoiceData, array $options = []): Invoice
     {
-        $invoiceData['type']   = 'proforma';
-        $invoiceData['status'] = 'draft';
+        $invoiceData['type']   = 'proforma'; // Internally mapped to InvoiceSerieType::PROFORMA
+        $invoiceData['status'] = 'draft';    // Internally mapped to InvoiceStatus::DRAFT
 
         // Proforma invoices are never immutable
         $options['make_immutable'] = false;
@@ -139,14 +149,15 @@ class BillingService
      */
     public function convertToInvoice(Invoice $proforma, array $options = []): Invoice
     {
-        if ($proforma->type !== 'proforma') {
+        // Check if proforma using new serie enum
+        if ($proforma->serie !== InvoiceSerieType::PROFORMA) {
             throw new \InvalidArgumentException('Only proforma invoices can be converted');
         }
 
         $invoiceData = [
             'user_id'          => $proforma->user_id,
-            'type'             => 'invoice',
-            'status'           => 'draft',
+            'type'             => 'invoice', // Internally mapped to InvoiceSerieType::INVOICE
+            'status'           => 'draft',   // Internally mapped to InvoiceStatus::DRAFT
             'due_date'         => $proforma->due_date,
             'payment_terms'    => $proforma->payment_terms,
             'template_name'    => $proforma->template_name,
@@ -221,6 +232,7 @@ class BillingService
 
     /**
      * Create an invoice item.
+     * TODO v0.3.3: Update to use item_type, unit_measure_id, tax_category_id, service dates
      *
      * @param  array<string, mixed>  $itemData
      */
@@ -230,19 +242,19 @@ class BillingService
         $unitPrice = $itemData['unit_price'] ?? 0;
         $taxRate   = $itemData['tax_rate']   ?? 0;
 
-        $subtotal  = $quantity * $unitPrice;
-        $taxAmount = $subtotal * ($taxRate / 100);
-        $total     = $subtotal + $taxAmount;
+        $taxableAmount = $quantity      * $unitPrice;
+        $taxAmount     = $taxableAmount * ($taxRate / 100);
+        $totalAmount   = $taxableAmount + $taxAmount;
 
         return InvoiceItem::create([
-            'invoice_id'  => $invoice->id,
-            'description' => $itemData['description'] ?? '',
-            'quantity'    => $quantity, // Base100 cast handles conversion
-            'unit_price'  => $unitPrice, // Base100 cast handles conversion
-            'subtotal'    => $subtotal, // Base100 cast handles conversion
-            'tax_rate'    => $taxRate, // Base100 cast handles conversion
-            'tax_amount'  => $taxAmount, // Base100 cast handles conversion
-            'total'       => $total, // Base100 cast handles conversion
+            'invoice_id'     => $invoice->id,
+            'description'    => $itemData['description'] ?? '',
+            'quantity'       => $quantity, // Base100 cast handles conversion
+            'unit_price'     => $unitPrice, // Base100 cast handles conversion
+            'taxable_amount' => $taxableAmount, // Base100 cast handles conversion
+            'tax_rate'       => $taxRate, // Base100 cast handles conversion
+            'tax_amount'     => $taxAmount, // Base100 cast handles conversion
+            'total_amount'   => $totalAmount, // Base100 cast handles conversion
         ]);
     }
 
@@ -264,5 +276,28 @@ class BillingService
                 'tax_rate'    => $item->tax_rate,    // Base100 cast already returns float
             ];
         })->toArray();
+    }
+
+    /**
+     * Map string status to enum value for backward compatibility.
+     * TODO v0.3.3: Remove this helper after refactoring all tests to use enums directly
+     *
+     * @param  string|int  $status  Status string or int
+     * @return int Enum value
+     */
+    private function mapStatusToEnum($status): int
+    {
+        if (is_int($status)) {
+            return $status; // Already an enum value
+        }
+
+        return match ($status) {
+            'draft'     => InvoiceStatus::DRAFT->value,
+            'sent'      => InvoiceStatus::SENT->value,
+            'paid'      => InvoiceStatus::PAID->value,
+            'overdue'   => InvoiceStatus::OVERDUE->value,
+            'cancelled' => InvoiceStatus::CANCELLED->value,
+            default     => InvoiceStatus::DRAFT->value,
+        };
     }
 }
