@@ -31,7 +31,7 @@ class EuSalesThresholdService
         // Only process invoices that are not ROI taxed (not reverse charge)
         if ($invoice->is_roi_taxed) {
             Log::info('Invoice is ROI taxed, skipping EU sales threshold update', [
-                'invoice_number' => $invoice->number,
+                'invoice_number' => $invoice->fiscal_number,
             ]);
 
             return;
@@ -40,32 +40,32 @@ class EuSalesThresholdService
         // Check if invoice is to EU customer (not domestic)
         if (! $this->isEuSale($invoice)) {
             Log::info('Invoice is not EU sale, skipping threshold update', [
-                'invoice_number' => $invoice->number,
+                'invoice_number' => $invoice->fiscal_number,
             ]);
 
             return;
         }
 
-        // Get company configuration
-        $companyId  = (string) ($invoice->company_id ?? config('larabill.company.id', '1'));
+        // Get user configuration
+        $userId  = (string) ($invoice->user_id ?? config('larabill.company.id', '1'));
         $fiscalYear = (int) ($invoice->fiscal_year ?? date('Y'));
-        $config     = FiscalSettings::getOrCreateForUser($companyId, $fiscalYear);
+        $config     = FiscalSettings::getOrCreateForUser($userId, $fiscalYear);
 
         // If company is already registered in OSS, no need to track threshold
         if ($config->is_oss) {
             Log::info('Company is already OSS registered, skipping threshold update', [
-                'invoice_number' => $invoice->number,
+                'invoice_number' => $invoice->fiscal_number,
             ]);
 
             return;
         }
 
         // Add invoice amount to EU sales counter
-        $invoiceAmount = $invoice->subtotal; // Use subtotal (base amount without tax)
+        $invoiceAmount = $invoice->taxable_amount; // Use taxable amount (base amount without tax)
         $config->incrementEuSales((float) $invoiceAmount);
 
         Log::info('EU sales threshold updated', [
-            'invoice_number' => $invoice->number,
+            'invoice_number' => $invoice->fiscal_number,
             'amount'         => $invoiceAmount,
             'new_total'      => $config->fresh()->current_eu_sales_amount,
         ]);
@@ -86,10 +86,10 @@ class EuSalesThresholdService
             return;
         }
 
-        // Get company configuration
-        $companyId  = (string) ($invoice->company_id ?? config('larabill.company.id', '1'));
+        // Get user configuration
+        $userId  = (string) ($invoice->user_id ?? config('larabill.company.id', '1'));
         $fiscalYear = (int) ($invoice->fiscal_year ?? date('Y'));
-        $config     = FiscalSettings::getOrCreateForUser($companyId, $fiscalYear);
+        $config     = FiscalSettings::getOrCreateForUser($userId, $fiscalYear);
 
         // If company is already registered in OSS, no need to track threshold
         if ($config->is_oss) {
@@ -97,11 +97,11 @@ class EuSalesThresholdService
         }
 
         // Subtract invoice amount from EU sales counter (refund)
-        $invoiceAmount = $invoice->subtotal;
+        $invoiceAmount = $invoice->taxable_amount;
         $config->incrementEuSales((float) -$invoiceAmount);
 
         Log::info('EU sales threshold updated (refund)', [
-            'invoice_number' => $invoice->number,
+            'invoice_number' => $invoice->fiscal_number,
             'amount'         => -$invoiceAmount,
             'new_total'      => $config->fresh()->current_eu_sales_amount,
         ]);
@@ -247,7 +247,7 @@ class EuSalesThresholdService
                 // This would need to be implemented based on your user model structure
                 // to filter by EU countries
             })
-            ->sum('subtotal');
+            ->sum('taxable_amount');
 
         Log::info('EU sales recalculated from invoices', [
             'fiscal_year' => $fiscalYear,
