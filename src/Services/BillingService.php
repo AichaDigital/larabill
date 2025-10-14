@@ -85,7 +85,7 @@ class BillingService
             'fiscal_number'  => $this->generateInvoiceNumber($invoiceType, $options), // TODO: usar InvoiceNumberingService
             'prefix'         => $invoiceType === 'proforma' ? 'PRO' : 'FAC',
             'serie'          => $serie,
-            'series_number'  => 1, // TODO: usar InvoiceNumberingService para correlativo real
+            'series_number'  => $this->getTempSeriesNumber($serie, now()->year), // TODO: usar InvoiceNumberingService para correlativo real
             'fiscal_year'    => now()->year,
             'invoice_date'   => now()->toDateString(),
             'issued_at'      => now(),
@@ -299,5 +299,23 @@ class BillingService
             'cancelled' => InvoiceStatus::CANCELLED->value,
             default     => InvoiceStatus::DRAFT->value,
         };
+    }
+
+    /**
+     * Get temporary unique series number (until InvoiceNumberingService is integrated).
+     * TODO v0.3.3: Replace with InvoiceNumberingService::generateNumber()
+     *
+     * @param  int  $serie  Serie type
+     * @param  int  $fiscalYear  Fiscal year
+     * @return int Temporary series number
+     */
+    private function getTempSeriesNumber(int $serie, int $fiscalYear): int
+    {
+        // Get max series_number for this serie + fiscal_year combination
+        $maxNumber = Invoice::where('serie', $serie)
+            ->where('fiscal_year', $fiscalYear)
+            ->max('series_number');
+
+        return ($maxNumber ?? 0) + 1;
     }
 }
