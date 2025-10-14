@@ -27,9 +27,9 @@ enum InvoiceSerieType: int
     public function label(): string
     {
         return match ($this) {
-            self::PROFORMA => __('larabill::enums.serie.proforma'),
-            self::INVOICE => __('larabill::enums.serie.invoice'),
-            self::RECTIFICATIVE => __('larabill::enums.serie.rectificative'),
+            self::PROFORMA => 'proforma',
+            self::INVOICE => 'invoice',
+            self::RECTIFICATIVE => 'rectificative',
         };
     }
 

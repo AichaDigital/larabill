@@ -303,7 +303,7 @@ class Invoice extends Model
      */
     public function getInvoiceType(): string
     {
-        return $this->serie->name;
+        return $this->serie->label();
     }
 
     /**
