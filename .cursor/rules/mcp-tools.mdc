@@ -30,16 +30,9 @@ mcp_baytamin-files_search_files
 - ✅ Directory exploration
 - ✅ File searching
 
-### 2. **baytamin-git** - Git Operations ⚠️ **DISABLED**
-**⛔ DO NOT USE**: Git operations are handled EXCLUSIVELY by the user
-```
-❌ mcp_baytamin-git_* (ALL GIT MCPs DISABLED)
-```
+### 2. **baytamin-git** - Git Operations
 
-**When to use**:
-- ❌ NEVER - User manages all git operations
-- ❌ NO git status, diffs, commits, or staging
-- ❌ Git MCPs are disabled due to previous incidents
+Is autorized for full use Git
 
 ### 3. **context7-remote** - Updated Documentation
 **Use for**: Current, up-to-date library documentation
@@ -57,10 +50,9 @@ mcp_context7_get-library-docs
 
 ## 🎯 **Usage Priority**
 
-1. **FIRST**: Use appropriate MCP tool (EXCEPT Git - see below)
+1. **FIRST**: Use appropriate MCP tool
 2. **SECOND**: Use internal knowledge only if MCP doesn't cover it
 3. **NEVER**: Assume or invent when Context7 could have real docs
-4. **🚨 CRITICAL**: NEVER use Git MCPs - user handles all Git operations
 
 ## 📚 **Context7 Usage Examples**
 
@@ -78,13 +70,6 @@ mcp_context7_resolve-library-id: "Pest"
 mcp_context7_get-library-docs: "/pestphp/pest" topic: "testing"
 ```
 
-## 🚨 **Git Operations - USER ONLY**
-
-- **ALL git operations**: User handles exclusively
-- **NO git commands**: Never execute git add, commit, push, status, etc.
-- **NO git MCPs**: baytamin-git is permanently disabled
-- **Reason**: Previous incidents damaged Git internal files
-
 ## ⚠️ **Red Flags - When to Use Context7**
 
 - Answering "How to do X in Laravel?"
@@ -97,7 +82,7 @@ mcp_context7_get-library-docs: "/pestphp/pest" topic: "testing"
 
 At the start of coding sessions, remember:
 1. **Files**: Use `baytamin-files` for ALL file operations
-2. **Git**: ⛔ USER ONLY - Never touch Git operations
+2. **Git**: Use `baytamin-git` for ALL Git operations
 3. **Docs**: Use `context7` for ANY library/framework questions
 4. **Never guess** when you can get current documentation
 
