@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use AichaDigital\Larabill\Enums\{InvoiceSerieType, InvoiceStatus};
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Services\BillingService;
 
@@ -25,8 +26,8 @@ it('can create a basic invoice', function () {
     $invoice = $service->createInvoice($invoiceData);
 
     expect($invoice)->toBeInstanceOf(Invoice::class);
-    expect($invoice->number)->toStartWith('FAC-');
-    expect($invoice->total)->toBe(121.0); // 100 + 21% VAT
+    expect($invoice->fiscal_number)->toStartWith('FAC-');
+    expect($invoice->total_amount)->toBe(121.0); // 100 + 21% VAT
     expect($invoice->is_immutable)->toBeFalse();
 });
 
@@ -74,8 +75,8 @@ it('can create a proforma invoice', function () {
     $proforma = $service->createProforma($invoiceData);
 
     expect($proforma)->toBeInstanceOf(Invoice::class);
-    expect($proforma->type)->toBe('proforma');
-    expect($proforma->status)->toBe('draft');
+    expect($proforma->serie)->toBe(InvoiceSerieType::PROFORMA);
+    expect($proforma->status)->toBe(InvoiceStatus::DRAFT);
     expect($proforma->is_immutable)->toBeFalse();
 });
 
@@ -100,23 +101,21 @@ it('can convert proforma to invoice', function () {
     $invoice  = $service->convertToInvoice($proforma, ['make_immutable' => true]);
 
     expect($invoice)->toBeInstanceOf(Invoice::class);
-    expect($invoice->type)->toBe('invoice');
+    expect($invoice->serie)->toBe(InvoiceSerieType::INVOICE);
     expect($invoice->user_id)->toBe($proforma->user_id);
     expect($invoice->is_immutable)->toBeTrue();
-    expect($invoice->number)->not->toBe($proforma->number);
+    expect($invoice->fiscal_number)->not->toBe($proforma->fiscal_number);
 });
 
 it('throws exception when trying to convert non-proforma invoice', function () {
     $service = new BillingService;
 
-    $regularInvoice = Invoice::create([
-        'number'     => 'FAC-001',
-        'type'       => 'invoice', // Not proforma
-        'status'     => 'draft',
-        'user_id'    => 1,
-        'subtotal'   => 100.0,
-        'tax_amount' => 21.0,
-        'total'      => 121.0,
+    // Use factory to create with correct schema
+    $regularInvoice = Invoice::factory()->create([
+        'fiscal_number' => 'FAC-2025-001',
+        'serie'         => InvoiceSerieType::INVOICE->value, // Not proforma
+        'status'        => InvoiceStatus::DRAFT->value,
+        'user_id'       => 1,
     ]);
 
     expect(fn () => $service->convertToInvoice($regularInvoice))
@@ -143,7 +142,7 @@ it('can generate sequential invoice numbers', function () {
     $invoice1 = $service->createInvoice($invoiceData);
     $invoice2 = $service->createInvoice($invoiceData);
 
-    expect($invoice1->number)->not->toBe($invoice2->number);
+    expect($invoice1->fiscal_number)->not->toBe($invoice2->fiscal_number);
 });
 
 it('can generate invoice numbers with annual reset', function () {
@@ -168,9 +167,9 @@ it('can generate invoice numbers with annual reset', function () {
     $invoice1 = $service->createInvoice($invoiceData, $options);
     $invoice2 = $service->createInvoice($invoiceData, $options);
 
-    expect($invoice1->number)->toStartWith('FAC-');
-    expect($invoice2->number)->toStartWith('FAC-');
-    expect($invoice1->number)->not->toBe($invoice2->number);
+    expect($invoice1->fiscal_number)->toStartWith('FAC-');
+    expect($invoice2->fiscal_number)->toStartWith('FAC-');
+    expect($invoice1->fiscal_number)->not->toBe($invoice2->fiscal_number);
 });
 
 it('can generate invoice numbers with detailed format', function () {
@@ -195,7 +194,7 @@ it('can generate invoice numbers with detailed format', function () {
     $invoice = $service->createInvoice($invoiceData, $options);
 
     // Should match pattern: FAC-YYYYMMDDHHMMNN
-    expect($invoice->number)->toMatch('/^FAC-\d{12}\d{2}$/');
+    expect($invoice->fiscal_number)->toMatch('/^FAC-\d{12}\d{2}$/');
 });
 
 it('can generate proforma numbers with different prefix', function () {
@@ -217,7 +216,7 @@ it('can generate proforma numbers with different prefix', function () {
 
     $proforma = $service->createProforma($invoiceData);
 
-    expect($proforma->number)->toStartWith('PRO-');
+    expect($proforma->fiscal_number)->toStartWith('PRO-');
 });
 
 it('can create invoice with encrypted customer data when immutable', function () {
@@ -228,10 +227,10 @@ it('can create invoice with encrypted customer data when immutable', function ()
         'customer_country' => 'ES',
         'customer_type'    => 'individual',
         'customer_data'    => [
-            'name'       => 'John Doe',
-            'email'      => 'john@example.com',
-            'address'    => '123 Main St, Madrid',
-            'vat_code'   => 'ESB12345678',
+            'name'     => 'John Doe',
+            'email'    => 'john@example.com',
+            'address'  => '123 Main St, Madrid',
+            'vat_code' => 'ESB12345678',
         ],
         'items' => [
             [

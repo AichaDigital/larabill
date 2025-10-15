@@ -1,7 +1,7 @@
 <?php
 
 declare(strict_types=1);
-
+use AichaDigital\Larabill\Enums\{InvoiceSerieType, InvoiceStatus};
 use AichaDigital\Larabill\Models\{Invoice, UserTaxProfile};
 use AichaDigital\Larabill\Tests\Models\CustomUser;
 
@@ -13,15 +13,17 @@ it('can configure custom user model mapping', function () {
     $userModel = \AichaDigital\Larabill\Services\ModelMappingService::getModelClass('user');
     expect($userModel)->toBe(CustomUser::class);
 
-    // Create an invoice
-    $invoice = Invoice::create([
-        'number'     => 'FAC-0001',
-        'type'       => 'invoice',
-        'status'     => 'draft',
-        'user_id'    => 1,
-        'subtotal'   => 100.0,
-        'tax_amount' => 21.0,
-        'total'      => 121.0,
+    // Create an invoice using factory
+    $invoice = Invoice::factory()->create([
+        'fiscal_number'  => 'FAC-0001',
+        'serie'          => InvoiceSerieType::INVOICE->value,
+        'status'         => InvoiceStatus::DRAFT->value,
+        'user_id'        => 1,
+        'series_number'  => 1,
+        'fiscal_year'    => now()->year,
+        'taxable_amount' => 10000,
+        'tax_amount'     => 2100,
+        'total_amount'   => 12100,
     ]);
 
     // The relationship should use the configured model

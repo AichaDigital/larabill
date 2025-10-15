@@ -1,7 +1,7 @@
 <?php
 
 declare(strict_types=1);
-
+use AichaDigital\Larabill\Enums\{InvoiceSerieType, InvoiceStatus};
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Services\PDF\DefaultPDFConnector;
 
@@ -35,8 +35,8 @@ it('returns required fields', function () {
 
     expect($fields)->toBeArray();
     expect($fields)->toContain('id');
-    expect($fields)->toContain('number');
-    expect($fields)->toContain('total');
+    expect($fields)->toContain('fiscal_number');
+    expect($fields)->toContain('total_amount');
     expect($fields)->toContain('status');
 });
 
@@ -60,13 +60,13 @@ it('returns metadata', function () {
 
 it('can validate valid invoice', function () {
     $invoice = Invoice::factory()->make([
-        'number'     => 'TEST-001',
-        'type'       => 'invoice',
-        'status'     => 'draft',
-        'user_id'    => 1,
-        'subtotal'   => 100.0,
-        'tax_amount' => 21.0,
-        'total'      => 121.0,
+        'fiscal_number'    => 'TEST-001',
+        'serie'            => InvoiceSerieType::INVOICE->value,
+        'status'           => InvoiceStatus::DRAFT->value,
+        'user_id'          => 1,
+        'taxable_amount'   => 100.0,
+        'tax_amount'       => 21.0,
+        'total_amount'     => 121.0,
     ]);
     // Save to generate UUID
     $invoice->save();
@@ -83,13 +83,13 @@ it('rejects invalid invoice', function () {
 
 it('can generate QR for valid invoice', function () {
     $invoice = Invoice::factory()->create([
-        'number'     => 'TEST-001',
-        'type'       => 'invoice',
-        'status'     => 'draft',
-        'user_id'    => 1,
-        'subtotal'   => 100.0,
-        'tax_amount' => 21.0,
-        'total'      => 121.0,
+        'fiscal_number'    => 'TEST-001',
+        'serie'            => InvoiceSerieType::INVOICE->value,
+        'status'           => InvoiceStatus::DRAFT->value,
+        'user_id'          => 1,
+        'taxable_amount'   => 100.0,
+        'tax_amount'       => 21.0,
+        'total_amount'     => 121.0,
     ]);
 
     $result = $this->connector->generateQR($invoice);
@@ -116,13 +116,13 @@ it('handles QR generation errors gracefully', function () {
 
 it('includes invoice data in QR', function () {
     $invoice = Invoice::factory()->create([
-        'number'     => 'TEST-001',
-        'type'       => 'invoice',
-        'status'     => 'draft',
-        'user_id'    => 1,
-        'subtotal'   => 100.0,
-        'tax_amount' => 21.0,
-        'total'      => 121.0,
+        'fiscal_number'    => 'TEST-001',
+        'serie'            => InvoiceSerieType::INVOICE->value,
+        'status'           => InvoiceStatus::DRAFT->value,
+        'user_id'          => 1,
+        'taxable_amount'   => 100.0,
+        'tax_amount'       => 21.0,
+        'total_amount'     => 121.0,
     ]);
 
     $result = $this->connector->generateQR($invoice);
@@ -132,7 +132,7 @@ it('includes invoice data in QR', function () {
     expect($result['qr_data'])->toHaveKey('invoice_number');
     expect($result['qr_data'])->toHaveKey('total_amount');
     expect($result['qr_data']['invoice_id'])->toBe($invoice->id);
-    expect($result['qr_data']['invoice_number'])->toBe($invoice->number);
+    expect($result['qr_data']['invoice_number'])->toBe($invoice->fiscal_number);
 });
 
 it('can be configured with custom settings', function () {
@@ -153,13 +153,13 @@ it('generates QR URL with custom base URL', function () {
     $connector = new DefaultPDFConnector($config);
 
     $invoice = Invoice::factory()->create([
-        'number'     => 'TEST-001',
-        'type'       => 'invoice',
-        'status'     => 'draft',
-        'user_id'    => 1,
-        'subtotal'   => 100.0,
-        'tax_amount' => 21.0,
-        'total'      => 121.0,
+        'fiscal_number'    => 'TEST-001',
+        'serie'            => InvoiceSerieType::INVOICE->value,
+        'status'           => InvoiceStatus::DRAFT->value,
+        'user_id'          => 1,
+        'taxable_amount'   => 100.0,
+        'tax_amount'       => 21.0,
+        'total_amount'     => 121.0,
     ]);
 
     $result = $connector->generateQR($invoice);
@@ -177,15 +177,15 @@ it('returns false when validating invoice if connector is not available', functi
         }
     };
 
-    $invoice             = new Invoice;
-    // ID auto-generated as UUID
-    $invoice->number     = 'TEST-001';
-    $invoice->type       = 'invoice';
-    $invoice->status     = 'draft';
-    $invoice->user_id    = 'test-user';
-    $invoice->subtotal   = 10000;
-    $invoice->tax_amount = 2100;
-    $invoice->total      = 12100;
+    $invoice = Invoice::factory()->make([
+        'fiscal_number'  => 'TEST-001',
+        'serie'          => InvoiceSerieType::INVOICE->value,
+        'status'         => InvoiceStatus::DRAFT->value,
+        'user_id'        => 1,
+        'taxable_amount' => 10000,
+        'tax_amount'     => 2100,
+        'total_amount'   => 12100,
+    ]);
 
     expect($connector->validateInvoice($invoice))->toBeFalse();
 });

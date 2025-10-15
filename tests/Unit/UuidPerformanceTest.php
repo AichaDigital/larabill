@@ -57,8 +57,8 @@ test('binary uuid is more efficient than string uuid', function () {
 
 test('invoice uses uuid with ordered generation', function () {
     $invoice = Invoice::factory()->create([
-        'number'  => 'TEST-001',
-        'user_id' => 1,
+        'fiscal_number' => 'TEST-001',
+        'user_id'       => 1,
     ]);
 
     // Verify UUID format
@@ -76,8 +76,8 @@ test('invoice uses uuid with ordered generation', function () {
 
 test('invoice uuid is stored as binary in database', function () {
     $invoice = Invoice::factory()->create([
-        'number'  => 'TEST-002',
-        'user_id' => 1,
+        'fiscal_number' => 'TEST-002',
+        'user_id'       => 1,
     ]);
 
     // Get raw database value (would be binary)
@@ -94,9 +94,9 @@ test('invoice uuid is stored as binary in database', function () {
 });
 
 test('multiple invoices have unique ordered uuids', function () {
-    $invoice1 = Invoice::factory()->create(['number' => 'TEST-003', 'user_id' => 1]);
-    $invoice2 = Invoice::factory()->create(['number' => 'TEST-004', 'user_id' => 1]);
-    $invoice3 = Invoice::factory()->create(['number' => 'TEST-005', 'user_id' => 1]);
+    $invoice1 = Invoice::factory()->create(['fiscal_number' => 'TEST-003', 'user_id' => 1]);
+    $invoice2 = Invoice::factory()->create(['fiscal_number' => 'TEST-004', 'user_id' => 1]);
+    $invoice3 = Invoice::factory()->create(['fiscal_number' => 'TEST-005', 'user_id' => 1]);
 
     // All UUIDs are unique
     $uuids = [$invoice1->id, $invoice2->id, $invoice3->id];
@@ -111,8 +111,8 @@ test('multiple invoices have unique ordered uuids', function () {
 
 test('invoice can be found by uuid', function () {
     $invoice = Invoice::factory()->create([
-        'number'  => 'TEST-006',
-        'user_id' => 1,
+        'fiscal_number' => 'TEST-006',
+        'user_id'       => 1,
     ]);
 
     // Find by UUID using whereUuid scope (from GeneratesUuid trait)
@@ -120,7 +120,7 @@ test('invoice can be found by uuid', function () {
 
     expect($found)->not->toBeNull()
         ->and($found->id)->toBe($invoice->id)
-        ->and($found->number)->toBe('TEST-006');
+        ->and($found->fiscal_number)->toBe('TEST-006');
 
     // Also works with whereUuid (recommended for UUID keys)
     $foundById = Invoice::whereUuid($invoice->id)->first();

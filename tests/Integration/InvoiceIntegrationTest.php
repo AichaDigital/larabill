@@ -2,20 +2,17 @@
 
 declare(strict_types=1);
 
+use AichaDigital\Larabill\Enums\{InvoiceSerieType, InvoiceStatus};
 use AichaDigital\Larabill\Models\{Invoice, InvoiceItem};
 use AichaDigital\Larabill\Services\BillingService;
 
 it('can perform complete CRUD operations on invoices', function () {
-    // Create
-    $invoice = Invoice::create([
-        'number'       => 'FAC-0001',
-        'type'         => 'invoice',
-        'status'       => 'draft',
-        'user_id'      => 1,
-        'subtotal'     => 100.0,
-        'tax_amount'   => 21.0,
-        'total'        => 121.0,
-        'is_immutable' => false,
+    // Create using factory
+    $invoice = Invoice::factory()->create([
+        'fiscal_number' => 'FAC-2025-0001',
+        'user_id'       => 1,
+        'is_immutable'  => false,
+        'immutable_at'  => null,
     ]);
 
     expect($invoice->exists)->toBeTrue();
@@ -23,17 +20,17 @@ it('can perform complete CRUD operations on invoices', function () {
 
     // Read
     $foundInvoice = Invoice::whereUuid($invoice->id)->first();
-    expect($foundInvoice->number)->toBe('FAC-0001');
-    expect($foundInvoice->total)->toBe(121.0);
+    expect($foundInvoice->fiscal_number)->toBe('FAC-2025-0001');
+    expect($foundInvoice->total_amount)->toBeFloat();
 
     // Update
     $foundInvoice->update([
-        'status' => 'sent',
+        'status' => InvoiceStatus::SENT->value,
         'notes'  => 'Invoice sent to customer',
     ]);
 
     $updatedInvoice = Invoice::whereUuid($invoice->id)->first();
-    expect($updatedInvoice->status)->toBe('sent');
+    expect($updatedInvoice->status)->toBe(InvoiceStatus::SENT);
     expect($updatedInvoice->notes)->toBe('Invoice sent to customer');
 
     // Delete
@@ -42,38 +39,32 @@ it('can perform complete CRUD operations on invoices', function () {
 });
 
 it('can handle invoice with items relationship using binary UUID', function () {
-    $invoice = Invoice::create([
-        'number'       => 'FAC-0002',
-        'type'         => 'invoice',
-        'status'       => 'draft',
-        'user_id'      => 1,
-        'subtotal'     => 200.0,
-        'tax_amount'   => 42.0,
-        'total'        => 242.0,
-        'is_immutable' => false,
+    $invoice = Invoice::factory()->create([
+        'fiscal_number' => 'FAC-2025-0002',
+        'user_id'       => 1,
     ]);
 
-    // Create invoice items
+    // Create invoice items directly
     InvoiceItem::create([
-        'invoice_id'  => $invoice->id,
-        'description' => 'Item 1',
-        'quantity'    => 2,
-        'unit_price'  => 50.0,
-        'subtotal'    => 100.0,
-        'tax_rate'    => 21.0,
-        'tax_amount'  => 21.0,
-        'total'       => 121.0,
+        'invoice_id'     => $invoice->id,
+        'description'    => 'Item 1',
+        'quantity'       => 200, // Base-100: 2.00
+        'unit_price'     => 5000, // Base-100: €50.00
+        'taxable_amount' => 10000, // 2.00 * 50.00 = €100.00
+        'tax_rate'       => 2100, // 21%
+        'tax_amount'     => 2100, // 21% of 100 = €21.00
+        'total_amount'   => 12100, // €121.00
     ]);
 
     InvoiceItem::create([
-        'invoice_id'  => $invoice->id,
-        'description' => 'Item 2',
-        'quantity'    => 1,
-        'unit_price'  => 100.0,
-        'subtotal'    => 100.0,
-        'tax_rate'    => 21.0,
-        'tax_amount'  => 21.0,
-        'total'       => 121.0,
+        'invoice_id'     => $invoice->id,
+        'description'    => 'Item 2',
+        'quantity'       => 100, // Base-100: 1.00
+        'unit_price'     => 10000, // Base-100: €100.00
+        'taxable_amount' => 10000, // 1.00 * 100.00 = €100.00
+        'tax_rate'       => 2100, // 21%
+        'tax_amount'     => 2100, // 21% of 100 = €21.00
+        'total_amount'   => 12100, // €121.00
     ]);
 
     // Refresh invoice to load items
@@ -90,20 +81,16 @@ it('can handle invoice with items relationship using binary UUID', function () {
 
     $items->each(function ($item) use ($invoice) {
         expect($item->invoice->id)->toBe($invoice->id);
-        expect($item->invoice->number)->toBe('FAC-0002');
+        expect($item->invoice->fiscal_number)->toBe('FAC-2025-0002');
     });
 });
 
 it('can handle invoice immutability correctly', function () {
-    $invoice = Invoice::create([
-        'number'       => 'FAC-0003',
-        'type'         => 'invoice',
-        'status'       => 'draft',
-        'user_id'      => 1,
-        'subtotal'     => 100.0,
-        'tax_amount'   => 21.0,
-        'total'        => 121.0,
-        'is_immutable' => false,
+    $invoice = Invoice::factory()->create([
+        'fiscal_number' => 'FAC-2025-0003',
+        'user_id'       => 1,
+        'is_immutable'  => false,
+        'immutable_at'  => null,
     ]);
 
     // Initially mutable
@@ -116,7 +103,7 @@ it('can handle invoice immutability correctly', function () {
     expect($invoice->immutable_at)->not->toBeNull();
 
     // Cannot update immutable invoice
-    expect(fn () => $invoice->update(['status' => 'paid']))
+    expect(fn () => $invoice->update(['status' => InvoiceStatus::PAID->value]))
         ->toThrow(Exception::class);
 
     // Cannot make immutable again (should not throw, just return early)
@@ -125,14 +112,9 @@ it('can handle invoice immutability correctly', function () {
 });
 
 it('can handle invoice data encryption when immutable', function () {
-    $invoice = Invoice::create([
-        'number'        => 'FAC-0004',
-        'type'          => 'invoice',
-        'status'        => 'draft',
+    $invoice = Invoice::factory()->create([
+        'fiscal_number' => 'FAC-2025-0004',
         'user_id'       => 1,
-        'subtotal'      => 100.0,
-        'tax_amount'    => 21.0,
-        'total'         => 121.0,
         'is_immutable'  => false,
         'customer_data' => [
             'name'    => 'John Doe',
@@ -159,44 +141,28 @@ it('can handle invoice data encryption when immutable', function () {
 
 it('can determine if QR code should be included', function () {
     // Regular invoice should include QR
-    $invoice = Invoice::create([
-        'number'       => 'FAC-0006',
-        'type'         => 'invoice',
-        'status'       => 'draft',
-        'user_id'      => 1,
-        'subtotal'     => 100.0,
-        'tax_amount'   => 21.0,
-        'total'        => 121.0,
-        'is_immutable' => false,
+    $invoice = Invoice::factory()->create([
+        'fiscal_number' => 'FAC-2025-0006',
+        'serie'         => InvoiceSerieType::INVOICE->value,
+        'user_id'       => 1,
     ]);
 
     expect($invoice->shouldIncludeQR())->toBeTrue();
 
     // Proforma should not include QR
-    $proforma = Invoice::create([
-        'number'       => 'PRO-0001',
-        'type'         => 'proforma',
-        'status'       => 'draft',
-        'user_id'      => 1,
-        'subtotal'     => 100.0,
-        'tax_amount'   => 21.0,
-        'total'        => 121.0,
-        'is_immutable' => false,
+    $proforma = Invoice::factory()->proforma()->create([
+        'fiscal_number' => 'PRO-2025-0001',
+        'user_id'       => 1,
     ]);
 
     expect($proforma->shouldIncludeQR())->toBeFalse();
 });
 
 it('can get invoice type correctly', function () {
-    $invoice = Invoice::create([
-        'number'       => 'FAC-0007',
-        'type'         => 'invoice',
-        'status'       => 'draft',
-        'user_id'      => 1,
-        'subtotal'     => 100.0,
-        'tax_amount'   => 21.0,
-        'total'        => 121.0,
-        'is_immutable' => false,
+    $invoice = Invoice::factory()->create([
+        'fiscal_number' => 'FAC-2025-0007',
+        'serie'         => InvoiceSerieType::INVOICE->value,
+        'user_id'       => 1,
     ]);
 
     expect($invoice->getInvoiceType())->toBe('invoice');
@@ -223,7 +189,7 @@ it('can handle invoice with BillingService integration', function () {
 
     // Verify invoice was created correctly
     expect($invoice)->toBeInstanceOf(Invoice::class);
-    expect($invoice->number)->toStartWith('FAC-');
+    expect($invoice->fiscal_number)->toStartWith('FAC-');
     expect($invoice->items)->toHaveCount(1);
     expect($invoice->items->first()->description)->toBe('Integration Test Item');
 
@@ -279,13 +245,13 @@ it('can handle proforma to invoice conversion', function () {
 
     // Create proforma
     $proforma = $service->createProforma($invoiceData);
-    expect($proforma->type)->toBe('proforma');
-    expect($proforma->number)->toStartWith('PRO-');
+    expect($proforma->serie)->toBe(InvoiceSerieType::PROFORMA);
+    expect($proforma->fiscal_number)->toStartWith('PRO-');
 
     // Convert to invoice
     $invoice = $service->convertToInvoice($proforma, ['make_immutable' => true]);
-    expect($invoice->type)->toBe('invoice');
-    expect($invoice->number)->toStartWith('FAC-');
+    expect($invoice->serie)->toBe(InvoiceSerieType::INVOICE);
+    expect($invoice->fiscal_number)->toStartWith('FAC-');
     expect($invoice->is_immutable)->toBeTrue();
     expect($invoice->user_id)->toBe($proforma->user_id);
 });

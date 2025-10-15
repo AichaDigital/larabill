@@ -5,46 +5,57 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Models;
 
 use AichaDigital\Lara100\Casts\Base100;
+use AichaDigital\Larabill\Enums\{InvoiceSerieType, InvoiceStatus};
 use Dyrynda\Database\Support\{BindsOnUuid, GeneratesUuid};
 use Dyrynda\Database\Support\Casts\EfficientUuid;
+use Illuminate\Database\Eloquent\{Builder, Model};
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
 use Illuminate\Support\Carbon;
 
 /**
  * Invoice Model
  *
- * Represents an invoice with immutability and encryption features.
+ * Represents an invoice with fiscal compliance, immutability and encryption features.
  * Uses ordered UUID v4 for efficient binary storage and indexing.
  * All monetary amounts are stored as base-100 integers (e.g., €12.34 => 1234).
  *
+ * v0.3.3: Enhanced for fiscal compliance (CEE/EU):
+ * - Correlative numbering with serie separation
+ * - Chronological validation with issued_at
+ * - Support for proforma→invoice and rectificative invoices
+ *
  * @property string $id UUID stored as binary(16)
- * @property string $number
- * @property string $type
- * @property string $status
+ * @property string $fiscal_number Complete display number (FAC-2025-000047)
+ * @property string $prefix User customizable prefix
+ * @property InvoiceSerieType $serie Invoice series type enum
+ * @property int $series_number Pure correlative number
+ * @property int $fiscal_year Calculated fiscal year
+ * @property Carbon $invoice_date Legal date on PDF
+ * @property Carbon $issued_at Technical chronological timestamp
+ * @property Carbon|null $service_date Service/delivery date
+ * @property Carbon|null $due_date Payment due date
+ * @property Carbon|null $paid_at Actual payment timestamp
+ * @property InvoiceStatus $status Invoice status enum
  * @property int|string $user_id
  * @property int|null $tax_profile_id
+ * @property string|null $proforma_id UUID if converted from proforma
+ * @property string|null $rectifies_invoice_id UUID if rectificative
  * @property string|null $user_tax_info_encrypted
  * @property array<string, mixed>|null $customer_data
- * @property bool $is_immutable
- * @property Carbon|null $immutable_at
- * @property int $subtotal Base-100 integer (e.g., 1234 => €12.34)
- * @property int $tax_amount Base-100 integer (e.g., 1234 => €12.34)
- * @property int $total Base-100 integer (e.g., 1234 => €12.34)
  * @property array<string, mixed>|null $fiscal_data
  * @property array<string, mixed>|null $vat_verification
- * @property bool $is_roi_taxed
- * @property Carbon|null $due_date
- * @property Carbon|null $paid_at
+ * @property bool $is_roi_taxed ROI reverse charge
+ * @property float $taxable_amount Base amount before tax
+ * @property float $tax_amount Calculated tax
+ * @property float $total_amount Total with tax
+ * @property bool $is_immutable
+ * @property Carbon|null $immutable_at
  * @property string|null $notes
  * @property string|null $payment_terms
  * @property string|null $template_name
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
- */
-/**
- * @phpstan-use HasFactory<\Database\Factories\InvoiceFactory>
  */
 class Invoice extends Model
 {
@@ -64,23 +75,31 @@ class Invoice extends Model
      * The attributes that are mass assignable.
      */
     protected $fillable = [
-        'number',
-        'type',
+        'fiscal_number',
+        'prefix',
+        'serie',
+        'series_number',
+        'fiscal_year',
+        'invoice_date',
+        'issued_at',
+        'service_date',
+        'due_date',
+        'paid_at',
         'status',
         'user_id',
         'tax_profile_id',
+        'proforma_id',
+        'rectifies_invoice_id',
         'user_tax_info_encrypted',
         'customer_data',
-        'is_immutable',
-        'immutable_at',
-        'subtotal',
-        'tax_amount',
-        'total',
         'fiscal_data',
         'vat_verification',
         'is_roi_taxed',
-        'due_date',
-        'paid_at',
+        'taxable_amount',
+        'tax_amount',
+        'total_amount',
+        'is_immutable',
+        'immutable_at',
         'notes',
         'payment_terms',
         'template_name',
@@ -115,18 +134,26 @@ class Invoice extends Model
     public function casts(): array
     {
         return [
-            'id'               => EfficientUuid::class, // Binary UUID storage (16 bytes)
-            'is_immutable'     => 'boolean',
-            'immutable_at'     => 'datetime',
-            'paid_at'          => 'datetime',
-            'due_date'         => 'date',
-            'subtotal'         => Base100::class, // €12.34 ↔ 1234
-            'tax_amount'       => Base100::class, // €12.34 ↔ 1234
-            'total'            => Base100::class, // €12.34 ↔ 1234
-            'fiscal_data'      => 'array',
-            'vat_verification' => 'array',
-            'customer_data'    => 'array',
-            'is_roi_taxed'     => 'boolean',
+            'id'                   => EfficientUuid::class, // Binary UUID storage (16 bytes)
+            'serie'                => InvoiceSerieType::class, // PHP Enum
+            'status'               => InvoiceStatus::class,    // PHP Enum
+            'fiscal_year'          => 'integer',
+            'invoice_date'         => 'date',
+            'issued_at'            => 'datetime',
+            'service_date'         => 'date',
+            'due_date'             => 'date',
+            'paid_at'              => 'datetime',
+            'is_immutable'         => 'boolean',
+            'immutable_at'         => 'datetime',
+            'taxable_amount'       => Base100::class, // €12.34 ↔ 1234
+            'tax_amount'           => Base100::class, // €12.34 ↔ 1234
+            'total_amount'         => Base100::class, // €12.34 ↔ 1234
+            'fiscal_data'          => 'array',
+            'vat_verification'     => 'array',
+            'customer_data'        => 'array',
+            'is_roi_taxed'         => 'boolean',
+            'proforma_id'          => EfficientUuid::class, // Binary UUID
+            'rectifies_invoice_id' => EfficientUuid::class, // Binary UUID
         ];
     }
 
@@ -168,6 +195,10 @@ class Invoice extends Model
         return new \AichaDigital\Larabill\Database\Query\BinaryUuidBuilder($query);
     }
 
+    // ========================================
+    // RELATIONSHIPS
+    // ========================================
+
     /**
      * Get the invoice items.
      *
@@ -206,16 +237,48 @@ class Invoice extends Model
     }
 
     /**
-     * Generate PDF for this invoice
+     * Get the proforma invoice (if this was converted from proforma)
      *
-     * @return array<string, mixed> PDF generation result
+     * @return BelongsTo<Invoice, $this>
      */
-    public function generatePDF(): array
+    public function proforma(): BelongsTo
     {
-        $pdfService = app(\AichaDigital\Larabill\Services\PDF\PDFService::class);
-
-        return $pdfService->generatePDF($this);
+        return $this->belongsTo(self::class, 'proforma_id');
     }
+
+    /**
+     * Get the original invoice (if this is a rectificative)
+     *
+     * @return BelongsTo<Invoice, $this>
+     */
+    public function rectifiesInvoice(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'rectifies_invoice_id');
+    }
+
+    /**
+     * Get rectificative invoices for this invoice
+     *
+     * @return HasMany<Invoice, $this>
+     */
+    public function rectificatives(): HasMany
+    {
+        return $this->hasMany(self::class, 'rectifies_invoice_id');
+    }
+
+    /**
+     * Get invoices converted from this proforma
+     *
+     * @return HasMany<Invoice, $this>
+     */
+    public function convertedInvoices(): HasMany
+    {
+        return $this->hasMany(self::class, 'proforma_id');
+    }
+
+    // ========================================
+    // HELPER METHODS
+    // ========================================
 
     /**
      * Check if this invoice should include QR code
@@ -225,12 +288,12 @@ class Invoice extends Model
     public function shouldIncludeQR(): bool
     {
         // Proforma invoices never include QR
-        if ($this->type === 'proforma') {
+        if ($this->serie === InvoiceSerieType::PROFORMA) {
             return false;
         }
 
         // Only fiscal invoices include QR
-        return $this->type === 'invoice' || $this->type === 'fiscal';
+        return $this->serie === InvoiceSerieType::INVOICE || $this->serie === InvoiceSerieType::RECTIFICATIVE;
     }
 
     /**
@@ -240,7 +303,19 @@ class Invoice extends Model
      */
     public function getInvoiceType(): string
     {
-        return $this->type ?? 'invoice';
+        return $this->serie->label();
+    }
+
+    /**
+     * Generate PDF for this invoice
+     *
+     * @return array<string, mixed> PDF generation result
+     */
+    public function generatePDF(): array
+    {
+        $pdfService = app(\AichaDigital\Larabill\Services\PDF\PDFService::class);
+
+        return $pdfService->generatePDF($this);
     }
 
     /**
@@ -271,5 +346,75 @@ class Invoice extends Model
         $filename = 'invoice_'.$this->id.'_'.$this->getInvoiceType().'.pdf';
 
         return url('storage/invoices/'.$filename);
+    }
+
+    // ========================================
+    // SCOPES
+    // ========================================
+
+    /**
+     * Scope for specific serie
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeSerie(Builder $query, InvoiceSerieType $serie): Builder
+    {
+        return $query->where('serie', $serie->value);
+    }
+
+    /**
+     * Scope for specific fiscal year
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeFiscalYear(Builder $query, int $year): Builder
+    {
+        return $query->where('fiscal_year', $year);
+    }
+
+    /**
+     * Scope for specific status
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeStatus(Builder $query, InvoiceStatus $status): Builder
+    {
+        return $query->where('status', $status->value);
+    }
+
+    /**
+     * Scope for proforma invoices
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeProformas(Builder $query): Builder
+    {
+        return $query->where('serie', InvoiceSerieType::PROFORMA->value);
+    }
+
+    /**
+     * Scope for final invoices (not proformas or rectificatives)
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeFinal(Builder $query): Builder
+    {
+        return $query->where('serie', InvoiceSerieType::INVOICE->value);
+    }
+
+    /**
+     * Scope for rectificative invoices
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeRectificatives(Builder $query): Builder
+    {
+        return $query->where('serie', InvoiceSerieType::RECTIFICATIVE->value);
     }
 }

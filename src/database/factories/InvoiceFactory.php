@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Database\Factories;
 
+use AichaDigital\Larabill\Enums\{InvoiceSerieType, InvoiceStatus};
 use AichaDigital\Larabill\Models\Invoice;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
  * Invoice Factory
  *
+ * v0.3.3: Updated for fiscal compliance
  * Uses integer base 100 for monetary values (amounts, prices)
  * Example: €12.34 is stored as 1234, €1.00 as 100
  *
@@ -21,33 +23,74 @@ class InvoiceFactory extends Factory
 
     public function definition(): array
     {
-        $subtotal  = $this->faker->numberBetween(1000, 100000); // €10.00 to €1000.00 in base 100
-        $taxAmount = (int) ($subtotal * 0.21); // 21% tax in base 100
-        $total     = $subtotal + $taxAmount;
+        $taxableAmount = $this->faker->numberBetween(1000, 100000); // €10.00 to €1000.00 in base 100
+        $taxAmount     = (int) ($taxableAmount * 0.21); // 21% tax in base 100
+        $totalAmount   = $taxableAmount + $taxAmount;
+        $currentYear   = now()->year;
 
         return [
-            'number'                  => 'INV-'.$this->faker->unique()->numerify('######'),
-            'type'                    => $this->faker->randomElement(['standard', 'credit', 'debit']),
-            'status'                  => $this->faker->randomElement(['draft', 'sent', 'paid', 'overdue']),
-            'user_id'                 => $this->faker->numberBetween(1, 100),
+            // v0.3.3: New fiscal numbering fields
+            'fiscal_number' => 'FAC-'.$currentYear.'-'.$this->faker->unique()->numerify('######'),
+            'prefix'        => 'FAC',
+            'serie'         => InvoiceSerieType::INVOICE->value,
+            'series_number' => $this->faker->unique()->numberBetween(1, 999999),
+            'fiscal_year'   => $currentYear,
+
+            // v0.3.3: Date fields
+            'invoice_date' => $this->faker->dateTimeBetween('-30 days', 'now'),
+            'issued_at'    => $this->faker->dateTimeBetween('-30 days', 'now'),
+            'service_date' => $this->faker->optional(0.3)->dateTimeBetween('-60 days', 'now'),
+            'due_date'     => $this->faker->optional(0.8)->dateTimeBetween('now', '+30 days'),
+            'paid_at'      => $this->faker->optional(0.3)->dateTimeBetween('-30 days', 'now'),
+
+            // v0.3.3: Status using enum
+            'status'  => $this->faker->randomElement([
+                InvoiceStatus::DRAFT->value,
+                InvoiceStatus::SENT->value,
+                InvoiceStatus::PAID->value,
+                InvoiceStatus::OVERDUE->value,
+            ]),
+
+            // Relations
+            'user_id'              => $this->faker->numberBetween(1, 100),
+            'tax_profile_id'       => null,
+            'proforma_id'          => null,
+            'rectifies_invoice_id' => null,
+
+            // Tax & Customer data
             'user_tax_info_encrypted' => $this->faker->optional()->sentence(),
-            'is_immutable'            => $this->faker->boolean(20), // 20% chance
-            'immutable_at'            => $this->faker->optional(0.2)->dateTime(),
-            'subtotal'                => $subtotal,
-            'tax_amount'              => $taxAmount,
-            'total'                   => $total,
-            'fiscal_data'             => [
+            'customer_data'           => [
+                'name'    => $this->faker->company(),
+                'email'   => $this->faker->companyEmail(),
+                'address' => $this->faker->address(),
+            ],
+            'fiscal_data' => [
                 'company_name' => $this->faker->company(),
                 'vat_code'     => $this->faker->optional()->numerify('ES##########'),
                 'address'      => $this->faker->address(),
+                'tax_rate'     => 21.00,
+                'tax_type'     => 'vat',
             ],
             'vat_verification' => [
                 'verified'   => $this->faker->boolean(80),
                 'api_source' => $this->faker->randomElement(['abstractapi', 'apilayer']),
                 'last_check' => $this->faker->dateTime(),
             ],
-            'due_date' => $this->faker->optional(0.8)->dateTimeBetween('now', '+30 days'),
-            'paid_at'  => $this->faker->optional(0.3)->dateTimeBetween('-30 days', 'now'),
+            'is_roi_taxed' => $this->faker->boolean(10),
+
+            // v0.3.3: Renamed amount fields
+            'taxable_amount' => $taxableAmount,
+            'tax_amount'     => $taxAmount,
+            'total_amount'   => $totalAmount,
+
+            // Immutability
+            'is_immutable' => $this->faker->boolean(20), // 20% chance
+            'immutable_at' => $this->faker->optional(0.2)->dateTime(),
+
+            // Additional fields
+            'notes'         => $this->faker->optional()->sentence(),
+            'payment_terms' => $this->faker->optional()->randomElement(['Net 30', 'Net 60', 'Due on receipt']),
+            'template_name' => $this->faker->optional()->randomElement(['default', 'modern', 'classic']),
         ];
     }
 
@@ -58,7 +101,7 @@ class InvoiceFactory extends Factory
     {
         return $this->state(function (array $attributes) {
             return [
-                'status'  => 'paid',
+                'status'  => InvoiceStatus::PAID->value,
                 'paid_at' => $this->faker->dateTimeBetween('-30 days', 'now'),
             ];
         });
@@ -71,9 +114,35 @@ class InvoiceFactory extends Factory
     {
         return $this->state(function (array $attributes) {
             return [
-                'status'   => 'overdue',
+                'status'   => InvoiceStatus::OVERDUE->value,
                 'due_date' => $this->faker->dateTimeBetween('-30 days', '-1 day'),
                 'paid_at'  => null,
+            ];
+        });
+    }
+
+    /**
+     * Create a draft invoice
+     */
+    public function draft(): static
+    {
+        return $this->state(function (array $attributes) {
+            return [
+                'status'   => InvoiceStatus::DRAFT->value,
+                'paid_at'  => null,
+                'due_date' => null,
+            ];
+        });
+    }
+
+    /**
+     * Create a sent invoice
+     */
+    public function sent(): static
+    {
+        return $this->state(function (array $attributes) {
+            return [
+                'status' => InvoiceStatus::SENT->value,
             ];
         });
     }
@@ -92,34 +161,56 @@ class InvoiceFactory extends Factory
     }
 
     /**
-     * Create a draft invoice
+     * Create a proforma invoice
      */
-    public function draft(): static
+    public function proforma(): static
     {
         return $this->state(function (array $attributes) {
+            $currentYear = now()->year;
+
             return [
-                'status'   => 'draft',
-                'paid_at'  => null,
-                'due_date' => null,
+                'fiscal_number' => 'PRO-'.$currentYear.'-'.$this->faker->unique()->numerify('######'),
+                'prefix'        => 'PRO',
+                'serie'         => InvoiceSerieType::PROFORMA->value,
+                'status'        => InvoiceStatus::DRAFT->value,
             ];
         });
     }
 
     /**
-     * Create a credit invoice (negative amounts)
+     * Create a rectificative invoice
+     */
+    public function rectificative(): static
+    {
+        return $this->state(function (array $attributes) {
+            $currentYear = now()->year;
+
+            return [
+                'fiscal_number' => 'RECT-'.$currentYear.'-'.$this->faker->unique()->numerify('######'),
+                'prefix'        => 'RECT',
+                'serie'         => InvoiceSerieType::RECTIFICATIVE->value,
+            ];
+        });
+    }
+
+    /**
+     * Create a credit invoice (negative amounts for rectificative)
      */
     public function credit(): static
     {
         return $this->state(function (array $attributes) {
-            $subtotal  = -$this->faker->numberBetween(1000, 10000); // Negative amount
-            $taxAmount = (int) ($subtotal * 0.21);
-            $total     = $subtotal + $taxAmount;
+            $taxableAmount = -$this->faker->numberBetween(1000, 10000); // Negative amount
+            $taxAmount     = (int) ($taxableAmount * 0.21);
+            $totalAmount   = $taxableAmount + $taxAmount;
+            $currentYear   = now()->year;
 
             return [
-                'type'       => 'credit',
-                'subtotal'   => $subtotal,
-                'tax_amount' => $taxAmount,
-                'total'      => $total,
+                'fiscal_number'  => 'RECT-'.$currentYear.'-'.$this->faker->unique()->numerify('######'),
+                'prefix'         => 'RECT',
+                'serie'          => InvoiceSerieType::RECTIFICATIVE->value,
+                'taxable_amount' => $taxableAmount,
+                'tax_amount'     => $taxAmount,
+                'total_amount'   => $totalAmount,
             ];
         });
     }

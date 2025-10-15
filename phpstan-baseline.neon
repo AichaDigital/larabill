@@ -7,24 +7,6 @@ parameters:
 			path: src/Models/FiscalSettings.php
 
 		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$immutable_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Models/Invoice.php
-
-		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$is_immutable\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Models/Invoice.php
-
-		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$type\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Models/Invoice.php
-
-		-
 			message: '#^Class AichaDigital\\Larabill\\Models\\Invoice uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
 			identifier: missingType.generics
 			count: 1
@@ -37,8 +19,50 @@ parameters:
 			path: src/Models/Invoice.php
 
 		-
+			message: '#^Class AichaDigital\\Larabill\\Models\\InvoiceItem has PHPDoc tag @property for property \$metadata with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/InvoiceItem.php
+
+		-
 			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceItem\:\:newEloquentBuilder\(\) return type with generic class AichaDigital\\Larabill\\Database\\Query\\BinaryUuidBuilder does not specify its types\: TModel$#'
 			identifier: missingType.generics
+			count: 1
+			path: src/Models/InvoiceItem.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceItem\:\:scopeGoods\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/InvoiceItem.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceItem\:\:scopeGoods\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/InvoiceItem.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceItem\:\:scopeServices\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/InvoiceItem.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceItem\:\:scopeServices\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/InvoiceItem.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceItem\:\:scopeWithServiceDates\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/InvoiceItem.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceItem\:\:scopeWithServiceDates\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
 			count: 1
 			path: src/Models/InvoiceItem.php
 
@@ -49,40 +73,208 @@ parameters:
 			path: src/Models/InvoiceItem.php
 
 		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$due_date\.$#'
-			identifier: property.notFound
+			message: '#^Class AichaDigital\\Larabill\\Models\\InvoiceSeriesControl has PHPDoc tag @property for property \$validation_rules with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
 			count: 1
-			path: src/Services/BillingService.php
+			path: src/Models/InvoiceSeriesControl.php
 
 		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$payment_terms\.$#'
-			identifier: property.notFound
+			message: '#^Class AichaDigital\\Larabill\\Models\\InvoiceSeriesControl uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
+			identifier: missingType.generics
 			count: 1
-			path: src/Services/BillingService.php
+			path: src/Models/InvoiceSeriesControl.php
 
 		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$template_name\.$#'
-			identifier: property.notFound
+			message: '#^Class App\\Models\\User not found\.$#'
+			identifier: class.notFound
 			count: 1
-			path: src/Services/BillingService.php
+			path: src/Models/InvoiceSeriesControl.php
 
 		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$type\.$#'
-			identifier: property.notFound
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceSeriesControl\:\:scopeActive\(\) has no return type specified\.$#'
+			identifier: missingType.return
 			count: 1
-			path: src/Services/BillingService.php
+			path: src/Models/InvoiceSeriesControl.php
 
 		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$user_id\.$#'
-			identifier: property.notFound
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceSeriesControl\:\:scopeActive\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
 			count: 1
-			path: src/Services/BillingService.php
+			path: src/Models/InvoiceSeriesControl.php
 
 		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$vat_verification\.$#'
-			identifier: property.notFound
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceSeriesControl\:\:scopeFiscalYear\(\) has no return type specified\.$#'
+			identifier: missingType.return
 			count: 1
-			path: src/Services/BillingService.php
+			path: src/Models/InvoiceSeriesControl.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceSeriesControl\:\:scopeFiscalYear\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/InvoiceSeriesControl.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceSeriesControl\:\:scopePrefix\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/InvoiceSeriesControl.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceSeriesControl\:\:scopePrefix\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/InvoiceSeriesControl.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceSeriesControl\:\:scopeSerie\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/InvoiceSeriesControl.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceSeriesControl\:\:scopeSerie\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/InvoiceSeriesControl.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\InvoiceSeriesControl\:\:user\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\BelongsTo does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/InvoiceSeriesControl.php
+
+		-
+			message: '#^Unable to resolve the template type TRelatedModel in call to method Illuminate\\Database\\Eloquent\\Model\:\:belongsTo\(\)$#'
+			identifier: argument.templateType
+			count: 1
+			path: src/Models/InvoiceSeriesControl.php
+
+		-
+			message: '#^Class AichaDigital\\Larabill\\Models\\TaxCategory has PHPDoc tag @property for property \$metadata with no value type specified in iterable type array\.$#'
+			identifier: missingType.iterableValue
+			count: 1
+			path: src/Models/TaxCategory.php
+
+		-
+			message: '#^Class AichaDigital\\Larabill\\Models\\TaxCategory uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/TaxCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\TaxCategory\:\:invoiceItems\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/TaxCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\TaxCategory\:\:scopeActive\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/TaxCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\TaxCategory\:\:scopeActive\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/TaxCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\TaxCategory\:\:scopeCountry\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/TaxCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\TaxCategory\:\:scopeCountry\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/TaxCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\TaxCategory\:\:scopeOrdered\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/TaxCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\TaxCategory\:\:scopeOrdered\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/TaxCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\TaxCategory\:\:scopeRegion\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/TaxCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\TaxCategory\:\:scopeRegion\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/TaxCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\TaxCategory\:\:scopeTaxType\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/TaxCategory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\TaxCategory\:\:scopeTaxType\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/TaxCategory.php
+
+		-
+			message: '#^Class AichaDigital\\Larabill\\Models\\UnitMeasure uses generic trait Illuminate\\Database\\Eloquent\\Factories\\HasFactory but does not specify its types\: TFactory$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/UnitMeasure.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\UnitMeasure\:\:invoiceItems\(\) return type with generic class Illuminate\\Database\\Eloquent\\Relations\\HasMany does not specify its types\: TRelatedModel, TDeclaringModel$#'
+			identifier: missingType.generics
+			count: 1
+			path: src/Models/UnitMeasure.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\UnitMeasure\:\:scopeActive\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/UnitMeasure.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\UnitMeasure\:\:scopeActive\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/UnitMeasure.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\UnitMeasure\:\:scopeCategory\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/UnitMeasure.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\UnitMeasure\:\:scopeCategory\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/UnitMeasure.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\UnitMeasure\:\:scopeOrdered\(\) has no return type specified\.$#'
+			identifier: missingType.return
+			count: 1
+			path: src/Models/UnitMeasure.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\UnitMeasure\:\:scopeOrdered\(\) has parameter \$query with no type specified\.$#'
+			identifier: missingType.parameter
+			count: 1
+			path: src/Models/UnitMeasure.php
 
 		-
 			message: '#^Unable to resolve the template type TCacheValue in call to method Illuminate\\Cache\\Repository\:\:remember\(\)$#'
@@ -103,121 +295,7 @@ parameters:
 			path: src/Services/DestinationVatService.php
 
 		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$is_roi_taxed\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Services/EuSalesThresholdService.php
-
-		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$number\.$#'
-			identifier: property.notFound
-			count: 5
-			path: src/Services/EuSalesThresholdService.php
-
-		-
 			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$subtotal\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Services/EuSalesThresholdService.php
-
-		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$user_tax_info_encrypted\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Services/EuSalesThresholdService.php
-
-		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$created_at\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Services/PDF/DefaultPDFConnector.php
-
-		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$due_date\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Services/PDF/DefaultPDFConnector.php
-
-		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$fiscal_data\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Services/PDF/DefaultPDFConnector.php
-
-		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$number\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Services/PDF/DefaultPDFConnector.php
-
-		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Services/PDF/DefaultPDFConnector.php
-
-		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$subtotal\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Services/PDF/DefaultPDFConnector.php
-
-		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$tax_amount\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Services/PDF/DefaultPDFConnector.php
-
-		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$total\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Services/PDF/DefaultPDFConnector.php
-
-		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$user_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Services/PDF/DefaultPDFConnector.php
-
-		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$user_tax_info_encrypted\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Services/PDF/DefaultPDFConnector.php
-
-		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$vat_verification\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Services/PDF/DefaultPDFConnector.php
-
-		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$notes\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Services/PDF/DomPDFService.php
-
-		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$payment_terms\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Services/PDF/DomPDFService.php
-
-		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$subtotal\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Services/PDF/DomPDFService.php
-
-		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$tax_amount\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Services/PDF/DomPDFService.php
-
-		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$template_name\.$#'
 			identifier: property.notFound
 			count: 2
 			path: src/Services/PDF/DomPDFService.php
@@ -231,19 +309,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$type\.$#'
 			identifier: property.notFound
-			count: 4
-			path: src/Services/PDF/DomPDFService.php
-
-		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$user_id\.$#'
-			identifier: property.notFound
 			count: 2
-			path: src/Services/PDF/DomPDFService.php
-
-		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$user_tax_info_encrypted\.$#'
-			identifier: property.notFound
-			count: 1
 			path: src/Services/PDF/DomPDFService.php
 
 		-

@@ -197,7 +197,7 @@ class DomPDFService
         }
 
         // Determine template based on invoice type and fiscal data
-        if ($invoice->type === 'proforma') {
+        if ($invoice->serie === \AichaDigital\Larabill\Enums\InvoiceSerieType::PROFORMA) {
             return 'larabill::pdf.invoice.proforma';
         }
 
@@ -223,12 +223,13 @@ class DomPDFService
     protected function shouldIncludeQR(Invoice $invoice): bool
     {
         // Proforma invoices never include QR
-        if ($invoice->type === 'proforma') {
+        if ($invoice->serie === \AichaDigital\Larabill\Enums\InvoiceSerieType::PROFORMA) {
             return false;
         }
 
-        // Only fiscal invoices include QR
-        return $invoice->type === 'invoice' || $invoice->type === 'fiscal';
+        // Only fiscal invoices (INVOICE and RECTIFICATIVE) include QR
+        return $invoice->serie === \AichaDigital\Larabill\Enums\InvoiceSerieType::INVOICE
+            || $invoice->serie === \AichaDigital\Larabill\Enums\InvoiceSerieType::RECTIFICATIVE;
     }
 
     /**

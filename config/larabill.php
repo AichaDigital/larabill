@@ -19,6 +19,28 @@ return [
         'cache_duration_days' => env('LARABILL_VAT_CACHE_DAYS', 30), // How long to cache VAT verification results
     ],
 
+    // Regional configuration (v0.3.3+)
+    'region' => [
+        'country'     => env('LARABILL_COUNTRY', 'ES'),        // ISO 3166-1 alpha-2
+        'region'      => env('LARABILL_REGION', null),          // State/Province (US: 'CA', 'NY')
+        'tax_system'  => env('LARABILL_TAX_SYSTEM', 'vat'), // vat, sales_tax, gst, hst
+        'fiscal_zone' => env('LARABILL_FISCAL_ZONE', 'eu'), // eu, us, au, ca, other
+    ],
+
+    // Fiscal compliance rules (v0.3.3+)
+    'compliance' => [
+        'requires_correlative_numbering' => true,  // CEE: true, USA: false
+        'requires_service_dates'         => true,          // CEE servicios: true
+        'requires_tax_verification'      => false,      // CEE B2B: true
+        'requires_fiscal_qr'             => false,             // España TBAI: true
+    ],
+
+    // Fiscal year configuration (v0.3.3+)
+    'fiscal_year' => [
+        'start_month' => env('LARABILL_FISCAL_START_MONTH', 1), // 1=Enero
+        'start_day'   => env('LARABILL_FISCAL_START_DAY', 1),     // 1
+    ],
+
     // Company fiscal data
     'company' => [
         'name'       => env('LARABILL_COMPANY_NAME', 'Your Company S.L.'),
