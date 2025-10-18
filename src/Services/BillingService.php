@@ -51,19 +51,20 @@ class BillingService
         $status      = isset($invoiceData['status']) ? $this->mapStatusToEnum($invoiceData['status']) : InvoiceStatus::DRAFT->value;
 
         $invoice = Invoice::create([
-            'fiscal_number' => $this->generateInvoiceNumber($invoiceType, $options),
-            'prefix'        => $invoiceType === 'proforma' ? 'PRO' : 'FAC',
-            'serie'         => $serie,
-            'series_number' => $this->getTempSeriesNumber($serie, now()->year),
-            'fiscal_year'   => now()->year,
-            'invoice_date'  => now()->toDateString(),
-            'issued_at'     => now(),
-            'status'        => $status,
-            'user_id'       => $userId,
-            'is_immutable'  => false,
-            'due_date'      => $invoiceData['due_date']      ?? null,
-            'payment_terms' => $invoiceData['payment_terms'] ?? null,
-            'template_name' => $invoiceData['template_name'] ?? null,
+            'fiscal_number'    => $this->generateInvoiceNumber($invoiceType, $options),
+            'prefix'           => $invoiceType === 'proforma' ? 'PRO' : 'FAC',
+            'serie'            => $serie,
+            'series_number'    => $this->getTempSeriesNumber($serie, now()->year),
+            'fiscal_year'      => now()->year,
+            'invoice_date'     => now()->toDateString(),
+            'issued_at'        => now(),
+            'status'           => $status,
+            'user_id'          => $userId,
+            'is_immutable'     => false,
+            'due_date'         => $invoiceData['due_date']         ?? null,
+            'payment_terms'    => $invoiceData['payment_terms']    ?? null,
+            'template_name'    => $invoiceData['template_name']    ?? null,
+            'vat_verification' => $invoiceData['vat_verification'] ?? null,
         ]);
 
         // Create invoice items, which now handle their own tax calculation
