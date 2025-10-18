@@ -4,96 +4,87 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use AichaDigital\Lara100\Casts\Base100;
-use Illuminate\Database\Eloquent\{Builder, Factories\HasFactory, Model};
+use AichaDigital\Larabill\Database\Factories\TaxRateFactory;
+use AichaDigital\Larabill\Enums\TaxType;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 /**
- * TaxRate Model
+ * TaxRate Model - Configuration Layer (Mutable)
  *
- * Represents tax rates for different countries and regions.
+ * Represents an atomic tax rate definition in the configuration layer.
+ * This is a "living" table that can be updated when tax laws change.
  * Tax rates are stored as base-100 integers (e.g., 21.50% => 2150).
  *
- * @property string $country_code
- * @property string $country_name
- * @property string $tax_name
- * @property string $tax_type
- * @property int $rate Base-100 integer (e.g., 2150 => 21.50%)
- * @property bool $is_active
- * @property string|null $applies_to
- * @property array<string, mixed>|null $special_conditions
+ * Examples:
+ * - IVA General (Spain): rate=2100, region="ES", type=VAT
+ * - MA State Sales Tax: rate=625, region="US-MA", type=SALES_TAX
+ * - Boston City Surcharge: rate=50, region="US-MA-BOSTON", type=SALES_TAX
+ *
+ * @property int $id
+ * @property string $name Tax rate name (e.g., "IVA General", "MA State Sales Tax")
+ * @property int $rate Tax rate as base-100 integer (21% => 2100)
+ * @property string|null $region Region/jurisdiction code (e.g., "ES", "US-MA", "US-MA-BOSTON")
+ * @property TaxType $type Tax type enum (vat, sales_tax, gst, other)
+ * @property \Carbon\Carbon $created_at
+ * @property \Carbon\Carbon $updated_at
  */
 class TaxRate extends Model
 {
-    /** @phpstan-ignore-next-line */
     use HasFactory;
 
     /**
      * The attributes that are mass assignable.
+     *
+     * @var array<string>
      */
     protected $fillable = [
-        'country_code',
-        'country_name',
-        'tax_name',
-        'tax_type',
+        'name',
         'rate',
-        'is_active',
-        'applies_to',
-        'special_conditions',
+        'region',
+        'type',
     ];
 
     /**
-     * Casts for attributes.
+     * Get the attributes that should be cast.
      *
-     * Uses Base100 cast from lara100 package for tax rate percentages
-     * Automatically handles conversion between decimals and base-100 integers
-     * Example: 21.50% ↔ 2150 (stored as integer, accessed as decimal)
+     * @return array<string, string>
      */
-    public function casts(): array
+    protected function casts(): array
     {
         return [
-            'is_active'          => 'boolean',
-            'rate'               => Base100::class, // 21.50% ↔ 2150
-            'special_conditions' => 'array',
+            'rate' => 'integer',
+            'type' => TaxType::class,
         ];
     }
 
+    // ========================================
+    // RELATIONSHIPS
+    // ========================================
+
     /**
-     * Get Spanish tax rates.
+     * The tax groups that belong to this tax rate.
+     * Many-to-many relationship through tax_group_tax_rate pivot.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, TaxRate>
+     * @return BelongsToMany<TaxGroup>
      */
-    public static function getSpanishRates(): \Illuminate\Database\Eloquent\Collection
+    public function taxGroups(): BelongsToMany
     {
-        return static::where('country_code', 'ES')
-            ->where('is_active', true)
-            ->get();
+        return $this->belongsToMany(TaxGroup::class, 'tax_group_tax_rate')
+            ->withPivot('priority')
+            ->orderBy('priority');
     }
 
-    /**
-     * Get EU tax rates.
-     *
-     * @return \Illuminate\Database\Eloquent\Collection<int, TaxRate>
-     */
-    public static function getEURates(): \Illuminate\Database\Eloquent\Collection
-    {
-        $euCountries = [
-            'AT', 'BE', 'BG', 'CY', 'CZ', 'DE', 'DK', 'EE', 'EL', 'ES', 'FI', 'FR', 'HR', 'HU',
-            'IE', 'IT', 'LT', 'LU', 'LV', 'MT', 'NL', 'PL', 'PT', 'RO', 'SE', 'SI', 'SK',
-        ];
-
-        return static::whereIn('country_code', $euCountries)
-            ->where('is_active', true)
-            ->get();
-    }
+    // ========================================
+    // FACTORY
+    // ========================================
 
     /**
-     * Scope to get only active tax rates.
-     *
-     * @param  Builder<static>  $query
-     * @return Builder<static>
+     * Create a new factory instance for the model.
      */
-    public function scopeActive(Builder $query): Builder
+    protected static function newFactory(): TaxRateFactory
     {
-        return $query->where('is_active', true);
+        return TaxRateFactory::new();
     }
 }

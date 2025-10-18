@@ -79,9 +79,9 @@ class InvoiceFactory extends Factory
             'is_roi_taxed' => $this->faker->boolean(10),
 
             // v0.3.3: Renamed amount fields
-            'taxable_amount' => $taxableAmount,
-            'tax_amount'     => $taxAmount,
-            'total_amount'   => $totalAmount,
+            'taxable_amount'   => $taxableAmount,
+            'total_tax_amount' => $taxAmount,
+            'total_amount'     => $totalAmount,
 
             // Immutability
             'is_immutable' => $this->faker->boolean(20), // 20% chance
@@ -205,12 +205,12 @@ class InvoiceFactory extends Factory
             $currentYear   = now()->year;
 
             return [
-                'fiscal_number'  => 'RECT-'.$currentYear.'-'.$this->faker->unique()->numerify('######'),
-                'prefix'         => 'RECT',
-                'serie'          => InvoiceSerieType::RECTIFICATIVE->value,
-                'taxable_amount' => $taxableAmount,
-                'tax_amount'     => $taxAmount,
-                'total_amount'   => $totalAmount,
+                'fiscal_number'    => 'RECT-'.$currentYear.'-'.$this->faker->unique()->numerify('######'),
+                'prefix'           => 'RECT',
+                'serie'            => InvoiceSerieType::RECTIFICATIVE->value,
+                'taxable_amount'   => $taxableAmount,
+                'total_tax_amount' => $taxAmount,
+                'total_amount'     => $totalAmount,
             ];
         });
     }

@@ -14,7 +14,7 @@ use AichaDigital\Larabill\Tests\TestCase;
 
 uses(TestCase::class)
     ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
-    ->in('Feature', 'Integration', 'Unit');
+    ->in('tests');
 
 // Alias an expectation name used in some tests (typo): toBeGreaterThanOrEqualTo
 expect()->extend('toBeGreaterThanOrEqualTo', function ($expected) {

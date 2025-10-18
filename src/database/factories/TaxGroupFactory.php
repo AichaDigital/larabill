@@ -4,20 +4,20 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Database\Factories;
 
-use AichaDigital\Larabill\Models\TaxRate;
+use AichaDigital\Larabill\Models\TaxGroup;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\AichaDigital\Larabill\Models\TaxRate>
+ * @extends \Illuminate\Database\Eloquent\Factories\Factory<\AichaDigital\Larabill\Models\TaxGroup>
  */
-class TaxRateFactory extends Factory
+class TaxGroupFactory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
      *
      * @var string
      */
-    protected $model = TaxRate::class;
+    protected $model = TaxGroup::class;
 
     /**
      * Define the model's default state.
@@ -27,10 +27,8 @@ class TaxRateFactory extends Factory
     public function definition(): array
     {
         return [
-            'name'   => fake()->words(3, true),
-            'rate'   => fake()->randomElement([2100, 1000, 400]),
-            'region' => fake()->countryCode(),
-            'type'   => 'vat',
+            'name'        => fake()->words(3, true),
+            'description' => fake()->sentence(),
         ];
     }
 }

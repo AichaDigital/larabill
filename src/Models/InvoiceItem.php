@@ -12,17 +12,21 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * InvoiceItem Model
+ * InvoiceItem Model - Immutable Record Layer
  *
- * Represents an item within an invoice.
+ * Represents an item within an invoice with immutable tax snapshot.
  * All monetary amounts are stored as base-100 integers (e.g., €12.34 => 1234).
- * Tax rates are stored as base-100 integers (e.g., 21.50% => 2150).
  *
- * v0.3.3: Enhanced for fiscal compliance (CEE/EU):
- * - Distinction between goods and services (item_type)
- * - Service dates (service_date_from/to) for EU compliance
- * - Extensible unit measures (FK to unit_measures)
- * - Extensible tax categories (FK to tax_categories)
+ * v0.3.3: Agnostic Tax System Refactor
+ * - Removed: tax_rate, tax_category_id (old single-tax approach)
+ * - Added: total_tax_amount, taxes_applied (JSON) for multiple taxes support
+ * - Tax immutability: Once created, the invoice item stores a permanent snapshot
+ *   of all applied taxes, independent of future changes to tax_rates or tax_groups
+ *
+ * Tax Structure:
+ * - total_tax_amount: Sum of all taxes (base-100 integer) - optimized for aggregation
+ * - taxes_applied: JSON array with detailed tax breakdown
+ *   Example: [{"source_rate_id":12,"name":"MA State Sales Tax","rate":625,"amount":625}]
  *
  * @property int $id
  * @property string $invoice_id UUID foreign key to invoices table
@@ -33,9 +37,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int|null $unit_measure_id FK to unit_measures
  * @property float $unit_price Base-100 integer (€12.34 => 1234)
  * @property float $taxable_amount Base-100 integer (€12.34 => 1234)
- * @property float $tax_rate Base-100 integer (21% => 2100)
- * @property int|null $tax_category_id FK to tax_categories
- * @property float $tax_amount Base-100 integer (€12.34 => 1234)
+ * @property float $total_tax_amount Base-100 integer - sum of all taxes
+ * @property array $taxes_applied JSON snapshot of applied taxes (immutable)
  * @property float $total_amount Base-100 integer (€12.34 => 1234)
  * @property \Carbon\Carbon|null $service_date_from Service start date
  * @property \Carbon\Carbon|null $service_date_to Service end date
@@ -73,9 +76,8 @@ class InvoiceItem extends Model
         'unit_measure_id',
         'unit_price',
         'taxable_amount',
-        'tax_rate',
-        'tax_category_id',
-        'tax_amount',
+        'total_tax_amount',
+        'taxes_applied',
         'total_amount',
         'service_date_from',
         'service_date_to',
@@ -97,8 +99,8 @@ class InvoiceItem extends Model
             'quantity'          => Base100::class, // 1.5 ↔ 150
             'unit_price'        => Base100::class, // €12.34 ↔ 1234
             'taxable_amount'    => Base100::class, // €12.34 ↔ 1234
-            'tax_rate'          => Base100::class, // 21.50% ↔ 2150
-            'tax_amount'        => Base100::class, // €12.34 ↔ 1234
+            'total_tax_amount'  => Base100::class,
+            'taxes_applied'     => 'array',
             'total_amount'      => Base100::class, // €12.34 ↔ 1234
             'service_date_from' => 'date',
             'service_date_to'   => 'date',
@@ -133,18 +135,8 @@ class InvoiceItem extends Model
         return $this->belongsTo(UnitMeasure::class);
     }
 
-    /**
-     * Get the tax category for this item
-     *
-     * @return BelongsTo<TaxCategory, $this>
-     */
-    public function taxCategory(): BelongsTo
-    {
-        return $this->belongsTo(TaxCategory::class);
-    }
-
     // ========================================
-    // CALCULATION METHODS
+    // CALCULATION HELPERS
     // ========================================
 
     /**
@@ -157,21 +149,13 @@ class InvoiceItem extends Model
     }
 
     /**
-     * Calculate tax amount from taxable amount and tax rate.
-     * Base100 cast handles conversion automatically.
+     * Get tax breakdown from the immutable taxes_applied snapshot.
+     *
+     * @return array<int, array{source_rate_id: int, name: string, rate: int, amount: int}>
      */
-    public function calculateTaxAmount(): float
+    public function getTaxBreakdown(): array
     {
-        return round($this->taxable_amount * ($this->tax_rate / 100), 2);
-    }
-
-    /**
-     * Calculate total from taxable amount and tax amount.
-     * Base100 cast handles conversion automatically.
-     */
-    public function calculateTotalAmount(): float
-    {
-        return $this->taxable_amount + $this->tax_amount;
+        return $this->taxes_applied ?? [];
     }
 
     // ========================================

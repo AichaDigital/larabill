@@ -1,7 +1,5 @@
 <?php
 
-declare(strict_types=1);
-
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -29,15 +27,12 @@ return new class extends Migration
             $table->integer('quantity')->default(100)->comment('Base-100: 1 unit = 100, 2.5 units = 250');
             $table->foreignId('unit_measure_id')->nullable()->constrained('unit_measures')->nullOnDelete()->comment('FK to extensible unit_measures table (unit, kg, L, m, m², etc.)');
 
-            // Pricing
+            // Pricing & Tax (Agnostic Structure)
             $table->integer('unit_price')->default(0)->comment('Base-100: price per unit measure');
             $table->integer('taxable_amount')->default(0)->comment('Base-100: taxable base = quantity * unit_price (before tax)');
-
-            // Tax
-            $table->integer('tax_rate')->default(0)->comment('Base-100: tax percentage. 21% = 2100');
-            $table->foreignId('tax_category_id')->nullable()->constrained('tax_categories')->nullOnDelete()->comment('FK to tax_categories (VAT/Sales Tax/GST categories by country)');
-            $table->integer('tax_amount')->default(0)->comment('Base-100: calculated tax = taxable_amount * (tax_rate / 10000)');
-            $table->integer('total_amount')->default(0)->comment('Base-100: total line = taxable_amount + tax_amount');
+            $table->integer('total_tax_amount')->default(0)->comment('Base-100: Suma de todos los impuestos aplicados');
+            $table->json('taxes_applied')->nullable()->comment('Snapshot inmutable del desglose de impuestos aplicados');
+            $table->integer('total_amount')->default(0)->comment('Base-100: total line = taxable_amount + total_tax_amount');
 
             // Service dates (EU requirement for services)
             $table->date('service_date_from')->nullable()->comment('Service start date (EU: mandatory for services if config requires)');
