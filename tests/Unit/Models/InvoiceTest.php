@@ -7,18 +7,18 @@ use AichaDigital\Larabill\Models\Invoice;
 
 it('can create an invoice', function () {
     $invoice = new Invoice([
-        'fiscal_number'  => 'FAC-2025-000001',
-        'prefix'         => 'FAC',
-        'serie'          => InvoiceSerieType::INVOICE->value,
-        'series_number'  => 1,
-        'fiscal_year'    => 2025,
-        'invoice_date'   => now()->toDateString(),
-        'issued_at'      => now(),
-        'status'         => InvoiceStatus::DRAFT->value,
-        'user_id'        => 1,
-        'taxable_amount' => 100.0,
-        'tax_amount'     => 21.0,
-        'total_amount'   => 121.0,
+        'fiscal_number'     => 'FAC-2025-000001',
+        'prefix'            => 'FAC',
+        'serie'             => InvoiceSerieType::INVOICE->value,
+        'series_number'     => 1,
+        'fiscal_year'       => 2025,
+        'invoice_date'      => now()->toDateString(),
+        'issued_at'         => now(),
+        'status'            => InvoiceStatus::DRAFT->value,
+        'user_id'           => 1,
+        'taxable_amount'    => 100.0,
+        'total_tax_amount'  => 21.0, // v0.3.3: Renamed from tax_amount
+        'total_amount'      => 121.0,
     ]);
 
     expect($invoice->fiscal_number)->toBe('FAC-2025-000001');
@@ -26,7 +26,7 @@ it('can create an invoice', function () {
     expect($invoice->status)->toBe(InvoiceStatus::DRAFT);
     expect($invoice->user_id)->toBe(1);
     expect($invoice->taxable_amount)->toBe(100.0); // Base100 cast returns float
-    expect($invoice->tax_amount)->toBe(21.0); // Base100 cast returns float
+    expect($invoice->total_tax_amount)->toBe(21.0); // v0.3.3: total_tax_amount
     expect($invoice->total_amount)->toBe(121.0); // Base100 cast returns float
 });
 

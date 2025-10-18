@@ -15,15 +15,15 @@ it('can configure custom user model mapping', function () {
 
     // Create an invoice using factory
     $invoice = Invoice::factory()->create([
-        'fiscal_number'  => 'FAC-0001',
-        'serie'          => InvoiceSerieType::INVOICE->value,
-        'status'         => InvoiceStatus::DRAFT->value,
-        'user_id'        => 1,
-        'series_number'  => 1,
-        'fiscal_year'    => now()->year,
-        'taxable_amount' => 10000,
-        'tax_amount'     => 2100,
-        'total_amount'   => 12100,
+        'fiscal_number'     => 'FAC-0001',
+        'serie'             => InvoiceSerieType::INVOICE->value,
+        'status'            => InvoiceStatus::DRAFT->value,
+        'user_id'           => 1,
+        'series_number'     => 1,
+        'fiscal_year'       => now()->year,
+        'taxable_amount'    => 10000,
+        'total_tax_amount'  => 2100, // v0.3.3: Renamed from tax_amount
+        'total_amount'      => 12100,
     ]);
 
     // The relationship should use the configured model

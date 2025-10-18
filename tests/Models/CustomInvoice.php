@@ -17,7 +17,7 @@ class CustomInvoice extends Model
         'status',
         'user_id',
         'taxable_amount',
-        'tax_amount',
+        'total_tax_amount', // v0.3.3: Renamed from tax_amount
         'total',
     ];
 }
