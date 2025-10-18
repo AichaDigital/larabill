@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Models;
 
 use AichaDigital\Lara100\Casts\Base100;
+use AichaDigital\Larabill\Database\Factories\InvoiceItemFactory;
 use AichaDigital\Larabill\Enums\ItemType;
 use Dyrynda\Database\Support\Casts\EfficientUuid;
 use Dyrynda\Database\Support\GeneratesUuid;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -48,7 +50,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class InvoiceItem extends Model
 {
-    use GeneratesUuid;
+    use GeneratesUuid, HasFactory;
 
     /**
      * Indicates if the IDs are auto-incrementing.
@@ -202,5 +204,13 @@ class InvoiceItem extends Model
     {
         return $query->whereNotNull('service_date_from')
             ->whereNotNull('service_date_to');
+    }
+
+    /**
+     * Create a new factory instance for the model.
+     */
+    protected static function newFactory(): InvoiceItemFactory
+    {
+        return InvoiceItemFactory::new();
     }
 }

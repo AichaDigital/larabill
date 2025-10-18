@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
+use AichaDigital\Larabill\Database\Factories\InvoiceSeriesControlFactory;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -82,7 +83,7 @@ class InvoiceSeriesControl extends Model
      */
     public function user(): BelongsTo
     {
-        $userModel = config('larabill.user_model', \App\Models\User::class);
+        $userModel = config('larabill.user_model', \AichaDigital\Larabill\Tests\Models\User::class);
 
         return $this->belongsTo($userModel);
     }
@@ -127,5 +128,13 @@ class InvoiceSeriesControl extends Model
     public function getNextNumber(): int
     {
         return $this->last_number + 1;
+    }
+
+    /**
+     * Create a new factory instance for the model.
+     */
+    protected static function newFactory(): InvoiceSeriesControlFactory
+    {
+        return InvoiceSeriesControlFactory::new();
     }
 }

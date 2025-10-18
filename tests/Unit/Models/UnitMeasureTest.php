@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 use AichaDigital\Larabill\Enums\UnitMeasureCategory;
-use AichaDigital\Larabill\Models\UnitMeasure;
+use AichaDigital\Larabill\Models\{Invoice, InvoiceItem, UnitMeasure};
+use AichaDigital\Larabill\Tests\Models\User;
 
 it('can create a unit measure', function () {
     $unitMeasure = UnitMeasure::create([
@@ -145,4 +146,18 @@ it('can order by sort_order', function () {
     $ordered = UnitMeasure::orderBy('sort_order')->get();
     expect($ordered->first()->code)->toBe('a');
     expect($ordered->last()->code)->toBe('c');
+});
+
+it('can have invoice items relationship', function () {
+    $unitMeasure = UnitMeasure::factory()->create();
+    $user        = User::factory()->create();
+    $invoice     = Invoice::factory()->create(['user_id' => $user->id]);
+
+    InvoiceItem::factory()->create([
+        'invoice_id'      => $invoice->id,
+        'unit_measure_id' => $unitMeasure->id,
+    ]);
+
+    expect($unitMeasure->invoiceItems)->toHaveCount(1)
+        ->and($unitMeasure->invoiceItems->first()->unit_measure_id)->toBe($unitMeasure->id);
 });
