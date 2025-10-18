@@ -25,6 +25,7 @@ _ide_helper_models.php
 /.vscode
 /.cursor
 /.claude
+/.claude.json
 
 # Misc
 phpunit.xml
