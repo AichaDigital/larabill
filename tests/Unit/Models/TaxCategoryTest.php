@@ -2,167 +2,228 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Models\TaxCategory;
+use AichaDigital\Larabill\Enums\ItemType;
+use AichaDigital\Larabill\Models\{Invoice, InvoiceItem, TaxCategory};
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-it('can create a tax category', function () {
-    $taxCategory = TaxCategory::create([
-        'code'          => 'VAT_ES_STANDARD',
-        'name'          => 'Standard VAT (ES)',
-        'tax_type'      => 'vat',
-        'country_code'  => 'ES',
-        'default_rate'  => 21.0, // 21%
-        'is_active'     => true,
+uses(RefreshDatabase::class);
+
+beforeEach(function () {
+    $this->category = TaxCategory::factory()->create([
+        'code'         => 'vat_standard',
+        'name'         => 'Standard VAT',
+        'tax_type'     => 'vat',
+        'description'  => 'Standard VAT rate',
+        'default_rate' => 21.00,
+        'country_code' => 'ES',
+        'region_code'  => null,
+        'is_active'    => true,
+        'sort_order'   => 1,
     ]);
-
-    expect($taxCategory->exists)->toBeTrue();
-    expect($taxCategory->code)->toBe('VAT_ES_STANDARD');
-    expect($taxCategory->name)->toBe('Standard VAT (ES)');
-    expect($taxCategory->tax_type)->toBe('vat');
-    expect($taxCategory->country_code)->toBe('ES');
-    expect($taxCategory->default_rate)->toBe(21.0); // Base100 cast returns float
-    expect($taxCategory->is_active)->toBeTrue();
 });
 
-it('can scope active tax categories', function () {
-    TaxCategory::create([
-        'code'         => 'ACTIVE_1',
-        'name'         => 'Active Category',
-        'tax_type'     => 'vat',
-        'country_code' => 'ES',
-        'default_rate' => 21.0,
-        'is_active'    => true,
+it('can create a tax category', function () {
+    expect($this->category->code)->toBe('vat_standard')
+        ->and($this->category->name)->toBe('Standard VAT')
+        ->and($this->category->tax_type)->toBe('vat')
+        ->and($this->category->default_rate)->toBe(21.00)
+        ->and($this->category->country_code)->toBe('ES')
+        ->and($this->category->is_active)->toBeTrue()
+        ->and($this->category->sort_order)->toBe(1);
+});
+
+it('can cast default_rate using Base100', function () {
+    $category = TaxCategory::factory()->create([
+        'default_rate' => 19.50,
     ]);
 
-    TaxCategory::create([
-        'code'         => 'INACTIVE_1',
-        'name'         => 'Inactive Category',
-        'tax_type'     => 'vat',
+    expect($category->default_rate)->toBe(19.50);
+});
+
+it('can scope active categories only', function () {
+    TaxCategory::factory()->create(['is_active' => false]);
+    TaxCategory::factory()->create(['is_active' => true]);
+
+    $activeCategories = TaxCategory::active()->get();
+
+    expect($activeCategories)->toHaveCount(2); // Including beforeEach category
+});
+
+it('can scope by country', function () {
+    TaxCategory::factory()->create(['country_code' => 'FR']);
+    TaxCategory::factory()->create(['country_code' => 'DE']);
+
+    $spainCategories = TaxCategory::country('ES')->get();
+
+    expect($spainCategories)->toHaveCount(1)
+        ->and($spainCategories->first()->country_code)->toBe('ES');
+});
+
+it('can scope by country case insensitive', function () {
+    $categories = TaxCategory::country('es')->get();
+
+    expect($categories)->toHaveCount(1)
+        ->and($categories->first()->country_code)->toBe('ES');
+});
+
+it('can scope by region', function () {
+    $category = TaxCategory::factory()->create([
+        'country_code' => 'US',
+        'region_code'  => 'CA',
+    ]);
+
+    $californiaCategories = TaxCategory::region('CA')->get();
+
+    expect($californiaCategories)->toHaveCount(1)
+        ->and($californiaCategories->first()->region_code)->toBe('CA');
+});
+
+it('can scope by region case insensitive', function () {
+    TaxCategory::factory()->create([
+        'country_code' => 'US',
+        'region_code'  => 'TX',
+    ]);
+
+    $categories = TaxCategory::region('tx')->get();
+
+    expect($categories)->toHaveCount(1)
+        ->and($categories->first()->region_code)->toBe('TX');
+});
+
+it('can scope by tax type', function () {
+    TaxCategory::factory()->create(['tax_type' => 'sales_tax']);
+    TaxCategory::factory()->create(['tax_type' => 'gst']);
+
+    $vatCategories = TaxCategory::taxType('vat')->get();
+
+    expect($vatCategories)->toHaveCount(1)
+        ->and($vatCategories->first()->tax_type)->toBe('vat');
+});
+
+it('can scope ordered by sort_order and name', function () {
+    TaxCategory::factory()->create(['name' => 'Zulu', 'sort_order' => 2]);
+    TaxCategory::factory()->create(['name' => 'Alpha', 'sort_order' => 1]);
+    TaxCategory::factory()->create(['name' => 'Beta', 'sort_order' => 1]);
+
+    $categories = TaxCategory::ordered()->get();
+
+    expect($categories->first()->name)->toBe('Alpha')
+        ->and($categories->last()->name)->toBe('Zulu');
+});
+
+it('can have invoice items relationship', function () {
+    $user    = \AichaDigital\Larabill\Tests\Models\User::factory()->create();
+    $invoice = Invoice::factory()->create(['user_id' => $user->id]);
+
+    InvoiceItem::factory()->create([
+        'invoice_id' => $invoice->id,
+        'item_type'  => ItemType::GOOD,
+    ]);
+
+    expect($this->category->invoiceItems())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\HasMany::class);
+});
+
+it('can store metadata as JSON', function () {
+    $metadata = [
+        'category_group' => 'food',
+        'tax_exemptions' => ['export'],
+    ];
+
+    $category = TaxCategory::factory()->create([
+        'metadata' => $metadata,
+    ]);
+
+    expect($category->metadata)->toBe($metadata)
+        ->and($category->metadata['category_group'])->toBe('food');
+});
+
+it('can filter active categories by country', function () {
+    TaxCategory::factory()->create([
+        'country_code' => 'FR',
+        'is_active'    => true,
+    ]);
+    TaxCategory::factory()->create([
         'country_code' => 'ES',
-        'default_rate' => 10.0,
         'is_active'    => false,
     ]);
 
-    $active = TaxCategory::active()->get();
-    expect($active)->toHaveCount(1);
-    expect($active->first()->code)->toBe('ACTIVE_1');
+    $categories = TaxCategory::active()->country('ES')->get();
+
+    expect($categories)->toHaveCount(1);
 });
 
-it('can filter by tax type', function () {
-    TaxCategory::create([
-        'code'         => 'VAT_1',
-        'name'         => 'VAT Standard',
-        'tax_type'     => 'vat',
-        'country_code' => 'ES',
-        'default_rate' => 21.0,
-    ]);
-
-    TaxCategory::create([
-        'code'         => 'SALES_1',
-        'name'         => 'Sales Tax',
-        'tax_type'     => 'sales_tax',
+it('can filter by tax type and country', function () {
+    TaxCategory::factory()->create([
         'country_code' => 'US',
-        'region_code'  => 'CA',
-        'default_rate' => 7.25,
-    ]);
-
-    $vatCategories = TaxCategory::taxType('vat')->get();
-    expect($vatCategories)->toHaveCount(1);
-    expect($vatCategories->first()->code)->toBe('VAT_1');
-});
-
-it('can filter by country code', function () {
-    TaxCategory::create([
-        'code'         => 'VAT_ES',
-        'name'         => 'Spain VAT',
-        'tax_type'     => 'vat',
-        'country_code' => 'ES',
-        'default_rate' => 21.0,
-    ]);
-
-    TaxCategory::create([
-        'code'         => 'VAT_DE',
-        'name'         => 'Germany VAT',
-        'tax_type'     => 'vat',
-        'country_code' => 'DE',
-        'default_rate' => 19.0,
-    ]);
-
-    $spainCategories = TaxCategory::country('ES')->get();
-    expect($spainCategories)->toHaveCount(1);
-    expect($spainCategories->first()->code)->toBe('VAT_ES');
-});
-
-it('stores rate as base-100 integer', function () {
-    $taxCategory = TaxCategory::create([
-        'code'         => 'TEST_RATE',
-        'name'         => 'Test Rate',
-        'tax_type'     => 'vat',
-        'country_code' => 'ES',
-        'default_rate' => 21.50, // Input as float
-    ]);
-
-    // Verify it's stored correctly and retrieved as float
-    expect($taxCategory->default_rate)->toBe(21.5);
-
-    // Reload from database
-    $reloaded = TaxCategory::find($taxCategory->id);
-    expect($reloaded->default_rate)->toBe(21.5);
-});
-
-it('can support different tax systems', function () {
-    $systems = [
-        ['code' => 'VAT_ES', 'name' => 'VAT Standard', 'tax_type' => 'vat', 'country' => 'ES', 'rate' => 2100],
-        ['code' => 'SALES_CA', 'name' => 'Sales Tax CA', 'tax_type' => 'sales_tax', 'country' => 'US', 'rate' => 725],
-        ['code' => 'GST_AU', 'name' => 'GST Australia', 'tax_type' => 'gst', 'country' => 'AU', 'rate' => 1000],
-        ['code' => 'HST_ON', 'name' => 'HST Ontario', 'tax_type' => 'hst', 'country' => 'CA', 'rate' => 1300],
-    ];
-
-    foreach ($systems as $system) {
-        TaxCategory::create([
-            'code'         => $system['code'],
-            'name'         => $system['name'],
-            'tax_type'     => $system['tax_type'],
-            'country_code' => $system['country'],
-            'default_rate' => $system['rate'],
-        ]);
-    }
-
-    expect(TaxCategory::taxType('vat')->count())->toBe(1);
-    expect(TaxCategory::taxType('sales_tax')->count())->toBe(1);
-    expect(TaxCategory::taxType('gst')->count())->toBe(1);
-    expect(TaxCategory::taxType('hst')->count())->toBe(1);
-});
-
-it('can filter by region', function () {
-    TaxCategory::create([
-        'code'         => 'SALES_CA',
-        'name'         => 'Sales Tax CA',
         'tax_type'     => 'sales_tax',
-        'country_code' => 'US',
-        'region_code'  => 'CA',
-        'default_rate' => 7.25,
     ]);
 
-    TaxCategory::create([
-        'code'         => 'SALES_NY',
-        'name'         => 'Sales Tax NY',
-        'tax_type'     => 'sales_tax',
+    $categories = TaxCategory::taxType('vat')->country('ES')->get();
+
+    expect($categories)->toHaveCount(1)
+        ->and($categories->first()->tax_type)->toBe('vat')
+        ->and($categories->first()->country_code)->toBe('ES');
+});
+
+it('can create category with region', function () {
+    $category = TaxCategory::factory()->create([
         'country_code' => 'US',
         'region_code'  => 'NY',
-        'default_rate' => 4.0,
+        'tax_type'     => 'sales_tax',
+        'default_rate' => 8.88,
     ]);
 
-    $caCategories = TaxCategory::region('CA')->get();
-    expect($caCategories)->toHaveCount(1);
-    expect($caCategories->first()->code)->toBe('SALES_CA');
+    expect($category->country_code)->toBe('US')
+        ->and($category->region_code)->toBe('NY')
+        ->and($category->default_rate)->toBe(8.88);
 });
 
-it('can order by sort_order', function () {
-    TaxCategory::create(['code' => 'C', 'name' => 'Third', 'tax_type' => 'vat', 'country_code' => 'ES', 'default_rate' => 21.0, 'sort_order' => 3]);
-    TaxCategory::create(['code' => 'A', 'name' => 'First', 'tax_type' => 'vat', 'country_code' => 'ES', 'default_rate' => 21.0, 'sort_order' => 1]);
-    TaxCategory::create(['code' => 'B', 'name' => 'Second', 'tax_type' => 'vat', 'country_code' => 'ES', 'default_rate' => 21.0, 'sort_order' => 2]);
+it('can have null region_code', function () {
+    $category = TaxCategory::factory()->create([
+        'region_code' => null,
+    ]);
 
-    $ordered = TaxCategory::ordered()->get();
-    expect($ordered->first()->code)->toBe('A');
-    expect($ordered->last()->code)->toBe('C');
+    expect($category->region_code)->toBeNull();
+});
+
+it('enforces unique code constraint', function () {
+    TaxCategory::factory()->create([
+        'code' => 'unique_code',
+    ]);
+
+    expect(function () {
+        TaxCategory::factory()->create([
+            'code' => 'unique_code',
+        ]);
+    })->toThrow(\Illuminate\Database\QueryException::class);
+});
+
+it('can get all tax types', function () {
+    TaxCategory::factory()->create(['tax_type' => 'sales_tax']);
+    TaxCategory::factory()->create(['tax_type' => 'gst']);
+    TaxCategory::factory()->create(['tax_type' => 'vat']);
+
+    $taxTypes = TaxCategory::distinct('tax_type')->pluck('tax_type')->toArray();
+
+    expect($taxTypes)->toContain('vat')
+        ->and($taxTypes)->toContain('sales_tax')
+        ->and($taxTypes)->toContain('gst');
+});
+
+it('can chain multiple scopes', function () {
+    TaxCategory::factory()->create([
+        'country_code' => 'ES',
+        'tax_type'     => 'vat',
+        'is_active'    => false,
+        'sort_order'   => 2,
+    ]);
+
+    $categories = TaxCategory::active()
+        ->country('ES')
+        ->taxType('vat')
+        ->ordered()
+        ->get();
+
+    expect($categories)->toHaveCount(1)
+        ->and($categories->first()->is_active)->toBeTrue();
 });

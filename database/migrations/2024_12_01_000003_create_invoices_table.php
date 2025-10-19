@@ -50,8 +50,8 @@ return new class extends Migration
 
             // Amounts (Base-100 integer storage)
             $table->integer('taxable_amount')->default(0)->comment('Base-100: €12.34 = 1234. Taxable amount before tax');
-            $table->integer('tax_amount')->default(0)->comment('Base-100: calculated tax amount');
-            $table->integer('total_amount')->default(0)->comment('Base-100: taxable_amount + tax_amount');
+            $table->integer('total_tax_amount')->default(0)->comment('Base-100: Sum of all tax amounts from items');
+            $table->integer('total_amount')->default(0)->comment('Base-100: taxable_amount + total_tax_amount');
 
             // Immutability
             $table->boolean('is_immutable')->default(false)->comment('If true, invoice cannot be modified (fiscal protection)');

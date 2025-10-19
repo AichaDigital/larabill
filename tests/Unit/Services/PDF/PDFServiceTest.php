@@ -69,13 +69,13 @@ it('can register new connector', function () {
 it('can generate PDF for invoice', function () {
     // Create a test invoice with factory
     $invoice = Invoice::factory()->create([
-        'fiscal_number'    => 'TEST-001',
-        'serie'            => InvoiceSerieType::INVOICE->value,
-        'status'           => InvoiceStatus::DRAFT->value,
-        'user_id'          => 1,
-        'taxable_amount'   => 100.0,
-        'tax_amount'       => 21.0,
-        'total_amount'     => 121.0,
+        'fiscal_number'     => 'TEST-001',
+        'serie'             => InvoiceSerieType::INVOICE->value,
+        'status'            => InvoiceStatus::DRAFT->value,
+        'user_id'           => 1,
+        'taxable_amount'    => 100.0,
+        'total_tax_amount'  => 21.0,
+        'total_amount'      => 121.0,
     ]);
 
     $result = $this->pdfService->generatePDF($invoice);
@@ -90,13 +90,13 @@ it('can generate PDF for invoice', function () {
 it('can handle PDF generation errors gracefully', function () {
     // Create an invoice with minimal fields
     $invoice = Invoice::factory()->create([
-        'fiscal_number'  => 'TEST-ERROR',
-        'serie'          => InvoiceSerieType::INVOICE->value,
-        'status'         => InvoiceStatus::DRAFT->value,
-        'user_id'        => 1,
-        'taxable_amount' => 10000,
-        'tax_amount'     => 2100,
-        'total_amount'   => 12100,
+        'fiscal_number'        => 'TEST-ERROR',
+        'serie'                => InvoiceSerieType::INVOICE->value,
+        'status'               => InvoiceStatus::DRAFT->value,
+        'user_id'              => 1,
+        'taxable_amount'       => 10000,
+        'total_tax_amount'     => 2100,
+        'total_amount'         => 12100,
     ]);
 
     $result = $this->pdfService->generatePDF($invoice);
@@ -109,13 +109,13 @@ it('can handle PDF generation errors gracefully', function () {
 
 it('can cache PDF results', function () {
     $invoice = Invoice::factory()->create([
-        'fiscal_number'    => 'TEST-002',
-        'serie'            => InvoiceSerieType::INVOICE->value,
-        'status'           => InvoiceStatus::DRAFT->value,
-        'user_id'          => 1,
-        'taxable_amount'   => 100.0,
-        'tax_amount'       => 21.0,
-        'total_amount'     => 121.0,
+        'fiscal_number'          => 'TEST-002',
+        'serie'                  => InvoiceSerieType::INVOICE->value,
+        'status'                 => InvoiceStatus::DRAFT->value,
+        'user_id'                => 1,
+        'taxable_amount'         => 100.0,
+        'total_tax_amount'       => 21.0,
+        'total_amount'           => 121.0,
     ]);
 
     $result = $this->pdfService->generatePDF($invoice);
@@ -129,13 +129,13 @@ it('can cache PDF results', function () {
 
 it('can clear PDF cache', function () {
     $invoice = Invoice::factory()->create([
-        'fiscal_number'  => 'TEST-003',
-        'serie'          => InvoiceSerieType::INVOICE->value,
-        'status'         => InvoiceStatus::DRAFT->value,
-        'user_id'        => 1,
-        'taxable_amount' => 10000,
-        'tax_amount'     => 2100,
-        'total_amount'   => 12100,
+        'fiscal_number'        => 'TEST-003',
+        'serie'                => InvoiceSerieType::INVOICE->value,
+        'status'               => InvoiceStatus::DRAFT->value,
+        'user_id'              => 1,
+        'taxable_amount'       => 10000,
+        'total_tax_amount'     => 2100,
+        'total_amount'         => 12100,
     ]);
 
     $this->pdfService->generatePDF($invoice);

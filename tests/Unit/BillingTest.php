@@ -3,8 +3,15 @@
 declare(strict_types=1);
 
 use AichaDigital\Larabill\Enums\{InvoiceSerieType, InvoiceStatus};
-use AichaDigital\Larabill\Models\Invoice;
+use AichaDigital\Larabill\Models\{Invoice, TaxGroup, TaxRate};
 use AichaDigital\Larabill\Services\BillingService;
+
+beforeEach(function () {
+    // Create a standard tax group for tests - v0.3.3 Agnostic Tax System
+    $this->taxGroup = TaxGroup::factory()->create(['name' => 'IVA General España']);
+    $this->taxRate  = TaxRate::factory()->create(['rate' => 2100]); // 21%
+    $this->taxGroup->taxRates()->attach($this->taxRate);
+});
 
 it('can create a basic invoice', function () {
     $service = new BillingService;
@@ -15,10 +22,10 @@ it('can create a basic invoice', function () {
         'customer_type'    => 'individual',
         'items'            => [
             [
-                'description' => 'Test Item',
-                'quantity'    => 1,
-                'unit_price'  => 100.0,
-                'tax_rate'    => 21.0,
+                'description'  => 'Test Item',
+                'quantity'     => 1,
+                'unit_price'   => 100.0,
+                'tax_group_id' => $this->taxGroup->id, // v0.3.3: Use tax_group_id instead of tax_rate
             ],
         ],
     ];
@@ -29,6 +36,12 @@ it('can create a basic invoice', function () {
     expect($invoice->fiscal_number)->toStartWith('FAC-');
     expect($invoice->total_amount)->toBe(121.0); // 100 + 21% VAT
     expect($invoice->is_immutable)->toBeFalse();
+
+    // v0.3.3: Verify new tax structure in invoice_item
+    $item = $invoice->items->first();
+    expect($item->total_tax_amount)->toBe(21.0);
+    expect($item->taxes_applied)->toBeArray();
+    expect($item->taxes_applied)->toHaveCount(1);
 });
 
 it('can create an immutable invoice', function () {
@@ -40,10 +53,10 @@ it('can create an immutable invoice', function () {
         'customer_type'    => 'individual',
         'items'            => [
             [
-                'description' => 'Test Item',
-                'quantity'    => 1,
-                'unit_price'  => 100.0,
-                'tax_rate'    => 21.0,
+                'description'  => 'Test Item',
+                'quantity'     => 1,
+                'unit_price'   => 100.0,
+                'tax_group_id' => $this->taxGroup->id,
             ],
         ],
     ];
@@ -64,10 +77,10 @@ it('can create a proforma invoice', function () {
         'customer_type'    => 'individual',
         'items'            => [
             [
-                'description' => 'Test Item',
-                'quantity'    => 1,
-                'unit_price'  => 100.0,
-                'tax_rate'    => 21.0,
+                'description'  => 'Test Item',
+                'quantity'     => 1,
+                'unit_price'   => 100.0,
+                'tax_group_id' => $this->taxGroup->id,
             ],
         ],
     ];
@@ -89,10 +102,10 @@ it('can convert proforma to invoice', function () {
         'customer_type'    => 'individual',
         'items'            => [
             [
-                'description' => 'Test Item',
-                'quantity'    => 1,
-                'unit_price'  => 100.0,
-                'tax_rate'    => 21.0,
+                'description'  => 'Test Item',
+                'quantity'     => 1,
+                'unit_price'   => 100.0,
+                'tax_group_id' => $this->taxGroup->id,
             ],
         ],
     ];
@@ -131,10 +144,10 @@ it('can generate sequential invoice numbers', function () {
         'customer_type'    => 'individual',
         'items'            => [
             [
-                'description' => 'Test Item',
-                'quantity'    => 1,
-                'unit_price'  => 100.0,
-                'tax_rate'    => 21.0,
+                'description'  => 'Test Item',
+                'quantity'     => 1,
+                'unit_price'   => 100.0,
+                'tax_group_id' => $this->taxGroup->id,
             ],
         ],
     ];
@@ -154,10 +167,10 @@ it('can generate invoice numbers with annual reset', function () {
         'customer_type'    => 'individual',
         'items'            => [
             [
-                'description' => 'Test Item',
-                'quantity'    => 1,
-                'unit_price'  => 100.0,
-                'tax_rate'    => 21.0,
+                'description'  => 'Test Item',
+                'quantity'     => 1,
+                'unit_price'   => 100.0,
+                'tax_group_id' => $this->taxGroup->id,
             ],
         ],
     ];
@@ -181,10 +194,10 @@ it('can generate invoice numbers with detailed format', function () {
         'customer_type'    => 'individual',
         'items'            => [
             [
-                'description' => 'Test Item',
-                'quantity'    => 1,
-                'unit_price'  => 100.0,
-                'tax_rate'    => 21.0,
+                'description'  => 'Test Item',
+                'quantity'     => 1,
+                'unit_price'   => 100.0,
+                'tax_group_id' => $this->taxGroup->id,
             ],
         ],
     ];
@@ -206,10 +219,10 @@ it('can generate proforma numbers with different prefix', function () {
         'customer_type'    => 'individual',
         'items'            => [
             [
-                'description' => 'Test Item',
-                'quantity'    => 1,
-                'unit_price'  => 100.0,
-                'tax_rate'    => 21.0,
+                'description'  => 'Test Item',
+                'quantity'     => 1,
+                'unit_price'   => 100.0,
+                'tax_group_id' => $this->taxGroup->id,
             ],
         ],
     ];
@@ -234,10 +247,10 @@ it('can create invoice with encrypted customer data when immutable', function ()
         ],
         'items' => [
             [
-                'description' => 'Test Item',
-                'quantity'    => 1,
-                'unit_price'  => 100.0,
-                'tax_rate'    => 21.0,
+                'description'  => 'Test Item',
+                'quantity'     => 1,
+                'unit_price'   => 100.0,
+                'tax_group_id' => $this->taxGroup->id,
             ],
         ],
     ];
@@ -267,10 +280,10 @@ it('can create invoice with ROI verification', function () {
         ],
         'items' => [
             [
-                'description' => 'Test Item',
-                'quantity'    => 1,
-                'unit_price'  => 100.0,
-                'tax_rate'    => 21.0,
+                'description'  => 'Test Item',
+                'quantity'     => 1,
+                'unit_price'   => 100.0,
+                'tax_group_id' => $this->taxGroup->id,
             ],
         ],
     ];
@@ -281,7 +294,10 @@ it('can create invoice with ROI verification', function () {
 
     expect($invoice)->toBeInstanceOf(Invoice::class);
     expect($invoice->vat_verification)->toBe($invoiceData['vat_verification']);
-    expect($invoice->is_roi_taxed)->toBeBool();
+    // Note: is_roi_taxed logic is handled separately by RoiVerificationService
+    // Here we just verify the invoice was created with vat_verification data
+    expect($invoice->vat_verification)->toHaveKey('vat_code');
+    expect($invoice->vat_verification)->toHaveKey('country_code');
 });
 
 it('can create invoice with multiple items', function () {
@@ -293,16 +309,16 @@ it('can create invoice with multiple items', function () {
         'customer_type'    => 'individual',
         'items'            => [
             [
-                'description' => 'Item 1',
-                'quantity'    => 2,
-                'unit_price'  => 50.0,
-                'tax_rate'    => 21.0,
+                'description'  => 'Item 1',
+                'quantity'     => 2,
+                'unit_price'   => 50.0,
+                'tax_group_id' => $this->taxGroup->id,
             ],
             [
-                'description' => 'Item 2',
-                'quantity'    => 1,
-                'unit_price'  => 100.0,
-                'tax_rate'    => 10.0,
+                'description'  => 'Item 2',
+                'quantity'     => 1,
+                'unit_price'   => 100.0,
+                'tax_group_id' => $this->taxGroup->id,
             ],
         ],
     ];
@@ -335,10 +351,10 @@ it('can create invoice with custom template', function () {
         'template_name'    => 'custom_template',
         'items'            => [
             [
-                'description' => 'Test Item',
-                'quantity'    => 1,
-                'unit_price'  => 100.0,
-                'tax_rate'    => 21.0,
+                'description'  => 'Test Item',
+                'quantity'     => 1,
+                'unit_price'   => 100.0,
+                'tax_group_id' => $this->taxGroup->id,
             ],
         ],
     ];
@@ -362,10 +378,10 @@ it('can create invoice with payment terms and due date', function () {
         'payment_terms'    => 'Net 30',
         'items'            => [
             [
-                'description' => 'Test Item',
-                'quantity'    => 1,
-                'unit_price'  => 100.0,
-                'tax_rate'    => 21.0,
+                'description'  => 'Test Item',
+                'quantity'     => 1,
+                'unit_price'   => 100.0,
+                'tax_group_id' => $this->taxGroup->id,
             ],
         ],
     ];

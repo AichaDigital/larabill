@@ -48,10 +48,10 @@ return new class extends Migration
             $table->json('vat_verification')->nullable()->comment('VAT/Tax number verification response (if B2B)');
             $table->boolean('is_roi_taxed')->default(false)->comment('If true, applies reverse charge mechanism (EU B2B)');
 
-            // Amounts (Base-100 integer storage)
+            // Amounts (Base-100 integer storage) - v0.3.3 Agnostic Tax System
             $table->integer('taxable_amount')->default(0)->comment('Base-100: €12.34 = 1234. Taxable amount before tax');
-            $table->integer('tax_amount')->default(0)->comment('Base-100: calculated tax amount');
-            $table->integer('total_amount')->default(0)->comment('Base-100: taxable_amount + tax_amount');
+            $table->integer('total_tax_amount')->default(0)->comment('Base-100: sum of all taxes from invoice_items');
+            $table->integer('total_amount')->default(0)->comment('Base-100: taxable_amount + total_tax_amount');
 
             // Immutability
             $table->boolean('is_immutable')->default(false)->comment('If true, invoice cannot be modified (fiscal protection)');

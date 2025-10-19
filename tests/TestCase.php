@@ -53,6 +53,9 @@ class TestCase extends Orchestra
 
         // Load package configuration
         $app['config']->set('larabill', require __DIR__.'/../config/larabill.php');
+
+        // Override user model for tests
+        $app['config']->set('larabill.user_model', TestUser::class);
     }
 
     /**

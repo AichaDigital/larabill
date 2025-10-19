@@ -29,6 +29,11 @@ class UnitMeasure extends Model
 {
     use HasFactory;
 
+    protected static function newFactory()
+    {
+        return \AichaDigital\Larabill\Database\Factories\UnitMeasureFactory::new();
+    }
+
     protected $table = 'unit_measures';
 
     protected $fillable = [

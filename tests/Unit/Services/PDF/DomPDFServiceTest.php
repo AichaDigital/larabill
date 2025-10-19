@@ -45,13 +45,13 @@ it('can update configuration', function () {
 
 it('can generate PDF for fiscal invoice', function () {
     $invoice = Invoice::factory()->create([
-        'fiscal_number'    => 'FAC-001',
-        'serie'            => InvoiceSerieType::INVOICE->value,
-        'status'           => InvoiceStatus::PAID->value,
-        'user_id'          => 'test-user',
-        'taxable_amount'   => 10000,
-        'tax_amount'       => 2100,
-        'total_amount'     => 12100,
+        'fiscal_number'          => 'FAC-001',
+        'serie'                  => InvoiceSerieType::INVOICE->value,
+        'status'                 => InvoiceStatus::PAID->value,
+        'user_id'                => 'test-user',
+        'taxable_amount'         => 10000,
+        'total_tax_amount'       => 2100,
+        'total_amount'           => 12100,
     ]);
 
     $qrData = [
@@ -72,13 +72,13 @@ it('can generate PDF for fiscal invoice', function () {
 
 it('can generate PDF for proforma invoice without QR', function () {
     $invoice = Invoice::factory()->create([
-        'fiscal_number'    => 'PRO-001',
-        'serie'            => InvoiceSerieType::PROFORMA->value,
-        'status'           => InvoiceStatus::DRAFT->value,
-        'user_id'          => 'test-user',
-        'taxable_amount'   => 10000,
-        'tax_amount'       => 2100,
-        'total_amount'     => 12100,
+        'fiscal_number'          => 'PRO-001',
+        'serie'                  => InvoiceSerieType::PROFORMA->value,
+        'status'                 => InvoiceStatus::DRAFT->value,
+        'user_id'                => 'test-user',
+        'taxable_amount'         => 10000,
+        'total_tax_amount'       => 2100,
+        'total_amount'           => 12100,
     ]);
 
     $result = $this->dompdfService->generatePDF($invoice);
@@ -93,14 +93,14 @@ it('can generate PDF for proforma invoice without QR', function () {
 
 it('can detect reverse charge invoice', function () {
     $invoice = Invoice::factory()->create([
-        'fiscal_number'     => 'FAC-003',
-        'serie'             => InvoiceSerieType::INVOICE->value,
-        'status'            => InvoiceStatus::PAID->value,
-        'user_id'           => 'test-user',
-        'taxable_amount'    => 10000,
-        'tax_amount'        => 0,
-        'total_amount'      => 10000,
-        'fiscal_data'       => ['reverse_charge' => true],
+        'fiscal_number'           => 'FAC-003',
+        'serie'                   => InvoiceSerieType::INVOICE->value,
+        'status'                  => InvoiceStatus::PAID->value,
+        'user_id'                 => 'test-user',
+        'taxable_amount'          => 10000,
+        'total_tax_amount'        => 0,
+        'total_amount'            => 10000,
+        'fiscal_data'             => ['reverse_charge' => true],
     ]);
 
     $result = $this->dompdfService->generatePDF($invoice);
@@ -112,14 +112,14 @@ it('can detect reverse charge invoice', function () {
 
 it('can detect exempt invoice', function () {
     $invoice = Invoice::factory()->create([
-        'fiscal_number'     => 'FAC-004',
-        'serie'             => InvoiceSerieType::INVOICE->value,
-        'status'            => InvoiceStatus::PAID->value,
-        'user_id'           => 'test-user',
-        'taxable_amount'    => 10000,
-        'tax_amount'        => 0,
-        'total_amount'      => 10000,
-        'fiscal_data'       => ['exempt' => true],
+        'fiscal_number'           => 'FAC-004',
+        'serie'                   => InvoiceSerieType::INVOICE->value,
+        'status'                  => InvoiceStatus::PAID->value,
+        'user_id'                 => 'test-user',
+        'taxable_amount'          => 10000,
+        'total_tax_amount'        => 0,
+        'total_amount'            => 10000,
+        'fiscal_data'             => ['exempt' => true],
     ]);
 
     $result = $this->dompdfService->generatePDF($invoice);

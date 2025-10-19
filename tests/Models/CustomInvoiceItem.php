@@ -17,8 +17,8 @@ class CustomInvoiceItem extends Model
         'quantity',
         'unit_price',
         'taxable_amount',
-        'tax_rate',
-        'tax_amount',
+        'total_tax_amount', // v0.3.3: Renamed from tax_amount
+        'taxes_applied',    // v0.3.3: JSON snapshot
         'total',
     ];
 }

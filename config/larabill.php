@@ -116,4 +116,81 @@ return [
         'fiscal_year_start'      => '01-01', // MM-DD format
         'auto_apply_destination' => true,
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Queue Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configure queue behavior for Larabill background jobs.
+    | If queue_connection is null, uses default Laravel queue connection.
+    | Supported drivers: redis, sqs, beanstalkd, sync (no queue)
+    |
+    */
+    'queue' => [
+        // Queue connection (redis, sqs, beanstalkd, sync, etc.)
+        'connection' => env('LARABILL_QUEUE_CONNECTION'),
+
+        // Specific queue name for Larabill jobs
+        'name' => env('LARABILL_QUEUE_NAME', 'default'),
+
+        // Number of times to retry failed jobs
+        'tries' => (int) env('LARABILL_QUEUE_TRIES', 3),
+
+        // Timeout in seconds
+        'timeout' => (int) env('LARABILL_QUEUE_TIMEOUT', 300),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Recurring Billing Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configure automatic recurring billing generation.
+    | Invoices are generated X days in advance of the service billing date.
+    |
+    */
+    'recurring_billing' => [
+        // Days in advance to generate invoices (global default)
+        // Can be overridden per article via billing_days_in_advance field
+        'days_in_advance' => (int) env('LARABILL_BILLING_DAYS_IN_ADVANCE', 7),
+
+        // Schedule time for daily recurring billing run (24h format: HH:MM)
+        'schedule_time' => env('LARABILL_BILLING_SCHEDULE_TIME', '00:00'),
+
+        // Send email notifications after creating invoices
+        'send_notifications' => (bool) env('LARABILL_BILLING_SEND_NOTIFICATIONS', true),
+
+        // Payment terms in days (for calculating due_date)
+        'payment_terms_days' => (int) env('LARABILL_PAYMENT_TERMS_DAYS', 15),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Payment Reminders Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configure automatic payment reminder emails for unpaid invoices.
+    | Disabled if 'enabled' is false.
+    |
+    */
+    'payment_reminders' => [
+        // Enable automatic payment reminders
+        'enabled' => (bool) env('LARABILL_REMINDERS_ENABLED', true),
+
+        // Schedule time for daily reminder run (24h format: HH:MM)
+        'schedule_time' => env('LARABILL_REMINDERS_SCHEDULE_TIME', '10:00'),
+
+        // Days before due date for first reminder
+        'first_reminder_days' => (int) env('LARABILL_REMINDER_FIRST', 7),
+
+        // Days before due date for second reminder
+        'second_reminder_days' => (int) env('LARABILL_REMINDER_SECOND', 3),
+
+        // Days after due date for overdue notice
+        'overdue_days' => (int) env('LARABILL_REMINDER_OVERDUE', 1),
+
+        // Days after due date for second overdue + suspension warning
+        'overdue_suspension_days' => (int) env('LARABILL_REMINDER_SUSPENSION', 7),
+    ],
 ];

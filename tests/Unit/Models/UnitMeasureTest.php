@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 use AichaDigital\Larabill\Enums\UnitMeasureCategory;
-use AichaDigital\Larabill\Models\UnitMeasure;
+use AichaDigital\Larabill\Models\{Invoice, InvoiceItem, UnitMeasure};
+use AichaDigital\Larabill\Tests\Models\User;
 
 it('can create a unit measure', function () {
     $unitMeasure = UnitMeasure::create([
@@ -145,4 +146,46 @@ it('can order by sort_order', function () {
     $ordered = UnitMeasure::orderBy('sort_order')->get();
     expect($ordered->first()->code)->toBe('a');
     expect($ordered->last()->code)->toBe('c');
+});
+
+it('can have invoice items relationship', function () {
+    $unitMeasure = UnitMeasure::factory()->create();
+    $user        = User::factory()->create();
+    $invoice     = Invoice::factory()->create(['user_id' => $user->id]);
+
+    InvoiceItem::factory()->create([
+        'invoice_id'      => $invoice->id,
+        'unit_measure_id' => $unitMeasure->id,
+    ]);
+
+    expect($unitMeasure->invoiceItems)->toHaveCount(1)
+        ->and($unitMeasure->invoiceItems->first()->unit_measure_id)->toBe($unitMeasure->id);
+});
+
+it('can use active scope', function () {
+    UnitMeasure::factory()->create(['is_active' => true, 'code' => 'active']);
+    UnitMeasure::factory()->create(['is_active' => false, 'code' => 'inactive']);
+
+    $activeUnits = UnitMeasure::active()->get();
+    expect($activeUnits)->toHaveCount(1)
+        ->and($activeUnits->first()->code)->toBe('active');
+});
+
+it('can use category scope', function () {
+    UnitMeasure::factory()->create(['category' => UnitMeasureCategory::WEIGHT]);
+    UnitMeasure::factory()->create(['category' => UnitMeasureCategory::VOLUME]);
+
+    $weightUnits = UnitMeasure::category(UnitMeasureCategory::WEIGHT)->get();
+    expect($weightUnits)->toHaveCount(1)
+        ->and($weightUnits->first()->category)->toBe(UnitMeasureCategory::WEIGHT);
+});
+
+it('can use ordered scope', function () {
+    UnitMeasure::factory()->create(['name' => 'Zebra', 'sort_order' => 3]);
+    UnitMeasure::factory()->create(['name' => 'Alpha', 'sort_order' => 1]);
+    UnitMeasure::factory()->create(['name' => 'Beta', 'sort_order' => 2]);
+
+    $ordered = UnitMeasure::ordered()->get();
+    expect($ordered->first()->name)->toBe('Alpha')
+        ->and($ordered->last()->name)->toBe('Zebra');
 });

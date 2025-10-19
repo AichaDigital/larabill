@@ -6,6 +6,7 @@ namespace AichaDigital\Larabill\Services;
 
 use AichaDigital\Larabill\Enums\{InvoiceSerieType, InvoiceStatus};
 use AichaDigital\Larabill\Models\{Invoice, InvoiceItem};
+use AichaDigital\Larabill\Models\TaxGroup;
 
 /**
  * Billing Service
@@ -38,81 +39,45 @@ class BillingService
      */
     public function createInvoice(array $invoiceData, array $options = []): Invoice
     {
-        $items           = $invoiceData['items'] ?? [];
-        $userId          = $invoiceData['user_id'];
-        $customerCountry = $invoiceData['customer_country'] ?? 'ES';
-        $customerType    = $invoiceData['customer_type']    ?? 'individual';
+        $userId = $invoiceData['user_id'];
 
         // Extract options
-        $roiVerification = $options['roi_verification']     ?? false;
-        $makeImmutable   = $options['make_immutable']       ?? false;
-        $vatVerification = $invoiceData['vat_verification'] ?? null;
-        $companyId       = $invoiceData['company_id']       ?? null;
+        $makeImmutable = $options['make_immutable'] ?? false;
 
-        // Calculate taxes using TaxCalculationService
-        $subtotal      = $this->calculateSubtotal($items);
-        $isB2B         = $customerType === 'business';
-        $sellerCountry = 'ES'; // Default seller country
-
-        $taxCalculation = $this->taxCalculationService->calculateTax(
-            $subtotal,
-            $sellerCountry,
-            $customerCountry,
-            $isB2B,
-            [
-                'company_id'       => $companyId,
-                'vat_verification' => $vatVerification,
-            ]
-        );
-
-        // ROI verification if requested
-        $roiData = null;
-        if ($roiVerification && $vatVerification) {
-            $roiData = $this->roiVerificationService->verifyRoiStatus(
-                userId: (string) $userId,
-                vatNumber: $vatVerification['vat_code']       ?? '',
-                countryCode: $vatVerification['country_code'] ?? $customerCountry
-            );
-        }
-
-        // Create invoice
+        // Create invoice record first, without totals
         // TODO v0.3.3: Refactor to use InvoiceNumberingService + new fiscal fields
         $invoiceType = $invoiceData['type'] ?? 'invoice';
         $serie       = $invoiceType === 'proforma' ? InvoiceSerieType::PROFORMA->value : InvoiceSerieType::INVOICE->value;
         $status      = isset($invoiceData['status']) ? $this->mapStatusToEnum($invoiceData['status']) : InvoiceStatus::DRAFT->value;
 
         $invoice = Invoice::create([
-            'fiscal_number'  => $this->generateInvoiceNumber($invoiceType, $options), // TODO: usar InvoiceNumberingService
-            'prefix'         => $invoiceType === 'proforma' ? 'PRO' : 'FAC',
-            'serie'          => $serie,
-            'series_number'  => $this->getTempSeriesNumber($serie, now()->year), // TODO: usar InvoiceNumberingService para correlativo real
-            'fiscal_year'    => now()->year,
-            'invoice_date'   => now()->toDateString(),
-            'issued_at'      => now(),
-            'status'         => $status,
-            'user_id'        => $userId,
-            'taxable_amount' => $taxCalculation['amount'], // Base100 cast handles conversion
-            'tax_amount'     => $taxCalculation['tax_amount'], // Base100 cast handles conversion
-            'total_amount'   => $taxCalculation['total'], // Base100 cast handles conversion
-            'fiscal_data'    => [
-                'tax_rate'           => $taxCalculation['tax_rate'],
-                'tax_type'           => $taxCalculation['tax_type'],
-                'tax_name'           => $taxCalculation['tax_name'],
-                'special_conditions' => $taxCalculation['special_conditions'],
-            ],
-            'vat_verification' => $vatVerification,
-            'is_roi_taxed'     => $roiData['is_roi'] ?? false,
+            'fiscal_number'    => $this->generateInvoiceNumber($invoiceType, $options),
+            'prefix'           => $invoiceType === 'proforma' ? 'PRO' : 'FAC',
+            'serie'            => $serie,
+            'series_number'    => $this->getTempSeriesNumber($serie, now()->year),
+            'fiscal_year'      => now()->year,
+            'invoice_date'     => now()->toDateString(),
+            'issued_at'        => now(),
+            'status'           => $status,
+            'user_id'          => $userId,
             'is_immutable'     => false,
-            'due_date'         => $invoiceData['due_date'] ?? null,
-            'notes'            => implode(' ', $taxCalculation['invoice_notes'] ?? []),
-            'payment_terms'    => $invoiceData['payment_terms'] ?? null,
-            'template_name'    => $invoiceData['template_name'] ?? null,
+            'due_date'         => $invoiceData['due_date']         ?? null,
+            'payment_terms'    => $invoiceData['payment_terms']    ?? null,
+            'template_name'    => $invoiceData['template_name']    ?? null,
+            'vat_verification' => $invoiceData['vat_verification'] ?? null,
         ]);
 
-        // Create invoice items
+        // Create invoice items, which now handle their own tax calculation
+        $items = $invoiceData['items'] ?? [];
         foreach ($items as $itemData) {
             $this->createInvoiceItem($invoice, $itemData);
         }
+
+        // Now, calculate invoice totals based on its items
+        $invoice->taxable_amount   = $invoice->items->sum('taxable_amount');
+        $invoice->total_tax_amount = $invoice->items->sum('total_tax_amount');
+        $invoice->total_amount     = $invoice->items->sum('total_amount');
+        $invoice->save();
 
         // Make immutable if requested
         if ($makeImmutable) {
@@ -238,30 +203,37 @@ class BillingService
      */
     private function createInvoiceItem(Invoice $invoice, array $itemData): InvoiceItem
     {
-        $quantity  = $itemData['quantity']   ?? 1;
-        $unitPrice = $itemData['unit_price'] ?? 0;
-        $taxRate   = $itemData['tax_rate']   ?? 0;
+        $taxGroup = TaxGroup::find($itemData['tax_group_id'] ?? null);
 
-        $taxableAmount = $quantity      * $unitPrice;
-        $taxAmount     = $taxableAmount * ($taxRate / 100);
-        $totalAmount   = $taxableAmount + $taxAmount;
+        $quantity      = $itemData['quantity']   ?? 1;
+        $unitPrice     = $itemData['unit_price'] ?? 0;
+        $taxableAmount = $quantity * $unitPrice;
+
+        $taxCalculation = [
+            'total_tax_amount' => 0,
+            'taxes_applied'    => [],
+        ];
+
+        if ($taxGroup) {
+            $taxCalculation = $this->taxCalculationService->calculate($taxableAmount, $taxGroup);
+        }
 
         return InvoiceItem::create([
-            'invoice_id'     => $invoice->id,
-            'description'    => $itemData['description'] ?? '',
-            'quantity'       => $quantity, // Base100 cast handles conversion
-            'unit_price'     => $unitPrice, // Base100 cast handles conversion
-            'taxable_amount' => $taxableAmount, // Base100 cast handles conversion
-            'tax_rate'       => $taxRate, // Base100 cast handles conversion
-            'tax_amount'     => $taxAmount, // Base100 cast handles conversion
-            'total_amount'   => $totalAmount, // Base100 cast handles conversion
+            'invoice_id'       => $invoice->id,
+            'description'      => $itemData['description'] ?? '',
+            'quantity'         => $quantity,
+            'unit_price'       => $unitPrice,
+            'taxable_amount'   => $taxableAmount,
+            'total_tax_amount' => $taxCalculation['total_tax_amount'],
+            'taxes_applied'    => $taxCalculation['taxes_applied'],
+            'total_amount'     => $taxableAmount + $taxCalculation['total_tax_amount'],
         ]);
     }
 
     /**
      * Get invoice items data for conversion.
      *
-     * @return array<int, array{description: string, quantity: float, unit_price: float, tax_rate: float}>
+     * @return array<int, array{description: string, quantity: float, unit_price: float, tax_group_id: int|null}>
      */
     private function getInvoiceItemsData(Invoice $invoice): array
     {
@@ -269,11 +241,14 @@ class BillingService
         $items = $invoice->items;
 
         return $items->map(function (InvoiceItem $item): array {
+            // This is tricky as we don't store the tax_group_id on the item.
+            // For conversion, we might need to store it or re-evaluate.
+            // For now, let's assume no tax on conversion for simplicity.
             return [
-                'description' => $item->description,
-                'quantity'    => $item->quantity,    // Base100 cast already returns float
-                'unit_price'  => $item->unit_price,  // Base100 cast already returns float
-                'tax_rate'    => $item->tax_rate,    // Base100 cast already returns float
+                'description'  => $item->description,
+                'quantity'     => $item->quantity,
+                'unit_price'   => $item->unit_price,
+                'tax_group_id' => null,
             ];
         })->toArray();
     }

@@ -96,7 +96,7 @@ class Invoice extends Model
         'vat_verification',
         'is_roi_taxed',
         'taxable_amount',
-        'tax_amount',
+        'total_tax_amount',
         'total_amount',
         'is_immutable',
         'immutable_at',
@@ -146,7 +146,7 @@ class Invoice extends Model
             'is_immutable'         => 'boolean',
             'immutable_at'         => 'datetime',
             'taxable_amount'       => Base100::class, // €12.34 ↔ 1234
-            'tax_amount'           => Base100::class, // €12.34 ↔ 1234
+            'total_tax_amount'     => Base100::class,
             'total_amount'         => Base100::class, // €12.34 ↔ 1234
             'fiscal_data'          => 'array',
             'vat_verification'     => 'array',
