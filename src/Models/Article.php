@@ -34,6 +34,7 @@ class Article extends Model
         'is_recurring',
         'billing_frequency',
         'billing_interval',
+        'billing_days_in_advance',
         'subscription_type',
         'tax_group_id',
         'unit_measure_id',
@@ -45,14 +46,15 @@ class Article extends Model
      * The attributes that should be cast.
      */
     protected $casts = [
-        'item_type'         => ItemType::class,
-        'billing_frequency' => BillingFrequency::class,
-        'base_price'        => Base100::class,
-        'cost_price'        => Base100::class,
-        'is_recurring'      => 'boolean',
-        'is_active'         => 'boolean',
-        'billing_interval'  => 'integer',
-        'metadata'          => 'array',
+        'item_type'                => ItemType::class,
+        'billing_frequency'        => BillingFrequency::class,
+        'base_price'               => Base100::class,
+        'cost_price'               => Base100::class,
+        'is_recurring'             => 'boolean',
+        'is_active'                => 'boolean',
+        'billing_interval'         => 'integer',
+        'billing_days_in_advance'  => 'integer',
+        'metadata'                 => 'array',
     ];
 
     /**

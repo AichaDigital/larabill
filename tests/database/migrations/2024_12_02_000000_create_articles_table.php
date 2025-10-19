@@ -33,6 +33,7 @@ return new class extends Migration
             $table->boolean('is_recurring')->default(false)->comment('If true, service is recurring');
             $table->char('billing_frequency', 1)->nullable()->comment('M=Monthly, Q=Quarterly, Y=Yearly, L=Lifetime');
             $table->unsignedTinyInteger('billing_interval')->default(1)->comment('Bill every X periods (e.g., every 2 months)');
+            $table->unsignedTinyInteger('billing_days_in_advance')->nullable()->comment('Days in advance to generate invoice (overrides global config)');
 
             // Integración externa
             $table->string('subscription_type', 100)->nullable()->comment('External system identifier: stripe:price_xxx, cpanel:account, etc.');
