@@ -160,7 +160,7 @@ class ArticleOverride extends Model
     /**
      * Get the discount amount compared to base price.
      */
-    public function getDiscountAmount(): int
+    public function getDiscountAmount(): float
     {
         return $this->article->base_price - $this->custom_price;
     }
@@ -170,7 +170,7 @@ class ArticleOverride extends Model
      */
     public function getDiscountPercentage(): int
     {
-        if ($this->article->base_price === 0) {
+        if ($this->article->base_price === 0.0 || $this->article->base_price === 0) {
             return 0;
         }
 

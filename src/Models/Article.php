@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use AichaDigital\Larabill\Enums\{BillingFrequency, ItemType};
 use AichaDigital\Lara100\Casts\Base100;
+use AichaDigital\Larabill\Enums\{BillingFrequency, ItemType};
 use Illuminate\Database\Eloquent\{Builder, Model, SoftDeletes};
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
@@ -172,7 +172,7 @@ class Article extends Model
         $rules = $this->metadata['service']['instance_validation'] ?? [];
 
         return match ($rules['type'] ?? 'any') {
-            'domain' => (bool) filter_var($identifier, FILTER_VALIDATE_DOMAIN, FILTER_FLAG_HOSTNAME),
+            'domain' => $this->validateDomain($identifier),
             'email'  => (bool) filter_var($identifier, FILTER_VALIDATE_EMAIL),
             'url'    => (bool) filter_var($identifier, FILTER_VALIDATE_URL),
             default  => true,
@@ -180,10 +180,19 @@ class Article extends Model
     }
 
     /**
+     * Validate domain name format.
+     */
+    protected function validateDomain(string $domain): bool
+    {
+        // Basic domain validation regex
+        return (bool) preg_match('/^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i', $domain);
+    }
+
+    /**
      * Get the effective price for a customer.
      * Checks for active overrides first, falls back to base price.
      */
-    public function getEffectivePriceFor(?int $customerId): int
+    public function getEffectivePriceFor(?int $customerId): float
     {
         if (! $customerId) {
             return $this->base_price;
@@ -238,7 +247,7 @@ class Article extends Model
      */
     public function getProfitMarginPercentage(): ?int
     {
-        if (! $this->cost_price || $this->base_price === 0) {
+        if (! $this->cost_price || $this->base_price == 0) {
             return null;
         }
 

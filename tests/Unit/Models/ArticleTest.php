@@ -199,13 +199,13 @@ it('validates instance identifier based on metadata rules', function () {
 it('returns base price when no customer provided', function () {
     $article = Article::factory()->create(['base_price' => 2900]);
 
-    expect($article->getEffectivePriceFor(null))->toBe(2900);
+    expect($article->getEffectivePriceFor(null))->toBe(2900.0);
 });
 
 it('returns base price when customer has no override', function () {
     $article = Article::factory()->create(['base_price' => 2900]);
 
-    expect($article->getEffectivePriceFor(999))->toBe(2900);
+    expect($article->getEffectivePriceFor(999))->toBe(2900.0);
 });
 
 it('returns override price when customer has active override', function () {
@@ -221,7 +221,7 @@ it('returns override price when customer has active override', function () {
         'is_active'    => true,
     ]);
 
-    expect($article->getEffectivePriceFor($customer->id))->toBe(2400);
+    expect($article->getEffectivePriceFor($customer->id))->toBe(2400.0);
 });
 
 it('gets active override for customer', function () {

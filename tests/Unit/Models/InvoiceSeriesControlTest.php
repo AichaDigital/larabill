@@ -49,7 +49,9 @@ it('can belong to a user', function () {
         'user_id' => $this->user->id,
     ]);
 
-    expect($control->user)->toBeInstanceOf(\AichaDigital\Larabill\Tests\Models\User::class)
+    $userModel = config('larabill.user_model', 'App\\Models\\User');
+
+    expect($control->user)->toBeInstanceOf($userModel)
         ->and($control->user->id)->toBe($this->user->id);
 });
 

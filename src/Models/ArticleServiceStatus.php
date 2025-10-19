@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use AichaDigital\Larabill\Enums\{CancellationType, ServiceStatus};
 use AichaDigital\Lara100\Casts\Base100;
+use AichaDigital\Larabill\Enums\{CancellationType, ServiceStatus};
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\{Builder, Model};
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -255,7 +255,7 @@ class ArticleServiceStatus extends Model
             return 0;
         }
 
-        return max(0, now()->diffInDays($this->next_billing_date, false));
+        return (int) max(0, now()->diffInDays($this->next_billing_date, false));
     }
 
     /**

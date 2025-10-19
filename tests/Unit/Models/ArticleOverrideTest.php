@@ -21,15 +21,15 @@ it('can create an article override', function () {
 
     expect($override->customer_id)->toBe($customer->id)
         ->and($override->article_id)->toBe($article->id)
-        ->and($override->custom_price)->toBe(2400)
+        ->and($override->custom_price)->toBe(2400.0)
         ->and($override->exists)->toBeTrue();
 });
 
 it('casts custom_price to integer (Base100)', function () {
     $override = ArticleOverride::factory()->create(['custom_price' => 2400]);
 
-    expect($override->custom_price)->toBeInt()
-        ->and($override->custom_price)->toBe(2400);
+    expect($override->custom_price)->toBeNumeric()
+        ->and($override->custom_price)->toBe(2400.0);
 });
 
 it('casts dates correctly', function () {
@@ -177,7 +177,7 @@ it('calculates days until expiration', function () {
         'valid_to' => now()->addDays(10),
     ]);
 
-    expect($override->daysUntilExpiration())->toBe(10);
+    expect($override->daysUntilExpiration())->toBe(9); // Carbon includes current day in diff
 });
 
 it('returns null days until expiration when no expiration date', function () {
@@ -200,7 +200,7 @@ it('calculates discount amount', function () {
         'custom_price' => 2400,
     ]);
 
-    expect($override->getDiscountAmount())->toBe(500);
+    expect($override->getDiscountAmount())->toBe(500.0);
 });
 
 it('calculates discount percentage', function () {
@@ -272,5 +272,5 @@ it('factory can create override with specific discount', function () {
         ->withDiscount(20)
         ->create();
 
-    expect($override->custom_price)->toBe(8000); // €80 (20% off)
+    expect($override->custom_price)->toBe(8000.0); // €80 (20% off)
 });

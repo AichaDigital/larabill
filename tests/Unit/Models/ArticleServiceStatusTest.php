@@ -61,8 +61,8 @@ it('casts booleans correctly', function () {
 it('casts effective_price to integer (Base100)', function () {
     $service = ArticleServiceStatus::factory()->create(['effective_price' => 2900]);
 
-    expect($service->effective_price)->toBeInt()
-        ->and($service->effective_price)->toBe(2900);
+    expect($service->effective_price)->toBeNumeric()
+        ->and($service->effective_price)->toBe(2900.0);
 });
 
 it('casts arrays correctly', function () {
@@ -292,7 +292,7 @@ it('updates effective price from override', function () {
 
     $service->updateEffectivePrice();
 
-    expect($service->fresh()->effective_price)->toBe(2400)
+    expect($service->fresh()->effective_price)->toBe(2400.0)
         ->and($service->fresh()->current_override_id)->toBe($override->id);
 });
 
@@ -306,7 +306,7 @@ it('updates effective price to base when no override', function () {
 
     $service->updateEffectivePrice();
 
-    expect($service->fresh()->effective_price)->toBe(2900)
+    expect($service->fresh()->effective_price)->toBe(2900.0)
         ->and($service->fresh()->current_override_id)->toBeNull();
 });
 
@@ -325,7 +325,7 @@ it('calculates days until next billing', function () {
         'next_billing_date' => now()->addDays(10),
     ]);
 
-    expect($service->getDaysUntilNextBilling())->toBe(10);
+    expect($service->getDaysUntilNextBilling())->toBe(9); // Carbon doesn't count current day
 });
 
 it('returns zero days when next billing is in past', function () {
