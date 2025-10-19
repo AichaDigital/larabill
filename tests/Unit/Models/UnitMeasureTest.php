@@ -161,3 +161,31 @@ it('can have invoice items relationship', function () {
     expect($unitMeasure->invoiceItems)->toHaveCount(1)
         ->and($unitMeasure->invoiceItems->first()->unit_measure_id)->toBe($unitMeasure->id);
 });
+
+it('can use active scope', function () {
+    UnitMeasure::factory()->create(['is_active' => true, 'code' => 'active']);
+    UnitMeasure::factory()->create(['is_active' => false, 'code' => 'inactive']);
+
+    $activeUnits = UnitMeasure::active()->get();
+    expect($activeUnits)->toHaveCount(1)
+        ->and($activeUnits->first()->code)->toBe('active');
+});
+
+it('can use category scope', function () {
+    UnitMeasure::factory()->create(['category' => UnitMeasureCategory::WEIGHT]);
+    UnitMeasure::factory()->create(['category' => UnitMeasureCategory::VOLUME]);
+
+    $weightUnits = UnitMeasure::category(UnitMeasureCategory::WEIGHT)->get();
+    expect($weightUnits)->toHaveCount(1)
+        ->and($weightUnits->first()->category)->toBe(UnitMeasureCategory::WEIGHT);
+});
+
+it('can use ordered scope', function () {
+    UnitMeasure::factory()->create(['name' => 'Zebra', 'sort_order' => 3]);
+    UnitMeasure::factory()->create(['name' => 'Alpha', 'sort_order' => 1]);
+    UnitMeasure::factory()->create(['name' => 'Beta', 'sort_order' => 2]);
+
+    $ordered = UnitMeasure::ordered()->get();
+    expect($ordered->first()->name)->toBe('Alpha')
+        ->and($ordered->last()->name)->toBe('Zebra');
+});
