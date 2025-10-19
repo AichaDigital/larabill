@@ -80,6 +80,23 @@ enum BillingFrequency: string
     }
 
     /**
+     * Subtract interval from date respecting the frequency
+     * Uses subMonths/subYears for precise calendar calculations
+     *
+     * @param  Carbon  $date  The starting date
+     * @param  int  $interval  Number of periods to subtract (default: 1)
+     */
+    public function subtractFromDate(Carbon $date, int $interval = 1): Carbon
+    {
+        return match ($this) {
+            self::MONTHLY   => $date->copy()->subMonthsNoOverflow($interval),
+            self::QUARTERLY => $date->copy()->subMonthsNoOverflow($interval * 3),
+            self::YEARLY    => $date->copy()->subYearsNoOverflow($interval),
+            self::LIFETIME  => $date->copy(), // No change for lifetime
+        };
+    }
+
+    /**
      * Get frequency from months count
      */
     public static function fromMonths(int $months): ?self
