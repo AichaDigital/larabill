@@ -45,13 +45,14 @@ it('skips services not due yet', function () {
         'customer_id'       => $customer->id,
         'article_id'        => $article->id,
         'status'            => ServiceStatus::ACTIVE,
-        'next_billing_date' => now()->addDays(30), // Not due yet
+        'next_billing_date' => now()->addDays(30), // Not due yet (30 days > 7 days in advance)
     ]);
 
     $results = $this->service->processRecurringBilling(now());
 
+    // Service is within our buffer window but doesn't pass shouldGenerateInvoice check
     expect($results['processed'])->toBe(0)
-        ->and($results['skipped'])->toBe(1)
+        ->and($results['skipped'])->toBe(1) // Counted as skipped (in window but not due)
         ->and($results['invoices'])->toHaveCount(0);
 });
 

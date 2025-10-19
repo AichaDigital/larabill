@@ -62,7 +62,7 @@ it('returns correct icons for each status', function () {
 
 it('returns all billable statuses', function () {
     $billable = ServiceStatus::billable();
-    
+
     expect($billable)->toHaveCount(1)
         ->and($billable)->toContain(ServiceStatus::ACTIVE)
         ->and($billable)->not->toContain(ServiceStatus::PENDING)
@@ -71,7 +71,7 @@ it('returns all billable statuses', function () {
 
 it('returns all final statuses', function () {
     $final = ServiceStatus::final();
-    
+
     expect($final)->toHaveCount(2)
         ->and($final)->toContain(ServiceStatus::CANCELLED)
         ->and($final)->toContain(ServiceStatus::EXPIRED)
@@ -81,16 +81,15 @@ it('returns all final statuses', function () {
 
 it('can be used in match expressions', function () {
     $getAction = fn (ServiceStatus $status) => match ($status) {
-        ServiceStatus::ACTIVE => 'bill',
-        ServiceStatus::PENDING => 'activate',
+        ServiceStatus::ACTIVE    => 'bill',
+        ServiceStatus::PENDING   => 'activate',
         ServiceStatus::SUSPENDED => 'resume',
         ServiceStatus::CANCELLED, ServiceStatus::EXPIRED => 'archive',
     };
-    
+
     expect($getAction(ServiceStatus::ACTIVE))->toBe('bill')
         ->and($getAction(ServiceStatus::PENDING))->toBe('activate')
         ->and($getAction(ServiceStatus::SUSPENDED))->toBe('resume')
         ->and($getAction(ServiceStatus::CANCELLED))->toBe('archive')
         ->and($getAction(ServiceStatus::EXPIRED))->toBe('archive');
 });
-

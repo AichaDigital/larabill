@@ -21,11 +21,10 @@ class ArticleServiceStatusFactory extends Factory
     public function definition(): array
     {
         $userModel = config('larabill.user_model', 'App\\Models\\User');
-        $article   = Article::factory()->service()->recurring()->create();
 
         return [
             'customer_id'               => $userModel::factory(),
-            'article_id'                => $article->id,
+            'article_id'                => Article::factory()->service()->recurring(),
             'instance_identifier'       => $this->faker->domainName(),
             'instance_name'             => 'Service for '.$this->faker->domainWord(),
             'started_at'                => now(),
@@ -36,7 +35,7 @@ class ArticleServiceStatusFactory extends Factory
             'cancellation_requested_at' => null,
             'cancellation_effective_at' => null,
             'refund_unused'             => false,
-            'effective_price'           => $article->base_price,
+            'effective_price'           => 2900, // Default price in Base100 (€29.00)
             'current_override_id'       => null,
             'external_reference'        => null,
             'instance_data'             => [],

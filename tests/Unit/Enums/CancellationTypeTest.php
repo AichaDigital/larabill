@@ -60,7 +60,7 @@ it('can be used in match expressions for business logic', function () {
         CancellationType::IMMEDIATE, CancellationType::END_OF_PERIOD => false,
         CancellationType::NOTICE_PERIOD => true,
     };
-    
+
     expect($shouldGenerateCreditNote(CancellationType::IMMEDIATE))->toBeFalse()
         ->and($shouldGenerateCreditNote(CancellationType::END_OF_PERIOD))->toBeFalse()
         ->and($shouldGenerateCreditNote(CancellationType::NOTICE_PERIOD))->toBeTrue();
@@ -68,13 +68,12 @@ it('can be used in match expressions for business logic', function () {
 
 it('can be used in match expressions for effective date calculation', function () {
     $getEffectiveDateType = fn (CancellationType $type) => match ($type) {
-        CancellationType::IMMEDIATE => 'now',
+        CancellationType::IMMEDIATE     => 'now',
         CancellationType::END_OF_PERIOD => 'next_billing_date',
         CancellationType::NOTICE_PERIOD => 'notice_days',
     };
-    
+
     expect($getEffectiveDateType(CancellationType::IMMEDIATE))->toBe('now')
         ->and($getEffectiveDateType(CancellationType::END_OF_PERIOD))->toBe('next_billing_date')
         ->and($getEffectiveDateType(CancellationType::NOTICE_PERIOD))->toBe('notice_days');
 });
-

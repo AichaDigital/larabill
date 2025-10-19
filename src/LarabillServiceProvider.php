@@ -4,16 +4,64 @@ namespace AichaDigital\Larabill;
 
 // Commands removed as they don't exist yet
 use AichaDigital\Larabill\Contracts\Services\TaxCalculation\TaxCalculationStrategy;
+use AichaDigital\Larabill\Events\{
+    RecurringBillingCompleted,
+    RecurringBillingFailed,
+    RecurringInvoiceGenerated
+};
+use AichaDigital\Larabill\Listeners\{
+    AlertBillingFailure,
+    LogBillingSummary,
+    SendInvoiceNotification
+};
 use AichaDigital\Larabill\Services\TaxCalculation\VatCalculationStrategy;
+use Illuminate\Support\Facades\Event;
 use Spatie\LaravelPackageTools\{Package, PackageServiceProvider};
 
 class LarabillServiceProvider extends PackageServiceProvider
 {
-    public function register()
+    /**
+     * Event listeners for recurring billing
+     *
+     * @var array<class-string, array<int, class-string>>
+     */
+    protected array $listen = [
+        RecurringInvoiceGenerated::class => [
+            SendInvoiceNotification::class,
+        ],
+        RecurringBillingCompleted::class => [
+            LogBillingSummary::class,
+        ],
+        RecurringBillingFailed::class => [
+            AlertBillingFailure::class,
+        ],
+    ];
+
+    public function register(): void
     {
         parent::register();
 
         $this->app->bind(TaxCalculationStrategy::class, VatCalculationStrategy::class);
+    }
+
+    public function boot(): void
+    {
+        parent::boot();
+
+        // Register event listeners
+        $this->registerEventListeners();
+    }
+
+    /**
+     * Register package event listeners
+     */
+    protected function registerEventListeners(): void
+    {
+        foreach ($this->listen as $event => $listeners) {
+            foreach ($listeners as $listener) {
+                Event::listen($event, $listener);
+            }
+        }
     }
 
     public function configurePackage(Package $package): void
@@ -29,6 +77,10 @@ class LarabillServiceProvider extends PackageServiceProvider
             ->hasViews()
             ->hasCommand(\AichaDigital\Larabill\Console\DetectUserIdTypeCommand::class)
             ->hasMigrations([
+                // Articles system (v0.3.4+)
+                '2025_01_20_000001_create_articles_table',
+                '2025_01_20_000002_create_article_overrides_table',
+                '2025_01_20_000003_create_article_service_status_table',
                 // Tax system (Configuration Layer) - v0.3.3 Agnostic Tax System
                 '2024_12_01_000000_create_tax_rates_table',
                 '2024_12_01_000001_create_tax_groups_table',

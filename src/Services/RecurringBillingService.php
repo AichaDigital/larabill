@@ -6,6 +6,11 @@ namespace AichaDigital\Larabill\Services;
 
 use AichaDigital\Larabill\DataTransferObjects\{BillingDetails, InvoiceItemMetadata, SourceReference};
 use AichaDigital\Larabill\Enums\{BillingFrequency, InvoiceStatus};
+use AichaDigital\Larabill\Events\{
+    RecurringBillingCompleted,
+    RecurringBillingFailed,
+    RecurringInvoiceGenerated
+};
 use AichaDigital\Larabill\Models\{Article, ArticleServiceStatus, Invoice, InvoiceItem};
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -35,31 +40,28 @@ final class RecurringBillingService
      */
     public function processRecurringBilling(Carbon $date, bool $dryRun = false): array
     {
-        $services = $this->getServicesDueForBilling($date);
+        $servicesInWindow = $this->getServicesInBillingWindow($date);
+        $servicesDue      = $servicesInWindow->filter(fn ($service) => $this->shouldGenerateInvoice($service, $date));
 
         $results = [
             'processed' => 0,
-            'skipped'   => 0,
+            'skipped'   => $servicesInWindow->count() - $servicesDue->count(),
             'failed'    => 0,
             'invoices'  => [],
             'errors'    => [],
         ];
 
-        foreach ($services as $service) {
+        foreach ($servicesDue as $service) {
             try {
-                // Check if should generate invoice based on days_in_advance
-                if (! $this->shouldGenerateInvoice($service, $date)) {
-                    $results['skipped']++;
-
-                    continue;
-                }
-
                 if (! $dryRun) {
                     $invoice               = $this->createInvoiceForService($service, $date);
                     $results['invoices'][] = $invoice->id;
 
                     // Update next billing date using addMonths/addYears
                     $this->updateNextBillingDate($service);
+
+                    // Dispatch invoice generated event
+                    RecurringInvoiceGenerated::dispatch($invoice, $service);
                 }
 
                 $results['processed']++;
@@ -73,6 +75,11 @@ final class RecurringBillingService
                     'error'       => $e->getMessage(),
                 ];
 
+                // Dispatch billing failed event
+                RecurringBillingFailed::dispatch($service, $e, [
+                    'billing_date' => $date->toDateString(),
+                ]);
+
                 // Log error for monitoring
                 Log::error('Recurring billing failed', [
                     'service_id' => $service->id,
@@ -82,29 +89,46 @@ final class RecurringBillingService
             }
         }
 
+        // Dispatch billing completed event
+        RecurringBillingCompleted::dispatch($date, $results, $dryRun);
+
         return $results;
     }
 
     /**
-     * Get services that are due for billing on given date
+     * Get services that are within the billing window
      *
-     * Considers days_in_advance from article or global config
+     * Returns all active services with next_billing_date within the days_in_advance window.
+     * Uses a conservative approach: fetches services within the global window + buffer
+     * to account for article-specific overrides.
      */
-    protected function getServicesDueForBilling(Carbon $date): Collection
+    protected function getServicesInBillingWindow(Carbon $date): Collection
     {
         $globalDays = config('larabill.recurring_billing.days_in_advance', 7);
 
+        // Use a larger window to catch services with article-specific days_in_advance
+        // We'll filter them properly in shouldGenerateInvoice()
+        $bufferDays = 30; // Conservative buffer to catch article-specific overrides
+        $windowEnd  = $date->copy()->addDays($bufferDays)->toDateString();
+
+        // Get all active services with billing dates within the extended window
         return ArticleServiceStatus::query()
             ->with(['article', 'customer', 'currentOverride'])
             ->active()
-            ->where(function ($query) use ($date, $globalDays) {
-                $query->where(function ($q) use ($date, $globalDays) {
-                    // Services with next_billing_date within days_in_advance window
-                    $q->whereNotNull('next_billing_date')
-                        ->whereDate('next_billing_date', '<=', $date->copy()->addDays($globalDays));
-                });
-            })
-            ->get()
+            ->whereNotNull('next_billing_date')
+            ->whereRaw('DATE(next_billing_date) <= ?', [$windowEnd])
+            ->get();
+    }
+
+    /**
+     * Get services that are due for billing on given date (DEPRECATED)
+     *
+     * @deprecated Use getServicesInBillingWindow() and filter manually
+     * @see getServicesInBillingWindow()
+     */
+    protected function getServicesDueForBilling(Carbon $date): Collection
+    {
+        return $this->getServicesInBillingWindow($date)
             ->filter(fn ($service) => $this->shouldGenerateInvoice($service, $date));
     }
 
@@ -115,12 +139,17 @@ final class RecurringBillingService
      */
     protected function shouldGenerateInvoice(ArticleServiceStatus $service, Carbon $date): bool
     {
+        // Get days in advance (article-specific or global)
         $daysInAdvance = $service->article->billing_days_in_advance
             ?? config('larabill.recurring_billing.days_in_advance', 7);
 
+        // Calculate the date when we should start generating the invoice
+        // If next_billing_date is 2024-10-26 and daysInAdvance is 7,
+        // then generateDate is 2024-10-19 (we start generating 7 days before)
         $generateDate = $service->next_billing_date->copy()->subDays($daysInAdvance);
 
-        return $date->isSameDay($generateDate) || $date->isAfter($generateDate);
+        // Compare dates as strings to avoid time component issues
+        return $date->toDateString() >= $generateDate->toDateString();
     }
 
     /**
@@ -145,13 +174,21 @@ final class RecurringBillingService
         $nextBillingDate = $this->calculateNextBillingDate($service);
 
         // Create invoice
+        $invoiceNumber = $this->generateInvoiceNumber();
+
         $invoice = Invoice::create([
             'user_id'        => $customer->id,
-            'invoice_number' => $this->generateInvoiceNumber(),
+            'fiscal_number'  => $invoiceNumber['fiscal_number'],
+            'prefix'         => $invoiceNumber['prefix'],
+            'serie'          => $invoiceNumber['serie'],
+            'series_number'  => $invoiceNumber['series_number'],
+            'fiscal_year'    => $invoiceNumber['fiscal_year'],
             'invoice_date'   => $date,
             'due_date'       => $date->copy()->addDays(config('larabill.recurring_billing.payment_terms_days', 15)),
             'status'         => InvoiceStatus::SENT,
-            'total'          => $pricingDetails->appliedPrice,
+            'taxable_amount' => $pricingDetails->appliedPrice,
+            'tax_amount'     => 0, // TODO: Calculate tax
+            'total_amount'   => $pricingDetails->appliedPrice,
             'metadata'       => [
                 'recurring_billing' => true,
                 'service_id'        => $service->id,
@@ -188,46 +225,40 @@ final class RecurringBillingService
             'metadata'          => $metadata->toArray(),
         ]);
 
-        // Send notification if enabled
-        if (config('larabill.recurring_billing.send_notifications', true)) {
-            // TODO: Dispatch InvoiceCreated event/notification
-            // event(new InvoiceCreated($invoice));
-        }
-
         return $invoice;
     }
 
     /**
      * Calculate period end based on billing frequency
      *
-     * Uses addMonths/addYears for accurate temporal calculations
+     * Uses addMonthsNoOverflow to prevent day overflow issues
      */
     protected function calculatePeriodEnd(ArticleServiceStatus $service): Carbon
     {
         $start = $service->next_billing_date->copy();
 
         return match ($service->article->billing_frequency) {
-            BillingFrequency::MONTHLY   => $start->addMonths($service->article->billing_interval)->subDay(),
-            BillingFrequency::QUARTERLY => $start->addMonths(3 * $service->article->billing_interval)->subDay(),
-            BillingFrequency::YEARLY    => $start->addYears($service->article->billing_interval)->subDay(),
-            default                     => $start->addMonth()->subDay(),
+            BillingFrequency::MONTHLY   => $start->addMonthsNoOverflow($service->article->billing_interval)->subDay(),
+            BillingFrequency::QUARTERLY => $start->addMonthsNoOverflow(3 * $service->article->billing_interval)->subDay(),
+            BillingFrequency::YEARLY    => $start->addYearsNoOverflow($service->article->billing_interval)->subDay(),
+            default                     => $start->addMonthNoOverflow()->subDay(),
         };
     }
 
     /**
      * Calculate next billing date using addMonths/addYears
      *
-     * This avoids discrepancies from day-based calculations
+     * Uses addMonthsNoOverflow to prevent day overflow (Jan 31 + 1 month = Feb 28/29, not Mar 2/3)
      */
     protected function calculateNextBillingDate(ArticleServiceStatus $service): Carbon
     {
         $current = $service->next_billing_date->copy();
 
         return match ($service->article->billing_frequency) {
-            BillingFrequency::MONTHLY   => $current->addMonths($service->article->billing_interval),
-            BillingFrequency::QUARTERLY => $current->addMonths(3 * $service->article->billing_interval),
-            BillingFrequency::YEARLY    => $current->addYears($service->article->billing_interval),
-            default                     => $current->addMonth(),
+            BillingFrequency::MONTHLY   => $current->addMonthsNoOverflow($service->article->billing_interval),
+            BillingFrequency::QUARTERLY => $current->addMonthsNoOverflow(3 * $service->article->billing_interval),
+            BillingFrequency::YEARLY    => $current->addYearsNoOverflow($service->article->billing_interval),
+            default                     => $current->addMonthNoOverflow(),
         };
     }
 
@@ -246,11 +277,29 @@ final class RecurringBillingService
     /**
      * Generate invoice number
      *
-     * Uses existing InvoiceNumberingService if available
+     * TODO: Use proper InvoiceSeriesControl for correlative numbering
+     *
+     * @return array{fiscal_number: string, prefix: string, serie: int, series_number: int, fiscal_year: int}
      */
-    protected function generateInvoiceNumber(): string
+    protected function generateInvoiceNumber(): array
     {
-        // TODO: Use InvoiceNumberingService from main package
-        return 'INV-'.now()->format('Y').'-'.str_pad((string) (Invoice::count() + 1), 6, '0', STR_PAD_LEFT);
+        // For now, use simple sequential numbering
+        // In production, this should use InvoiceSeriesControl
+        $lastInvoice = Invoice::query()
+            ->where('serie', 1) // Regular invoices
+            ->orderByDesc('series_number')
+            ->first();
+
+        $seriesNumber = ($lastInvoice?->series_number ?? 0) + 1;
+        $fiscalYear   = now()->year;
+        $fiscalNumber = sprintf('FAC-%d-%06d', $fiscalYear, $seriesNumber);
+
+        return [
+            'fiscal_number' => $fiscalNumber,
+            'prefix'        => 'FAC',
+            'serie'         => 1,
+            'series_number' => $seriesNumber,
+            'fiscal_year'   => $fiscalYear,
+        ];
     }
 }
