@@ -224,7 +224,7 @@ class Article extends Model
     /**
      * Get profit margin (difference between base_price and cost_price).
      */
-    public function getProfitMargin(): ?int
+    public function getProfitMargin(): ?float
     {
         if (! $this->cost_price) {
             return null;
