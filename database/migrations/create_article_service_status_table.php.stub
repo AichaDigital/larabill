@@ -1,0 +1,80 @@
+<?php
+
+declare(strict_types=1);
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('article_service_status', function (Blueprint $table) {
+            $table->id();
+
+            // Relaciones
+            $table->unsignedBigInteger('customer_id')->comment('Customer/User ID (agnostic)');
+            $table->foreignId('article_id')
+                ->constrained('articles')
+                ->restrictOnDelete()
+                ->comment('FK to articles table - should be a Service with is_recurring=true');
+
+            // Identificador de instancia específica
+            $table->string('instance_identifier', 255)->nullable()->comment('Unique identifier for this service instance: domain name, property address, license key, etc.');
+            $table->string('instance_name', 255)->nullable()->comment('Friendly name for display');
+
+            // Control temporal
+            $table->date('started_at')->comment('Service start date');
+            $table->date('next_billing_date')->nullable()->comment('Next automatic billing date');
+            $table->date('expires_at')->nullable()->comment('Service expiration date (null = indefinite)');
+
+            // Estado del servicio
+            $table->char('status', 1)->comment('A=Active, P=Pending, S=Suspended, C=Cancelled, E=Expired');
+
+            // Cancelación
+            $table->char('cancellation_type', 1)->nullable()->comment('I=Immediate, E=EndOfPeriod, N=NoticePeriod');
+            $table->date('cancellation_requested_at')->nullable()->comment('When cancellation was requested');
+            $table->date('cancellation_effective_at')->nullable()->comment('When cancellation becomes effective');
+            $table->boolean('refund_unused')->default(false)->comment('If true, refund unused time');
+
+            // Pricing efectivo (cache)
+            $table->integer('effective_price')->comment('Currently applied price in Base100 (from base_price or override)');
+            $table->foreignId('current_override_id')->nullable()
+                ->constrained('article_overrides')
+                ->nullOnDelete()
+                ->comment('FK to active article_override if applicable');
+
+            // Integración externa
+            $table->string('external_reference', 255)->nullable()->comment('ID in external system: cpanel_account_123, stripe_sub_xxx, etc.');
+
+            // Datos de la instancia
+            $table->json('instance_data')->nullable()->comment('Instance-specific data: hosting details, domain info, property specs, etc.');
+
+            // Metadata flexible
+            $table->json('metadata')->nullable()->comment('Additional tracking data: last_invoice_id, failed_payments, provision_status, notes, etc.');
+
+            $table->timestamps();
+
+            // Índices
+            $table->unique(['customer_id', 'article_id', 'instance_identifier'], 'customer_article_instance_unique');
+            $table->index(['customer_id', 'status']);
+            $table->index(['article_id', 'status']);
+            $table->index(['next_billing_date'], 'idx_next_billing'); // Critical for billing job
+            $table->index(['instance_identifier']);
+            $table->index(['status']);
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('article_service_status');
+    }
+};
+
