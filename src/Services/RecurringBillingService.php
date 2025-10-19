@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Services;
 
 use AichaDigital\Larabill\DataTransferObjects\{BillingDetails, InvoiceItemMetadata, SourceReference};
-use AichaDigital\Larabill\Enums\BillingFrequency;
+use AichaDigital\Larabill\Enums\{BillingFrequency, InvoiceStatus};
 use AichaDigital\Larabill\Models\{Article, ArticleServiceStatus, Invoice, InvoiceItem};
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
@@ -96,7 +96,7 @@ final class RecurringBillingService
 
         return ArticleServiceStatus::query()
             ->with(['article', 'customer', 'currentOverride'])
-            ->billable()
+            ->active()
             ->where(function ($query) use ($date, $globalDays) {
                 $query->where(function ($q) use ($date, $globalDays) {
                     // Services with next_billing_date within days_in_advance window
@@ -150,7 +150,7 @@ final class RecurringBillingService
             'invoice_number' => $this->generateInvoiceNumber(),
             'invoice_date'   => $date,
             'due_date'       => $date->copy()->addDays(config('larabill.recurring_billing.payment_terms_days', 15)),
-            'status'         => 'pending',
+            'status'         => InvoiceStatus::SENT,
             'total'          => $pricingDetails->appliedPrice,
             'metadata'       => [
                 'recurring_billing' => true,
