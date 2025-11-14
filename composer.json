@@ -53,8 +53,8 @@
         "autoload": {
             "psr-4": {
                 "AichaDigital\\Larabill\\": "src/",
-                "AichaDigital\\Larabill\\Database\\Factories\\": "database/factories/",
-                "AichaDigital\\Larabill\\Database\\Seeders\\": "database/seeders/"
+                "AichaDigital\\Larabill\\Database\\Factories\\": "src/database/factories/",
+                "AichaDigital\\Larabill\\Database\\Seeders\\": "src/database/seeders/"
             }
         },
         "autoload-dev": {
