@@ -4,13 +4,15 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Database\Seeders;
 
+use AichaDigital\Larabill\Enums\TaxType;
 use AichaDigital\Larabill\Models\TaxRate;
 use Illuminate\Database\Seeder;
 
 /**
  * Tax Rates Seeder
  *
- * Seeds tax rates for different countries and regions.
+ * Seeds comprehensive tax rates for Spain, EU countries, and special territories.
+ * Uses the enhanced tax_rates structure with Laravel SoftDeletes.
  */
 class TaxRatesSeeder extends Seeder
 {
@@ -31,43 +33,37 @@ class TaxRatesSeeder extends Seeder
     {
         $spanishRates = [
             [
-                'country_code'       => 'ES',
-                'country_name'       => 'Spain',
-                'tax_name'           => 'IVA General',
-                'tax_type'           => 'standard',
-                'rate'               => 21.0, // Base100 cast handles conversion
-                'is_active'          => true,
-                'applies_to'         => 'general_goods_services',
+                'name'   => 'IVA General España',
+                'rate'   => 2100, // 21%
+                'region' => 'ES',
+                'type'   => TaxType::VAT,
                 'special_conditions' => null,
             ],
             [
-                'country_code'       => 'ES',
-                'country_name'       => 'Spain',
-                'tax_name'           => 'IVA Reducido',
-                'tax_type'           => 'reduced',
-                'rate'               => 10.0, // Base100 cast handles conversion
-                'is_active'          => true,
-                'applies_to'         => 'reduced_goods_services',
-                'special_conditions' => null,
+                'name'   => 'IVA Reducido España',
+                'rate'   => 1000, // 10%
+                'region' => 'ES',
+                'type'   => TaxType::VAT,
+                'special_conditions' => [
+                    'applies_to' => 'reduced_goods_services',
+                    'examples' => ['food', 'books', 'cultural_events'],
+                ],
             ],
             [
-                'country_code'       => 'ES',
-                'country_name'       => 'Spain',
-                'tax_name'           => 'IVA Superreducido',
-                'tax_type'           => 'super_reduced',
-                'rate'               => 4.0, // Base100 cast handles conversion
-                'is_active'          => true,
-                'applies_to'         => 'super_reduced_goods_services',
-                'special_conditions' => null,
+                'name'   => 'IVA Superreducido España',
+                'rate'   => 400, // 4%
+                'region' => 'ES',
+                'type'   => TaxType::VAT,
+                'special_conditions' => [
+                    'applies_to' => 'super_reduced_goods_services',
+                    'examples' => ['basic_food', 'medicines', 'newspapers'],
+                ],
             ],
         ];
 
         foreach ($spanishRates as $rate) {
             TaxRate::updateOrCreate(
-                [
-                    'country_code' => $rate['country_code'],
-                    'tax_name'     => $rate['tax_name'],
-                ],
+                ['name' => $rate['name'], 'region' => $rate['region']],
                 $rate
             );
         }
@@ -80,171 +76,143 @@ class TaxRatesSeeder extends Seeder
     {
         $euRates = [
             [
-                'country_code'       => 'DE',
-                'country_name'       => 'Germany',
-                'tax_name'           => 'MwSt',
-                'tax_type'           => 'standard',
-                'rate'               => 19.0, // Base100 cast handles conversion
-                'is_active'          => true,
-                'applies_to'         => 'general_goods_services',
+                'name'   => 'MwSt Germany',
+                'rate'   => 1900, // 19%
+                'region' => 'DE',
+                'type'   => TaxType::VAT,
                 'special_conditions' => null,
             ],
             [
-                'country_code'       => 'FR',
-                'country_name'       => 'France',
-                'tax_name'           => 'TVA',
-                'tax_type'           => 'standard',
-                'rate'               => 20.0, // Base100 cast handles conversion
-                'is_active'          => true,
-                'applies_to'         => 'general_goods_services',
+                'name'   => 'TVA France',
+                'rate'   => 2000, // 20%
+                'region' => 'FR',
+                'type'   => TaxType::VAT,
                 'special_conditions' => null,
             ],
             [
-                'country_code'       => 'IT',
-                'country_name'       => 'Italy',
-                'tax_name'           => 'IVA',
-                'tax_type'           => 'standard',
-                'rate'               => 22.0, // Base100 cast handles conversion
-                'is_active'          => true,
-                'applies_to'         => 'general_goods_services',
+                'name'   => 'IVA Italy',
+                'rate'   => 2200, // 22%
+                'region' => 'IT',
+                'type'   => TaxType::VAT,
                 'special_conditions' => null,
             ],
             [
-                'country_code'       => 'NL',
-                'country_name'       => 'Netherlands',
-                'tax_name'           => 'BTW',
-                'tax_type'           => 'standard',
-                'rate'               => 21.0, // Base100 cast handles conversion
-                'is_active'          => true,
-                'applies_to'         => 'general_goods_services',
+                'name'   => 'BTW Netherlands',
+                'rate'   => 2100, // 21%
+                'region' => 'NL',
+                'type'   => TaxType::VAT,
                 'special_conditions' => null,
             ],
             [
-                'country_code'       => 'PT',
-                'country_name'       => 'Portugal',
-                'tax_name'           => 'IVA',
-                'tax_type'           => 'standard',
-                'rate'               => 23.0, // Base100 cast handles conversion
-                'is_active'          => true,
-                'applies_to'         => 'general_goods_services',
+                'name'   => 'IVA Portugal',
+                'rate'   => 2300, // 23%
+                'region' => 'PT',
+                'type'   => TaxType::VAT,
                 'special_conditions' => null,
             ],
             [
-                'country_code'       => 'BE',
-                'country_name'       => 'Belgium',
-                'tax_name'           => 'TVA',
-                'tax_type'           => 'standard',
-                'rate'               => 21.0, // Base100 cast handles conversion
-                'is_active'          => true,
-                'applies_to'         => 'general_goods_services',
+                'name'   => 'TVA Belgium',
+                'rate'   => 2100, // 21%
+                'region' => 'BE',
+                'type'   => TaxType::VAT,
                 'special_conditions' => null,
             ],
             [
-                'country_code'       => 'AT',
-                'country_name'       => 'Austria',
-                'tax_name'           => 'USt',
-                'tax_type'           => 'standard',
-                'rate'               => 20.0, // Base100 cast handles conversion
-                'is_active'          => true,
-                'applies_to'         => 'general_goods_services',
+                'name'   => 'USt Austria',
+                'rate'   => 2000, // 20%
+                'region' => 'AT',
+                'type'   => TaxType::VAT,
                 'special_conditions' => null,
             ],
             [
-                'country_code'       => 'IE',
-                'country_name'       => 'Ireland',
-                'tax_name'           => 'VAT',
-                'tax_type'           => 'standard',
-                'rate'               => 23.0, // Base100 cast handles conversion
-                'is_active'          => true,
-                'applies_to'         => 'general_goods_services',
+                'name'   => 'VAT Ireland',
+                'rate'   => 2300, // 23%
+                'region' => 'IE',
+                'type'   => TaxType::VAT,
                 'special_conditions' => null,
             ],
             [
-                'country_code'       => 'FI',
-                'country_name'       => 'Finland',
-                'tax_name'           => 'ALV',
-                'tax_type'           => 'standard',
-                'rate'               => 24.0, // Base100 cast handles conversion
-                'is_active'          => true,
-                'applies_to'         => 'general_goods_services',
+                'name'   => 'ALV Finland',
+                'rate'   => 2400, // 24%
+                'region' => 'FI',
+                'type'   => TaxType::VAT,
                 'special_conditions' => null,
             ],
             [
-                'country_code'       => 'SE',
-                'country_name'       => 'Sweden',
-                'tax_name'           => 'Moms',
-                'tax_type'           => 'standard',
-                'rate'               => 25.0, // Base100 cast handles conversion
-                'is_active'          => true,
-                'applies_to'         => 'general_goods_services',
+                'name'   => 'Moms Sweden',
+                'rate'   => 2500, // 25%
+                'region' => 'SE',
+                'type'   => TaxType::VAT,
                 'special_conditions' => null,
             ],
         ];
 
         foreach ($euRates as $rate) {
             TaxRate::updateOrCreate(
-                [
-                    'country_code' => $rate['country_code'],
-                    'tax_name'     => $rate['tax_name'],
-                ],
+                ['name' => $rate['name'], 'region' => $rate['region']],
                 $rate
             );
         }
     }
 
     /**
-     * Seed special territories rates.
+     * Seed special territories rates (Canary Islands, Ceuta, Melilla).
      */
     private function seedSpecialTerritoriesRates(): void
     {
         $specialRates = [
             [
-                'country_code'       => 'IC',
-                'country_name'       => 'Canary Islands',
-                'tax_name'           => 'IGIC',
-                'tax_type'           => 'standard',
-                'rate'               => 7.0, // Base100 cast handles conversion
-                'is_active'          => true,
-                'applies_to'         => 'general_goods_services',
+                'name'   => 'IGIC General Canarias',
+                'rate'   => 700, // 7%
+                'region' => 'IC',  // Special code for Canary Islands
+                'type'   => TaxType::VAT,
                 'special_conditions' => [
                     'exempt_from_spanish_vat' => true,
-                    'territory_type'          => 'special_territory',
+                    'territory_type' => 'special_territory',
+                    'applies_to' => 'general_goods_services',
+                    'note' => 'IGIC (Impuesto General Indirecto Canario) applies instead of Spanish IVA',
                 ],
             ],
             [
-                'country_code'       => 'CE',
-                'country_name'       => 'Ceuta',
-                'tax_name'           => 'IPSI',
-                'tax_type'           => 'standard',
-                'rate'               => 0.0, // Base100 cast handles conversion
-                'is_active'          => true,
-                'applies_to'         => 'general_goods_services',
+                'name'   => 'IGIC Reducido Canarias',
+                'rate'   => 300, // 3%
+                'region' => 'IC',
+                'type'   => TaxType::VAT,
                 'special_conditions' => [
                     'exempt_from_spanish_vat' => true,
-                    'territory_type'          => 'special_territory',
+                    'territory_type' => 'special_territory',
+                    'applies_to' => 'reduced_goods_services',
                 ],
             ],
             [
-                'country_code'       => 'ML',
-                'country_name'       => 'Melilla',
-                'tax_name'           => 'IPSI',
-                'tax_type'           => 'standard',
-                'rate'               => 0.0, // Base100 cast handles conversion
-                'is_active'          => true,
-                'applies_to'         => 'general_goods_services',
+                'name'   => 'IPSI Ceuta',
+                'rate'   => 0, // 0% for digital services
+                'region' => 'CE',
+                'type'   => TaxType::OTHER,
                 'special_conditions' => [
                     'exempt_from_spanish_vat' => true,
-                    'territory_type'          => 'special_territory',
+                    'territory_type' => 'special_territory',
+                    'note' => 'Operación exenta - Prestación de servicios digitales en Ceuta',
+                    'applies_to' => 'digital_services',
+                ],
+            ],
+            [
+                'name'   => 'IPSI Melilla',
+                'rate'   => 0, // 0% for digital services
+                'region' => 'ML',
+                'type'   => TaxType::OTHER,
+                'special_conditions' => [
+                    'exempt_from_spanish_vat' => true,
+                    'territory_type' => 'special_territory',
+                    'note' => 'Operación exenta - Prestación de servicios digitales en Melilla',
+                    'applies_to' => 'digital_services',
                 ],
             ],
         ];
 
         foreach ($specialRates as $rate) {
             TaxRate::updateOrCreate(
-                [
-                    'country_code' => $rate['country_code'],
-                    'tax_name'     => $rate['tax_name'],
-                ],
+                ['name' => $rate['name'], 'region' => $rate['region']],
                 $rate
             );
         }
