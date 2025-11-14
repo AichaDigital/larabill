@@ -90,7 +90,6 @@ class LarabillServiceProvider extends PackageServiceProvider
                 '2024_12_01_0004_create_invoice_items_table',
                 // Supporting tables
                 '2024_12_01_000005_create_user_tax_infos_table',
-                '2024_12_01_000006_create_tax_rates_table',
                 '2024_12_01_000007_create_vat_verifications_table',
                 '2024_12_01_000008_create_company_fiscal_configs_table',
                 // Template system

@@ -1,8 +1,8 @@
 # Larabill - Professional Billing & Invoicing for Laravel
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/aichadigital/larabill.svg?style=flat-square)](https://packagist.org/packages/aichadigital/larabill)
-[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/aichadigital/larabill/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/aichadigital/larabill/actions?query=workflow%3Arun-tests+branch%3Amain)
-[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/aichadigital/larabill/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/aichadigital/larabill/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
+[![CI](https://img.shields.io/github/actions/workflow/status/aichadigital/larabill/tests.yml?branch=main&label=CI&style=flat-square)](https://github.com/aichadigital/larabill/actions/workflows/tests.yml)
+[![codecov](https://img.shields.io/codecov/c/github/aichadigital/larabill?style=flat-square)](https://codecov.io/gh/aichadigital/larabill)
 [![Total Downloads](https://img.shields.io/packagist/dt/aichadigital/larabill.svg?style=flat-square)](https://packagist.org/packages/aichadigital/larabill)
 
 > ⚠️ **DEVELOPMENT VERSION** - This package is under active development (v0.1.0). Not recommended for production use yet.

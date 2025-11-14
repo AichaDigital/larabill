@@ -2,6 +2,73 @@
 
 All notable changes to `larabill` will be documented in this file.
 
+## [0.3.4] - 2025-01-13
+
+### 🎯 Tax Rates System Refactor
+
+#### Changed
+- **Unified Tax Rates Migration**: Eliminated duplicate `tax_rates` migration for clarity and consistency
+  - Removed: `2024_12_01_000006_create_tax_rates_table.php` (conflicting duplicate)
+  - Enhanced: `2024_12_01_000000_create_tax_rates_table.php` with new features
+  - **Action Required**: Users who published migrations must delete the duplicate (see migration guide)
+
+#### Added
+- **SoftDeletes Support**: Tax rates now use Laravel's native soft deletion
+  - `deleted_at` column for "deleting" rates without losing historical data
+  - Automatic filtering of deleted rates in queries
+  - Easy restoration with `restore()` method
+  - **Breaking**: Replaces custom `is_active` field with Laravel standard
+- **Special Conditions (JSON)**: New metadata field for complex tax rules
+  - Perfect for Spanish special territories (Canarias, Ceuta, Melilla)
+  - Stores exemptions, territory types, special notes
+  - Flexible JSON structure for any custom metadata
+- **Enhanced Territory Support**: Better handling of Spanish special tax territories
+  - Canary Islands (IC): IGIC tax system (7% / 3%)
+  - Ceuta (CE): IPSI tax system (0% for digital services)
+  - Melilla (ML): IPSI tax system (0% for digital services)
+  - Full metadata in `special_conditions` field
+
+#### Improved
+- **TaxRatesSeeder**: Completely refactored for consistency
+  - Now uses unified structure: `name`, `rate`, `region`, `type`, `special_conditions`
+  - Comprehensive EU countries coverage (10 countries)
+  - Spanish special territories with full metadata
+  - Removed incompatible `country_code`, `tax_name` structure
+- **TaxRate Model**: Enhanced with new features
+  - Added `SoftDeletes` trait
+  - New `special_conditions` cast to array
+  - Updated PHPDoc with `deleted_at` property
+- **TaxRateFactory**: New helper method
+  - `withSpecialConditions(array $conditions)` state for testing
+  - Default `special_conditions => null` in definition
+- **Test Coverage**: Migration tests updated
+  - Test database migration synchronized with main migration
+  - All 856 tests passing (100%)
+
+#### Documentation
+- **New Guide**: `docs/TAX_RATES_MIGRATION_GUIDE.md`
+  - Complete migration instructions for existing users
+  - SoftDeletes usage examples
+  - Special conditions examples (Canarias, Ceuta, Melilla)
+  - Troubleshooting section
+- **Comprehensive Analysis**: `docs/TAX_SYSTEM_ANALYSIS_AND_RECOMMENDATIONS.md`
+  - 1,500+ lines of technical analysis
+  - Comparison of old vs new structure
+  - Spanish/EU requirements analysis
+  - Decision matrix and recommendations
+
+#### Migration Guide for Users
+**If you haven't published migrations**: Nothing to do, just update the package.
+
+**If you published migrations (v0.3.3 or earlier)**:
+1. Delete duplicate: `rm database/migrations/*000006_create_tax_rates_table.php`
+2. For production with data: Create ALTER TABLE migration to add new columns
+3. For development: Use `migrate:fresh`
+
+See `docs/TAX_RATES_MIGRATION_GUIDE.md` for detailed instructions.
+
+---
+
 ## [0.3.0] - 2025-01-13
 
 ### Breaking Changes

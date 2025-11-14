@@ -27,10 +27,23 @@ class TaxRateFactory extends Factory
     public function definition(): array
     {
         return [
-            'name'   => fake()->words(3, true),
-            'rate'   => fake()->randomElement([2100, 1000, 400]),
-            'region' => fake()->countryCode(),
-            'type'   => 'vat',
+            'name'               => fake()->words(3, true),
+            'rate'               => fake()->randomElement([2100, 1000, 400]),
+            'region'             => fake()->countryCode(),
+            'type'               => 'vat',
+            'special_conditions' => null,
         ];
+    }
+
+    /**
+     * Indicate that the tax rate has special conditions.
+     *
+     * @param  array<string, mixed>  $conditions
+     */
+    public function withSpecialConditions(array $conditions): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'special_conditions' => $conditions,
+        ]);
     }
 }

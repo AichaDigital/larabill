@@ -7,7 +7,7 @@ namespace AichaDigital\Larabill\Models;
 use AichaDigital\Larabill\Database\Factories\TaxRateFactory;
 use AichaDigital\Larabill\Enums\TaxType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\{Model, SoftDeletes};
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 /**
@@ -25,14 +25,17 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property int $id
  * @property string $name Tax rate name (e.g., "IVA General", "MA State Sales Tax")
  * @property int $rate Tax rate as base-100 integer (21% => 2100)
- * @property string|null $region Region/jurisdiction code (e.g., "ES", "US-MA", "US-MA-BOSTON")
+ * @property string|null $region Region/jurisdiction code (e.g., "ES", "IC", "US-MA", "US-MA-BOSTON")
  * @property TaxType $type Tax type enum (vat, sales_tax, gst, other)
+ * @property array|null $special_conditions Additional metadata for special cases (IGIC, IPSI, exemptions)
  * @property \Carbon\Carbon $created_at
  * @property \Carbon\Carbon $updated_at
+ * @property \Carbon\Carbon|null $deleted_at
  */
 class TaxRate extends Model
 {
     use HasFactory;
+    use SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -44,6 +47,7 @@ class TaxRate extends Model
         'rate',
         'region',
         'type',
+        'special_conditions',
     ];
 
     /**
@@ -54,8 +58,9 @@ class TaxRate extends Model
     protected function casts(): array
     {
         return [
-            'rate' => 'integer',
-            'type' => TaxType::class,
+            'rate'               => 'integer',
+            'type'               => TaxType::class,
+            'special_conditions' => 'array',
         ];
     }
 

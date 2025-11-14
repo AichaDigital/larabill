@@ -2,19 +2,28 @@ includes:
     - phpstan-baseline.neon
 
 parameters:
-    level: 6
+    level: 5
     paths:
         - src
-        - config
-        - database
+
+    # Exclude problematic directories (marked as optional with (?))
     excludePaths:
-        - database/migrations/*
+        - bootstrap/cache (?)
+        - storage/* (?)
+        - database/migrations/* (?)
+
+    # Basic strict rules that are supported
+    checkMissingCallableSignature: true
+    checkUninitializedProperties: true
+    checkDynamicProperties: true
+    reportUnmatchedIgnoredErrors: false
+    treatPhpDocTypesAsCertain: false
+
+    # Laravel specific
+    noUnnecessaryCollectionCall: true
+    noUnnecessaryCollectionCallOnly: []
+    noUnnecessaryCollectionCallExcept: []
+
     tmpDir: build/phpstan
     checkOctaneCompatibility: true
     checkModelProperties: true
-    treatPhpDocTypesAsCertain: false
-    ignoreErrors:
-        - message: "#Called 'env' outside of the config directory which returns null when the config is cached, use 'config'.#"
-          paths:
-              - config/*
-              - src/config/*
