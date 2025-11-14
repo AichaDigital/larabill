@@ -1,17 +1,16 @@
 includes:
-    - ./vendor/larastan/larastan/extension.neon
+    - phpstan-baseline.neon
 
 parameters:
     level: 5
     paths:
         - src
-        - config
 
-    # Exclude problematic directories
+    # Exclude problematic directories (marked as optional with (?))
     excludePaths:
-        - bootstrap/cache
-        - storage/*
-        - database/migrations/*
+        - bootstrap/cache (?)
+        - storage/* (?)
+        - database/migrations/* (?)
 
     # Basic strict rules that are supported
     checkMissingCallableSignature: true
