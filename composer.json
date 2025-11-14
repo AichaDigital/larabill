@@ -50,20 +50,20 @@
         "phpstan/phpstan-deprecation-rules": "^2.0",
         "phpstan/phpstan-phpunit": "^2.0"
     },
-        "autoload": {
-            "psr-4": {
-                "AichaDigital\\Larabill\\": "src/",
-                "AichaDigital\\Larabill\\Database\\Factories\\": "src/Database/Factories/",
-                "AichaDigital\\Larabill\\Database\\Seeders\\": "src/Database/Seeders/"
-            }
-        },
-        "autoload-dev": {
-            "psr-4": {
-                "AichaDigital\\Larabill\\Tests\\": "tests/",
-                "Workbench\\App\\": "workbench/app/",
-                "App\\": "tests/Models/"
-            }
-        },
+    "autoload": {
+        "psr-4": {
+            "AichaDigital\\Larabill\\": "src/",
+            "AichaDigital\\Larabill\\Database\\Factories\\": "src/Database/Factories/",
+            "AichaDigital\\Larabill\\Database\\Seeders\\": "src/Database/Seeders/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "AichaDigital\\Larabill\\Tests\\": "tests/",
+            "Workbench\\App\\": "workbench/app/",
+            "App\\": "tests/Models/"
+        }
+    },
     "scripts": {
         "post-install-cmd": [
             "@composer run prepare"
