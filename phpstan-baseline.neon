@@ -1,6 +1,84 @@
 parameters:
 	ignoreErrors:
 		-
+			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 2
+			path: src/Database/Factories/ArticleFactory.php
+
+		-
+			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\ArticleOverride\:\:\$custom_price\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Database/Factories/ArticleOverrideFactory.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$base_price\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Database/Factories/ArticleOverrideFactory.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<Illuminate\\Database\\Eloquent\\Model\>\:\:afterMaking\(\) expects Closure\(Illuminate\\Database\\Eloquent\\Model\)\: mixed, Closure\(AichaDigital\\Larabill\\Models\\ArticleOverride\)\: void given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Database/Factories/ArticleOverrideFactory.php
+
+		-
+			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Article\:\:\$base_price\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Database/Factories/ArticleServiceStatusFactory.php
+
+		-
+			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\ArticleServiceStatus\:\:\$customer_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Database/Factories/ArticleServiceStatusFactory.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<Illuminate\\Database\\Eloquent\\Model\>\:\:afterCreating\(\) expects Closure\(Illuminate\\Database\\Eloquent\\Model\)\: mixed, Closure\(AichaDigital\\Larabill\\Models\\ArticleServiceStatus\)\: void given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Database/Factories/ArticleServiceStatusFactory.php
+
+		-
+			message: '#^PHPDoc type string of property AichaDigital\\Larabill\\Database\\Factories\\TaxGroupFactory\:\:\$model is not covariant with PHPDoc type class\-string\<AichaDigital\\Larabill\\Models\\TaxGroup\> of overridden property Illuminate\\Database\\Eloquent\\Factories\\Factory\<AichaDigital\\Larabill\\Models\\TaxGroup\>\:\:\$model\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: src/Database/Factories/TaxGroupFactory.php
+
+		-
+			message: '#^Return type \(array\<string, mixed\>\) of method AichaDigital\\Larabill\\Database\\Factories\\TaxGroupFactory\:\:definition\(\) should be compatible with return type \(array\<model property of AichaDigital\\Larabill\\Models\\TaxGroup, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<AichaDigital\\Larabill\\Models\\TaxGroup\>\:\:definition\(\)$#'
+			identifier: method.childReturnType
+			count: 1
+			path: src/Database/Factories/TaxGroupFactory.php
+
+		-
+			message: '#^PHPDoc type string of property AichaDigital\\Larabill\\Database\\Factories\\TaxRateFactory\:\:\$model is not covariant with PHPDoc type class\-string\<AichaDigital\\Larabill\\Models\\TaxRate\> of overridden property Illuminate\\Database\\Eloquent\\Factories\\Factory\<AichaDigital\\Larabill\\Models\\TaxRate\>\:\:\$model\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: src/Database/Factories/TaxRateFactory.php
+
+		-
+			message: '#^Return type \(array\<string, mixed\>\) of method AichaDigital\\Larabill\\Database\\Factories\\TaxRateFactory\:\:definition\(\) should be compatible with return type \(array\<model property of AichaDigital\\Larabill\\Models\\TaxRate, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<AichaDigital\\Larabill\\Models\\TaxRate\>\:\:definition\(\)$#'
+			identifier: method.childReturnType
+			count: 1
+			path: src/Database/Factories/TaxRateFactory.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Database\\Query\\BinaryUuidBuilder\:\:where\(\) should return \$this\(AichaDigital\\Larabill\\Database\\Query\\BinaryUuidBuilder\<TModel of Illuminate\\Database\\Eloquent\\Model\>\) but returns static\(AichaDigital\\Larabill\\Database\\Query\\BinaryUuidBuilder\<TModel of Illuminate\\Database\\Eloquent\\Model\>\)\.$#'
+			identifier: return.type
+			count: 3
+			path: src/Database/Query/BinaryUuidBuilder.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Database\\Query\\BinaryUuidBuilder\:\:whereIn\(\) should return \$this\(AichaDigital\\Larabill\\Database\\Query\\BinaryUuidBuilder\<TModel of Illuminate\\Database\\Eloquent\\Model\>\) but returns Illuminate\\Database\\Eloquent\\Builder\<TModel of Illuminate\\Database\\Eloquent\\Model\>\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Database/Query/BinaryUuidBuilder.php
+
+		-
 			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\ArticleServiceStatus\:\:\$article_id\.$#'
 			identifier: property.notFound
 			count: 1
@@ -425,81 +503,3 @@ parameters:
 			identifier: larastan.noEnvCallsOutsideOfConfig
 			count: 39
 			path: src/config/larabill.php
-
-		-
-			message: '#^Method AichaDigital\\Larabill\\Database\\Query\\BinaryUuidBuilder\:\:where\(\) should return \$this\(AichaDigital\\Larabill\\Database\\Query\\BinaryUuidBuilder\<TModel of Illuminate\\Database\\Eloquent\\Model\>\) but returns static\(AichaDigital\\Larabill\\Database\\Query\\BinaryUuidBuilder\<TModel of Illuminate\\Database\\Eloquent\\Model\>\)\.$#'
-			identifier: return.type
-			count: 3
-			path: src/database/Query/BinaryUuidBuilder.php
-
-		-
-			message: '#^Method AichaDigital\\Larabill\\Database\\Query\\BinaryUuidBuilder\:\:whereIn\(\) should return \$this\(AichaDigital\\Larabill\\Database\\Query\\BinaryUuidBuilder\<TModel of Illuminate\\Database\\Eloquent\\Model\>\) but returns Illuminate\\Database\\Eloquent\\Builder\<TModel of Illuminate\\Database\\Eloquent\\Model\>\.$#'
-			identifier: return.type
-			count: 1
-			path: src/database/Query/BinaryUuidBuilder.php
-
-		-
-			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 2
-			path: src/database/factories/ArticleFactory.php
-
-		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\ArticleOverride\:\:\$custom_price\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/database/factories/ArticleOverrideFactory.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$base_price\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/database/factories/ArticleOverrideFactory.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<Illuminate\\Database\\Eloquent\\Model\>\:\:afterMaking\(\) expects Closure\(Illuminate\\Database\\Eloquent\\Model\)\: mixed, Closure\(AichaDigital\\Larabill\\Models\\ArticleOverride\)\: void given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/database/factories/ArticleOverrideFactory.php
-
-		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Article\:\:\$base_price\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/database/factories/ArticleServiceStatusFactory.php
-
-		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\ArticleServiceStatus\:\:\$customer_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/database/factories/ArticleServiceStatusFactory.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<Illuminate\\Database\\Eloquent\\Model\>\:\:afterCreating\(\) expects Closure\(Illuminate\\Database\\Eloquent\\Model\)\: mixed, Closure\(AichaDigital\\Larabill\\Models\\ArticleServiceStatus\)\: void given\.$#'
-			identifier: argument.type
-			count: 1
-			path: src/database/factories/ArticleServiceStatusFactory.php
-
-		-
-			message: '#^PHPDoc type string of property AichaDigital\\Larabill\\Database\\Factories\\TaxGroupFactory\:\:\$model is not covariant with PHPDoc type class\-string\<AichaDigital\\Larabill\\Models\\TaxGroup\> of overridden property Illuminate\\Database\\Eloquent\\Factories\\Factory\<AichaDigital\\Larabill\\Models\\TaxGroup\>\:\:\$model\.$#'
-			identifier: property.phpDocType
-			count: 1
-			path: src/database/factories/TaxGroupFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method AichaDigital\\Larabill\\Database\\Factories\\TaxGroupFactory\:\:definition\(\) should be compatible with return type \(array\<model property of AichaDigital\\Larabill\\Models\\TaxGroup, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<AichaDigital\\Larabill\\Models\\TaxGroup\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: src/database/factories/TaxGroupFactory.php
-
-		-
-			message: '#^PHPDoc type string of property AichaDigital\\Larabill\\Database\\Factories\\TaxRateFactory\:\:\$model is not covariant with PHPDoc type class\-string\<AichaDigital\\Larabill\\Models\\TaxRate\> of overridden property Illuminate\\Database\\Eloquent\\Factories\\Factory\<AichaDigital\\Larabill\\Models\\TaxRate\>\:\:\$model\.$#'
-			identifier: property.phpDocType
-			count: 1
-			path: src/database/factories/TaxRateFactory.php
-
-		-
-			message: '#^Return type \(array\<string, mixed\>\) of method AichaDigital\\Larabill\\Database\\Factories\\TaxRateFactory\:\:definition\(\) should be compatible with return type \(array\<model property of AichaDigital\\Larabill\\Models\\TaxRate, mixed\>\) of method Illuminate\\Database\\Eloquent\\Factories\\Factory\<AichaDigital\\Larabill\\Models\\TaxRate\>\:\:definition\(\)$#'
-			identifier: method.childReturnType
-			count: 1
-			path: src/database/factories/TaxRateFactory.php
