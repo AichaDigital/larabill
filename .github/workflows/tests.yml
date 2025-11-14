@@ -60,7 +60,7 @@ jobs:
       fail-fast: true
       matrix:
         os: [ubuntu-latest]
-        php: [8.3, 8.4]
+        php: [8.3]
         laravel: [12.*]
         stability: [prefer-stable]
         include:
@@ -96,12 +96,10 @@ jobs:
       - name: Execute tests (Pest)
         run: vendor/bin/pest --ci
 
-      - name: Execute tests with coverage (PHP 8.3 only)
-        if: matrix.php == '8.3' && matrix.os == 'ubuntu-latest'
+      - name: Execute tests with coverage
         run: vendor/bin/pest --coverage --coverage-clover=coverage.xml
 
       - name: Upload coverage to Codecov
-        if: matrix.php == '8.3' && matrix.os == 'ubuntu-latest'
         uses: codecov/codecov-action@v4
         with:
           files: ./coverage.xml
