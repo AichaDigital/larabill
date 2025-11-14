@@ -1,4 +1,4 @@
-name: Tests
+name: CI
 
 on:
   push:
@@ -7,11 +7,53 @@ on:
       - refactor/**
       - feature/**
       - issues/**
-  pull_request:
-    branches:
-      - main
 
 jobs:
+  code-style:
+    runs-on: ubuntu-latest
+    name: Code Style (Pint)
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.3
+          extensions: dom, curl, libxml, mbstring, zip
+          coverage: none
+
+      - name: Install dependencies
+        run: composer update --prefer-stable --prefer-dist --no-interaction
+
+      - name: Run Laravel Pint
+        run: vendor/bin/pint --test
+
+  phpstan:
+    runs-on: ubuntu-latest
+    name: Static Analysis (PHPStan)
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: 8.3
+          extensions: dom, curl, libxml, mbstring, zip, pcntl, pdo, sqlite, pdo_sqlite
+          coverage: none
+
+      - name: Install dependencies
+        run: composer update --prefer-stable --prefer-dist --no-interaction
+
+      - name: Create build directory
+        run: mkdir -p build/phpstan
+
+      - name: Run PHPStan
+        run: vendor/bin/phpstan analyse --memory-limit=1G
+
   test:
     runs-on: ${{ matrix.os }}
     strategy:
@@ -19,11 +61,11 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         php: [8.3, 8.4]
-        laravel: [11.*]
+        laravel: [12.*]
         stability: [prefer-stable]
         include:
-          - laravel: 11.*
-            testbench: 10.*
+          - laravel: 12.*
+            testbench: 11.*
 
     name: P${{ matrix.php }} - L${{ matrix.laravel }} - ${{ matrix.stability }} - ${{ matrix.os }}
 

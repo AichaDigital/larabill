@@ -1,8 +1,7 @@
 # Larabill - Professional Billing & Invoicing for Laravel
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/aichadigital/larabill.svg?style=flat-square)](https://packagist.org/packages/aichadigital/larabill)
-[![Tests](https://img.shields.io/github/actions/workflow/status/aichadigital/larabill/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/aichadigital/larabill/actions/workflows/tests.yml)
-[![Code Quality](https://img.shields.io/github/actions/workflow/status/aichadigital/larabill/code-quality.yml?branch=main&label=code%20quality&style=flat-square)](https://github.com/aichadigital/larabill/actions/workflows/code-quality.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/aichadigital/larabill/tests.yml?branch=main&label=CI&style=flat-square)](https://github.com/aichadigital/larabill/actions/workflows/tests.yml)
 [![codecov](https://img.shields.io/codecov/c/github/aichadigital/larabill?style=flat-square)](https://codecov.io/gh/aichadigital/larabill)
 [![Total Downloads](https://img.shields.io/packagist/dt/aichadigital/larabill.svg?style=flat-square)](https://packagist.org/packages/aichadigital/larabill)
 
