@@ -15,7 +15,7 @@ class IssuerConfigFactory extends Factory
     /**
      * The name of the factory's corresponding model.
      *
-     * @var class-string<\Illuminate\Database\Eloquent\Model>
+     * @var class-string<\AichaDigital\Larabill\Models\IssuerConfig>
      */
     protected $model = IssuerConfig::class;
 

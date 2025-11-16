@@ -15,7 +15,7 @@ class LegalEntityTypeFactory extends Factory
     /**
      * The name of the factory's corresponding model.
      *
-     * @var class-string<\Illuminate\Database\Eloquent\Model>
+     * @var class-string<\AichaDigital\Larabill\Models\LegalEntityType>
      */
     protected $model = LegalEntityType::class;
 

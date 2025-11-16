@@ -15,7 +15,7 @@ class CustomerFactory extends Factory
     /**
      * The name of the factory's corresponding model.
      *
-     * @var class-string<\Illuminate\Database\Eloquent\Model>
+     * @var class-string<\AichaDigital\Larabill\Models\Customer>
      */
     protected $model = Customer::class;
 

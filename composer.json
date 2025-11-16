@@ -27,7 +27,9 @@
     ],
     "require": {
         "php": "^8.3",
-        "aichadigital/lara100": "^1.0",
+        "aichadigital/lara100": "^1.0 || dev-main",
+        "aichadigital/lararoi": "dev-main",
+        "aichadigital/lara-verifactu": "^0.2.0 || dev-main",
         "dompdf/dompdf": "^3.1",
         "dyrynda/laravel-model-uuid": "^8.2",
         "illuminate/contracts": "^12.0",

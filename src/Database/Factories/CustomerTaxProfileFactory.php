@@ -15,7 +15,7 @@ class CustomerTaxProfileFactory extends Factory
     /**
      * The name of the factory's corresponding model.
      *
-     * @var class-string<\Illuminate\Database\Eloquent\Model>
+     * @var class-string<\AichaDigital\Larabill\Models\CustomerTaxProfile>
      */
     protected $model = CustomerTaxProfile::class;
 
@@ -35,7 +35,7 @@ class CustomerTaxProfileFactory extends Factory
             'tax_id'                 => $this->generateSpanishTaxId($isCompany),
             'legal_entity_type_code' => $isCompany ? 'SOCIEDAD_LIMITADA' : 'PERSONA_FISICA',
             'address'                => $this->faker->streetAddress(),
-            'address_line_2'         => $this->faker->optional()->secondaryAddress(),
+            'address_line_2'         => $this->faker->optional()->streetAddress(),
             'city'                   => $this->faker->city(),
             'state'                  => $this->faker->optional()->state(),
             'postal_code'            => $this->faker->postcode(),

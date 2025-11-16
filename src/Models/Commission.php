@@ -149,7 +149,7 @@ class Commission extends Model
         // Check level matching
         return match ($this->level) {
             'product'       => $this->article_id          === $articleId,
-            'product_group' => $this->product_group === $productGroup,
+            'product_group' => $this->product_group       === $productGroup,
             'global'        => true,
             default         => false,
         };
