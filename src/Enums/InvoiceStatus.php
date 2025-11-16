@@ -20,6 +20,8 @@ enum InvoiceStatus: int
     case PAID      = 2;
     case OVERDUE   = 3;
     case CANCELLED = 4;
+    case PENDING   = 5;
+    case CONVERTED = 6;
 
     /**
      * Get human-readable label
@@ -32,6 +34,8 @@ enum InvoiceStatus: int
             self::PAID      => __('larabill::enums.status.paid'),
             self::OVERDUE   => __('larabill::enums.status.overdue'),
             self::CANCELLED => __('larabill::enums.status.cancelled'),
+            self::PENDING   => __('larabill::enums.status.pending'),
+            self::CONVERTED => __('larabill::enums.status.converted'),
         };
     }
 
@@ -57,6 +61,8 @@ enum InvoiceStatus: int
             self::PAID->value      => self::PAID->label(),
             self::OVERDUE->value   => self::OVERDUE->label(),
             self::CANCELLED->value => self::CANCELLED->label(),
+            self::PENDING->value   => self::PENDING->label(),
+            self::CONVERTED->value => self::CONVERTED->label(),
         ];
     }
 }

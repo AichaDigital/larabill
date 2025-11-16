@@ -11,6 +11,8 @@ describe('InvoiceStatus Enum', function () {
         expect(InvoiceStatus::PAID->value)->toBe(2);
         expect(InvoiceStatus::OVERDUE->value)->toBe(3);
         expect(InvoiceStatus::CANCELLED->value)->toBe(4);
+        expect(InvoiceStatus::PENDING->value)->toBe(5);
+        expect(InvoiceStatus::CONVERTED->value)->toBe(6);
     });
 
     it('returns correct labels', function () {
@@ -25,13 +27,15 @@ describe('InvoiceStatus Enum', function () {
         expect(InvoiceStatus::PAID->canBeEdited())->toBeFalse();
         expect(InvoiceStatus::OVERDUE->canBeEdited())->toBeFalse();
         expect(InvoiceStatus::CANCELLED->canBeEdited())->toBeFalse();
+        expect(InvoiceStatus::PENDING->canBeEdited())->toBeFalse();
+        expect(InvoiceStatus::CONVERTED->canBeEdited())->toBeFalse();
     });
 
     it('converts to array', function () {
         $array = InvoiceStatus::toArray();
 
         expect($array)->toBeArray();
-        expect($array)->toHaveCount(5);
-        expect($array)->toHaveKeys([0, 1, 2, 3, 4]);
+        expect($array)->toHaveCount(7); // Updated from 5 to 7
+        expect($array)->toHaveKeys([0, 1, 2, 3, 4, 5, 6]); // Added 5, 6
     });
 });
