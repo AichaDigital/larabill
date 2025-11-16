@@ -38,10 +38,19 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $paid_at Actual payment timestamp
  * @property InvoiceStatus $status Invoice status enum
  * @property int|string $user_id
+ * @property int|null $customer_id FK to customers (v0.4.0)
  * @property int|null $tax_profile_id
  * @property string|null $proforma_id UUID if converted from proforma
  * @property string|null $rectifies_invoice_id UUID if rectificative
  * @property string|null $user_tax_info_encrypted
+ * @property string|null $issuer_snapshot Encrypted issuer data (v0.4.0)
+ * @property string|null $customer_snapshot Encrypted customer data (v0.4.0)
+ * @property string|null $fiscal_snapshot Encrypted fiscal context (v0.4.0)
+ * @property string|null $fiscal_verification_id Verifactu/TicketBAI ID (v0.4.0)
+ * @property string|null $fiscal_verification_qr QR code (v0.4.0)
+ * @property string|null $fiscal_verification_hash Hash (v0.4.0)
+ * @property \Illuminate\Support\Carbon|null $fiscal_verified_at (v0.4.0)
+ * @property array<string, mixed>|null $fiscal_verification_metadata (v0.4.0)
  * @property array<string, mixed>|null $customer_data
  * @property array<string, mixed>|null $fiscal_data
  * @property array<string, mixed>|null $vat_verification
@@ -87,10 +96,19 @@ class Invoice extends Model
         'paid_at',
         'status',
         'user_id',
+        'customer_id',
         'tax_profile_id',
         'proforma_id',
         'rectifies_invoice_id',
         'user_tax_info_encrypted',
+        'issuer_snapshot',
+        'customer_snapshot',
+        'fiscal_snapshot',
+        'fiscal_verification_id',
+        'fiscal_verification_qr',
+        'fiscal_verification_hash',
+        'fiscal_verified_at',
+        'fiscal_verification_metadata',
         'customer_data',
         'fiscal_data',
         'vat_verification',
@@ -134,26 +152,28 @@ class Invoice extends Model
     public function casts(): array
     {
         return [
-            'id'                   => EfficientUuid::class, // Binary UUID storage (16 bytes)
-            'serie'                => InvoiceSerieType::class, // PHP Enum
-            'status'               => InvoiceStatus::class,    // PHP Enum
-            'fiscal_year'          => 'integer',
-            'invoice_date'         => 'date',
-            'issued_at'            => 'datetime',
-            'service_date'         => 'date',
-            'due_date'             => 'date',
-            'paid_at'              => 'datetime',
-            'is_immutable'         => 'boolean',
-            'immutable_at'         => 'datetime',
-            'taxable_amount'       => Base100::class, // €12.34 ↔ 1234
-            'total_tax_amount'     => Base100::class,
-            'total_amount'         => Base100::class, // €12.34 ↔ 1234
-            'fiscal_data'          => 'array',
-            'vat_verification'     => 'array',
-            'customer_data'        => 'array',
-            'is_roi_taxed'         => 'boolean',
-            'proforma_id'          => EfficientUuid::class, // Binary UUID
-            'rectifies_invoice_id' => EfficientUuid::class, // Binary UUID
+            'id'                            => EfficientUuid::class, // Binary UUID storage (16 bytes)
+            'serie'                         => InvoiceSerieType::class, // PHP Enum
+            'status'                        => InvoiceStatus::class,    // PHP Enum
+            'fiscal_year'                   => 'integer',
+            'invoice_date'                  => 'date',
+            'issued_at'                     => 'datetime',
+            'service_date'                  => 'date',
+            'due_date'                      => 'date',
+            'paid_at'                       => 'datetime',
+            'fiscal_verified_at'            => 'datetime',
+            'is_immutable'                  => 'boolean',
+            'immutable_at'                  => 'datetime',
+            'taxable_amount'                => Base100::class, // €12.34 ↔ 1234
+            'total_tax_amount'              => Base100::class,
+            'total_amount'                  => Base100::class, // €12.34 ↔ 1234
+            'fiscal_data'                   => 'array',
+            'fiscal_verification_metadata'  => 'array',
+            'vat_verification'              => 'array',
+            'customer_data'                 => 'array',
+            'is_roi_taxed'                  => 'boolean',
+            'proforma_id'                   => EfficientUuid::class, // Binary UUID
+            'rectifies_invoice_id'          => EfficientUuid::class, // Binary UUID
         ];
     }
 
@@ -226,6 +246,16 @@ class Invoice extends Model
     }
 
     /**
+     * Get the customer (billable entity) for this invoice (v0.4.0).
+     *
+     * @return BelongsTo<\AichaDigital\Larabill\Models\Customer, $this>
+     */
+    public function customer(): BelongsTo
+    {
+        return $this->belongsTo(\AichaDigital\Larabill\Models\Customer::class);
+    }
+
+    /**
      * Get the tax profile snapshot for this invoice.
      * This maintains a reference to the user's tax information at invoice creation time.
      *
@@ -294,6 +324,56 @@ class Invoice extends Model
 
         // Only fiscal invoices include QR
         return $this->serie === InvoiceSerieType::INVOICE || $this->serie === InvoiceSerieType::RECTIFICATIVE;
+    }
+
+    /**
+     * Check if this invoice has been fiscally verified (v0.4.0).
+     */
+    public function isFiscallyVerified(): bool
+    {
+        return $this->fiscal_verification_id !== null && $this->fiscal_verified_at !== null;
+    }
+
+    /**
+     * Get decrypted issuer snapshot (v0.4.0).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function getIssuerSnapshotData(): ?array
+    {
+        if (! $this->issuer_snapshot) {
+            return null;
+        }
+
+        return json_decode(decrypt($this->issuer_snapshot), true);
+    }
+
+    /**
+     * Get decrypted customer snapshot (v0.4.0).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function getCustomerSnapshotData(): ?array
+    {
+        if (! $this->customer_snapshot) {
+            return null;
+        }
+
+        return json_decode(decrypt($this->customer_snapshot), true);
+    }
+
+    /**
+     * Get decrypted fiscal snapshot (v0.4.0).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function getFiscalSnapshotData(): ?array
+    {
+        if (! $this->fiscal_snapshot) {
+            return null;
+        }
+
+        return json_decode(decrypt($this->fiscal_snapshot), true);
     }
 
     /**
