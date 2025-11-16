@@ -40,8 +40,8 @@ class InvoiceService
      */
     public function createInvoice(array $invoiceData, array $options = []): Invoice
     {
-        $customer = Customer::with('activeTaxProfile')->findOrFail($invoiceData['customer_id']);
-        $issuer   = IssuerConfig::with('activeProfile')->firstOrFail();
+        $customer = Customer::with('currentTaxProfile')->findOrFail($invoiceData['customer_id']);
+        $issuer   = IssuerConfig::with('currentProfile')->firstOrFail();
 
         // Determine invoice type and serie
         $invoiceType = $invoiceData['type'] ?? 'invoice';
@@ -101,7 +101,7 @@ class InvoiceService
      */
     protected function generateIssuerSnapshot(IssuerConfig $issuer): string
     {
-        $profile = $issuer->activeProfile;
+        $profile = $issuer->currentProfile;
 
         $data = [
             'legal_name'             => $profile->legal_name,
@@ -129,7 +129,7 @@ class InvoiceService
      */
     protected function generateCustomerSnapshot(Customer $customer): string
     {
-        $profile = $customer->activeTaxProfile;
+        $profile = $customer->currentTaxProfile;
 
         $data = [
             'customer_id'            => $customer->id,
@@ -165,8 +165,8 @@ class InvoiceService
             'series_number'     => $invoice->series_number,
             'fiscal_number'     => $invoice->fiscal_number,
             'invoice_date'      => $invoice->invoice_date,
-            'issuer_country'    => $issuer->activeProfile->country_code,
-            'customer_country'  => $customer->activeTaxProfile->country_code,
+            'issuer_country'    => $issuer->currentProfile->country_code,
+            'customer_country'  => $customer->currentTaxProfile->country_code,
             'currency'          => 'EUR', // TODO: Make configurable
             'exchange_rate'     => 1.0,   // TODO: Implement multi-currency
             'tax_rules_applied' => [], // TODO: Add tax calculation details
