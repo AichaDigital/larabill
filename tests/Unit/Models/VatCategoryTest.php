@@ -2,7 +2,18 @@
 
 declare(strict_types=1);
 
+/**
+ * @deprecated v0.4.0 - VatCategory table/model removed in v0.4.0
+ * The tax system was refactored to use TaxRate + TaxGroup architecture.
+ * These tests use legacy API that no longer exists.
+ */
+
 use AichaDigital\Larabill\Models\VatCategory;
+
+// Skip all tests - legacy code
+beforeEach(function () {
+    $this->markTestSkipped('VatCategory deprecated in v0.4.0 - Use TaxRate/TaxGroup instead');
+});
 
 it('can create a VAT category', function () {
     $category = VatCategory::create([
