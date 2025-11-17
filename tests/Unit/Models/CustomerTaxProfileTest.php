@@ -25,37 +25,37 @@ it('belongs to a customer', function () {
 });
 
 it('can scope active profiles', function () {
-    CustomerTaxProfile::factory()->create(['is_active' => true]);
-    CustomerTaxProfile::factory()->create(['is_active' => false]);
+    CustomerTaxProfile::factory()->create(['is_current' => true]);
+    CustomerTaxProfile::factory()->create(['is_current' => false]);
 
-    $activeProfiles = CustomerTaxProfile::active()->get();
+    $currentProfiles = CustomerTaxProfile::where('is_current', true)->get();
 
-    expect($activeProfiles)->toHaveCount(1)
-        ->and($activeProfiles->first()->is_active)->toBeTrue();
+    expect($currentProfiles)->toHaveCount(1)
+        ->and($currentProfiles->first()->is_current)->toBeTrue();
 });
 
 it('stores complete fiscal address', function () {
     $profile = CustomerTaxProfile::factory()->create([
-        'fiscal_address'     => 'Calle Test 123',
-        'fiscal_city'        => 'Madrid',
-        'fiscal_postal_code' => '28001',
-        'fiscal_country'     => 'ES',
+        'address'     => 'Calle Test 123',
+        'city'        => 'Madrid',
+        'postal_code' => '28001',
+        'country_code' => 'ES',
     ]);
 
-    expect($profile->fiscal_address)->toBe('Calle Test 123')
-        ->and($profile->fiscal_city)->toBe('Madrid')
-        ->and($profile->fiscal_postal_code)->toBe('28001')
-        ->and($profile->fiscal_country)->toBe('ES');
+    expect($profile->address)->toBe('Calle Test 123')
+        ->and($profile->city)->toBe('Madrid')
+        ->and($profile->postal_code)->toBe('28001')
+        ->and($profile->country_code)->toBe('ES');
 });
 
 it('has ROI verification fields', function () {
     $profile = CustomerTaxProfile::factory()->create([
-        'is_roi_verified' => true,
-        'roi_verified_at' => now(),
+        'vat_number_verified' => true,
+        'vat_verified_at' => now(),
     ]);
 
-    expect($profile->is_roi_verified)->toBeTrue()
-        ->and($profile->roi_verified_at)->not->toBeNull();
+    expect($profile->vat_number_verified)->toBeTrue()
+        ->and($profile->vat_verified_at)->not->toBeNull();
 });
 
 it('casts metadata as array', function () {

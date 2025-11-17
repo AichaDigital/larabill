@@ -19,6 +19,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('invoices', function (Blueprint $table) {
+            // v0.4.0: Make user_id nullable (legacy, replaced by customer_id)
+            $table->unsignedBigInteger('user_id')->nullable()->change();
+
             // v0.4.0: Customer reference (new billable entity)
             $table->unsignedBigInteger('customer_id')->nullable()->after('user_id')
                 ->comment('FK a customers - Entidad facturable (reemplaza user_id en v0.4.0)');

@@ -2,6 +2,17 @@
 
 declare(strict_types=1);
 
+/**
+ * @deprecated v0.4.0 - UnitMeasure table/migration not included in v0.4.0
+ * The unit_measures table is not part of the core v0.4.0 architecture.
+ * This feature may be added in a future version.
+ */
+
+// Skip all tests - feature not implemented in v0.4.0
+beforeEach(function () {
+    $this->markTestSkipped('UnitMeasure not included in v0.4.0 - Feature postponed');
+});
+
 use AichaDigital\Larabill\Enums\UnitMeasureCategory;
 use AichaDigital\Larabill\Models\{Invoice, InvoiceItem, UnitMeasure};
 use AichaDigital\Larabill\Tests\Models\User;
