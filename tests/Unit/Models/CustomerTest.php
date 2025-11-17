@@ -51,6 +51,8 @@ it('can check if is company', function () {
         'legal_entity_type_code' => 'SOCIEDAD_LIMITADA',
     ]);
 
+    $customer->load('legalEntityType');
+
     expect($customer->isCompany())->toBeTrue();
 });
 
