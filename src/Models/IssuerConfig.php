@@ -7,7 +7,7 @@ namespace AichaDigital\Larabill\Models;
 use AichaDigital\Lara100\Casts\Base100;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\{HasMany, HasOne};
 
 /**
  * IssuerConfig Model
@@ -102,6 +102,14 @@ class IssuerConfig extends Model
     public function currentTaxProfile(): HasOne
     {
         return $this->hasOne(IssuerTaxProfile::class, 'id', 'current_tax_profile_id');
+    }
+
+    /**
+     * Get all tax profiles (historical).
+     */
+    public function taxProfiles(): HasMany
+    {
+        return $this->hasMany(IssuerTaxProfile::class);
     }
 
     /**
