@@ -3,15 +3,15 @@
 declare(strict_types=1);
 
 use AichaDigital\Larabill\Enums\ItemType;
-use AichaDigital\Larabill\Models\{Invoice, InvoiceItem, UnitMeasure};
+use AichaDigital\Larabill\Models\{Invoice, InvoiceItem};
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->user        = \AichaDigital\Larabill\Tests\Models\User::factory()->create();
-    $this->invoice     = Invoice::factory()->create(['user_id' => $this->user->id]);
-    $this->unitMeasure = UnitMeasure::factory()->create();
+    $this->user    = \AichaDigital\Larabill\Tests\Models\User::factory()->create();
+    $this->invoice = Invoice::factory()->create(['user_id' => $this->user->id]);
+    // Note: unit_measure_id is nullable and not required in v0.4.0
 });
 
 it('can create an invoice item', function () {
@@ -78,15 +78,7 @@ it('belongs to an invoice', function () {
         ->and($item->invoice->id)->toBe($this->invoice->id);
 });
 
-it('belongs to a unit measure', function () {
-    $item = InvoiceItem::factory()->create([
-        'invoice_id'      => $this->invoice->id,
-        'unit_measure_id' => $this->unitMeasure->id,
-    ]);
-
-    expect($item->unitMeasure)->toBeInstanceOf(UnitMeasure::class)
-        ->and($item->unitMeasure->id)->toBe($this->unitMeasure->id);
-});
+// Removed: 'it belongs to a unit measure' - UnitMeasure not implemented in v0.4.0
 
 it('can calculate taxable amount', function () {
     $item = InvoiceItem::factory()->create([

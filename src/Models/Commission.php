@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
+use AichaDigital\Lara100\Casts\Base100;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\{Model, SoftDeletes};
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -72,11 +73,15 @@ class Commission extends Model
 
     /**
      * The attributes that should be cast.
+     *
+     * Uses Base100 cast from lara100 package for monetary values
+     * Automatically handles conversion between decimals and base-100 integers
+     * Example: 10.5% ↔ 1050, €20.50 ↔ 2050
      */
     protected function casts(): array
     {
         return [
-            'rate'               => 'decimal:4',
+            'rate'               => Base100::class, // 10.5% ↔ 1050 or €20.50 ↔ 2050
             'rate_base100'       => 'integer',
             'valid_from'         => 'date',
             'valid_until'        => 'date',
@@ -123,8 +128,8 @@ class Commission extends Model
             return $baseAmount * ($this->rate / 100);
         }
 
-        // Fixed amount
-        return (float) $this->rate;
+        // Fixed amount - Base100 cast already returns float
+        return $this->rate;
     }
 
     /**

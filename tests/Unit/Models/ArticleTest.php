@@ -70,13 +70,7 @@ it('has tax group relationship', function () {
         ->and($article->taxGroup->id)->toBe($taxGroup->id);
 });
 
-it('has unit measure relationship', function () {
-    $unitMeasure = UnitMeasure::factory()->create();
-    $article     = Article::factory()->create(['unit_measure_id' => $unitMeasure->id]);
-
-    expect($article->unitMeasure)->toBeInstanceOf(UnitMeasure::class)
-        ->and($article->unitMeasure->id)->toBe($unitMeasure->id);
-});
+// Removed: 'it has unit measure relationship' - UnitMeasure not implemented in v0.4.0
 
 it('has overrides relationship', function () {
     $article = Article::factory()->create();
