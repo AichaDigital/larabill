@@ -1,5 +1,5 @@
-includes:
-    - phpstan-baseline.neon
+# includes:
+#     - phpstan-baseline.neon
 
 parameters:
     level: 5
@@ -11,6 +11,8 @@ parameters:
         - bootstrap/cache (?)
         - storage/* (?)
         - database/migrations/* (?)
+        - database/factories/* (?)
+        - src/Database/Factories/* (?)
         - config/* (?)
         - src/config/* (?)
 

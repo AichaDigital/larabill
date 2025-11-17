@@ -10,6 +10,21 @@ use Illuminate\Database\Eloquent\{Builder, Model};
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * Article Override Model
+ *
+ * @property int $id
+ * @property int|string $customer_id
+ * @property int $article_id
+ * @property int|null $custom_price
+ * @property string|null $reason
+ * @property \Illuminate\Support\Carbon|null $valid_from
+ * @property \Illuminate\Support\Carbon|null $valid_to
+ * @property bool $is_active
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \AichaDigital\Larabill\Models\Article $article
+ */
 class ArticleOverride extends Model
 {
     use HasFactory;

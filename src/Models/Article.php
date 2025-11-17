@@ -10,6 +10,34 @@ use Illuminate\Database\Eloquent\{Builder, Model, SoftDeletes};
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
 
+/**
+ * Article Model
+ *
+ * @property int $id
+ * @property string $code
+ * @property string $name
+ * @property string|null $description
+ * @property string $item_type
+ * @property string|null $category
+ * @property int $base_price
+ * @property int|null $cost_price
+ * @property bool $is_recurring
+ * @property string|null $billing_frequency
+ * @property int|null $billing_interval
+ * @property int|null $billing_days_in_advance
+ * @property string|null $subscription_type
+ * @property int|null $tax_group_id
+ * @property int|null $unit_measure_id
+ * @property bool $is_active
+ * @property array|null $metadata
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property-read \AichaDigital\Larabill\Models\TaxGroup|null $taxGroup
+ * @property-read \AichaDigital\Larabill\Models\UnitMeasure|null $unitMeasure
+ * @property-read \Illuminate\Database\Eloquent\Collection|\AichaDigital\Larabill\Models\ArticleOverride[] $overrides
+ * @property-read \Illuminate\Database\Eloquent\Collection|\AichaDigital\Larabill\Models\ArticleServiceStatus[] $serviceStatuses
+ */
 class Article extends Model
 {
     use HasFactory;
