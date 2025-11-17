@@ -11,6 +11,9 @@ beforeEach(function () {
     // Clean singleton IssuerConfig
     IssuerConfig::query()->delete();
 
+    // Create IssuerConfig (required for all invoice operations)
+    $this->issuer = IssuerConfig::factory()->create();
+
     // Bind fake fiscal verification for testing
     app()->bind(FiscalVerificationContract::class, FakeFiscalVerification::class);
 
@@ -18,7 +21,6 @@ beforeEach(function () {
 });
 
 it('can create an invoice with encrypted snapshots', function () {
-    $issuer   = IssuerConfig::factory()->create();
     $customer = Customer::factory()->create();
 
     $invoiceData = [
