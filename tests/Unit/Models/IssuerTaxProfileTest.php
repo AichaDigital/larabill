@@ -22,15 +22,9 @@ it('can create an issuer tax profile', function () {
         ->and($profile->exists)->toBeTrue();
 });
 
-it('belongs to issuer config', function () {
-    $issuer = IssuerConfig::factory()->create();
-    $profile = IssuerTaxProfile::factory()->create([
-        'issuer_config_id' => $issuer->id,
-    ]);
-
-    expect($profile->issuer())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class)
-        ->and($profile->issuer)->toBeInstanceOf(IssuerConfig::class);
-});
+// Removed: 'it belongs to issuer config' - Invalid relationship in v0.4.0
+// IssuerTaxProfile does NOT belongsTo IssuerConfig
+// Relationship is reversed: IssuerConfig hasOne IssuerTaxProfile
 
 it('can scope active profiles', function () {
     IssuerTaxProfile::factory()->create(['is_current' => true]);

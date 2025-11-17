@@ -55,8 +55,7 @@ class IssuerConfigFactory extends Factory
             // Create default tax profile if none exists
             if (! $issuer->currentTaxProfile) {
                 $profile = IssuerTaxProfile::factory()->create([
-                    'issuer_config_id' => $issuer->id,
-                    'is_current'       => true,
+                    'is_current' => true,
                 ]);
 
                 $issuer->update(['current_tax_profile_id' => $profile->id]);

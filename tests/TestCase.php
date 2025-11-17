@@ -52,6 +52,9 @@ class TestCase extends Orchestra
             'prefix'   => '',
         ]);
 
+        // Set APP_KEY for encryption (required by InvoiceService snapshots)
+        config()->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
+
         // Load package configuration
         $app['config']->set('larabill', require __DIR__.'/../config/larabill.php');
 
