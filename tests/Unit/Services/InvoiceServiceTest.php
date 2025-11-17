@@ -94,7 +94,7 @@ it('cannot convert already converted proforma', function () {
 
     // Try to convert again - should throw exception
     $this->invoiceService->convertProformaToInvoice($proforma->fresh());
-})->throws(\RuntimeException::class, 'already been converted');
+})->throws(\InvalidArgumentException::class, 'already converted');
 
 it('can create invoice items with tax calculation', function () {
     $customer = Customer::factory()->create();
