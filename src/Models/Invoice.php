@@ -55,10 +55,12 @@ use Illuminate\Support\Carbon;
  * @property array<string, mixed>|null $fiscal_data
  * @property array<string, mixed>|null $vat_verification
  * @property bool $is_roi_taxed ROI reverse charge
+ * @property string $type invoice|proforma|rectificative
  * @property float $taxable_amount Base amount before tax
  * @property float $tax_amount Calculated tax
  * @property float $total_amount Total with tax
  * @property float|null $total Total amount (alias)
+ * @property float|null $subtotal Subtotal (alias for taxable_amount)
  * @property float|null $total_tax_amount Total tax (alias)
  * @property string|null $converted_invoice_id UUID of final invoice (if proforma converted)
  * @property bool $is_immutable

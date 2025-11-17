@@ -30,6 +30,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $website
  * @property string|null $vat_number
  * @property bool $is_roi_registered
+ * @property bool $roi_enabled Alias for is_roi_registered
  * @property bool $is_oss_registered
  * @property \Illuminate\Support\Carbon $valid_from
  * @property \Illuminate\Support\Carbon|null $valid_until
