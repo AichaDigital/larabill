@@ -47,8 +47,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            // Indexes
-            $table->index('user_id');
+            // Indexes (user_id index is created automatically by MigrationHelper::userIdColumn)
             $table->index('relationship_type');
             $table->index('legal_entity_type_code');
             $table->index('is_active');
