@@ -27,7 +27,7 @@ class PricingService
 
         $override = $this->getActiveOverride($article, $customerId);
 
-        return $override?->custom_price ?? $article->base_price;
+        return $override->custom_price ?? $article->base_price;
     }
 
     /**

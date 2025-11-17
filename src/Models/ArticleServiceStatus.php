@@ -257,7 +257,7 @@ class ArticleServiceStatus extends Model
         $override = $this->article->getActiveOverrideFor($this->customer_id);
 
         $this->update([
-            'effective_price'     => $override?->custom_price ?? $this->article->base_price,
+            'effective_price'     => $override->custom_price ?? $this->article->base_price,
             'current_override_id' => $override?->id,
         ]);
     }

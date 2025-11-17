@@ -58,6 +58,9 @@ use Illuminate\Support\Carbon;
  * @property float $taxable_amount Base amount before tax
  * @property float $tax_amount Calculated tax
  * @property float $total_amount Total with tax
+ * @property float|null $total Total amount (alias)
+ * @property float|null $total_tax_amount Total tax (alias)
+ * @property string|null $converted_invoice_id UUID of final invoice (if proforma converted)
  * @property bool $is_immutable
  * @property Carbon|null $immutable_at
  * @property string|null $notes

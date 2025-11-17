@@ -31,6 +31,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property array|null $metadata
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \AichaDigital\Larabill\Models\IssuerTaxProfile|null $currentProfile
+ * @property-read \Illuminate\Database\Eloquent\Collection|\AichaDigital\Larabill\Models\IssuerTaxProfile[] $taxProfiles
  */
 class IssuerConfig extends Model
 {

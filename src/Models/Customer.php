@@ -18,6 +18,8 @@ use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, HasOne};
  * @property int|string|null $user_id FK to users (nullable - customer can exist without User)
  * @property string $relationship_type self|self_company|client|other
  * @property string $display_name
+ * @property string $name Alias for display_name
+ * @property string|null $relationship_to_user Alias for relationship_type
  * @property string|null $internal_code
  * @property string $legal_entity_type_code FK to legal_entity_types
  * @property int|null $current_tax_profile_id FK to customer_tax_profiles

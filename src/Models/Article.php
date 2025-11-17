@@ -230,7 +230,7 @@ class Article extends Model
 
         $override = $this->getActiveOverrideFor($customerId);
 
-        return $override?->custom_price ?? $this->base_price;
+        return $override->custom_price ?? $this->base_price;
     }
 
     /**
