@@ -290,7 +290,7 @@ final class RecurringBillingService
             ->orderByDesc('series_number')
             ->first();
 
-        $seriesNumber = ($lastInvoice?->series_number ?? 0) + 1;
+        $seriesNumber = ($lastInvoice->series_number ?? 0) + 1;
         $fiscalYear   = now()->year;
         $fiscalNumber = sprintf('FAC-%d-%06d', $fiscalYear, $seriesNumber);
 

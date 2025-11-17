@@ -32,6 +32,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *
  * @property int $id
  * @property string $invoice_id UUID foreign key to invoices table
+ * @property int|null $article_id FK to articles (v0.4.0)
  * @property ItemType $item_type Good or Service
  * @property string $description
  * @property string|null $internal_code User product/service code
