@@ -69,6 +69,26 @@ class CommissionCalculationService
     }
 
     /**
+     * Calculate commission amount (simplified return).
+     *
+     * @param  float  $baseAmount  Amount to calculate on
+     * @param  int|null  $articleId  Article ID
+     * @param  string|null  $productGroup  Product group name
+     * @param  \DateTimeInterface|null  $date  Date to check validity
+     * @return float Commission amount
+     */
+    public function calculateCommission(
+        float $baseAmount,
+        ?int $articleId = null,
+        ?string $productGroup = null,
+        ?\DateTimeInterface $date = null
+    ): float {
+        $result = $this->calculateForItem($articleId, $productGroup, $baseAmount, 1, $date);
+
+        return $result['commission_amount'];
+    }
+
+    /**
      * Calculate total commissions for multiple items.
      *
      * @param  array<array{article_id?: int, product_group?: string, base_amount: float, quantity?: int}>  $items

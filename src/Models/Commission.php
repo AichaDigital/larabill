@@ -124,7 +124,7 @@ class Commission extends Model
         }
 
         // Fixed amount
-        return $this->rate;
+        return (float) $this->rate;
     }
 
     /**

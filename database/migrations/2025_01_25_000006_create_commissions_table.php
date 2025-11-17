@@ -52,6 +52,7 @@ return new class extends Migration
             $table->json('metadata')->nullable()->comment('Condiciones adicionales, reglas especiales, etc.');
 
             $table->timestamps();
+            $table->softDeletes();
 
             // Indexes
             $table->index('level');
