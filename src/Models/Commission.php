@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\{Model, SoftDeletes};
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -41,6 +41,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Commission extends Model
 {
     use HasFactory;
+    use SoftDeletes;
 
     /**
      * The table associated with the model.
@@ -169,6 +170,31 @@ class Commission extends Model
     }
 
     /**
+     * Check if commission is currently valid.
+     */
+    public function isCurrentlyValid(): bool
+    {
+        $now = now();
+
+        // Must be active
+        if (! $this->is_active) {
+            return false;
+        }
+
+        // Check valid_from
+        if ($this->valid_from && $now->lessThan($this->valid_from)) {
+            return false;
+        }
+
+        // Check valid_until (null means no end date)
+        if ($this->valid_until && $now->greaterThan($this->valid_until)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Scope active commissions.
      */
     public function scopeActive($query)
@@ -182,6 +208,22 @@ class Commission extends Model
     public function scopeLevel($query, string $level)
     {
         return $query->where('level', $level);
+    }
+
+    /**
+     * Scope by level (alias for better readability).
+     */
+    public function scopeForLevel($query, string $level)
+    {
+        return $query->where('level', $level);
+    }
+
+    /**
+     * Scope by type.
+     */
+    public function scopeForType($query, string $type)
+    {
+        return $query->where('type', $type);
     }
 
     /**

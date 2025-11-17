@@ -7,7 +7,7 @@ use AichaDigital\Larabill\Models\Customer;
 it('can create a customer', function () {
     $customer = Customer::factory()->create([
         'display_name' => 'Test Customer',
-        'is_active' => true,
+        'is_active'    => true,
     ]);
 
     expect($customer->display_name)->toBe('Test Customer')
@@ -27,7 +27,7 @@ it('can deactivate a customer', function () {
 
 it('can activate a customer', function () {
     $customer = Customer::factory()->create([
-        'is_active' => false,
+        'is_active'       => false,
         'inactive_reason' => 'Test',
     ]);
 
@@ -75,7 +75,7 @@ it('can scope by relationship type', function () {
 });
 
 it('uses soft deletes', function () {
-    $customer = Customer::factory()->create();
+    $customer   = Customer::factory()->create();
     $customerId = $customer->id;
 
     $customer->delete();
@@ -83,4 +83,3 @@ it('uses soft deletes', function () {
     expect(Customer::find($customerId))->toBeNull()
         ->and(Customer::withTrashed()->find($customerId))->not->toBeNull();
 });
-
