@@ -41,7 +41,7 @@ class InvoiceService
     public function createInvoice(array $invoiceData, array $options = []): Invoice
     {
         $customer = Customer::with('currentTaxProfile')->findOrFail($invoiceData['customer_id']);
-        $issuer   = IssuerConfig::with('currentProfile')->firstOrFail();
+        $issuer   = IssuerConfig::with('currentTaxProfile')->firstOrFail();
 
         // Determine invoice type and serie
         $invoiceType = $invoiceData['type'] ?? 'invoice';
@@ -53,7 +53,7 @@ class InvoiceService
             'fiscal_number'    => $this->generateInvoiceNumber($invoiceType),
             'prefix'           => $invoiceType === 'proforma' ? 'PRO' : 'FAC',
             'serie'            => $serie,
-            'series_number'    => $this->getTempSeriesNumber($serie, now()->year),
+            'series_number'    => $this->getTempSeriesNumber((string) $serie, now()->year),
             'fiscal_year'      => now()->year,
             'invoice_date'     => now()->toDateString(),
             'issued_at'        => now(),
@@ -327,7 +327,7 @@ class InvoiceService
     /**
      * Map status string to enum value.
      */
-    protected function mapStatusToEnum(string $status): string
+    protected function mapStatusToEnum(string $status): int
     {
         return match (strtolower($status)) {
             'draft'     => InvoiceStatus::DRAFT->value,
