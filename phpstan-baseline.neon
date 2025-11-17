@@ -1,0 +1,229 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Method AichaDigital\\Larabill\\Database\\Query\\BinaryUuidBuilder\:\:where\(\) should return \$this\(AichaDigital\\Larabill\\Database\\Query\\BinaryUuidBuilder\<TModel of Illuminate\\Database\\Eloquent\\Model\>\) but returns static\(AichaDigital\\Larabill\\Database\\Query\\BinaryUuidBuilder\<TModel of Illuminate\\Database\\Eloquent\\Model\>\)\.$#'
+			identifier: return.type
+			count: 3
+			path: src/Database/Query/BinaryUuidBuilder.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Database\\Query\\BinaryUuidBuilder\:\:whereIn\(\) should return \$this\(AichaDigital\\Larabill\\Database\\Query\\BinaryUuidBuilder\<TModel of Illuminate\\Database\\Eloquent\\Model\>\) but returns Illuminate\\Database\\Eloquent\\Builder\<TModel of Illuminate\\Database\\Eloquent\\Model\>\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Database/Query/BinaryUuidBuilder.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\Article\:\:getActiveOverrideFor\(\) should return AichaDigital\\Larabill\\Models\\ArticleOverride\|null but returns Illuminate\\Database\\Eloquent\\Model\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Models/Article.php
+
+		-
+			message: '#^Cannot call method addToDate\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: src/Models/ArticleServiceStatus.php
+
+		-
+			message: '#^Cannot call method canBill\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: src/Models/ArticleServiceStatus.php
+
+		-
+			message: '#^Property AichaDigital\\Larabill\\Models\\FiscalSettings\:\:\$current_eu_sales_amount \(int\) does not accept float\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: src/Models/FiscalSettings.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\TaxGroup\:\:taxRates\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<AichaDigital\\Larabill\\Models\\TaxRate, Illuminate\\Database\\Eloquent\\Relations\\Pivot, ''pivot''\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<AichaDigital\\Larabill\\Models\\TaxRate, \$this\(AichaDigital\\Larabill\\Models\\TaxGroup\), Illuminate\\Database\\Eloquent\\Relations\\Pivot, ''pivot''\>\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Models/TaxGroup.php
+
+		-
+			message: '#^PHPDoc type array\<string\> of property AichaDigital\\Larabill\\Models\\TaxGroup\:\:\$fillable is not covariant with PHPDoc type list\<string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$fillable\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: src/Models/TaxGroup.php
+
+		-
+			message: '#^Type string in generic type Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<AichaDigital\\Larabill\\Models\\TaxRate, Illuminate\\Database\\Eloquent\\Relations\\Pivot, string\> in PHPDoc tag @return is not subtype of template type TPivotModel of Illuminate\\Database\\Eloquent\\Relations\\Pivot \= Illuminate\\Database\\Eloquent\\Relations\\Pivot of class Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\.$#'
+			identifier: generics.notSubtype
+			count: 1
+			path: src/Models/TaxGroup.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Models\\TaxRate\:\:taxGroups\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<AichaDigital\\Larabill\\Models\\TaxGroup, Illuminate\\Database\\Eloquent\\Relations\\Pivot, ''pivot''\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<AichaDigital\\Larabill\\Models\\TaxGroup, \$this\(AichaDigital\\Larabill\\Models\\TaxRate\), Illuminate\\Database\\Eloquent\\Relations\\Pivot, ''pivot''\>\.$#'
+			identifier: return.type
+			count: 1
+			path: src/Models/TaxRate.php
+
+		-
+			message: '#^PHPDoc type array\<string\> of property AichaDigital\\Larabill\\Models\\TaxRate\:\:\$fillable is not covariant with PHPDoc type list\<string\> of overridden property Illuminate\\Database\\Eloquent\\Model\:\:\$fillable\.$#'
+			identifier: property.phpDocType
+			count: 1
+			path: src/Models/TaxRate.php
+
+		-
+			message: '#^Type string in generic type Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<AichaDigital\\Larabill\\Models\\TaxGroup, Illuminate\\Database\\Eloquent\\Relations\\Pivot, string\> in PHPDoc tag @return is not subtype of template type TPivotModel of Illuminate\\Database\\Eloquent\\Relations\\Pivot \= Illuminate\\Database\\Eloquent\\Relations\\Pivot of class Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\.$#'
+			identifier: generics.notSubtype
+			count: 1
+			path: src/Models/TaxRate.php
+
+		-
+			message: '#^Method AichaDigital\\Larabill\\Services\\BillingService\:\:calculateSubtotal\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: src/Services/BillingService.php
+
+		-
+			message: '#^Property AichaDigital\\Larabill\\Services\\BillingService\:\:\$roiVerificationService is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: src/Services/BillingService.php
+
+		-
+			message: '#^Property AichaDigital\\Larabill\\Models\\FiscalSettings\:\:\$current_eu_sales_amount \(int\) does not accept float\.$#'
+			identifier: assign.propertyType
+			count: 1
+			path: src/Services/DestinationVatService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$address\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Services/InvoiceService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$address_line_2\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Services/InvoiceService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$city\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Services/InvoiceService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$commercial_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Services/InvoiceService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$country_code\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Services/InvoiceService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Services/InvoiceService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$legal_entity_type_code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Services/InvoiceService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$legal_name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Services/InvoiceService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$phone\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Services/InvoiceService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$postal_code\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Services/InvoiceService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$state\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Services/InvoiceService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$tax_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Services/InvoiceService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$vat_number\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Services/InvoiceService.php
+
+		-
+			message: '#^Expression on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.expr
+			count: 1
+			path: src/Services/InvoiceService.php
+
+		-
+			message: '#^Offset ''verification_id'' does not exist on array\{success\: true, id\: string\|null, qr\: string\|null, hash\: string\|null, signature\: string\|null, timestamp\: string\|null, metadata\: array\<string, mixed\>\|null, error\: string\|null\}\.$#'
+			identifier: offsetAccess.notFound
+			count: 1
+			path: src/Services/InvoiceService.php
+
+		-
+			message: '#^Parameter \#1 \$invoiceData of method AichaDigital\\Larabill\\Contracts\\Services\\FiscalVerificationContract\:\:verify\(\) expects array\<string, mixed\>, AichaDigital\\Larabill\\Models\\Invoice given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Services/InvoiceService.php
+
+		-
+			message: '#^Parameter \#1 \$invoiceData of method AichaDigital\\Larabill\\Services\\InvoiceService\:\:createInvoice\(\) expects array\{customer_id\: int, items\: array\<array\{article_id\: int, quantity\: int, base_price\: float\}\>, type\?\: string, status\?\: string, due_date\?\: string\|null, payment_terms\?\: int\|null, template_name\?\: string\|null\}, array\{customer_id\: int\|null, items\: array\<mixed\>, type\: ''invoice'', status\: ''pending'', due_date\: Illuminate\\Support\\Carbon\|null, payment_terms\: string\|null, template_name\: string\|null\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Services/InvoiceService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany\:\:active\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: src/Services/PricingService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>custom_price" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: src/Services/PricingService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Services/RecurringBillingService.php
+
+		-
+			message: '#^Cannot access property \$value on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: src/Services/RecurringBillingService.php
+
+		-
+			message: '#^Cannot call method subtractFromDate\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: src/Services/ServiceLifecycleService.php
+
+		-
+			message: '#^Parameter \#2 \$type of event class AichaDigital\\Larabill\\Events\\ServiceCancelled constructor expects AichaDigital\\Larabill\\Enums\\CancellationType in AichaDigital\\Larabill\\Events\\ServiceCancelled\:\:dispatch\(\), string\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: src/Services/ServiceLifecycleService.php
