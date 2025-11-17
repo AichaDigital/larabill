@@ -8,6 +8,9 @@ use AichaDigital\Larabill\Services\InvoiceService;
 use AichaDigital\Larabill\Testing\FakeFiscalVerification;
 
 beforeEach(function () {
+    // Clean singleton IssuerConfig
+    IssuerConfig::query()->delete();
+
     // Bind fake fiscal verification for testing
     app()->bind(FiscalVerificationContract::class, FakeFiscalVerification::class);
 

@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Database\Factories;
 
-use AichaDigital\Larabill\Models\IssuerConfig;
+use AichaDigital\Larabill\Models\{IssuerConfig, IssuerTaxProfile};
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -44,6 +44,24 @@ class IssuerConfigFactory extends Factory
             'fiscal_settings'               => null,
             'metadata'                      => null,
         ];
+    }
+
+    /**
+     * Configure the model factory.
+     */
+    public function configure(): static
+    {
+        return $this->afterCreating(function (IssuerConfig $issuer) {
+            // Create default tax profile if none exists
+            if (! $issuer->currentTaxProfile) {
+                $profile = IssuerTaxProfile::factory()->create([
+                    'issuer_config_id' => $issuer->id,
+                    'is_current'       => true,
+                ]);
+
+                $issuer->update(['current_tax_profile_id' => $profile->id]);
+            }
+        });
     }
 
     /**

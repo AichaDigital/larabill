@@ -101,7 +101,7 @@ class InvoiceService
      */
     protected function generateIssuerSnapshot(IssuerConfig $issuer): string
     {
-        $profile = $issuer->currentProfile;
+        $profile = $issuer->currentTaxProfile;
 
         $data = [
             'legal_name'             => $profile->legal_name,
@@ -325,10 +325,16 @@ class InvoiceService
     }
 
     /**
-     * Map status string to enum value.
+     * Map status (string or int) to enum value.
      */
-    protected function mapStatusToEnum(string $status): int
+    protected function mapStatusToEnum(string|int $status): int
     {
+        // If already int, return it
+        if (is_int($status)) {
+            return $status;
+        }
+
+        // Map string to int
         return match (strtolower($status)) {
             'draft'     => InvoiceStatus::DRAFT->value,
             'pending'   => InvoiceStatus::PENDING->value,

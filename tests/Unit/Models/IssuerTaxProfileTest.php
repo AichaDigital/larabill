@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 use AichaDigital\Larabill\Models\{IssuerConfig, IssuerTaxProfile};
 
+beforeEach(function () {
+    // Clean singleton IssuerConfig
+    IssuerConfig::query()->delete();
+});
+
 it('can create an issuer tax profile', function () {
     $profile = IssuerTaxProfile::factory()->create([
         'legal_name'   => 'AichaDigital SL',
@@ -18,38 +23,41 @@ it('can create an issuer tax profile', function () {
 });
 
 it('belongs to issuer config', function () {
-    $profile = IssuerTaxProfile::factory()->create();
+    $issuer = IssuerConfig::factory()->create();
+    $profile = IssuerTaxProfile::factory()->create([
+        'issuer_config_id' => $issuer->id,
+    ]);
 
-    expect($profile->issuerConfig())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class)
-        ->and($profile->issuerConfig)->toBeInstanceOf(IssuerConfig::class);
+    expect($profile->issuer())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\BelongsTo::class)
+        ->and($profile->issuer)->toBeInstanceOf(IssuerConfig::class);
 });
 
 it('can scope active profiles', function () {
-    IssuerTaxProfile::factory()->create(['is_active' => true]);
-    IssuerTaxProfile::factory()->create(['is_active' => false]);
+    IssuerTaxProfile::factory()->create(['is_current' => true]);
+    IssuerTaxProfile::factory()->create(['is_current' => false]);
 
-    $activeProfiles = IssuerTaxProfile::active()->get();
+    $currentProfiles = IssuerTaxProfile::where('is_current', true)->get();
 
-    expect($activeProfiles)->toHaveCount(1)
-        ->and($activeProfiles->first()->is_active)->toBeTrue();
+    expect($currentProfiles)->toHaveCount(1)
+        ->and($currentProfiles->first()->is_current)->toBeTrue();
 });
 
 it('stores complete fiscal information', function () {
     $profile = IssuerTaxProfile::factory()->create([
-        'legal_name'         => 'AichaDigital SL',
-        'trade_name'         => 'Aicha Digital',
-        'tax_id'             => 'B12345678',
-        'fiscal_address'     => 'Calle Principal 1',
-        'fiscal_city'        => 'Barcelona',
-        'fiscal_postal_code' => '08001',
-        'fiscal_country'     => 'ES',
+        'legal_name'     => 'AichaDigital SL',
+        'commercial_name' => 'Aicha Digital',
+        'tax_id'         => 'B12345678',
+        'address'        => 'Calle Principal 1',
+        'city'           => 'Barcelona',
+        'postal_code'    => '08001',
+        'country_code'   => 'ES',
     ]);
 
     expect($profile->legal_name)->toBe('AichaDigital SL')
-        ->and($profile->trade_name)->toBe('Aicha Digital')
+        ->and($profile->commercial_name)->toBe('Aicha Digital')
         ->and($profile->tax_id)->toBe('B12345678')
-        ->and($profile->fiscal_address)->toBe('Calle Principal 1')
-        ->and($profile->fiscal_city)->toBe('Barcelona');
+        ->and($profile->address)->toBe('Calle Principal 1')
+        ->and($profile->city)->toBe('Barcelona');
 });
 
 it('tracks profile validity period', function () {
