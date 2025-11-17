@@ -6,8 +6,8 @@ use AichaDigital\Larabill\Models\{Customer, CustomerTaxProfile};
 
 it('can create a customer tax profile', function () {
     $profile = CustomerTaxProfile::factory()->create([
-        'legal_name' => 'John Doe',
-        'tax_id' => 'X1234567A',
+        'legal_name'   => 'John Doe',
+        'tax_id'       => 'X1234567A',
         'country_code' => 'ES',
     ]);
 
@@ -36,10 +36,10 @@ it('can scope active profiles', function () {
 
 it('stores complete fiscal address', function () {
     $profile = CustomerTaxProfile::factory()->create([
-        'fiscal_address' => 'Calle Test 123',
-        'fiscal_city' => 'Madrid',
+        'fiscal_address'     => 'Calle Test 123',
+        'fiscal_city'        => 'Madrid',
         'fiscal_postal_code' => '28001',
-        'fiscal_country' => 'ES',
+        'fiscal_country'     => 'ES',
     ]);
 
     expect($profile->fiscal_address)->toBe('Calle Test 123')
@@ -66,4 +66,3 @@ it('casts metadata as array', function () {
     expect($profile->metadata)->toBeArray()
         ->and($profile->metadata)->toHaveKey('custom_field');
 });
-

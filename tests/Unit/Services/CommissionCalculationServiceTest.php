@@ -11,11 +11,11 @@ beforeEach(function () {
 
 it('can calculate global commission', function () {
     Commission::factory()->create([
-        'level' => 'global',
-        'type' => 'percentage',
-        'rate' => 10.0,
-        'is_active' => true,
-        'valid_from' => now()->subDay(),
+        'level'       => 'global',
+        'type'        => 'percentage',
+        'rate'        => 10.0,
+        'is_active'   => true,
+        'valid_from'  => now()->subDay(),
         'valid_until' => null,
     ]);
 
@@ -33,11 +33,11 @@ it('can calculate product commission', function () {
     $article = Article::factory()->create();
 
     Commission::factory()->create([
-        'level' => 'product',
+        'level'      => 'product',
         'article_id' => $article->id,
-        'type' => 'percentage',
-        'rate' => 15.0,
-        'is_active' => true,
+        'type'       => 'percentage',
+        'rate'       => 15.0,
+        'is_active'  => true,
         'valid_from' => now()->subDay(),
     ]);
 
@@ -56,20 +56,20 @@ it('prioritizes product over global commission', function () {
 
     // Global commission
     Commission::factory()->create([
-        'level' => 'global',
-        'type' => 'percentage',
-        'rate' => 10.0,
-        'is_active' => true,
+        'level'      => 'global',
+        'type'       => 'percentage',
+        'rate'       => 10.0,
+        'is_active'  => true,
         'valid_from' => now()->subDay(),
     ]);
 
     // Product commission (higher priority)
     Commission::factory()->create([
-        'level' => 'product',
+        'level'      => 'product',
         'article_id' => $article->id,
-        'type' => 'percentage',
-        'rate' => 20.0,
-        'is_active' => true,
+        'type'       => 'percentage',
+        'rate'       => 20.0,
+        'is_active'  => true,
         'valid_from' => now()->subDay(),
     ]);
 
@@ -86,12 +86,12 @@ it('prioritizes product over global commission', function () {
 
 it('can calculate product group commission', function () {
     Commission::factory()->create([
-        'level' => 'product_group',
+        'level'         => 'product_group',
         'product_group' => 'hosting',
-        'type' => 'percentage',
-        'rate' => 12.5,
-        'is_active' => true,
-        'valid_from' => now()->subDay(),
+        'type'          => 'percentage',
+        'rate'          => 12.5,
+        'is_active'     => true,
+        'valid_from'    => now()->subDay(),
     ]);
 
     $amount = $this->commissionService->calculateCommission(
@@ -117,11 +117,11 @@ it('returns zero when no active commission found', function () {
 
 it('respects commission date range', function () {
     Commission::factory()->create([
-        'level' => 'global',
-        'type' => 'percentage',
-        'rate' => 10.0,
-        'is_active' => true,
-        'valid_from' => now()->subMonth(),
+        'level'       => 'global',
+        'type'        => 'percentage',
+        'rate'        => 10.0,
+        'is_active'   => true,
+        'valid_from'  => now()->subMonth(),
         'valid_until' => now()->subDay(),
     ]);
 
@@ -138,10 +138,10 @@ it('respects commission date range', function () {
 
 it('can calculate fixed amount commission', function () {
     Commission::factory()->create([
-        'level' => 'global',
-        'type' => 'fixed',
-        'rate' => 5.00,
-        'is_active' => true,
+        'level'      => 'global',
+        'type'       => 'fixed',
+        'rate'       => 5.00,
+        'is_active'  => true,
         'valid_from' => now()->subDay(),
     ]);
 
@@ -154,4 +154,3 @@ it('can calculate fixed amount commission', function () {
 
     expect($amount)->toBe(5.00);
 });
-

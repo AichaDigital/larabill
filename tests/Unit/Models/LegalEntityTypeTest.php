@@ -6,8 +6,8 @@ use AichaDigital\Larabill\Models\LegalEntityType;
 
 it('can create a legal entity type', function () {
     $type = LegalEntityType::factory()->create([
-        'code' => 'TEST_TYPE',
-        'name' => 'Test Legal Entity',
+        'code'     => 'TEST_TYPE',
+        'name'     => 'Test Legal Entity',
         'category' => 'person',
     ]);
 
@@ -39,7 +39,7 @@ it('can scope active types', function () {
 
 it('stores fiscal requirements', function () {
     $type = LegalEntityType::factory()->create([
-        'requires_tax_id' => true,
+        'requires_tax_id'              => true,
         'requires_commercial_register' => true,
     ]);
 
@@ -60,4 +60,3 @@ it('uses code as primary key', function () {
         ->and($type->getKey())->toBe('CUSTOM_CODE')
         ->and($type->incrementing)->toBeFalse();
 });
-

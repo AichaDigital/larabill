@@ -6,9 +6,9 @@ use AichaDigital\Larabill\Models\Commission;
 
 it('can create a commission', function () {
     $commission = Commission::factory()->create([
-        'name' => 'Test Commission',
+        'name'  => 'Test Commission',
         'level' => 'global',
-        'rate' => 10.5,
+        'rate'  => 10.5,
     ]);
 
     expect($commission->name)->toBe('Test Commission')
@@ -49,7 +49,7 @@ it('can scope by type', function () {
 
 it('can check if commission is currently valid', function () {
     $commission = Commission::factory()->create([
-        'valid_from' => now()->subDay(),
+        'valid_from'  => now()->subDay(),
         'valid_until' => now()->addDay(),
     ]);
 
@@ -58,7 +58,7 @@ it('can check if commission is currently valid', function () {
 
 it('detects expired commission', function () {
     $commission = Commission::factory()->create([
-        'valid_from' => now()->subMonth(),
+        'valid_from'  => now()->subMonth(),
         'valid_until' => now()->subDay(),
     ]);
 
@@ -67,7 +67,7 @@ it('detects expired commission', function () {
 
 it('handles commission without end date as always valid', function () {
     $commission = Commission::factory()->create([
-        'valid_from' => now()->subDay(),
+        'valid_from'  => now()->subDay(),
         'valid_until' => null,
     ]);
 
@@ -75,8 +75,8 @@ it('handles commission without end date as always valid', function () {
 });
 
 it('supports multi-level commission structure', function () {
-    $global = Commission::factory()->create(['level' => 'global', 'rate' => 5.0]);
-    $group = Commission::factory()->create(['level' => 'product_group', 'rate' => 7.5]);
+    $global  = Commission::factory()->create(['level' => 'global', 'rate' => 5.0]);
+    $group   = Commission::factory()->create(['level' => 'product_group', 'rate' => 7.5]);
     $product = Commission::factory()->create(['level' => 'product', 'rate' => 10.0]);
 
     expect($global->level)->toBe('global')
@@ -86,7 +86,7 @@ it('supports multi-level commission structure', function () {
 });
 
 it('uses soft deletes', function () {
-    $commission = Commission::factory()->create();
+    $commission   = Commission::factory()->create();
     $commissionId = $commission->id;
 
     $commission->delete();
@@ -94,4 +94,3 @@ it('uses soft deletes', function () {
     expect(Commission::find($commissionId))->toBeNull()
         ->and(Commission::withTrashed()->find($commissionId))->not->toBeNull();
 });
-

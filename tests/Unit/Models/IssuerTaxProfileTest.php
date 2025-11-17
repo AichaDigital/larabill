@@ -6,8 +6,8 @@ use AichaDigital\Larabill\Models\{IssuerConfig, IssuerTaxProfile};
 
 it('can create an issuer tax profile', function () {
     $profile = IssuerTaxProfile::factory()->create([
-        'legal_name' => 'AichaDigital SL',
-        'tax_id' => 'B12345678',
+        'legal_name'   => 'AichaDigital SL',
+        'tax_id'       => 'B12345678',
         'country_code' => 'ES',
     ]);
 
@@ -36,13 +36,13 @@ it('can scope active profiles', function () {
 
 it('stores complete fiscal information', function () {
     $profile = IssuerTaxProfile::factory()->create([
-        'legal_name' => 'AichaDigital SL',
-        'trade_name' => 'Aicha Digital',
-        'tax_id' => 'B12345678',
-        'fiscal_address' => 'Calle Principal 1',
-        'fiscal_city' => 'Barcelona',
+        'legal_name'         => 'AichaDigital SL',
+        'trade_name'         => 'Aicha Digital',
+        'tax_id'             => 'B12345678',
+        'fiscal_address'     => 'Calle Principal 1',
+        'fiscal_city'        => 'Barcelona',
         'fiscal_postal_code' => '08001',
-        'fiscal_country' => 'ES',
+        'fiscal_country'     => 'ES',
     ]);
 
     expect($profile->legal_name)->toBe('AichaDigital SL')
@@ -54,7 +54,7 @@ it('stores complete fiscal information', function () {
 
 it('tracks profile validity period', function () {
     $profile = IssuerTaxProfile::factory()->create([
-        'valid_from' => now()->subMonth(),
+        'valid_from'  => now()->subMonth(),
         'valid_until' => now()->addMonth(),
     ]);
 
@@ -71,4 +71,3 @@ it('casts metadata as array', function () {
     expect($profile->metadata)->toBeArray()
         ->and($profile->metadata)->toHaveKey('register');
 });
-

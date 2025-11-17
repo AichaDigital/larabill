@@ -3,28 +3,28 @@
 declare(strict_types=1);
 
 use AichaDigital\Larabill\Contracts\FiscalVerificationContract;
-use AichaDigital\Larabill\Models\{Customer, IssuerConfig, Invoice};
+use AichaDigital\Larabill\Models\{Customer, Invoice, IssuerConfig};
 use AichaDigital\Larabill\Services\InvoiceService;
 use AichaDigital\Larabill\Testing\FakeFiscalVerification;
 
 beforeEach(function () {
     // Bind fake fiscal verification for testing
     app()->bind(FiscalVerificationContract::class, FakeFiscalVerification::class);
-    
+
     $this->invoiceService = app(InvoiceService::class);
 });
 
 it('can create an invoice with encrypted snapshots', function () {
-    $issuer = IssuerConfig::factory()->create();
+    $issuer   = IssuerConfig::factory()->create();
     $customer = Customer::factory()->create();
 
     $invoiceData = [
         'customer_id' => $customer->id,
-        'issue_date' => now(),
-        'series' => 'A',
-        'number' => 1,
-        'type' => 'final',
-        'status' => 1,
+        'issue_date'  => now(),
+        'series'      => 'A',
+        'number'      => 1,
+        'type'        => 'final',
+        'status'      => 1,
     ];
 
     $invoice = $this->invoiceService->createInvoice($invoiceData);
@@ -42,9 +42,9 @@ it('can create a proforma invoice', function () {
 
     $invoiceData = [
         'customer_id' => $customer->id,
-        'issue_date' => now(),
-        'series' => 'P',
-        'number' => 1,
+        'issue_date'  => now(),
+        'series'      => 'P',
+        'number'      => 1,
     ];
 
     $proforma = $this->invoiceService->createProforma($invoiceData);
@@ -59,9 +59,9 @@ it('can convert proforma to final invoice', function () {
 
     $proforma = $this->invoiceService->createProforma([
         'customer_id' => $customer->id,
-        'issue_date' => now(),
-        'series' => 'P',
-        'number' => 1,
+        'issue_date'  => now(),
+        'series'      => 'P',
+        'number'      => 1,
     ]);
 
     $finalInvoice = $this->invoiceService->convertProformaToInvoice($proforma);
@@ -79,9 +79,9 @@ it('cannot convert already converted proforma', function () {
 
     $proforma = $this->invoiceService->createProforma([
         'customer_id' => $customer->id,
-        'issue_date' => now(),
-        'series' => 'P',
-        'number' => 1,
+        'issue_date'  => now(),
+        'series'      => 'P',
+        'number'      => 1,
     ]);
 
     // Convert once
@@ -92,23 +92,23 @@ it('cannot convert already converted proforma', function () {
 })->throws(\RuntimeException::class, 'already been converted');
 
 it('can create invoice items with tax calculation', function () {
-    $issuer = IssuerConfig::factory()->create();
+    $issuer   = IssuerConfig::factory()->create();
     $customer = Customer::factory()->create();
 
     $invoice = $this->invoiceService->createInvoice([
         'customer_id' => $customer->id,
-        'issue_date' => now(),
-        'series' => 'A',
-        'number' => 1,
-        'type' => 'final',
-        'status' => 1,
+        'issue_date'  => now(),
+        'series'      => 'A',
+        'number'      => 1,
+        'type'        => 'final',
+        'status'      => 1,
     ]);
 
     $itemData = [
-        'invoice_id' => $invoice->id,
+        'invoice_id'  => $invoice->id,
         'description' => 'Test Service',
-        'quantity' => 1,
-        'unit_price' => 100.00,
+        'quantity'    => 1,
+        'unit_price'  => 100.00,
     ];
 
     $item = $this->invoiceService->createInvoiceItem($itemData);
@@ -124,9 +124,9 @@ it('locks proforma after conversion', function () {
 
     $proforma = $this->invoiceService->createProforma([
         'customer_id' => $customer->id,
-        'issue_date' => now(),
-        'series' => 'P',
-        'number' => 1,
+        'issue_date'  => now(),
+        'series'      => 'P',
+        'number'      => 1,
     ]);
 
     $this->invoiceService->convertProformaToInvoice($proforma);
@@ -136,4 +136,3 @@ it('locks proforma after conversion', function () {
     expect($proforma->is_immutable)->toBeTrue()
         ->and($proforma->status)->toBe(6); // CONVERTED
 });
-

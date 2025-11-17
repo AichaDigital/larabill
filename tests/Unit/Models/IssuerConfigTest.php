@@ -38,10 +38,9 @@ it('casts metadata as array', function () {
 it('stores company information correctly', function () {
     $issuer = IssuerConfig::factory()->create([
         'company_name' => 'AichaDigital SL',
-        'trade_name' => 'Aicha Digital',
+        'trade_name'   => 'Aicha Digital',
     ]);
 
     expect($issuer->company_name)->toBe('AichaDigital SL')
         ->and($issuer->trade_name)->toBe('Aicha Digital');
 });
-

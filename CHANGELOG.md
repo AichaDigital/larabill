@@ -2,6 +2,228 @@
 
 All notable changes to `larabill` will be documented in this file.
 
+## [0.4.0-alpha] - 2025-01-17 (WIP)
+
+### 🚀 **MAJOR REFACTOR**: Agnostic Billable Entity System
+
+This is a **breaking change** release that fundamentally restructures the billing system to be agnostic to the billable entity, replacing the rigid User coupling with a flexible Customer entity.
+
+---
+
+### 🔥 **BREAKING CHANGES**
+
+#### 1. **Customer Entity Replaces User Coupling**
+- **Old**: Invoices were tightly coupled to `User` model
+- **New**: Invoices are issued to `Customer` entities
+
+**Migration Required**:
+```bash
+php artisan larabill:migrate-to-v040
+```
+
+#### 2. **New Core Tables**
+- `legal_entity_types` - Flexible entity types (person, company, public entity)
+- `issuer_config` - Singleton issuer configuration
+- `issuer_tax_profiles` - Historical issuer fiscal data
+- `customers` - Billable entities (replaces direct User link)
+- `customer_tax_profiles` - Historical customer fiscal data  
+- `commissions` - Multi-level commission system
+
+#### 3. **Invoice Schema Changes**
+- Added: `customer_id` (replaces various user fields)
+- Added: `issuer_snapshot` (encrypted issuer fiscal data)
+- Added: `customer_snapshot` (encrypted customer fiscal data)
+- Added: `fiscal_snapshot` (encrypted tax context)
+- Added: `fiscal_verification_id`, `fiscal_verification_qr`, `fiscal_verification_hash`
+- Added: `converted_invoice_id` (for proforma conversion tracking)
+- Added: `is_immutable` (locks proforma after conversion)
+
+---
+
+### ✨ **Added**
+
+#### **Core Architecture**
+
+**Single Issuer Model**  
+Only one entity issues invoices (your company). Supports:
+- Historical tracking of issuer identity changes
+- Audit trail for legal name, tax ID changes
+- Singleton pattern for active issuer configuration
+
+**Agnostic Customer Entity**  
+Flexible billable entity supporting:
+- `relationship_type`: self, self_company, client, other
+- Multiple fiscal identities per User
+- Any legal entity type (person, company, public entity)
+
+**Immutable Invoice Snapshots**  
+Encrypted JSON snapshots capturing fiscal context at invoice time:
+- Issuer fiscal data (legal name, tax ID, address)
+- Customer fiscal data (name, tax ID, ROI verification)
+- Tax context (rates, thresholds, ROI status, OSS)
+
+#### **Models**
+
+**New Models**:
+- `LegalEntityType` - Flexible entity types with fiscal requirements
+- `IssuerConfig` - Singleton issuer configuration
+- `IssuerTaxProfile` - Historical issuer fiscal profiles
+- `Customer` - Agnostic billable entity (replaces rigid User coupling)
+- `CustomerTaxProfile` - Historical customer fiscal profiles
+- `Commission` - Multi-level commission system
+
+**Model Features**:
+- Full Eloquent relationships
+- Soft deletes support
+- Comprehensive scopes (active, by type, by level)
+- Factory support for testing
+
+#### **Services**
+
+**InvoiceService** (Refactored):
+- `createInvoice()` - Creates invoice with encrypted snapshots
+- `createProforma()` - Creates proforma invoice
+- `convertProformaToInvoice()` - Converts proforma to final invoice with locking
+- `createInvoiceItem()` - Creates invoice items with tax calculation
+- `verifyInvoiceFiscally()` - Triggers fiscal verification via contract
+
+**CommissionCalculationService** (New):
+- Multi-level commission support (global, product group, product)
+- Priority system (product > group > global)
+- Date range validation
+- Percentage and fixed amount types
+
+**TaxCalculationService** (Updated):
+- Integration with Customer and IssuerConfig context
+- Support for encrypted snapshots
+
+#### **Contracts & Testing**
+
+**FiscalVerificationContract**:
+- Interface for fiscal verification integrations
+- Allows external packages (lara-verifactu, etc.) to implement
+- Decoupled from core billing logic
+
+**FakeFiscalVerification**:
+- Test double for fiscal verification
+- No external dependencies required for testing
+
+#### **Migrations**
+
+**New Migrations**:
+- `2025_01_25_000001_create_legal_entity_types_table`
+- `2025_01_25_000002_create_issuer_config_table`
+- `2025_01_25_000003_create_issuer_tax_profiles_table`
+- `2025_01_25_000004_create_customers_table`
+- `2025_01_25_000005_create_customer_tax_profiles_table`
+- `2025_01_25_000006_create_commissions_table`
+- `2025_01_25_000007_add_v040_fields_to_invoices_table`
+
+---
+
+### 🔧 **Fixed**
+
+#### **Migration System**
+- Fixed duplicate index creation in `customers` table
+- Resolved "index already exists" error via TDD approach
+- Unified migration loading in tests
+- Cleaned duplicate migrations from test directory
+
+#### **PHPStan**
+- Fixed covariance errors in factories
+- Added missing PHPDoc properties
+- Corrected Faker method calls
+
+#### **CI/CD**
+- Added VCS repositories for private packages (lara-verifactu, lararoi)
+- Fixed Composer installation in GitHub Actions
+
+#### **Enums**
+- Added `PENDING` and `CONVERTED` statuses to `InvoiceStatus`
+
+---
+
+### 📚 **Documentation**
+
+**New Documents**:
+- `REFACTOR_ARQUITECTÓNICO-LARABILL-v0.4.0.md` - Architecture specification
+- `REFACTOR_V040_PROGRESS.md` - Implementation progress
+- `TAX_SYSTEM_ANALYSIS_AND_RECOMMENDATIONS.md` - Tax system analysis
+
+**Updated**:
+- README (pending)
+- CHANGELOG (this file)
+
+---
+
+### 🧪 **Testing**
+
+**Test Suite Status**: 640/913 tests passing (70%)
+
+**New Tests** (55 total):
+- Model tests (34): Customer, IssuerConfig, Commission, etc.
+- Service tests (16): InvoiceService, CommissionCalculationService
+- Integration tests (5): Complete billing flows
+
+---
+
+### 🎯 **Migration Guide**
+
+#### **For Package Users**
+
+1. **Update composer.json**:
+```bash
+composer require aichadigital/larabill:^0.4.0-alpha
+```
+
+2. **Run migrations**:
+```bash
+php artisan migrate
+```
+
+3. **Seed initial data**:
+```bash
+php artisan db:seed --class=LarabillSeeder
+```
+
+4. **Migrate existing data** (if upgrading):
+```bash
+php artisan larabill:migrate-to-v040
+```
+
+5. **Update code**:
+- Replace `Invoice::create(['user_id' => ...])` with `Invoice::create(['customer_id' => ...])`
+- Create `Customer` entities for your users
+- Update fiscal verification integration (if using lara-verifactu)
+
+---
+
+### ⚠️ **Deprecations**
+
+The following will be removed in v1.0.0:
+- Direct `user_id` on invoices (use `customer_id`)
+- Old `UserTaxProfile` model (use `CustomerTaxProfile`)
+
+---
+
+### 🚀 **Roadmap**
+
+**v0.4.1**:
+- Complete service implementation
+- Fix remaining test failures
+
+**v0.5.0**:
+- Production-ready
+- Complete documentation
+- Migration command
+
+**v1.0.0**:
+- Stable API
+- Remove deprecations
+- Full Laravel 12 support
+
+---
+
 ## [0.3.4] - 2025-01-13
 
 ### 🎯 Tax Rates System Refactor
