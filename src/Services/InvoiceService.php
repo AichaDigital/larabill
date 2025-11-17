@@ -165,7 +165,7 @@ class InvoiceService
             'series_number'     => $invoice->series_number,
             'fiscal_number'     => $invoice->fiscal_number,
             'invoice_date'      => $invoice->invoice_date,
-            'issuer_country'    => $issuer->currentProfile->country_code,
+            'issuer_country'    => $issuer->currentTaxProfile->country_code,
             'customer_country'  => $customer->currentTaxProfile->country_code,
             'currency'          => 'EUR', // TODO: Make configurable
             'exchange_rate'     => 1.0,   // TODO: Implement multi-currency
