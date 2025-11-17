@@ -6,6 +6,7 @@ namespace AichaDigital\Larabill\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * LegalEntityType Model
@@ -142,5 +143,13 @@ class LegalEntityType extends Model
     public function scopeOrdered($query)
     {
         return $query->orderBy('sort_order')->orderBy('name');
+    }
+
+    /**
+     * Get all customers of this legal entity type.
+     */
+    public function customers(): HasMany
+    {
+        return $this->hasMany(Customer::class, 'legal_entity_type_code', 'code');
     }
 }

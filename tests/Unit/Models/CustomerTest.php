@@ -47,8 +47,17 @@ it('can check if is person', function () {
 });
 
 it('can check if is company', function () {
+    // Create legal entity type first
+    $legalType = \AichaDigital\Larabill\Models\LegalEntityType::create([
+        'code'        => 'SOCIEDAD_LIMITADA',
+        'name'        => 'Sociedad Limitada',
+        'category'    => 'company',
+        'is_company'  => true,
+        'description' => 'Test SL',
+    ]);
+
     $customer = Customer::factory()->create([
-        'legal_entity_type_code' => 'SOCIEDAD_LIMITADA',
+        'legal_entity_type_code' => $legalType->code,
     ]);
 
     $customer->load('legalEntityType');

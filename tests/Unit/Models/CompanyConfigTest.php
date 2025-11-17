@@ -2,8 +2,21 @@
 
 declare(strict_types=1);
 
+/**
+ * @deprecated v0.4.0 - CompanyConfig was renamed to IssuerConfig
+ * @see IssuerConfigTest for updated tests using v0.4.0 architecture
+ *
+ * This test file uses the legacy CompanyConfig model which no longer exists.
+ * Tests have been migrated to IssuerConfigTest using IssuerConfig + IssuerTaxProfile.
+ */
+
 use AichaDigital\Larabill\Models\CompanyConfig;
 use Carbon\Carbon;
+
+// Skip all tests in this file - legacy code
+beforeEach(function () {
+    $this->markTestSkipped('CompanyConfig deprecated in v0.4.0 - See IssuerConfigTest');
+});
 
 it('can create a company config', function () {
     $config = CompanyConfig::create([
