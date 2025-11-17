@@ -1,5 +1,5 @@
 includes:
-#    - phpstan-baseline.neon  # Commented until baseline is regenerated
+    - phpstan-baseline.neon
 
 parameters:
     level: 5
