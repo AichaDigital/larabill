@@ -200,11 +200,12 @@ class Invoice extends Model
      */
     public function update(array $attributes = [], array $options = []): bool
     {
-        // Allow updating immutability status and conversion fields even on immutable invoices
-        $allowedImmutableFields = ['is_immutable', 'converted_invoice_id', 'converted_at', 'status'];
-        $isOnlyAllowedFields    = empty(array_diff(array_keys($attributes), $allowedImmutableFields));
+        // Allow updating conversion-related fields even on immutable invoices (for proforma conversion)
+        $conversionFields    = ['is_immutable', 'converted_invoice_id', 'converted_at', 'status'];
+        $isConversionUpdate  = isset($attributes['converted_invoice_id']) || isset($attributes['converted_at']);
+        $isOnlyAllowedFields = empty(array_diff(array_keys($attributes), $conversionFields));
 
-        if ($this->is_immutable && ! $isOnlyAllowedFields) {
+        if ($this->is_immutable && ! ($isConversionUpdate && $isOnlyAllowedFields)) {
             throw new \Exception('Cannot update an immutable invoice');
         }
 
