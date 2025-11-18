@@ -262,7 +262,7 @@ class InvoiceService
      */
     public function convertProformaToInvoice(Invoice $proforma, array $options = []): Invoice
     {
-        if ($proforma->serie !== InvoiceSerieType::PROFORMA->value) {
+        if ($proforma->serie !== InvoiceSerieType::PROFORMA) {
             throw new \InvalidArgumentException('Invoice is not a proforma');
         }
 

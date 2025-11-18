@@ -54,7 +54,8 @@ it('can create a proforma invoice', function () {
 
     $proforma = $this->invoiceService->createProforma($invoiceData);
 
-    expect($proforma->type)->toBe('proforma')
+    expect($proforma->serie)->toBe(\AichaDigital\Larabill\Enums\InvoiceSerieType::PROFORMA)
+        ->and($proforma->prefix)->toBe('PRO')
         ->and($proforma->status)->toBe(1) // DRAFT
         ->and($proforma->is_immutable)->toBeFalse();
 });
@@ -98,6 +99,9 @@ it('cannot convert already converted proforma', function () {
 
 it('can create invoice items with tax calculation', function () {
     $customer = Customer::factory()->create();
+    $article  = \AichaDigital\Larabill\Models\Article::factory()->create([
+        'base_price' => 10000, // 100.00 EUR en Base-100
+    ]);
 
     $invoice = $this->invoiceService->createInvoice([
         'customer_id' => $customer->id,
@@ -106,21 +110,19 @@ it('can create invoice items with tax calculation', function () {
         'number'      => 1,
         'type'        => 'final',
         'status'      => 1,
+        'items'       => [
+            [
+                'article_id' => $article->id,
+                'quantity'   => 1,
+                'base_price' => 10000, // 100.00 EUR
+            ],
+        ],
     ]);
 
-    $itemData = [
-        'invoice_id'  => $invoice->id,
-        'description' => 'Test Service',
-        'quantity'    => 1,
-        'unit_price'  => 100.00,
-    ];
-
-    $item = $this->invoiceService->createInvoiceItem($itemData);
-
-    expect($item->invoice_id)->toBe($invoice->id)
-        ->and($item->description)->toBe('Test Service')
-        ->and($item->quantity)->toBe(1)
-        ->and($item->unit_price)->toBeGreaterThan(0);
+    expect($invoice->items)->toHaveCount(1)
+        ->and($invoice->items->first()->article_id)->toBe($article->id)
+        ->and($invoice->items->first()->quantity)->toBe(1)
+        ->and($invoice->items->first()->base_price)->toBe(10000);
 });
 
 it('locks proforma after conversion', function () {
