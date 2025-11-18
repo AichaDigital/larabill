@@ -17,7 +17,7 @@
         "aichadigital"
     ],
     "homepage": "https://github.com/aichadigital/larabill",
-    "license": "MIT",
+    "license": "AGPL-3.0-or-later",
     "authors": [
         {
             "name": "Abdelkarim Mateos Sanchez",
