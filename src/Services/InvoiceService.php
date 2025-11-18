@@ -270,9 +270,6 @@ class InvoiceService
             throw new \InvalidArgumentException('Proforma already converted to invoice');
         }
 
-        // Lock the proforma
-        $proforma->update(['is_immutable' => true]);
-
         // Create new invoice from proforma data
         $invoiceData = [
             'customer_id' => $proforma->customer_id,
@@ -294,8 +291,9 @@ class InvoiceService
             'verify_fiscally' => $options['verify_fiscally'] ?? false,
         ]);
 
-        // Link proforma to invoice
+        // Lock the proforma and link to invoice (single update to avoid immutable conflict)
         $proforma->update([
+            'is_immutable'         => true,
             'converted_invoice_id' => $invoice->id,
             'converted_at'         => now(),
             'status'               => InvoiceStatus::CONVERTED->value,

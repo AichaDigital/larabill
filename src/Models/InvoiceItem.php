@@ -72,6 +72,7 @@ class InvoiceItem extends Model
      */
     protected $fillable = [
         'invoice_id',
+        'article_id',
         'item_type',
         'description',
         'internal_code',
@@ -79,6 +80,7 @@ class InvoiceItem extends Model
         'unit_measure_id',
         'unit_price',
         'taxable_amount',
+        'tax_group_id',
         'total_tax_amount',
         'taxes_applied',
         'total_amount',
