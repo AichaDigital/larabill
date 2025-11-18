@@ -101,6 +101,7 @@ class InvoiceService
      */
     protected function generateIssuerSnapshot(IssuerConfig $issuer): string
     {
+        /** @var \AichaDigital\Larabill\Models\IssuerTaxProfile $profile */
         $profile = $issuer->currentTaxProfile;
 
         $data = [
@@ -117,7 +118,7 @@ class InvoiceService
             'phone'                  => $profile->phone,
             'email'                  => $profile->email,
             'vat_number'             => $profile->vat_number,
-            'roi_enabled'            => $profile->roi_enabled,
+            'roi_enabled'            => (bool) $profile->is_roi_registered,
             'snapshot_at'            => now()->toIso8601String(),
         ];
 
@@ -129,6 +130,7 @@ class InvoiceService
      */
     protected function generateCustomerSnapshot(Customer $customer): string
     {
+        /** @var \AichaDigital\Larabill\Models\CustomerTaxProfile $profile */
         $profile = $customer->currentTaxProfile;
 
         $data = [
@@ -159,14 +161,19 @@ class InvoiceService
      */
     protected function generateFiscalSnapshot(Invoice $invoice, Customer $customer, IssuerConfig $issuer): string
     {
+        /** @var \AichaDigital\Larabill\Models\IssuerTaxProfile $issuerProfile */
+        $issuerProfile = $issuer->currentTaxProfile;
+        /** @var \AichaDigital\Larabill\Models\CustomerTaxProfile $customerProfile */
+        $customerProfile = $customer->currentTaxProfile;
+
         $data = [
             'fiscal_year'       => $invoice->fiscal_year,
             'serie'             => $invoice->serie,
             'series_number'     => $invoice->series_number,
             'fiscal_number'     => $invoice->fiscal_number,
             'invoice_date'      => $invoice->invoice_date,
-            'issuer_country'    => $issuer->currentTaxProfile->country_code,
-            'customer_country'  => $customer->currentTaxProfile->country_code,
+            'issuer_country'    => $issuerProfile->country_code,
+            'customer_country'  => $customerProfile->country_code,
             'currency'          => 'EUR', // TODO: Make configurable
             'exchange_rate'     => 1.0,   // TODO: Implement multi-currency
             'tax_rules_applied' => [], // TODO: Add tax calculation details

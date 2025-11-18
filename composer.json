@@ -90,7 +90,7 @@
         "post-autoload-dump": "@composer run prepare",
         "prepare": "@php vendor/bin/testbench package:discover --ansi",
         "analyse": "vendor/bin/phpstan analyse",
-        "format": "vendor/bin/pint",
+        "pint": "vendor/bin/pint",
         "test": "vendor/bin/pest",
         "test-parallel": "vendor/bin/pest --parallel",
         "test-profile": "vendor/bin/pest --profile",
@@ -101,18 +101,18 @@
         "phpinsights-fix": "vendor/bin/phpinsights fix",
         "phpinsights-baseline": "vendor/bin/phpinsights baseline",
         "quality": [
-            "@format",
+            "@pint",
             "@phpstan",
             "@test-coverage"
         ],
         "quality-full": [
-            "@format",
+            "@pint",
             "@phpstan",
             "@test-coverage",
             "@test-mutate"
         ],
         "precommit": [
-            "@format",
+            "@pint",
             "@phpstan",
             "@test-parallel"
         ]

@@ -38,13 +38,13 @@ it('can scope active profiles', function () {
 
 it('stores complete fiscal information', function () {
     $profile = IssuerTaxProfile::factory()->create([
-        'legal_name'     => 'AichaDigital SL',
+        'legal_name'      => 'AichaDigital SL',
         'commercial_name' => 'Aicha Digital',
-        'tax_id'         => 'B12345678',
-        'address'        => 'Calle Principal 1',
-        'city'           => 'Barcelona',
-        'postal_code'    => '08001',
-        'country_code'   => 'ES',
+        'tax_id'          => 'B12345678',
+        'address'         => 'Calle Principal 1',
+        'city'            => 'Barcelona',
+        'postal_code'     => '08001',
+        'country_code'    => 'ES',
     ]);
 
     expect($profile->legal_name)->toBe('AichaDigital SL')
