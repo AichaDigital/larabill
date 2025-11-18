@@ -32,7 +32,8 @@ class TestCase extends Orchestra
      */
     protected function defineDatabaseMigrations()
     {
-        $this->loadMigrationsFrom(__DIR__.'/Database/migrations');
+        // Load ALL migrations from database/migrations (includes test users now)
+        $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
     }
 
     protected function getPackageProviders($app)
@@ -50,6 +51,9 @@ class TestCase extends Orchestra
             'database' => ':memory:',
             'prefix'   => '',
         ]);
+
+        // Set APP_KEY for encryption (required by InvoiceService snapshots)
+        config()->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
 
         // Load package configuration
         $app['config']->set('larabill', require __DIR__.'/../config/larabill.php');

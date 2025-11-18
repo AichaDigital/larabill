@@ -77,6 +77,17 @@ class LarabillServiceProvider extends PackageServiceProvider
             ->hasViews()
             ->hasCommand(\AichaDigital\Larabill\Console\DetectUserIdTypeCommand::class)
             ->hasMigrations([
+                // Test migrations (users tables)
+                '2019_08_19_000000_create_users_table',
+                '2025_01_01_000000_create_test_users_table',
+                // v0.4.0 Core Entities
+                '2025_01_25_000001_create_legal_entity_types_table',
+                '2025_01_25_000002_create_issuer_config_table',
+                '2025_01_25_000003_create_issuer_tax_profiles_table',
+                '2025_01_25_000004_create_customers_table',
+                '2025_01_25_000005_create_customer_tax_profiles_table',
+                '2025_01_25_000006_create_commissions_table',
+                '2025_01_25_000007_add_v040_fields_to_invoices_table',
                 // Articles system (v0.3.4+)
                 '2025_01_20_000001_create_articles_table',
                 '2025_01_20_000002_create_article_overrides_table',

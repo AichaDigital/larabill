@@ -32,6 +32,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *
  * @property int $id
  * @property string $invoice_id UUID foreign key to invoices table
+ * @property int|null $article_id FK to articles (v0.4.0)
  * @property ItemType $item_type Good or Service
  * @property string $description
  * @property string|null $internal_code User product/service code
@@ -71,6 +72,7 @@ class InvoiceItem extends Model
      */
     protected $fillable = [
         'invoice_id',
+        'article_id',
         'item_type',
         'description',
         'internal_code',
@@ -78,6 +80,7 @@ class InvoiceItem extends Model
         'unit_measure_id',
         'unit_price',
         'taxable_amount',
+        'tax_group_id',
         'total_tax_amount',
         'taxes_applied',
         'total_amount',

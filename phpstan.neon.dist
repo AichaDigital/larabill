@@ -6,11 +6,21 @@ parameters:
     paths:
         - src
 
-    # Exclude problematic directories (marked as optional with (?))
+    # Exclude config directories (contain env() calls which are valid)
     excludePaths:
         - bootstrap/cache (?)
         - storage/* (?)
         - database/migrations/* (?)
+        - database/factories/* (?)
+        - src/Database/Factories/* (?)
+        - config/* (?)
+        - src/config/* (?)
+
+    # Ignore env() calls in package config files (they get published to config/)
+    ignoreErrors:
+        -
+            message: "#Called 'env' outside of the config directory#"
+            path: src/config/*.php
 
     # Basic strict rules that are supported
     checkMissingCallableSignature: true

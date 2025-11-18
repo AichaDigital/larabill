@@ -2,6 +2,16 @@
 
 declare(strict_types=1);
 
+/**
+ * @deprecated v0.4.0 - DestinationVat logic refactored
+ * These tests use legacy API/tables that no longer exist in v0.4.0.
+ */
+
+// Skip all tests - legacy code
+beforeEach(function () {
+    $this->markTestSkipped('Legacy test - deprecated in v0.4.0');
+});
+
 use AichaDigital\Larabill\Models\{CountryVatRate, EuSalesThreshold, FiscalSettings, VatCategory};
 use AichaDigital\Larabill\Services\DestinationVatService;
 

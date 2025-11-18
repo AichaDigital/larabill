@@ -12,6 +12,32 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Auth;
 
+/**
+ * Article Service Status Model
+ *
+ * @property int $id
+ * @property int|string $customer_id
+ * @property int $article_id
+ * @property string|null $instance_identifier
+ * @property string|null $instance_name
+ * @property \Illuminate\Support\Carbon|null $started_at
+ * @property \Illuminate\Support\Carbon|null $next_billing_date
+ * @property \Illuminate\Support\Carbon|null $expires_at
+ * @property string $status
+ * @property string|null $cancellation_type
+ * @property \Illuminate\Support\Carbon|null $cancellation_requested_at
+ * @property \Illuminate\Support\Carbon|null $cancellation_effective_at
+ * @property bool $refund_unused
+ * @property int|null $effective_price
+ * @property int|null $current_override_id
+ * @property string|null $external_reference
+ * @property array|null $instance_data
+ * @property array|null $metadata
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property-read \AichaDigital\Larabill\Models\Article $article
+ * @property-read \AichaDigital\Larabill\Models\ArticleOverride|null $currentOverride
+ */
 class ArticleServiceStatus extends Model
 {
     use HasFactory;
@@ -231,7 +257,7 @@ class ArticleServiceStatus extends Model
         $override = $this->article->getActiveOverrideFor($this->customer_id);
 
         $this->update([
-            'effective_price'     => $override?->custom_price ?? $this->article->base_price,
+            'effective_price'     => $override->custom_price ?? $this->article->base_price,
             'current_override_id' => $override?->id,
         ]);
     }
