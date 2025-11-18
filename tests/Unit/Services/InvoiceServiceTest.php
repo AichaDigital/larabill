@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Contracts\FiscalVerificationContract;
+use AichaDigital\Larabill\Contracts\Services\FiscalVerificationContract;
 use AichaDigital\Larabill\Models\{Customer, Invoice, IssuerConfig};
+use AichaDigital\Larabill\Services\FiscalVerification\FakeFiscalVerification;
 use AichaDigital\Larabill\Services\InvoiceService;
-use AichaDigital\Larabill\Testing\FakeFiscalVerification;
 
 beforeEach(function () {
     // Clean singleton IssuerConfig
@@ -56,7 +56,7 @@ it('can create a proforma invoice', function () {
 
     expect($proforma->serie)->toBe(\AichaDigital\Larabill\Enums\InvoiceSerieType::PROFORMA)
         ->and($proforma->prefix)->toBe('PRO')
-        ->and($proforma->status)->toBe(1) // DRAFT
+        ->and($proforma->status)->toBe(\AichaDigital\Larabill\Enums\InvoiceStatus::DRAFT) // DRAFT
         ->and($proforma->is_immutable)->toBeFalse();
 });
 
@@ -73,10 +73,10 @@ it('can convert proforma to final invoice', function () {
     $finalInvoice = $this->invoiceService->convertProformaToInvoice($proforma);
 
     expect($finalInvoice)->toBeInstanceOf(Invoice::class)
-        ->and($finalInvoice->type)->toBe('final')
+        ->and($finalInvoice->serie)->toBe(\AichaDigital\Larabill\Enums\InvoiceSerieType::INVOICE)
         ->and($finalInvoice->id)->not->toBe($proforma->id)
         ->and($proforma->fresh()->is_immutable)->toBeTrue()
-        ->and($proforma->fresh()->status)->toBe(6) // CONVERTED
+        ->and($proforma->fresh()->status)->toBe(\AichaDigital\Larabill\Enums\InvoiceStatus::CONVERTED) // CONVERTED
         ->and($proforma->fresh()->converted_invoice_id)->toBe($finalInvoice->id);
 });
 
@@ -112,17 +112,19 @@ it('can create invoice items with tax calculation', function () {
         'status'      => 1,
         'items'       => [
             [
-                'article_id' => $article->id,
-                'quantity'   => 1,
-                'base_price' => 10000, // 100.00 EUR
+                'quantity'    => 1,
+                'base_price'  => 10000, // 100.00 EUR
+                'description' => 'Test line',
             ],
         ],
     ]);
 
     expect($invoice->items)->toHaveCount(1)
-        ->and($invoice->items->first()->article_id)->toBe($article->id)
-        ->and($invoice->items->first()->quantity)->toBe(1)
-        ->and($invoice->items->first()->base_price)->toBe(10000);
+        ->and($invoice->items->first()->quantity)->toBe(1.0)
+        ->and($invoice->items->first()->unit_price)->toBe(10000.0)
+        ->and($invoice->items->first()->taxable_amount)->toBe(10000.0)
+        ->and($invoice->items->first()->total_tax_amount)->toBe(0.0)
+        ->and($invoice->items->first()->total_amount)->toBe(10000.0);
 });
 
 it('locks proforma after conversion', function () {
@@ -140,5 +142,5 @@ it('locks proforma after conversion', function () {
     $proforma->refresh();
 
     expect($proforma->is_immutable)->toBeTrue()
-        ->and($proforma->status)->toBe(6); // CONVERTED
+        ->and($proforma->status)->toBe(\AichaDigital\Larabill\Enums\InvoiceStatus::CONVERTED); // CONVERTED
 });

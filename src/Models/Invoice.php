@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\{Builder, Model};
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Crypt;
 
 /**
  * Invoice Model
@@ -121,6 +122,8 @@ class Invoice extends Model
         'taxable_amount',
         'total_tax_amount',
         'total_amount',
+        'converted_invoice_id',
+        'converted_at',
         'is_immutable',
         'immutable_at',
         'notes',
@@ -355,7 +358,7 @@ class Invoice extends Model
             return null;
         }
 
-        return json_decode(decrypt($this->issuer_snapshot), true);
+        return json_decode(Crypt::decryptString($this->issuer_snapshot), true);
     }
 
     /**
@@ -369,7 +372,7 @@ class Invoice extends Model
             return null;
         }
 
-        return json_decode(decrypt($this->customer_snapshot), true);
+        return json_decode(Crypt::decryptString($this->customer_snapshot), true);
     }
 
     /**
@@ -383,7 +386,7 @@ class Invoice extends Model
             return null;
         }
 
-        return json_decode(decrypt($this->fiscal_snapshot), true);
+        return json_decode(Crypt::decryptString($this->fiscal_snapshot), true);
     }
 
     /**

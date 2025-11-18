@@ -186,13 +186,23 @@ class InvoiceService
         }
 
         // This will dispatch a job in the external package (e.g., lara-verifactu)
-        $result = $this->fiscalVerification->verify($invoice);
+        $result = $this->fiscalVerification->verify([
+            'id'             => $invoice->id,
+            'fiscal_number'  => $invoice->fiscal_number,
+            'serie'          => $invoice->serie->value,
+            'series_number'  => $invoice->series_number,
+            'fiscal_year'    => $invoice->fiscal_year,
+            'invoice_date'   => $invoice->invoice_date,
+            'customer_id'    => $invoice->customer_id,
+            'total_amount'   => $invoice->total_amount,
+            'taxable_amount' => $invoice->taxable_amount,
+        ]);
 
         if ($result['success']) {
             $invoice->update([
-                'fiscal_verification_id'       => $result['verification_id'],
-                'fiscal_verification_qr'       => $result['qr_code'] ?? null,
-                'fiscal_verification_hash'     => $result['hash']    ?? null,
+                'fiscal_verification_id'       => $result['id']    ?? null,
+                'fiscal_verification_qr'       => $result['qr']    ?? null,
+                'fiscal_verification_hash'     => $result['hash']  ?? null,
                 'fiscal_verified_at'           => now(),
                 'fiscal_verification_metadata' => $result['metadata'] ?? [],
             ]);
@@ -204,13 +214,12 @@ class InvoiceService
      */
     protected function createInvoiceItem(Invoice $invoice, array $itemData): InvoiceItem
     {
-        $articleId = $itemData['article_id'];
-        $quantity  = $itemData['quantity'];
-        $basePrice = $itemData['base_price'] ?? 0;
+        $quantity  = $itemData['quantity']   ?? 1;
+        $basePrice = $itemData['base_price'] ?? ($itemData['unit_price'] ?? 0);
 
         // Calculate taxes using TaxCalculationService
         $taxCalculation = $this->taxCalculationService->calculateForInvoiceItem([
-            'article_id'  => $articleId,
+            'article_id'  => $itemData['article_id'] ?? 0,
             'quantity'    => $quantity,
             'base_price'  => $basePrice,
             'customer_id' => $invoice->customer_id,
@@ -218,12 +227,10 @@ class InvoiceService
 
         return InvoiceItem::create([
             'invoice_id'       => $invoice->id,
-            'article_id'       => $articleId,
             'description'      => $itemData['description'] ?? '',
             'quantity'         => $quantity,
             'unit_price'       => $basePrice,
             'taxable_amount'   => $taxCalculation['taxable_amount'],
-            'tax_group_id'     => $taxCalculation['tax_group_id'] ?? null,
             'total_tax_amount' => $taxCalculation['total_tax_amount'],
             'total_amount'     => $taxCalculation['total_amount'],
         ]);

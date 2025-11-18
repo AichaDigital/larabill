@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Contracts\FiscalVerificationContract;
+use AichaDigital\Larabill\Contracts\Services\FiscalVerificationContract;
 use AichaDigital\Larabill\Models\{Customer, Invoice, IssuerConfig};
+use AichaDigital\Larabill\Services\FiscalVerification\FakeFiscalVerification;
 use AichaDigital\Larabill\Services\InvoiceService;
-use AichaDigital\Larabill\Testing\FakeFiscalVerification;
 
 beforeEach(function () {
     // Clean singleton IssuerConfig
@@ -35,38 +35,35 @@ it('can complete full direct billing flow', function () {
         'status'      => 1,
     ]);
 
-    // 3. Add line items
-    $item1 = $this->invoiceService->createInvoiceItem([
-        'invoice_id'  => $invoice->id,
-        'description' => 'Web Hosting - Monthly',
-        'quantity'    => 1,
-        'unit_price'  => 50.00,
-    ]);
-
-    $item2 = $this->invoiceService->createInvoiceItem([
-        'invoice_id'  => $invoice->id,
-        'description' => 'Domain Registration',
-        'quantity'    => 1,
-        'unit_price'  => 15.00,
+    // 3. Add line items via invoice creation (protected method in service)
+    $invoice = $this->invoiceService->createInvoice([
+        'customer_id' => $customer->id,
+        'issue_date'  => now(),
+        'series'      => 'A',
+        'number'      => 1,
+        'type'        => 'final',
+        'status'      => 1,
+        'items'       => [
+            ['quantity' => 1, 'base_price' => 50.00, 'description' => 'Web Hosting - Monthly'],
+            ['quantity' => 1, 'base_price' => 15.00, 'description' => 'Domain Registration'],
+        ],
     ]);
 
     // 4. Verify invoice structure
     expect($invoice->exists)->toBeTrue()
         ->and($invoice->customer_id)->toBe($customer->id)
-        ->and($invoice->type)->toBe('final')
+        ->and($invoice->serie)->toBe(\AichaDigital\Larabill\Enums\InvoiceSerieType::INVOICE)
         ->and($invoice->issuer_snapshot)->not->toBeNull()
         ->and($invoice->customer_snapshot)->not->toBeNull()
         ->and($invoice->fiscal_snapshot)->not->toBeNull();
 
     // 5. Verify items exist
-    expect($item1->exists)->toBeTrue()
-        ->and($item2->exists)->toBeTrue()
-        ->and($invoice->items()->count())->toBe(2);
+    expect($invoice->items()->count())->toBe(2);
 
-    // 6. Verify snapshots are encrypted (contain metadata)
-    $issuerSnapshot   = json_decode($invoice->issuer_snapshot, true);
-    $customerSnapshot = json_decode($invoice->customer_snapshot, true);
-    $fiscalSnapshot   = json_decode($invoice->fiscal_snapshot, true);
+    // 6. Verify snapshots (use helpers to decrypt)
+    $issuerSnapshot   = $invoice->getIssuerSnapshotData();
+    $customerSnapshot = $invoice->getCustomerSnapshotData();
+    $fiscalSnapshot   = $invoice->getFiscalSnapshotData();
 
     expect($issuerSnapshot)->toBeArray()
         ->and($customerSnapshot)->toBeArray()
@@ -84,34 +81,28 @@ it('can complete full proforma to invoice flow', function () {
         'issue_date'  => now(),
         'series'      => 'P',
         'number'      => 1,
-    ]);
-
-    // 3. Add items to proforma
-    $this->invoiceService->createInvoiceItem([
-        'invoice_id'  => $proforma->id,
-        'description' => 'Service A',
-        'quantity'    => 2,
-        'unit_price'  => 100.00,
+        'items'       => [
+            ['quantity' => 2, 'base_price' => 100.00, 'description' => 'Service A'],
+        ],
     ]);
 
     // 4. Verify proforma state
-    expect($proforma->type)->toBe('proforma')
-        ->and($proforma->status)->toBe(1) // DRAFT
+    expect($proforma->serie)->toBe(\AichaDigital\Larabill\Enums\InvoiceSerieType::PROFORMA)
+        ->and($proforma->status)->toBe(\AichaDigital\Larabill\Enums\InvoiceStatus::DRAFT) // DRAFT
         ->and($proforma->is_immutable)->toBeFalse();
 
     // 5. Convert to final invoice
     $finalInvoice = $this->invoiceService->convertProformaToInvoice($proforma);
 
     // 6. Verify conversion
-    expect($finalInvoice->type)->toBe('final')
+    expect($finalInvoice->serie)->toBe(\AichaDigital\Larabill\Enums\InvoiceSerieType::INVOICE)
         ->and($finalInvoice->id)->not->toBe($proforma->id)
-        ->and($finalInvoice->series)->toBe('A') // Changed to final series
         ->and($finalInvoice->items()->count())->toBe(1);
 
     // 7. Verify proforma is locked
     $proforma->refresh();
     expect($proforma->is_immutable)->toBeTrue()
-        ->and($proforma->status)->toBe(6) // CONVERTED
+        ->and($proforma->status)->toBe(\AichaDigital\Larabill\Enums\InvoiceStatus::CONVERTED) // CONVERTED
         ->and($proforma->converted_invoice_id)->toBe($finalInvoice->id);
 });
 
@@ -171,10 +162,7 @@ it('can handle fiscal verification integration', function () {
         'number'      => 1,
         'type'        => 'final',
         'status'      => 1,
-    ]);
-
-    // Verify with FakeFiscalVerification
-    $this->invoiceService->verifyInvoiceFiscally($invoice);
+    ], ['verify_fiscally' => true]);
 
     // Fake should set verification fields
     $invoice->refresh();

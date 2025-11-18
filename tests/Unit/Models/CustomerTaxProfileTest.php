@@ -25,10 +25,16 @@ it('belongs to a customer', function () {
 });
 
 it('can scope active profiles', function () {
-    CustomerTaxProfile::factory()->create(['is_current' => true]);
-    CustomerTaxProfile::factory()->create(['is_current' => false]);
+    $customer = Customer::factory()->create();
 
-    $currentProfiles = CustomerTaxProfile::where('is_current', true)->get();
+    CustomerTaxProfile::factory()->create([
+        'customer_id' => $customer->id,
+        'is_current'  => false,
+    ]);
+
+    $currentProfiles = CustomerTaxProfile::where('customer_id', $customer->id)
+        ->where('is_current', true)
+        ->get();
 
     expect($currentProfiles)->toHaveCount(1)
         ->and($currentProfiles->first()->is_current)->toBeTrue();
@@ -36,9 +42,9 @@ it('can scope active profiles', function () {
 
 it('stores complete fiscal address', function () {
     $profile = CustomerTaxProfile::factory()->create([
-        'address'     => 'Calle Test 123',
-        'city'        => 'Madrid',
-        'postal_code' => '28001',
+        'address'      => 'Calle Test 123',
+        'city'         => 'Madrid',
+        'postal_code'  => '28001',
         'country_code' => 'ES',
     ]);
 
@@ -51,7 +57,7 @@ it('stores complete fiscal address', function () {
 it('has ROI verification fields', function () {
     $profile = CustomerTaxProfile::factory()->create([
         'vat_number_verified' => true,
-        'vat_verified_at' => now(),
+        'vat_verified_at'     => now(),
     ]);
 
     expect($profile->vat_number_verified)->toBeTrue()
