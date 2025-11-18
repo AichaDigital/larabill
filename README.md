@@ -1,9 +1,13 @@
 # Larabill - Professional Billing & Invoicing for Laravel
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/aichadigital/larabill.svg?style=flat-square)](https://packagist.org/packages/aichadigital/larabill)
-[![CI](https://img.shields.io/github/actions/workflow/status/aichadigital/larabill/tests.yml?branch=main&label=CI&style=flat-square)](https://github.com/aichadigital/larabill/actions/workflows/tests.yml)
-[![codecov](https://img.shields.io/codecov/c/github/aichadigital/larabill?style=flat-square)](https://codecov.io/gh/aichadigital/larabill)
+[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/aichadigital/larabill/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/aichadigital/larabill/actions/workflows/tests.yml)
+[![Code Coverage](https://img.shields.io/codecov/c/github/aichadigital/larabill?style=flat-square)](https://codecov.io/gh/aichadigital/larabill)
+[![GitHub Issues](https://img.shields.io/github/issues/aichadigital/larabill?style=flat-square)](https://github.com/aichadigital/larabill/issues)
 [![Total Downloads](https://img.shields.io/packagist/dt/aichadigital/larabill.svg?style=flat-square)](https://packagist.org/packages/aichadigital/larabill)
+[![PHP Version](https://img.shields.io/packagist/dependency-v/aichadigital/larabill/php?style=flat-square)](https://packagist.org/packages/aichadigital/larabill)
+[![Laravel](https://img.shields.io/packagist/dependency-v/aichadigital/larabill/illuminate/contracts?style=flat-square&label=laravel)](https://packagist.org/packages/aichadigital/larabill)
+[![License](https://img.shields.io/packagist/l/aichadigital/larabill.svg?style=flat-square)](https://packagist.org/packages/aichadigital/larabill)
 
 > ⚠️ **DEVELOPMENT VERSION** - This package is under active development (v0.1.0). Not recommended for production use yet.
 
@@ -554,4 +558,10 @@ Please review [our security policy](../../security/policy) on how to report secu
 
 ## License
 
-The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
+GNU Affero General Public License v3.0 (AGPL-3.0-or-later). Please see [License File](LICENSE.md) for more information.
+
+This means:
+- ✅ You can use, modify, and distribute this software
+- ✅ You must share any modifications under the same license
+- ⚠️ If you run this as a network service, you must provide the source code to users
+- ⚠️ You must preserve copyright and attribution notices
