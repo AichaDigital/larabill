@@ -60,3 +60,6 @@ infection.log.summary
 docs/
 ./PUBLISH.sh
 
+# Local helper scripts (do not track)
+/bin/
+
