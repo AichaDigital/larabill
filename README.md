@@ -16,7 +16,7 @@ Larabill is a professional, agnostic billing and invoicing package for Laravel a
 ## ✨ **New Architecture (v0.3.x)**
 
 - **Invoices with UUID Binary**: Efficient invoice IDs using binary(16) UUID (55% storage savings, non-sequential for security)
-- **User Agnostic**: Works with ANY user ID type (int, UUID, ULID, binary variants) - auto-detected
+- **User Agnostic**: ⚠️ **Roadmap Item** - Currently assumes UUID binary for user_id. Full agnosticism (int, UUID, ULID, binary variants) planned for v0.5.0
 - **Ordered UUID v4**: Performance-optimized for MySQL B-tree indexes
 - **SOLID Nomenclature**: `tax_code`, `vat_code` for international compatibility
 - **Tax Profile Snapshots**: Immutable fiscal data per invoice
@@ -95,8 +95,8 @@ Larabill supports **two installation scenarios** to fit your needs:
 
 **What you get**: 
 - ✅ Invoices with UUID binary(16) IDs (efficient, secure, scalable)
-- ✅ Works with ANY User ID type (int, UUID, ULID, binary variants)
-- ✅ Auto-detects your User model configuration
+- ⚠️ **Currently**: Assumes User ID is UUID binary(16) - matches most modern Laravel apps
+- 📋 **Roadmap (v0.5.0)**: Full auto-detection for ANY User ID type (int, UUID, ULID, binary variants)
 
 #### 1. Install the package
 ```bash
@@ -108,29 +108,34 @@ composer require aichadigital/larabill
 php artisan vendor:publish --tag="larabill-config"
 ```
 
-#### 3. 🔍 Detect your User ID type (CRITICAL STEP)
+#### 3. 🔍 Verify your User ID type
+
+⚠️ **IMPORTANT**: Current version (v0.4.x) **assumes `user_id` is UUID binary(16)**.
+
 ```bash
-php artisan larabill:detect-user-id --update-env
+# Check your users table structure
+php artisan db:table users
 ```
 
-**This command**:
-- Inspects your `users` table structure
-- Auto-detects ID type: `int`, `uuid`, `uuid_binary`, `ulid`, `ulid_binary`
-- Updates `.env` with `LARABILL_USER_ID_TYPE=xxx`
-- Ensures migrations use correct foreign key type
+**If your `users.id` is NOT `binary(16)`:**
+- You'll need to manually adjust published migrations for:
+  - `eu_sales_thresholds`
+  - `roi_queries`
+  - `user_roi_verifications`
 
-**Example output**:
-```
-🔍 Detecting User ID type...
-
-Detected User ID Type    uuid_binary
-Description              UUID as binary(16) - most efficient
-Current Config           int (needs update)
-
-✅ Updated .env file with LARABILL_USER_ID_TYPE=uuid_binary
+**Change this:**
+```php
+$table->binary('user_id', 16); // UUID binary
 ```
 
-**⚠️ IMPORTANT**: Run this BEFORE publishing migrations!
+**To one of:**
+```php
+$table->unsignedBigInteger('user_id'); // Auto-increment int
+$table->uuid('user_id');                // UUID string (36 chars)
+$table->char('user_id', 26);            // ULID (26 chars)
+```
+
+📋 **Roadmap**: Auto-detection planned for v0.5.0 (post-Dec 2024)
 
 #### 4. Publish and review migrations
 ```bash
@@ -550,6 +555,33 @@ Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
 ## Security Vulnerabilities
 
 Please review [our security policy](../../security/policy) on how to report security vulnerabilities.
+
+## 🗺️ Roadmap
+
+### v0.5.0 (Post-December 2024)
+- **Full User ID Agnosticism**: Auto-detect and adapt to ANY user ID type:
+  - `int` (auto-increment)
+  - `uuid` (string, 36 chars)
+  - `uuid_binary` (binary, 16 bytes) ← Current default
+  - `ulid` (string, 26 chars)
+  - `ulid_binary` (binary, 26 bytes)
+- **Dynamic Migration Generation**: Migrations adapt to detected User ID type
+- **Multi-Database Testing**: Test suite covers all ID type scenarios
+
+### v1.0.0 (Target: Q1 2025)
+- **Production-Ready**: Stable API, comprehensive documentation
+- **WHMCS Migration Tools**: Full data import from WHMCS
+- **Multi-Currency Support**: Beyond EUR base
+- **Advanced Reporting**: Sales analytics, tax reports
+- **Filament Admin Panel**: Complete billing UI
+
+### v2.0.0 (Future)
+- **Multi-Tenancy**: Native support for SaaS applications
+- **Subscription Billing**: Recurring charges, metered billing
+- **Payment Gateway Integration**: Stripe, PayPal, Redsys
+- **Advanced Tax Engine**: Global tax jurisdictions beyond EU
+
+**Note**: Current version (v0.4.x) focuses on **Spanish hosting companies** operating as **EU intra-community operators**. User ID agnosticism is designed but not yet fully implemented.
 
 ## Credits
 
