@@ -7,6 +7,14 @@ on:
       - refactor/**
       - feature/**
       - issues/**
+      - improvements/**
+    paths-ignore:
+      - 'docs/**'
+  pull_request:
+    branches:
+      - main
+    paths-ignore:
+      - 'docs/**'
 
 jobs:
   code-style:
