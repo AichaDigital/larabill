@@ -79,7 +79,7 @@ class LarabillServiceProvider extends PackageServiceProvider
                 \AichaDigital\Larabill\Console\DetectUserIdTypeCommand::class,
                 \AichaDigital\Larabill\Console\Commands\LarabillInstallCommand::class,
             ]);
-        
+
         // Note: Migrations are published via `php artisan larabill:install`
         // This ensures correct order and avoids FK errors
     }
