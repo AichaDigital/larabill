@@ -9,7 +9,7 @@ declare(strict_types=1);
 
 // Skip all tests - legacy code
 beforeEach(function () {
-    $this->markTestSkipped('Legacy test - deprecated in v0.4.0');
+    // REACTIVATED v0.4.1: $this->markTestSkipped('Legacy test - deprecated in v0.4.0');
 });
 
 use AichaDigital\Larabill\Database\Factories\CountryVatRateFactory;

@@ -44,6 +44,12 @@ class LarabillInstallCommand extends Command
         '022' => 'create_invoice_templates_table',
         '023' => 'create_company_template_settings_table',
         '024' => 'add_v040_fields_to_invoices_table', // DESPUÉS de create_invoices
+        // === NUEVAS MIGRACIONES ROI/VAT (v0.4.1) ===
+        '025' => 'create_country_vat_rates_table',      // Independiente
+        '026' => 'create_vat_categories_table',         // Independiente (self-referencing OK)
+        '027' => 'create_eu_sales_thresholds_table',    // FK a users
+        '028' => 'create_roi_queries_table',            // FK a users
+        '029' => 'create_user_roi_verifications_table', // FK a users
     ];
 
     public function handle(): int
