@@ -50,13 +50,6 @@ class LarabillServiceProvider extends PackageServiceProvider
 
         // Register event listeners
         $this->registerEventListeners();
-        
-        // Register commands manually
-        if ($this->app->runningInConsole()) {
-            $this->commands([
-                \AichaDigital\Larabill\Console\Commands\LarabillInstallCommand::class,
-            ]);
-        }
     }
 
     /**
