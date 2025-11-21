@@ -50,7 +50,7 @@ class LarabillServiceProvider extends PackageServiceProvider
 
         // Register event listeners
         $this->registerEventListeners();
-        
+
         // Register install command manually (package not built with Spatie skeleton)
         if ($this->app->runningInConsole()) {
             $this->commands([
