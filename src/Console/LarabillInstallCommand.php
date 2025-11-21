@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Console;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\{File, Schema};
 
 class LarabillInstallCommand extends Command
 {
@@ -65,8 +64,8 @@ class LarabillInstallCommand extends Command
         $this->info('📝 Publishing configurations...');
         $this->call('vendor:publish', [
             '--provider' => 'AichaDigital\\Larabill\\LarabillServiceProvider',
-            '--tag' => 'larabill-config',
-            '--force' => $this->option('force'),
+            '--tag'      => 'larabill-config',
+            '--force'    => $this->option('force'),
         ]);
 
         // 4. Publicar migraciones EN ORDEN
@@ -135,10 +134,11 @@ class LarabillInstallCommand extends Command
     {
         try {
             $connection = Schema::getConnection();
-            $column = $connection->getDoctrineColumn('users', 'id');
+            $type       = Schema::getColumnType('users', 'id');
 
-            $type = $column->getType()->getName();
-            $length = $column->getLength();
+            // Get column details using native database queries
+            $columnDetails = $this->getColumnDetails($connection, 'users', 'id');
+            $length        = $columnDetails['length'] ?? null;
 
             // UUID binary (16 bytes)
             if ($type === 'binary' && $length === 16) {
@@ -166,6 +166,65 @@ class LarabillInstallCommand extends Command
         }
     }
 
+    protected function getColumnDetails($connection, string $table, string $column): array
+    {
+        $driver = $connection->getDriverName();
+
+        return match ($driver) {
+            'mysql'  => $this->getMysqlColumnDetails($connection, $table, $column),
+            'pgsql'  => $this->getPostgresColumnDetails($connection, $table, $column),
+            'sqlite' => $this->getSqliteColumnDetails($connection, $table, $column),
+            default  => [],
+        };
+    }
+
+    protected function getMysqlColumnDetails($connection, string $table, string $column): array
+    {
+        $result = $connection->selectOne(
+            "SHOW COLUMNS FROM {$table} WHERE Field = ?",
+            [$column]
+        );
+
+        if (! $result) {
+            return [];
+        }
+
+        // Parse type like "varchar(36)" or "int(11)"
+        if (preg_match('/\((\d+)\)/', $result->Type, $matches)) {
+            return ['length' => (int) $matches[1]];
+        }
+
+        return [];
+    }
+
+    protected function getPostgresColumnDetails($connection, string $table, string $column): array
+    {
+        $result = $connection->selectOne(
+            'SELECT character_maximum_length
+             FROM information_schema.columns
+             WHERE table_name = ? AND column_name = ?',
+            [$table, $column]
+        );
+
+        return $result ? ['length' => $result->character_maximum_length] : [];
+    }
+
+    protected function getSqliteColumnDetails($connection, string $table, string $column): array
+    {
+        $result = $connection->selectOne("PRAGMA table_info({$table})");
+
+        if (! $result) {
+            return [];
+        }
+
+        // Parse SQLite type definition
+        if (preg_match('/\((\d+)\)/', $result->type ?? '', $matches)) {
+            return ['length' => (int) $matches[1]];
+        }
+
+        return [];
+    }
+
     protected function validatePrerequisites(): bool
     {
         // Verificar que existe tabla users
@@ -182,8 +241,8 @@ class LarabillInstallCommand extends Command
     protected function publishMigrationsInOrder(): int
     {
         $packagePath = dirname(__DIR__, 3).'/database/migrations';
-        $targetPath = database_path('migrations');
-        $timestamp = now();
+        $targetPath  = database_path('migrations');
+        $timestamp   = now();
 
         $published = 0;
 
@@ -215,7 +274,7 @@ class LarabillInstallCommand extends Command
 
             // Generar timestamp incremental para mantener orden
             $migrationTimestamp = $timestamp->copy()->addSeconds((int) $order);
-            $targetFile = $targetPath.'/'.$migrationTimestamp->format('Y_m_d_His').'_'.$migrationName.'.php';
+            $targetFile         = $targetPath.'/'.$migrationTimestamp->format('Y_m_d_His').'_'.$migrationName.'.php';
 
             // No sobrescribir si existe y no se pasó --force
             if (File::exists($targetFile) && ! $this->option('force')) {
@@ -232,4 +291,3 @@ class LarabillInstallCommand extends Command
         return $published;
     }
 }
-
