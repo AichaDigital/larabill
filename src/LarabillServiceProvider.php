@@ -76,7 +76,7 @@ class LarabillServiceProvider extends PackageServiceProvider
             ->hasConfigFile()
             ->hasViews()
             ->hasCommand(\AichaDigital\Larabill\Console\DetectUserIdTypeCommand::class)
-            ->hasCommand(\AichaDigital\Larabill\Console\Commands\LarabillInstallCommand::class);
+            ->hasCommand(\AichaDigital\Larabill\Console\LarabillInstallCommand::class);
 
         // Note: Migrations are published via `php artisan larabill:install`
         // This ensures correct order and avoids FK errors
