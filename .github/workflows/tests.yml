@@ -8,8 +8,8 @@ on:
       - feature/**
       - issues/**
       - improvements/**
-    branches-ignore:
-      - docs/**
+    paths-ignore:
+      - 'docs/**'
   pull_request:
     branches:
       - main
