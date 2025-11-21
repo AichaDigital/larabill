@@ -12,7 +12,7 @@ use AichaDigital\Larabill\Models\VatCategory;
 
 // Skip all tests - legacy code
 beforeEach(function () {
-    $this->markTestSkipped('VatCategory deprecated in v0.4.0 - Use TaxRate/TaxGroup instead');
+    // REACTIVATED v0.4.1: $this->markTestSkipped('VatCategory deprecated in v0.4.0 - Use TaxRate/TaxGroup instead');
 });
 
 it('can create a VAT category', function () {
