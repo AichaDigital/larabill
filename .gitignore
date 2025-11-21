@@ -63,4 +63,12 @@ docs/
 # Local helper scripts (do not track)
 /bin/
 
-# D
+# Docs no
+MIGRACIONES_INFORME.md
+REFACTOR_ARQUITECTÓNICO-LARABILL-v0.4.0.md
+REFACTOR_V040_PROGRESS.md
+TAX_SYSTEM_ANALYSIS_AND_RECOMMENDATIONS.md
+
+# Internal documentation (development only)
+docs/
+./PUBLISH.sh
