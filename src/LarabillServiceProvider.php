@@ -50,6 +50,13 @@ class LarabillServiceProvider extends PackageServiceProvider
 
         // Register event listeners
         $this->registerEventListeners();
+        
+        // Register install command manually (package not built with Spatie skeleton)
+        if ($this->app->runningInConsole()) {
+            $this->commands([
+                \AichaDigital\Larabill\Console\LarabillInstallCommand::class,
+            ]);
+        }
     }
 
     /**
@@ -75,8 +82,7 @@ class LarabillServiceProvider extends PackageServiceProvider
             ->name('larabill')
             ->hasConfigFile()
             ->hasViews()
-            ->hasCommand(\AichaDigital\Larabill\Console\DetectUserIdTypeCommand::class)
-            ->hasCommand(\AichaDigital\Larabill\Console\LarabillInstallCommand::class);
+            ->hasCommand(\AichaDigital\Larabill\Console\DetectUserIdTypeCommand::class);
 
         // Note: Migrations are published via `php artisan larabill:install`
         // This ensures correct order and avoids FK errors
