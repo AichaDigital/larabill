@@ -27,29 +27,30 @@ class LarabillInstallCommand extends Command
         '005' => 'create_issuer_tax_profiles_table',
         '006' => 'create_customers_table',
         '007' => 'create_customer_tax_profiles_table',
-        '008' => 'create_user_tax_infos_table', // ANTES de invoices
-        '009' => 'create_unit_measures_table',   // ANTES de invoice_items
-        '010' => 'create_tax_categories_table',  // ANTES de invoice_items
-        '011' => 'create_articles_table',        // ANTES de commissions
-        '012' => 'create_article_overrides_table',
-        '013' => 'create_article_service_status_table',
-        '014' => 'create_tax_rates_table',
-        '015' => 'create_tax_groups_table',
-        '016' => 'create_tax_group_tax_rate_table',
-        '017' => 'create_invoices_table',
-        '018' => 'create_invoice_items_table',
-        '019' => 'create_commissions_table',     // DESPUÉS de articles
-        '020' => 'create_vat_verifications_table',
-        '021' => 'create_company_fiscal_configs_table',
-        '022' => 'create_invoice_templates_table',
-        '023' => 'create_company_template_settings_table',
-        '024' => 'add_v040_fields_to_invoices_table', // DESPUÉS de create_invoices
+        '008' => 'create_user_tax_infos_table',     // ANTES de invoices
+        '009' => 'create_user_tax_profiles_table',  // ANTES de invoices (FK)
+        '010' => 'create_unit_measures_table',      // ANTES de invoice_items
+        '011' => 'create_tax_categories_table',     // ANTES de invoice_items
+        '012' => 'create_articles_table',           // ANTES de commissions
+        '013' => 'create_article_overrides_table',
+        '014' => 'create_article_service_status_table',
+        '015' => 'create_tax_rates_table',
+        '016' => 'create_tax_groups_table',
+        '017' => 'create_tax_group_tax_rate_table',
+        '018' => 'create_invoices_table',
+        '019' => 'create_invoice_items_table',
+        '020' => 'create_commissions_table',     // DESPUÉS de articles
+        '021' => 'create_vat_verifications_table',
+        '022' => 'create_company_fiscal_configs_table',
+        '023' => 'create_invoice_templates_table',
+        '024' => 'create_company_template_settings_table',
+        '025' => 'add_v040_fields_to_invoices_table', // DESPUÉS de create_invoices
         // === NUEVAS MIGRACIONES ROI/VAT (v0.4.1) ===
-        '025' => 'create_country_vat_rates_table',      // Independiente
-        '026' => 'create_vat_categories_table',         // Independiente (self-referencing OK)
-        '027' => 'create_eu_sales_thresholds_table',    // FK a users
-        '028' => 'create_roi_queries_table',            // FK a users
-        '029' => 'create_user_roi_verifications_table', // FK a users
+        '026' => 'create_country_vat_rates_table',      // Independiente
+        '027' => 'create_vat_categories_table',         // Independiente (self-referencing OK)
+        '028' => 'create_eu_sales_thresholds_table',    // FK a users
+        '029' => 'create_roi_queries_table',            // FK a users
+        '030' => 'create_user_roi_verifications_table', // FK a users
     ];
 
     public function handle(): int
