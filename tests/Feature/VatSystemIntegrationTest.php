@@ -13,7 +13,7 @@ use AichaDigital\Larabill\Models\{CountryVatRate, VatCategory};
 
 // Skip all tests - legacy code
 beforeEach(function () {
-    // REACTIVATED v0.4.1: $this->markTestSkipped('Legacy test - deprecated in v0.4.0. Requires full rewrite for v0.4.0 architecture.');
+    $this->markTestSkipped('Legacy test - deprecated in v0.4.0. Requires full rewrite for v0.4.0 architecture.');
 });
 
 it('can perform complete destination VAT workflow', function () {
