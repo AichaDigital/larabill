@@ -246,7 +246,7 @@ class LarabillInstallCommand extends Command
 
     protected function publishMigrationsInOrder(): int
     {
-        $packagePath = dirname(__DIR__, 3).'/database/migrations';
+        $packagePath = dirname(__DIR__, 2).'/database/migrations';
         $targetPath  = database_path('migrations');
         $timestamp   = now();
 
