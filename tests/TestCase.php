@@ -45,7 +45,7 @@ class TestCase extends Orchestra
     protected function loadStubMigrations(): void
     {
         $stubPath = __DIR__.'/../database/migrations';
-        $stubs = [
+        $stubs    = [
             'create_country_vat_rates_table.php.stub',
             'create_vat_categories_table.php.stub',
             'create_eu_sales_thresholds_table.php.stub',
