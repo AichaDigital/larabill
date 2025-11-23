@@ -32,7 +32,7 @@ class CustomerTaxProfileFactory extends Factory
             'customer_id'            => Customer::factory(),
             'legal_name'             => $isCompany ? $this->faker->company() : $this->faker->name(),
             'commercial_name'        => $isCompany ? $this->faker->optional()->companySuffix() : null,
-            'tax_id'                 => $this->generateSpanishTaxId($isCompany),
+            'tax_code'               => $this->generateSpanishTaxId($isCompany),
             'legal_entity_type_code' => $isCompany ? 'SOCIEDAD_LIMITADA' : 'PERSONA_FISICA',
             'address'                => $this->faker->streetAddress(),
             'address_line_2'         => $this->faker->optional()->streetAddress(),
@@ -82,7 +82,7 @@ class CustomerTaxProfileFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'legal_name'             => $this->faker->name(),
             'commercial_name'        => null,
-            'tax_id'                 => $this->generateSpanishTaxId(false),
+            'tax_code'               => $this->generateSpanishTaxId(false),
             'legal_entity_type_code' => 'PERSONA_FISICA',
         ]);
     }
@@ -95,7 +95,7 @@ class CustomerTaxProfileFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'legal_name'             => $this->faker->company(),
             'commercial_name'        => $this->faker->optional()->companySuffix(),
-            'tax_id'                 => $this->generateSpanishTaxId(true),
+            'tax_code'               => $this->generateSpanishTaxId(true),
             'legal_entity_type_code' => 'SOCIEDAD_LIMITADA',
         ]);
     }

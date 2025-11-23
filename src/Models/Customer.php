@@ -42,6 +42,14 @@ class Customer extends Model
     protected $table = 'customers';
 
     /**
+     * Create a new factory instance for the model.
+     */
+    protected static function newFactory(): \AichaDigital\Larabill\Database\Factories\CustomerFactory
+    {
+        return \AichaDigital\Larabill\Database\Factories\CustomerFactory::new();
+    }
+
+    /**
      * The attributes that are mass assignable.
      */
     protected $fillable = [

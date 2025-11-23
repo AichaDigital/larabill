@@ -82,6 +82,14 @@ class Invoice extends Model
     public $incrementing = false;
 
     /**
+     * Create a new factory instance for the model.
+     */
+    protected static function newFactory(): \AichaDigital\Larabill\Database\Factories\InvoiceFactory
+    {
+        return \AichaDigital\Larabill\Database\Factories\InvoiceFactory::new();
+    }
+
+    /**
      * The data type of the auto-incrementing ID.
      */
     protected $keyType = 'string';

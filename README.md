@@ -508,9 +508,81 @@ composer test -- --filter="Invoice"
 composer test-coverage
 ```
 
-**Current Test Status (v0.1.0):** 419/530 passing (79%)
+**Current Test Status (v0.4.2):** Tests passing with full integration coverage
 
-## 📊 Performance Benefits
+---
+
+## 🏭 Factories (Testing & Development)
+
+Larabill includes **factories for all models** to facilitate testing and development.
+
+### ⚠️ Important: Factories are NOT Publishable (by design)
+
+**Current Behavior (v1.0):**
+- Factories **live in the package** (`src/Database/Factories/`)
+- Models use `newFactory()` to reference package factories
+- **Not publishable** to your application's `database/factories/`
+
+**Why this decision?**
+- ✅ **Simplicity**: No manual factory publication needed
+- ✅ **Consistency**: Factories evolve automatically with package updates
+- ✅ **Standard Laravel approach** (used by Sanctum, Passport, etc.)
+
+**Usage in Tests:**
+
+```php
+use AichaDigital\Larabill\Models\{Customer, Invoice, Article};
+
+// Create customers with various profiles
+$spanishCustomer = Customer::factory()->spanish()->b2c()->create();
+$frenchB2B = Customer::factory()->french()->b2b()->withValidVAT()->create();
+
+// Create articles
+$hosting = Article::factory()->monthlyHosting()->create();
+$vps = Article::factory()->monthlyVPS()->create();
+
+// Create invoices
+$invoice = Invoice::factory()->for($spanishCustomer)->create();
+```
+
+### Available Factory States
+
+**CustomerFactory:**
+- `->spanish()` - Spanish customer (ES)
+- `->french()` - French customer (FR) 
+- `->german()` - German customer (DE)
+- `->b2c()` - Consumer/Individual
+- `->b2b()` - Business/Company
+- `->withValidVAT()` - VAT pre-verified
+
+**ArticleFactory:**
+- `->monthlyHosting()` - €9.99/month
+- `->monthlyVPS()` - €19.99/month
+- `->annualVPS()` - €239.88/year
+- `->domainRegistration()` - €9.99/year
+- `->oneTimeMigration()` - €99.99 one-time
+
+**InvoiceFactory:**
+- `->proforma()` - Proforma invoice (draft)
+- `->emitted()` - Emitted invoice (final)
+
+### 📋 Roadmap v2.0: Publishable Factories (Optional)
+
+For production applications that need **custom factory behavior**, we plan to add:
+
+```bash
+# Future feature (v2.0)
+php artisan larabill:publish --factories
+
+# Will copy factories to:
+# database/factories/Larabill/
+```
+
+This will allow users to customize factories while keeping the originals in the package.
+
+**Tracking:** [Issue #TBD](https://github.com/AichaDigital/larabill/issues/)
+
+---
 
 ### Binary UUID Storage
 - **Storage**: 16 bytes vs 36 bytes (55% savings)

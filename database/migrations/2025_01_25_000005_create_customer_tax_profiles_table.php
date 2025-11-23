@@ -25,7 +25,7 @@ return new class extends Migration
             // Identification
             $table->string('legal_name')->comment('Nombre legal/razón social');
             $table->string('commercial_name')->nullable()->comment('Nombre comercial (si difiere)');
-            $table->string('tax_id')->comment('NIF/CIF/NIE del cliente');
+            $table->string('tax_code')->comment('NIF/CIF/NIE del cliente');
             $table->string('legal_entity_type_code', 20)->comment('Tipo de entidad jurídica');
 
             // Address
@@ -59,7 +59,7 @@ return new class extends Migration
 
             // Indexes
             $table->index('customer_id');
-            $table->index('tax_id');
+            $table->index('tax_code');
             $table->index('is_current');
             $table->index(['customer_id', 'is_current']);
             $table->index(['valid_from', 'valid_until']);

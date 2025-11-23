@@ -7,12 +7,12 @@ use AichaDigital\Larabill\Models\{Customer, CustomerTaxProfile};
 it('can create a customer tax profile', function () {
     $profile = CustomerTaxProfile::factory()->create([
         'legal_name'   => 'John Doe',
-        'tax_id'       => 'X1234567A',
+        'tax_code'     => 'X1234567A',
         'country_code' => 'ES',
     ]);
 
     expect($profile->legal_name)->toBe('John Doe')
-        ->and($profile->tax_id)->toBe('X1234567A')
+        ->and($profile->tax_code)->toBe('X1234567A')
         ->and($profile->country_code)->toBe('ES')
         ->and($profile->exists)->toBeTrue();
 });
