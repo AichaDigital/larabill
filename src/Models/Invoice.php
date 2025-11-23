@@ -128,7 +128,7 @@ class Invoice extends Model
         'vat_verification',
         'is_roi_taxed',
         'taxable_amount',
-        'total_tax_amount',
+        'tax_amount',
         'total_amount',
         'converted_invoice_id',
         'converted_at',
@@ -181,7 +181,7 @@ class Invoice extends Model
             'is_immutable'                  => 'boolean',
             'immutable_at'                  => 'datetime',
             'taxable_amount'                => Base100::class, // €12.34 ↔ 1234
-            'total_tax_amount'              => Base100::class,
+            'tax_amount'                    => Base100::class,
             'total_amount'                  => Base100::class, // €12.34 ↔ 1234
             'fiscal_data'                   => 'array',
             'fiscal_verification_metadata'  => 'array',
@@ -335,9 +335,9 @@ class Invoice extends Model
      * Calculate and update invoice totals from items
      *
      * Sums all line items to update:
-     * - taxable_amount (sum of line_subtotal)
-     * - tax_amount (sum of line_tax_amount)
-     * - total_amount (sum of line_total)
+     * - taxable_amount (sum of items.taxable_amount)
+     * - tax_amount (sum of items.tax_amount)
+     * - total_amount (sum of items.total_amount)
      *
      * @return self
      */
@@ -345,9 +345,9 @@ class Invoice extends Model
     {
         $items = $this->items;
 
-        $this->taxable_amount = $items->sum('line_subtotal');
-        $this->tax_amount = $items->sum('line_tax_amount');
-        $this->total_amount = $items->sum('line_total');
+        $this->taxable_amount = (int) $items->sum('taxable_amount');
+        $this->tax_amount = (int) $items->sum('tax_amount');
+        $this->total_amount = (int) $items->sum('total_amount');
 
         $this->save();
 

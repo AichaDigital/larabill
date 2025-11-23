@@ -80,9 +80,10 @@ class InvoiceItem extends Model
         'unit_measure_id',
         'unit_price',
         'taxable_amount',
-        'tax_group_id',
-        'total_tax_amount',
-        'taxes_applied',
+        'tax_rate',
+        'tax_category_id',
+        'tax_amount',
+        'total_amount',
         'total_amount',
         'service_date_from',
         'service_date_to',
@@ -104,8 +105,8 @@ class InvoiceItem extends Model
             'quantity'          => Base100::class, // 1.5 ↔ 150
             'unit_price'        => Base100::class, // €12.34 ↔ 1234
             'taxable_amount'    => Base100::class, // €12.34 ↔ 1234
-            'total_tax_amount'  => Base100::class,
-            'taxes_applied'     => 'array',
+            'tax_rate'          => Base100::class, // 21% ↔ 2100
+            'tax_amount'        => Base100::class,
             'total_amount'      => Base100::class, // €12.34 ↔ 1234
             'service_date_from' => 'date',
             'service_date_to'   => 'date',
