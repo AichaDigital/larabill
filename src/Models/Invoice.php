@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use AichaDigital\Lara100\Casts\Base100;
+use AichaDigital\Lara100\Casts\Base100Int;
 use AichaDigital\Larabill\Enums\{InvoiceSerieType, InvoiceStatus};
 use Dyrynda\Database\Support\{BindsOnUuid, GeneratesUuid};
 use Dyrynda\Database\Support\Casts\EfficientUuid;
@@ -128,7 +128,7 @@ class Invoice extends Model
         'vat_verification',
         'is_roi_taxed',
         'taxable_amount',
-        'tax_amount',
+        'total_tax_amount',
         'total_amount',
         'converted_invoice_id',
         'converted_at',
@@ -180,9 +180,9 @@ class Invoice extends Model
             'fiscal_verified_at'            => 'datetime',
             'is_immutable'                  => 'boolean',
             'immutable_at'                  => 'datetime',
-            'taxable_amount'                => Base100::class, // €12.34 ↔ 1234
-            'tax_amount'                    => Base100::class,
-            'total_amount'                  => Base100::class, // €12.34 ↔ 1234
+            'taxable_amount'                => Base100Int::class, // €12.34 ↔ 1234
+            'total_tax_amount'              => Base100Int::class,
+            'total_amount'                  => Base100Int::class, // €12.34 ↔ 1234
             'fiscal_data'                   => 'array',
             'fiscal_verification_metadata'  => 'array',
             'vat_verification'              => 'array',
@@ -330,29 +330,6 @@ class Invoice extends Model
     // ========================================
     // HELPER METHODS
     // ========================================
-
-    /**
-     * Calculate and update invoice totals from items
-     *
-     * Sums all line items to update:
-     * - taxable_amount (sum of items.taxable_amount)
-     * - tax_amount (sum of items.tax_amount)
-     * - total_amount (sum of items.total_amount)
-     *
-     * @return self
-     */
-    public function calculateTotals(): self
-    {
-        $items = $this->items;
-
-        $this->taxable_amount = (int) $items->sum('taxable_amount');
-        $this->tax_amount = (int) $items->sum('tax_amount');
-        $this->total_amount = (int) $items->sum('total_amount');
-
-        $this->save();
-
-        return $this;
-    }
 
     /**
      * Check if this invoice should include QR code
@@ -541,80 +518,4 @@ class Invoice extends Model
     {
         return $query->where('serie', InvoiceSerieType::RECTIFICATIVE->value);
     }
-
-    // ========================================
-    // TAX VALIDATION METHODS
-    // ========================================
-
-    /**
-     * Check if this invoice requires VAT/IVA
-     *
-     * Returns true if the customer is in Spain (or similar scenario where VAT applies)
-     *
-     * @return bool
-     */
-    public function requiresVAT(): bool
-    {
-        // If no customer, assume VAT required (conservative approach)
-        if (! $this->customer || ! $this->customer->currentTaxProfile) {
-            return true;
-        }
-
-        $country = $this->customer->currentTaxProfile->country_code;
-
-        // Spain always requires VAT
-        if ($country === 'ES') {
-            return true;
-        }
-
-        // EU B2C requires VAT (unless reverse charge applies)
-        // For now, simplified: if not Spain, check if reverse charge applies
-        return ! $this->isReverseCharge();
-    }
-
-    /**
-     * Check if this invoice uses reverse charge mechanism
-     *
-     * Reverse charge applies for:
-     * - EU B2B transactions with valid VAT number
-     * - Customer is a company (not individual)
-     *
-     * @return bool
-     */
-    public function isReverseCharge(): bool
-    {
-        // If no customer, no reverse charge
-        if (! $this->customer || ! $this->customer->currentTaxProfile) {
-            return false;
-        }
-
-        $profile = $this->customer->currentTaxProfile;
-        $country = $profile->country_code;
-
-        // Reverse charge only applies to EU countries (excluding Spain for this company)
-        $euCountries = ['AT', 'BE', 'BG', 'CY', 'CZ', 'DE', 'DK', 'EE', 'FI', 'FR', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'MT', 'NL', 'PL', 'PT', 'RO', 'SE', 'SI', 'SK'];
-
-        if (! in_array($country, $euCountries, true)) {
-            return false;
-        }
-
-        // Must be a company (B2B)
-        if ($profile->legal_entity_type_code === 'PERSONA_FISICA') {
-            return false;
-        }
-
-        // Must have valid VAT number
-        if (empty($profile->vat_number)) {
-            return false;
-        }
-
-        // If VAT verification exists and is verified, reverse charge applies
-        if ($profile->vat_number_verified) {
-            return true;
-        }
-
-        // Conservative: if not verified, no reverse charge
-        return false;
-    }
 }
-

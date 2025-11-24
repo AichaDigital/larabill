@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use AichaDigital\Lara100\Casts\Base100;
+use AichaDigital\Lara100\Casts\Base100Int;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\{Model, SoftDeletes};
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -81,7 +81,7 @@ class Commission extends Model
     protected function casts(): array
     {
         return [
-            'rate'               => Base100::class, // 10.5% ↔ 1050 or €20.50 ↔ 2050
+            'rate'               => Base100Int::class, // 10.5% ↔ 1050 or €20.50 ↔ 2050
             'rate_base100'       => 'integer',
             'valid_from'         => 'date',
             'valid_until'        => 'date',

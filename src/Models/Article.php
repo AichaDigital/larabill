@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use AichaDigital\Lara100\Casts\Base100;
+use AichaDigital\Lara100\Casts\Base100Int;
 use AichaDigital\Larabill\Enums\{BillingFrequency, ItemType};
 use Illuminate\Database\Eloquent\{Builder, Model, SoftDeletes};
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -76,8 +76,8 @@ class Article extends Model
     protected $casts = [
         'item_type'                => ItemType::class,
         'billing_frequency'        => BillingFrequency::class,
-        'base_price'               => Base100::class,
-        'cost_price'               => Base100::class,
+        'base_price'               => Base100Int::class,
+        'cost_price'               => Base100Int::class,
         'is_recurring'             => 'boolean',
         'is_active'                => 'boolean',
         'billing_interval'         => 'integer',

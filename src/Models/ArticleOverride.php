@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use AichaDigital\Lara100\Casts\Base100;
+use AichaDigital\Lara100\Casts\Base100Int;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\{Builder, Model};
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -51,7 +51,7 @@ class ArticleOverride extends Model
      * The attributes that should be cast.
      */
     protected $casts = [
-        'custom_price' => Base100::class,
+        'custom_price' => Base100Int::class,
         'valid_from'   => 'date',
         'valid_to'     => 'date',
         'is_active'    => 'boolean',

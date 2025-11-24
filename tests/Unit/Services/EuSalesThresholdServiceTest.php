@@ -21,13 +21,13 @@ it('processes EU sale invoice and updates threshold', function () {
 
     $userId         = (string) ($invoice->user_id ?? config('larabill.company.id', '1'));
     $fiscalSettings = FiscalSettings::getOrCreateForUser($userId, now()->year);
-    expect($fiscalSettings->current_eu_sales_amount)->toBe(0.0);
+    expect($fiscalSettings->current_eu_sales_amount)->toBe(0); // Base100 integer
 
     $this->service->processInvoice($invoice);
 
     // Fetch a fresh instance from DB
     $fiscalSettings = FiscalSettings::getOrCreateForUser($userId, now()->year);
-    expect($fiscalSettings->current_eu_sales_amount)->toBe(50000.0); // Base100 value
+    expect($fiscalSettings->current_eu_sales_amount)->toBe(50000); // €500.00 in base100
 });
 
 it('skips ROI taxed invoices', function () {
@@ -107,13 +107,13 @@ it('processes invoice refund and decreases EU sales', function () {
     $this->service->processInvoice($invoice);
 
     $fiscalSettings = FiscalSettings::getOrCreateForUser((string) ($invoice->user_id ?? '1'), now()->year);
-    expect($fiscalSettings->current_eu_sales_amount)->toBe(50000.0); // Base100 value
+    expect($fiscalSettings->current_eu_sales_amount)->toBe(50000); // €500.00 in base100
 
     // Now process refund
     $this->service->processInvoiceRefund($invoice);
 
     $fiscalSettings = FiscalSettings::getOrCreateForUser((string) ($invoice->user_id ?? '1'), now()->year);
-    expect($fiscalSettings->current_eu_sales_amount)->toBe(0.0); // Back to zero after refund
+    expect($fiscalSettings->current_eu_sales_amount)->toBe(0); // Back to zero after refund
 });
 
 it('should send notification when threshold exceeded', function () {

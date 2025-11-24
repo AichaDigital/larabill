@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use AichaDigital\Lara100\Casts\Base100;
+use AichaDigital\Lara100\Casts\Base100Int;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\{Builder, Model};
 
@@ -75,8 +75,8 @@ class FiscalSettings extends Model
             'auto_apply_destination'  => 'boolean',
             'notification_sent'       => 'boolean',
             'threshold_exceeded'      => 'boolean',
-            'eu_sales_threshold'      => Base100::class, // €10,000.00 ↔ 1000000
-            'current_eu_sales_amount' => Base100::class, // €12.34 ↔ 1234
+            'eu_sales_threshold'      => Base100Int::class, // €10,000.00 ↔ 1000000
+            'current_eu_sales_amount' => Base100Int::class, // €12.34 ↔ 1234
             'threshold_exceeded_at'   => 'datetime',
             'custom_threshold_rules'  => 'array',
         ];

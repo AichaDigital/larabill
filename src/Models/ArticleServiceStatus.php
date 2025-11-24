@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use AichaDigital\Lara100\Casts\Base100;
+use AichaDigital\Lara100\Casts\Base100Int;
 use AichaDigital\Larabill\Enums\{CancellationType, ServiceStatus};
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\{Builder, Model};
@@ -82,7 +82,7 @@ class ArticleServiceStatus extends Model
         'cancellation_requested_at' => 'date',
         'cancellation_effective_at' => 'date',
         'refund_unused'             => 'boolean',
-        'effective_price'           => Base100::class,
+        'effective_price'           => Base100Int::class,
         'instance_data'             => 'array',
         'metadata'                  => 'array',
     ];

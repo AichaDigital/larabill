@@ -207,7 +207,8 @@ class BillingService
 
         $quantity      = $itemData['quantity']   ?? 1;
         $unitPrice     = $itemData['unit_price'] ?? 0;
-        $taxableAmount = $quantity * $unitPrice;
+        // Both values are in base100, divide by 100
+        $taxableAmount = (int) (($quantity * $unitPrice) / 100);
 
         $taxCalculation = [
             'total_tax_amount' => 0,

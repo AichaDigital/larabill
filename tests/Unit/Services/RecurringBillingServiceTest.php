@@ -251,7 +251,7 @@ it('applies customer price overrides to invoices', function () {
     $invoice = Invoice::latest()->first();
     $item    = $invoice->items()->first();
 
-    expect($item->unit_price)->toBe(2400.0);
+    expect($item->unit_price)->toBe(2400); // €24.00 in base100
 });
 
 it('creates invoice with comprehensive metadata', function () {

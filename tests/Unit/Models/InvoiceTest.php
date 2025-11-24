@@ -16,18 +16,18 @@ it('can create an invoice', function () {
         'issued_at'         => now(),
         'status'            => InvoiceStatus::DRAFT->value,
         'user_id'           => 1,
-        'taxable_amount'    => 100.0,
-        'total_tax_amount'  => 21.0, // v0.3.3: Renamed from tax_amount
-        'total_amount'      => 121.0,
+        'taxable_amount'    => 10000, // €100.00 in base100
+        'total_tax_amount'  => 2100,  // €21.00 in base100
+        'total_amount'      => 12100, // €121.00 in base100
     ]);
 
     expect($invoice->fiscal_number)->toBe('FAC-2025-000001');
     expect($invoice->serie)->toBe(InvoiceSerieType::INVOICE);
     expect($invoice->status)->toBe(InvoiceStatus::DRAFT);
     expect($invoice->user_id)->toBe(1);
-    expect($invoice->taxable_amount)->toBe(100.0); // Base100 cast returns float
-    expect($invoice->total_tax_amount)->toBe(21.0); // v0.3.3: total_tax_amount
-    expect($invoice->total_amount)->toBe(121.0); // Base100 cast returns float
+    expect($invoice->taxable_amount)->toBe(10000); // Base100Int returns int
+    expect($invoice->total_tax_amount)->toBe(2100);
+    expect($invoice->total_amount)->toBe(12100);
 });
 
 it('can make an invoice immutable', function () {
@@ -41,9 +41,9 @@ it('can make an invoice immutable', function () {
         'issued_at'      => now(),
         'status'         => InvoiceStatus::DRAFT->value,
         'user_id'        => 1,
-        'taxable_amount' => 100.0,
-        'tax_amount'     => 21.0,
-        'total_amount'   => 121.0,
+        'taxable_amount' => 10000, // €100.00 in base100
+        'tax_amount'     => 2100,  // €21.00 in base100
+        'total_amount'   => 12100, // €121.00 in base100
     ]);
 
     $invoice->makeImmutable();

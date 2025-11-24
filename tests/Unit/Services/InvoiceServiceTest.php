@@ -112,7 +112,7 @@ it('can create invoice items with tax calculation', function () {
         'status'      => 1,
         'items'       => [
             [
-                'quantity'    => 1,
+                'quantity'    => 100, // 1.0 unit in base100
                 'base_price'  => 10000, // 100.00 EUR
                 'description' => 'Test line',
             ],
@@ -120,11 +120,11 @@ it('can create invoice items with tax calculation', function () {
     ]);
 
     expect($invoice->items)->toHaveCount(1)
-        ->and($invoice->items->first()->quantity)->toBe(1.0)
-        ->and($invoice->items->first()->unit_price)->toBe(10000.0)
-        ->and($invoice->items->first()->taxable_amount)->toBe(10000.0)
-        ->and($invoice->items->first()->total_tax_amount)->toBe(0.0)
-        ->and($invoice->items->first()->total_amount)->toBe(10000.0);
+        ->and($invoice->items->first()->quantity)->toBe(100) // 1.0 unit in base100
+        ->and($invoice->items->first()->unit_price)->toBe(10000)
+        ->and($invoice->items->first()->taxable_amount)->toBe(10000)
+        ->and($invoice->items->first()->total_tax_amount)->toBe(0)
+        ->and($invoice->items->first()->total_amount)->toBe(10000);
 });
 
 it('locks proforma after conversion', function () {

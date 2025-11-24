@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use AichaDigital\Lara100\Casts\Base100;
+use AichaDigital\Lara100\Casts\Base100Int;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\{HasMany, HasOne};
@@ -75,8 +75,8 @@ class IssuerConfig extends Model
         return [
             'is_roi_registered'           => 'boolean',
             'is_oss_registered'           => 'boolean',
-            'eu_sales_threshold'          => Base100::class,
-            'current_eu_sales'            => Base100::class,
+            'eu_sales_threshold'          => Base100Int::class,
+            'current_eu_sales'            => Base100Int::class,
             'fiscal_year'                 => 'integer',
             'fiscal_year_start'           => 'date',
             'fiscal_year_end'             => 'date',

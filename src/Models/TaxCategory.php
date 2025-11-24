@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use AichaDigital\Lara100\Casts\Base100;
+use AichaDigital\Lara100\Casts\Base100Int;
 use AichaDigital\Larabill\Database\Factories\TaxCategoryFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -57,7 +57,7 @@ class TaxCategory extends Model
     protected function casts(): array
     {
         return [
-            'default_rate' => Base100::class,
+            'default_rate' => Base100Int::class,
             'is_active'    => 'boolean',
             'sort_order'   => 'integer',
             'metadata'     => 'array',

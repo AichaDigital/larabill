@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use AichaDigital\Lara100\Casts\Base100;
+use AichaDigital\Lara100\Casts\Base100Int;
 use AichaDigital\Larabill\Database\Factories\InvoiceItemFactory;
 use AichaDigital\Larabill\Enums\ItemType;
 use Dyrynda\Database\Support\Casts\EfficientUuid;
@@ -80,10 +80,9 @@ class InvoiceItem extends Model
         'unit_measure_id',
         'unit_price',
         'taxable_amount',
-        'tax_rate',
-        'tax_category_id',
-        'tax_amount',
-        'total_amount',
+        'tax_group_id',
+        'total_tax_amount',
+        'taxes_applied',
         'total_amount',
         'service_date_from',
         'service_date_to',
@@ -102,12 +101,12 @@ class InvoiceItem extends Model
         return [
             'invoice_id'        => EfficientUuid::class, // UUID binary(16)
             'item_type'         => ItemType::class, // PHP Enum
-            'quantity'          => Base100::class, // 1.5 ↔ 150
-            'unit_price'        => Base100::class, // €12.34 ↔ 1234
-            'taxable_amount'    => Base100::class, // €12.34 ↔ 1234
-            'tax_rate'          => Base100::class, // 21% ↔ 2100
-            'tax_amount'        => Base100::class,
-            'total_amount'      => Base100::class, // €12.34 ↔ 1234
+            'quantity'          => Base100Int::class, // 1.5 ↔ 150
+            'unit_price'        => Base100Int::class, // €12.34 ↔ 1234
+            'taxable_amount'    => Base100Int::class, // €12.34 ↔ 1234
+            'total_tax_amount'  => Base100Int::class,
+            'taxes_applied'     => 'array',
+            'total_amount'      => Base100Int::class, // €12.34 ↔ 1234
             'service_date_from' => 'date',
             'service_date_to'   => 'date',
             'metadata'          => 'array',
@@ -149,9 +148,10 @@ class InvoiceItem extends Model
      * Calculate taxable amount from quantity and unit price.
      * Base100 cast handles conversion automatically.
      */
-    public function calculateTaxableAmount(): float
+    public function calculateTaxableAmount(): int
     {
-        return round($this->quantity * $this->unit_price, 2);
+        // Both quantity and unit_price are in base100, divide by 100
+        return (int) (($this->quantity * $this->unit_price) / 100);
     }
 
     /**

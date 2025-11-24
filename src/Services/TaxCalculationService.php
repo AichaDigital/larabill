@@ -67,7 +67,9 @@ class TaxCalculationService
     {
         $quantity      = $itemData['quantity'];
         $basePrice     = $itemData['base_price'];
-        $taxableAmount = $quantity * $basePrice;
+        // Both values are in base100, so we need to divide by 100
+        // Example: qty=100 (1.0 unit) * price=10000 (€100.00) / 100 = 10000 (€100.00)
+        $taxableAmount = (int) (($quantity * $basePrice) / 100);
 
         // TODO: Get tax group from article or customer location
         // For now, return basic calculation without taxes

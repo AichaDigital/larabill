@@ -23,8 +23,8 @@ it('can create a basic invoice', function () {
         'items'            => [
             [
                 'description'  => 'Test Item',
-                'quantity'     => 1,
-                'unit_price'   => 100.0,
+                'quantity'     => 100,    // 1.0 unit in base100
+                'unit_price'   => 10000,  // €100.00 in base100
                 'tax_group_id' => $this->taxGroup->id, // v0.3.3: Use tax_group_id instead of tax_rate
             ],
         ],
@@ -34,12 +34,12 @@ it('can create a basic invoice', function () {
 
     expect($invoice)->toBeInstanceOf(Invoice::class);
     expect($invoice->fiscal_number)->toStartWith('FAC-');
-    expect($invoice->total_amount)->toBe(121.0); // 100 + 21% VAT
+    expect($invoice->total_amount)->toBe(12100); // €121.00 in base100 (€100 + 21% VAT)
     expect($invoice->is_immutable)->toBeFalse();
 
     // v0.3.3: Verify new tax structure in invoice_item
     $item = $invoice->items->first();
-    expect($item->total_tax_amount)->toBe(21.0);
+    expect($item->total_tax_amount)->toBe(2100); // €21.00 in base100
     expect($item->taxes_applied)->toBeArray();
     expect($item->taxes_applied)->toHaveCount(1);
 });
@@ -310,14 +310,14 @@ it('can create invoice with multiple items', function () {
         'items'            => [
             [
                 'description'  => 'Item 1',
-                'quantity'     => 2,
-                'unit_price'   => 50.0,
+                'quantity'     => 200,   // 2.0 units in base100
+                'unit_price'   => 5000,  // €50.00 in base100
                 'tax_group_id' => $this->taxGroup->id,
             ],
             [
                 'description'  => 'Item 2',
-                'quantity'     => 1,
-                'unit_price'   => 100.0,
+                'quantity'     => 100,    // 1.0 unit in base100
+                'unit_price'   => 10000,  // €100.00 in base100
                 'tax_group_id' => $this->taxGroup->id,
             ],
         ],
@@ -331,14 +331,14 @@ it('can create invoice with multiple items', function () {
     // Check first item
     $item1 = $invoice->items->first();
     expect($item1->description)->toBe('Item 1');
-    expect($item1->quantity)->toBe(2.0);
-    expect($item1->unit_price)->toBe(50.0);
+    expect($item1->quantity)->toBe(200); // 2.0 units in base100
+    expect($item1->unit_price)->toBe(5000); // €50.00 in base100
 
     // Check second item
     $item2 = $invoice->items->last();
     expect($item2->description)->toBe('Item 2');
-    expect($item2->quantity)->toBe(1.0);
-    expect($item2->unit_price)->toBe(100.0);
+    expect($item2->quantity)->toBe(100); // 1.0 unit in base100
+    expect($item2->unit_price)->toBe(10000); // €100.00 in base100
 });
 
 it('can create invoice with custom template', function () {

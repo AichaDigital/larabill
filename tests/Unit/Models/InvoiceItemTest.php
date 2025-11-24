@@ -19,20 +19,20 @@ it('can create an invoice item', function () {
         'invoice_id'        => $this->invoice->id,
         'item_type'         => ItemType::GOOD,
         'description'       => 'Test Product',
-        'quantity'          => 2.0,
-        'unit_price'        => 10.00,
-        'taxable_amount'    => 20.00,
-        'total_tax_amount'  => 4.20,
-        'total_amount'      => 24.20,
+        'quantity'          => 200,  // 2.0 units in base100
+        'unit_price'        => 1000, // €10.00 in base100
+        'taxable_amount'    => 2000, // €20.00 in base100
+        'total_tax_amount'  => 420,  // €4.20 in base100
+        'total_amount'      => 2420, // €24.20 in base100
     ]);
 
     expect($item)->toBeInstanceOf(InvoiceItem::class)
         ->and($item->description)->toBe('Test Product')
-        ->and($item->quantity)->toBe(2.0)
-        ->and($item->unit_price)->toBe(10.00)
-        ->and($item->taxable_amount)->toBe(20.00)
-        ->and($item->total_tax_amount)->toBe(4.20)
-        ->and($item->total_amount)->toBe(24.20);
+        ->and($item->quantity)->toBe(200)
+        ->and($item->unit_price)->toBe(1000)
+        ->and($item->taxable_amount)->toBe(2000)
+        ->and($item->total_tax_amount)->toBe(420)
+        ->and($item->total_amount)->toBe(2420);
 });
 
 it('can cast item_type as enum', function () {
@@ -48,25 +48,25 @@ it('can cast item_type as enum', function () {
 it('can cast monetary values using Base100', function () {
     $item = InvoiceItem::factory()->create([
         'invoice_id'       => $this->invoice->id,
-        'unit_price'       => 12.34,
-        'taxable_amount'   => 24.68,
-        'total_tax_amount' => 5.18,
-        'total_amount'     => 29.86,
+        'unit_price'       => 1234, // €12.34 in base100
+        'taxable_amount'   => 2468, // €24.68 in base100
+        'total_tax_amount' => 518,  // €5.18 in base100
+        'total_amount'     => 2986, // €29.86 in base100
     ]);
 
-    expect($item->unit_price)->toBe(12.34)
-        ->and($item->taxable_amount)->toBe(24.68)
-        ->and($item->total_tax_amount)->toBe(5.18)
-        ->and($item->total_amount)->toBe(29.86);
+    expect($item->unit_price)->toBe(1234)
+        ->and($item->taxable_amount)->toBe(2468)
+        ->and($item->total_tax_amount)->toBe(518)
+        ->and($item->total_amount)->toBe(2986);
 });
 
 it('can cast quantity using Base100', function () {
     $item = InvoiceItem::factory()->create([
         'invoice_id' => $this->invoice->id,
-        'quantity'   => 1.5,
+        'quantity'   => 150, // 1.5 units in base100
     ]);
 
-    expect($item->quantity)->toBe(1.5);
+    expect($item->quantity)->toBe(150);
 });
 
 it('belongs to an invoice', function () {
@@ -83,25 +83,25 @@ it('belongs to an invoice', function () {
 it('can calculate taxable amount', function () {
     $item = InvoiceItem::factory()->create([
         'invoice_id' => $this->invoice->id,
-        'quantity'   => 3.0,
-        'unit_price' => 15.50,
+        'quantity'   => 300,  // 3.0 units in base100
+        'unit_price' => 1550, // €15.50 in base100
     ]);
 
     $taxableAmount = $item->calculateTaxableAmount();
 
-    expect($taxableAmount)->toBe(46.5);
+    expect($taxableAmount)->toBe(4650); // 3.0 * €15.50 = €46.50 = 4650 in base100
 });
 
 it('can calculate taxable amount with decimal quantity', function () {
     $item = InvoiceItem::factory()->create([
         'invoice_id' => $this->invoice->id,
-        'quantity'   => 2.5,
-        'unit_price' => 10.00,
+        'quantity'   => 250,  // 2.5 units in base100
+        'unit_price' => 1000, // €10.00 in base100
     ]);
 
     $taxableAmount = $item->calculateTaxableAmount();
 
-    expect($taxableAmount)->toBe(25.0);
+    expect($taxableAmount)->toBe(2500); // 2.5 * €10.00 = €25.00 = 2500 in base100
 });
 
 it('can store taxes_applied as array', function () {
@@ -281,13 +281,13 @@ it('has auto-incrementing integer id', function () {
 it('calculates taxable amount with precision', function () {
     $item = InvoiceItem::factory()->create([
         'invoice_id' => $this->invoice->id,
-        'quantity'   => 3.33,
-        'unit_price' => 9.99,
+        'quantity'   => 333,  // 3.33 units in base100
+        'unit_price' => 999,  // €9.99 in base100
     ]);
 
     $taxableAmount = $item->calculateTaxableAmount();
 
-    expect($taxableAmount)->toBe(33.27);
+    expect($taxableAmount)->toBe(3326); // 333 * 999 / 100 = 3326.67 → rounds to 3326
 });
 
 it('can create service item with service dates', function () {
@@ -315,15 +315,15 @@ it('can create multiple items for same invoice', function () {
 it('stores total amounts correctly', function () {
     $item = InvoiceItem::factory()->create([
         'invoice_id'       => $this->invoice->id,
-        'quantity'         => 2.0,
-        'unit_price'       => 50.00,
-        'taxable_amount'   => 100.00,
-        'total_tax_amount' => 21.00,
-        'total_amount'     => 121.00,
+        'quantity'         => 200,   // 2.0 units in base100
+        'unit_price'       => 5000,  // €50.00 in base100
+        'taxable_amount'   => 10000, // €100.00 in base100
+        'total_tax_amount' => 2100,  // €21.00 in base100
+        'total_amount'     => 12100, // €121.00 in base100
     ]);
 
-    expect($item->taxable_amount)->toBe(100.00)
-        ->and($item->total_tax_amount)->toBe(21.00)
-        ->and($item->total_amount)->toBe(121.00)
+    expect($item->taxable_amount)->toBe(10000)
+        ->and($item->total_tax_amount)->toBe(2100)
+        ->and($item->total_amount)->toBe(12100)
         ->and($item->taxable_amount + $item->total_tax_amount)->toBe($item->total_amount);
 });
