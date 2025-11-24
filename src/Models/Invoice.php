@@ -551,4 +551,19 @@ class Invoice extends Model
     {
         return $this->is_roi_taxed;
     }
+
+    /**
+     * Calculate totals from invoice items.
+     *
+     * Recalculates taxable_amount, total_tax_amount, and total_amount
+     * based on the sum of all invoice items. Updates the model but does not save.
+     */
+    public function calculateTotals(): self
+    {
+        $this->taxable_amount   = (int) $this->items()->sum('taxable_amount');
+        $this->total_tax_amount = (int) $this->items()->sum('total_tax_amount');
+        $this->total_amount     = (int) $this->items()->sum('total_amount');
+
+        return $this;
+    }
 }
