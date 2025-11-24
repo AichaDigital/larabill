@@ -518,4 +518,37 @@ class Invoice extends Model
     {
         return $query->where('serie', InvoiceSerieType::RECTIFICATIVE->value);
     }
+
+    // ========================================
+    // TAX CALCULATION METHODS
+    // ========================================
+
+    /**
+     * Check if this invoice requires VAT to be applied.
+     *
+     * An invoice requires VAT when it's NOT using reverse charge mechanism.
+     * Reverse charge (ROI) is used for B2B intra-community transactions where
+     * the customer (not the issuer) is responsible for paying VAT.
+     *
+     * @return bool True if VAT should be applied by the issuer
+     */
+    public function requiresVAT(): bool
+    {
+        return ! $this->is_roi_taxed;
+    }
+
+    /**
+     * Check if this invoice uses reverse charge mechanism (ROI).
+     *
+     * Reverse charge applies to:
+     * - B2B intra-community transactions (EU)
+     * - When both issuer and customer are VAT registered
+     * - Customer is responsible for paying VAT in their country
+     *
+     * @return bool True if reverse charge applies
+     */
+    public function isReverseCharge(): bool
+    {
+        return $this->is_roi_taxed;
+    }
 }
