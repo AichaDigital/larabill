@@ -16,7 +16,7 @@ return new class extends Migration
 
             // User ID - must match users table primary key type
             // WARNING: This assumes users.id is binary(16) UUID. Adjust if different.
-            $table->binary('user_id', 16);
+            $table->uuid('user_id');
             $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
 
             $table->integer('fiscal_year'); // e.g., 2024

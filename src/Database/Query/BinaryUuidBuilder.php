@@ -83,6 +83,11 @@ class BinaryUuidBuilder extends Builder
      */
     protected function shouldConvertToUuidBinary(string $column, mixed $value): bool
     {
+        // Don't convert if value is already binary (16 bytes)
+        if (is_string($value) && strlen($value) === 16) {
+            return false;
+        }
+
         return $this->isUuidColumn($column) && is_string($value) && Uuid::isValid($value);
     }
 
@@ -99,8 +104,8 @@ class BinaryUuidBuilder extends Builder
             : $column;
 
         // Check if the model has EfficientUuid cast for this column
-        // @phpstan-ignore-next-line method.protected
-        $casts = method_exists($model, 'casts') ? $model->casts() : $model->getCasts();
+        // Use getCasts() which is the public method to access model casts
+        $casts = $model->getCasts();
 
         return isset($casts[$columnName]) &&
                $casts[$columnName] === \Dyrynda\Database\Support\Casts\EfficientUuid::class;

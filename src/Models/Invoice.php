@@ -5,9 +5,8 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Models;
 
 use AichaDigital\Lara100\Casts\Base100Int;
+use AichaDigital\Larabill\Concerns\HasUuid;
 use AichaDigital\Larabill\Enums\{InvoiceSerieType, InvoiceStatus};
-use Dyrynda\Database\Support\{BindsOnUuid, GeneratesUuid};
-use Dyrynda\Database\Support\Casts\EfficientUuid;
 use Illuminate\Database\Eloquent\{Builder, Model};
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
@@ -74,12 +73,7 @@ use Illuminate\Support\Facades\Crypt;
  */
 class Invoice extends Model
 {
-    use BindsOnUuid, GeneratesUuid, HasFactory;
-
-    /**
-     * Indicates if the IDs are auto-incrementing.
-     */
-    public $incrementing = false;
+    use HasFactory, HasUuid;
 
     /**
      * Create a new factory instance for the model.
@@ -88,11 +82,6 @@ class Invoice extends Model
     {
         return \AichaDigital\Larabill\Database\Factories\InvoiceFactory::new();
     }
-
-    /**
-     * The data type of the auto-incrementing ID.
-     */
-    protected $keyType = 'string';
 
     /**
      * The attributes that are mass assignable.
@@ -140,35 +129,17 @@ class Invoice extends Model
     ];
 
     /**
-     * Specify the column name for UUID generation.
-     * Dyrynda package defaults to 'uuid', but we use 'id'.
-     */
-    public function uuidColumn(): string
-    {
-        return 'id';
-    }
-
-    /**
-     * UUID version to use for invoice IDs.
-     * Uses 'ordered' for better MySQL index performance.
-     */
-    public function uuidVersion(): string
-    {
-        return 'ordered'; // Laravel's ordered UUID v4 for better performance
-    }
-
-    /**
      * Casts for attributes.
      *
      * Uses Base100 cast from lara100 package for monetary values
-     * Uses EfficientUuid cast for binary UUID storage (16 bytes vs 36 bytes)
      * Automatically handles conversion between decimals and base-100 integers
      * Example: €12.34 ↔ 1234 (stored as integer, accessed as decimal)
+     *
+     * Note: UUID fields (id, proforma_id, rectifies_invoice_id) are handled by HasUuid trait
      */
     public function casts(): array
     {
         return [
-            'id'                            => EfficientUuid::class, // Binary UUID storage (16 bytes)
             'serie'                         => InvoiceSerieType::class, // PHP Enum
             'status'                        => InvoiceStatus::class,    // PHP Enum
             'fiscal_year'                   => 'integer',
@@ -188,8 +159,6 @@ class Invoice extends Model
             'vat_verification'              => 'array',
             'customer_data'                 => 'array',
             'is_roi_taxed'                  => 'boolean',
-            'proforma_id'                   => EfficientUuid::class, // Binary UUID
-            'rectifies_invoice_id'          => EfficientUuid::class, // Binary UUID
         ];
     }
 
@@ -223,19 +192,6 @@ class Invoice extends Model
         return parent::update($attributes, $options);
     }
 
-    /**
-     * Create a new Eloquent query builder for the model.
-     *
-     * Uses custom BinaryUuidBuilder to handle UUID binary conversions in relationships.
-     *
-     * @param  \Illuminate\Database\Query\Builder  $query
-     * @return \AichaDigital\Larabill\Database\Query\BinaryUuidBuilder
-     */
-    public function newEloquentBuilder($query)
-    {
-        return new \AichaDigital\Larabill\Database\Query\BinaryUuidBuilder($query);
-    }
-
     // ========================================
     // RELATIONSHIPS
     // ========================================
@@ -248,6 +204,9 @@ class Invoice extends Model
     public function items(): HasMany
     {
         $invoiceItemModel = \AichaDigital\Larabill\Services\ModelMappingService::getModelClass('invoice_item');
+
+        // @phpstan-ignore-next-line return.type,argument.templateType
+        return $this->hasMany($invoiceItemModel);
 
         // @phpstan-ignore-next-line return.type,argument.templateType
         return $this->hasMany($invoiceItemModel);

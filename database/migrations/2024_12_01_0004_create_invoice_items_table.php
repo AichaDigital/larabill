@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id()->comment('PK for individual line editing, deletion, reordering, and future relations (discounts, promotions)');
 
             // Use binary(16) to match Invoice UUID storage (dyrynda/laravel-model-uuid)
-            $table->binary('invoice_id', 16);
+            $table->uuid('invoice_id');
             $table->foreign('invoice_id')->references('id')->on('invoices')->onDelete('cascade')->comment('UUID binary(16) parent invoice');
 
             // Item identification

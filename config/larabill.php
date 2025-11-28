@@ -3,6 +3,60 @@
 declare(strict_types=1);
 
 return [
+    /*
+    |--------------------------------------------------------------------------
+    | User ID Type
+    |--------------------------------------------------------------------------
+    |
+    | Specify the type of primary key used in your users table:
+    | - 'int' (default): Auto-increment integer
+    | - 'uuid': String UUID (36 characters)
+    | - 'uuid_binary': Binary UUID (16 bytes)
+    | - 'ulid': ULID
+    | - 'auto': Auto-detect from users table
+    |
+    */
+    'user_id_type' => env('LARABILL_USER_ID_TYPE', 'uuid'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Filament UI Integration (v1.0 - Temporary)
+    |--------------------------------------------------------------------------
+    |
+    | In v1.0, Filament UI is integrated directly in the core package for
+    | faster development. In v2.0, this will be extracted to a separate
+    | `larabill-filament` plugin package.
+    |
+    | Set 'enabled' to false to disable Filament resources registration.
+    |
+    */
+    'filament' => [
+        'enabled' => env('LARABILL_FILAMENT_ENABLED', true),
+
+        'navigation' => [
+            'group' => env('LARABILL_NAVIGATION_GROUP', 'Billing'),
+            'sort' => (int) env('LARABILL_NAVIGATION_SORT', 10),
+        ],
+
+        'resources' => [
+            'invoice' => [
+                'enabled' => true,
+                'icon' => 'heroicon-o-document-text',
+                'sort' => 1,
+            ],
+            'customer' => [
+                'enabled' => true,
+                'icon' => 'heroicon-o-users',
+                'sort' => 2,
+            ],
+            'article' => [
+                'enabled' => true,
+                'icon' => 'heroicon-o-cube',
+                'sort' => 3,
+            ],
+        ],
+    ],
+
     // VAT verification API settings
     'vat_apis' => [
         'abstractapi' => [

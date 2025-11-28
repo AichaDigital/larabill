@@ -7,8 +7,6 @@ namespace AichaDigital\Larabill\Models;
 use AichaDigital\Lara100\Casts\Base100Int;
 use AichaDigital\Larabill\Database\Factories\InvoiceItemFactory;
 use AichaDigital\Larabill\Enums\ItemType;
-use Dyrynda\Database\Support\Casts\EfficientUuid;
-use Dyrynda\Database\Support\GeneratesUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -51,12 +49,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class InvoiceItem extends Model
 {
-    use GeneratesUuid, HasFactory;
-
-    /**
-     * Indicates if the IDs are auto-incrementing.
-     */
-    public $incrementing = true;
+    use HasFactory;
 
     /**
      * The UUID columns for this model.
@@ -95,11 +88,12 @@ class InvoiceItem extends Model
      * Uses Base100 cast from lara100 package for monetary values, quantities and percentages
      * Automatically handles conversion between decimals and base-100 integers
      * Example: €12.34 ↔ 1234, 1.5 ↔ 150, 21.50% ↔ 2150
+     *
+     * Note: invoice_id is handled by accessor/mutator for binary UUID conversion
      */
     public function casts(): array
     {
         return [
-            'invoice_id'        => EfficientUuid::class, // UUID binary(16)
             'item_type'         => ItemType::class, // PHP Enum
             'quantity'          => Base100Int::class, // 1.5 ↔ 150
             'unit_price'        => Base100Int::class, // €12.34 ↔ 1234
@@ -121,6 +115,10 @@ class InvoiceItem extends Model
      * Get the invoice that owns the item.
      *
      * @return BelongsTo<\AichaDigital\Larabill\Models\Invoice, $this>
+     */
+    /**
+    /**
+     * Get the invoice that owns the item.
      */
     public function invoice(): BelongsTo
     {

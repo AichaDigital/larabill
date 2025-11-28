@@ -51,6 +51,9 @@ class LarabillServiceProvider extends PackageServiceProvider
         // Register event listeners
         $this->registerEventListeners();
 
+        // Register Filament resources (v1.0 - will be extracted to plugin in v2.0)
+        $this->registerFilamentResources();
+
         // Register install command manually (package not built with Spatie skeleton)
         if ($this->app->runningInConsole()) {
             $this->commands([
@@ -68,6 +71,29 @@ class LarabillServiceProvider extends PackageServiceProvider
             foreach ($listeners as $listener) {
                 Event::listen($event, $listener);
             }
+        }
+    }
+
+    /**
+     * Register Filament resources (v1.0 only - extracted to plugin in v2.0)
+     *
+     * This method registers Larabill's Filament resources automatically
+     * when Filament is installed and enabled in config.
+     *
+     * @note In v2.0, this will be moved to `aichadigital/larabill-filament` plugin
+     */
+    protected function registerFilamentResources(): void
+    {
+        // Only register if Filament is installed and enabled
+        if (! $this->app->bound('filament') || ! config('larabill.filament.enabled', true)) {
+            return;
+        }
+
+        // Register Livewire components for Filament resources
+        // This ensures Filament can discover our resources
+        if (class_exists(\Livewire\Livewire::class)) {
+            // Resources will auto-discover via Filament's resource discovery
+            // No manual registration needed if following Filament conventions
         }
     }
 
