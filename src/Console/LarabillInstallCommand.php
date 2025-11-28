@@ -86,7 +86,7 @@ class LarabillInstallCommand extends Command
         // 5. Ejecutar migraciones si no se especificó --no-migrate
         if (! $this->option('no-migrate')) {
             $this->newLine();
-            
+
             // En modo no-interactivo o producción, solo informar
             if ($this->option('no-interaction') || app()->environment('production')) {
                 $this->info('✓ Migrations published successfully');
@@ -105,7 +105,7 @@ class LarabillInstallCommand extends Command
 
                         return self::FAILURE;
                     }
-                    
+
                     $this->newLine();
                 }
             }
@@ -119,7 +119,7 @@ class LarabillInstallCommand extends Command
         $this->newLine();
         $this->info('✅ Larabill installed successfully!');
         $this->newLine();
-        
+
         // Mostrar próximos pasos según el contexto
         if ($this->option('no-migrate') || $this->option('no-interaction') || app()->environment('production')) {
             $this->comment('📋 Next steps:');
