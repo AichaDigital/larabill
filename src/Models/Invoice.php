@@ -40,6 +40,8 @@ use Illuminate\Support\Facades\Crypt;
  * @property int|string $user_id
  * @property int|null $customer_id FK to customers (v0.4.0)
  * @property int|null $tax_profile_id
+ * @property int|null $company_fiscal_config_id FK to company_fiscal_configs (ADR-001)
+ * @property int|null $customer_fiscal_data_id FK to customer_fiscal_data (ADR-001)
  * @property string|null $proforma_id UUID if converted from proforma
  * @property string|null $rectifies_invoice_id UUID if rectificative
  * @property string|null $user_tax_info_encrypted
@@ -84,6 +86,24 @@ class Invoice extends Model
     }
 
     /**
+     * Boot the model (ADR-001).
+     *
+     * Auto-load fiscal configs on invoice creation for immutability.
+     */
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        // Al crear factura, snapshot fiscal automático
+        static::creating(function (Invoice $invoice) {
+            // Solo si no es proforma Y no tiene configs ya asignadas
+            if ($invoice->serie !== InvoiceSerieType::PROFORMA && ! $invoice->company_fiscal_config_id) {
+                $invoice->snapshotFiscalConfigs();
+            }
+        });
+    }
+
+    /**
      * The attributes that are mass assignable.
      */
     protected $fillable = [
@@ -101,6 +121,8 @@ class Invoice extends Model
         'user_id',
         'customer_id',
         'tax_profile_id',
+        'company_fiscal_config_id', // ADR-001
+        'customer_fiscal_data_id',  // ADR-001
         'proforma_id',
         'rectifies_invoice_id',
         'user_tax_info_encrypted',
@@ -284,6 +306,32 @@ class Invoice extends Model
     public function convertedInvoices(): HasMany
     {
         return $this->hasMany(self::class, 'proforma_id');
+    }
+
+    /**
+     * Get the company fiscal config snapshot for this invoice (ADR-001).
+     *
+     * This maintains a reference to the company's fiscal identity at invoice creation time.
+     * IMMUTABLE: Once invoice is created, this relationship NEVER changes.
+     *
+     * @return BelongsTo<CompanyFiscalConfig, $this>
+     */
+    public function companyFiscalConfig(): BelongsTo
+    {
+        return $this->belongsTo(CompanyFiscalConfig::class, 'company_fiscal_config_id');
+    }
+
+    /**
+     * Get the customer fiscal data snapshot for this invoice (ADR-001).
+     *
+     * This maintains a reference to the customer's fiscal identity at invoice creation time.
+     * IMMUTABLE: Once invoice is created, this relationship NEVER changes.
+     *
+     * @return BelongsTo<CustomerFiscalData, $this>
+     */
+    public function customerFiscalData(): BelongsTo
+    {
+        return $this->belongsTo(CustomerFiscalData::class, 'customer_fiscal_data_id');
     }
 
     // ========================================
@@ -494,6 +542,62 @@ class Invoice extends Model
     public function requiresVAT(): bool
     {
         return ! $this->is_roi_taxed;
+    }
+
+    /**
+     * Snapshot fiscal configs at invoice creation (ADR-001).
+     *
+     * CRITICAL: This method loads and stores the fiscal identities
+     * of both company (issuer) and customer (recipient) at the moment
+     * of invoice creation, ensuring IMMUTABILITY.
+     *
+     * Called automatically on invoice creation (boot::creating).
+     */
+    public function snapshotFiscalConfigs(): void
+    {
+        // 1. Company fiscal config (emisor)
+        $companyConfig = CompanyFiscalConfig::getValidAt($this->invoice_date ?? now());
+        if ($companyConfig) {
+            $this->company_fiscal_config_id = $companyConfig->id;
+        }
+
+        // 2. Customer fiscal data (receptor)
+        if ($this->user_id) {
+            $customerData = CustomerFiscalData::getValidForUserAt($this->user_id, $this->invoice_date ?? now());
+            if ($customerData) {
+                $this->customer_fiscal_data_id = $customerData->id;
+            }
+        }
+    }
+
+    /**
+     * Get full company fiscal identity at invoice creation.
+     *
+     * Returns the CompanyFiscalConfig snapshot.
+     * IMMUTABLE: Always returns the config valid at invoice_date.
+     */
+    public function getCompanyFiscalSnapshot(): ?CompanyFiscalConfig
+    {
+        return $this->companyFiscalConfig;
+    }
+
+    /**
+     * Get full customer fiscal identity at invoice creation.
+     *
+     * Returns the CustomerFiscalData snapshot.
+     * IMMUTABLE: Always returns the data valid at invoice_date.
+     */
+    public function getCustomerFiscalSnapshot(): ?CustomerFiscalData
+    {
+        return $this->customerFiscalData;
+    }
+
+    /**
+     * Check if invoice has fiscal snapshots loaded.
+     */
+    public function hasFiscalSnapshots(): bool
+    {
+        return $this->company_fiscal_config_id !== null && $this->customer_fiscal_data_id !== null;
     }
 
     /**
