@@ -86,25 +86,53 @@ class LarabillInstallCommand extends Command
         // 5. Ejecutar migraciones si no se especificó --no-migrate
         if (! $this->option('no-migrate')) {
             $this->newLine();
-            if ($this->confirm('Run migrations now?', true)) {
-                $this->info('🔄 Running migrations...');
-                $exitCode = $this->call('migrate');
+            
+            // En modo no-interactivo o producción, solo informar
+            if ($this->option('no-interaction') || app()->environment('production')) {
+                $this->info('✓ Migrations published successfully');
+                $this->newLine();
+                $this->comment('📋 Next step:');
+                $this->line('   Run migrations: php artisan migrate --force');
+                $this->newLine();
+            } else {
+                // En desarrollo, preguntar si quiere migrar ahora
+                if ($this->confirm('Run migrations now?', true)) {
+                    $this->info('🔄 Running migrations...');
+                    $exitCode = $this->call('migrate');
 
-                if ($exitCode !== 0) {
-                    $this->error('❌ Migration failed. Please check the errors above.');
+                    if ($exitCode !== 0) {
+                        $this->error('❌ Migration failed. Please check the errors above.');
 
-                    return self::FAILURE;
+                        return self::FAILURE;
+                    }
+                    
+                    $this->newLine();
                 }
             }
+        } else {
+            $this->newLine();
+            $this->comment('⏭ Migrations skipped (--no-migrate flag)');
+            $this->line('   Run migrations manually: php artisan migrate --force');
+            $this->newLine();
         }
 
         $this->newLine();
         $this->info('✅ Larabill installed successfully!');
         $this->newLine();
-        $this->comment('Next steps:');
-        $this->line('  - Configure your .env file with LARABILL_* variables');
-        $this->line('  - Run seeders if needed: php artisan db:seed');
-        $this->line('  - Check documentation: https://github.com/aichadigital/larabill');
+        
+        // Mostrar próximos pasos según el contexto
+        if ($this->option('no-migrate') || $this->option('no-interaction') || app()->environment('production')) {
+            $this->comment('📋 Next steps:');
+            $this->line('  1. Run migrations: php artisan migrate --force');
+            $this->line('  2. Configure .env with LARABILL_* variables (optional)');
+            $this->line('  3. Optimize cache: php artisan config:cache');
+            $this->line('  4. Check documentation: https://github.com/aichadigital/larabill');
+        } else {
+            $this->comment('📋 Optional steps:');
+            $this->line('  - Configure .env with LARABILL_* variables');
+            $this->line('  - Run seeders if needed: php artisan db:seed');
+            $this->line('  - Check documentation: https://github.com/aichadigital/larabill');
+        }
 
         return self::SUCCESS;
     }
