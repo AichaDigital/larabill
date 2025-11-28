@@ -184,3 +184,4 @@ class CustomerFiscalDataFactory extends Factory
         ]);
     }
 }
+

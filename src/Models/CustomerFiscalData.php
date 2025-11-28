@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use AichaDigital\Larabill\Database\Factories\CustomerFiscalDataFactory;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\{Builder, Model, Relations\BelongsTo, SoftDeletes};
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use AichaDigital\Larabill\Database\Factories\CustomerFiscalDataFactory;
 
 /**
  * CustomerFiscalData Model
@@ -312,3 +312,4 @@ class CustomerFiscalData extends Model
         return true; // Requiere IVA normal
     }
 }
+

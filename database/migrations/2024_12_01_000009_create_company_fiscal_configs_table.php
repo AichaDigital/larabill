@@ -64,3 +64,4 @@ return new class extends Migration
         Schema::dropIfExists('company_fiscal_configs');
     }
 };
+

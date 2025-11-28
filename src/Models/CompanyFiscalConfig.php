@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use AichaDigital\Larabill\Database\Factories\CompanyFiscalConfigFactory;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\{Builder, Model, SoftDeletes};
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use AichaDigital\Larabill\Database\Factories\CompanyFiscalConfigFactory;
 
 /**
  * CompanyFiscalConfig Model
@@ -256,3 +256,4 @@ class CompanyFiscalConfig extends Model
         return implode(', ', $parts);
     }
 }
+
