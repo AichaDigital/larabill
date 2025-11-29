@@ -54,12 +54,9 @@ class LarabillServiceProvider extends PackageServiceProvider
         // Register Filament resources (v1.0 - will be extracted to plugin in v2.0)
         $this->registerFilamentResources();
 
-        // Load migrations automatically ONLY in CI/testing (not in local with published migrations)
-        // In production, use `php artisan larabill:install` for controlled publishing
-        // In local dev with symlinks, migrations are published in database/migrations/
-        if ($this->app->runningInConsole() &&
-            $this->app->environment('testing') &&
-            ! $this->migrationsArePublished()) {
+        // Load migrations automatically in non-production environments
+        // In production, migrations should be explicitly published via larabill:install
+        if ($this->app->runningInConsole() && ! $this->app->environment('production')) {
             $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
         }
 
@@ -69,14 +66,6 @@ class LarabillServiceProvider extends PackageServiceProvider
                 \AichaDigital\Larabill\Console\LarabillInstallCommand::class,
             ]);
         }
-    }
-
-    /**
-     * Check if migrations are already published to app
-     */
-    protected function migrationsArePublished(): bool
-    {
-        return file_exists(database_path('migrations/2025_11_22_092323_create_legal_entity_types_table.php'));
     }
 
     /**
