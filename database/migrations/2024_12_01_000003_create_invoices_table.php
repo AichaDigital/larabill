@@ -15,8 +15,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('invoices', function (Blueprint $table) {
-            // UUID as binary(16) for efficient storage - using Dyrynda's laravel-model-uuid
-            $table->uuid('id')->primary()->comment('UUID binary(16) primary key for distributed systems');
+            // UUID primary key - agnostic storage based on larabill.user_id_type config:
+            // - 'uuid': char(36) string storage - human readable
+            // - 'uuid_binary': binary(16) with EfficientUuid cast - 55% storage savings
+            // Note: $table->uuid() creates char(36). For binary, use HasUuid trait with EfficientUuid cast.
+            $table->uuid('id')->primary()->comment('UUID v7 primary key (agnostic: string or binary via cast)');
 
             // Fiscal numbering (CEE compliance)
             $table->string('fiscal_number')->unique()->comment('Complete fiscal number for display: FAC-2025-000047');
@@ -38,8 +41,8 @@ return new class extends Migration
             // Relations
             MigrationHelper::userIdColumn($table);
             $table->unsignedBigInteger('tax_profile_id')->nullable()->comment('Snapshot of user tax info at invoice creation time');
-            $table->foreignUuid('proforma_id')->nullable()->constrained('invoices')->nullOnDelete()->comment('UUID binary(16) if this invoice was converted from a proforma');
-            $table->foreignUuid('rectifies_invoice_id')->nullable()->constrained('invoices')->nullOnDelete()->comment('UUID binary(16) if this is a rectificative invoice, references original');
+            $table->foreignUuid('proforma_id')->nullable()->constrained('invoices')->nullOnDelete()->comment('UUID FK if this invoice was converted from a proforma');
+            $table->foreignUuid('rectifies_invoice_id')->nullable()->constrained('invoices')->nullOnDelete()->comment('UUID FK if this is a rectificative invoice, references original');
 
             // Tax & Customer data
             $table->text('user_tax_info_encrypted')->nullable()->comment('Encrypted snapshot of user tax data for immutability');

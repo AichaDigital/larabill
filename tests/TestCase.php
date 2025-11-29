@@ -87,6 +87,10 @@ class TestCase extends Orchestra
 
         // Override user model for tests
         $app['config']->set('larabill.user_model', TestUser::class);
+
+        // Use string UUID for tests (migrations use $table->uuid() which creates char(36))
+        // Production apps can configure uuid_binary with proper binary(16) migrations
+        $app['config']->set('larabill.user_id_type', 'uuid');
     }
 
     /**

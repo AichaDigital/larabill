@@ -14,9 +14,9 @@ return new class extends Migration
         Schema::create('invoice_items', function (Blueprint $table) {
             $table->id()->comment('PK for individual line editing, deletion, reordering, and future relations (discounts, promotions)');
 
-            // Use binary(16) to match Invoice UUID storage (dyrynda/laravel-model-uuid)
+            // UUID FK to invoices - matches Invoice primary key type
             $table->uuid('invoice_id');
-            $table->foreign('invoice_id')->references('id')->on('invoices')->onDelete('cascade')->comment('UUID binary(16) parent invoice');
+            $table->foreign('invoice_id')->references('id')->on('invoices')->onDelete('cascade')->comment('UUID FK to parent invoice');
 
             // Item identification
             $table->unsignedTinyInteger('item_type')->default(0)->comment('ItemType enum: 0=good, 1=service. Critical for EU tax rules (services have different treatment)');

@@ -18,7 +18,7 @@
 | Item | Value |
 |------|-------|
 | **Version** | dev-main (targeting v1.0 for Dec 15, 2025) |
-| **PHP** | ^8.3 (Laravel 12 standard) |
+| **PHP** | ^8.3 |
 | **Laravel** | ^11.0 \| ^12.0 |
 | **Filament** | ^4.0 |
 | **License** | AGPL-3.0-or-later |
@@ -40,27 +40,30 @@ aichadigital/
 
 ## 🏗️ Architecture
 
-### UUID Strategy - String UUID v7
+### UUID Strategy - AGNOSTIC
 
-**IMPORTANT**: This package uses UUID v7 **STRING** (char 36), NOT binary.
+**CRITICAL**: This package is **agnostic** regarding ID types. It supports:
 
+| Type | Config Value | Storage | Size | Use Case |
+|------|-------------|---------|------|----------|
+| Integer | `int` | `unsignedBigInteger` | 8 bytes | Standard Laravel |
+| UUID String | `uuid` | `char(36)` | 36 bytes | Human readable |
+| UUID Binary | `uuid_binary` | `binary(16)` + cast | 16 bytes | **Best performance** |
+| ULID String | `ulid` | `char(26)` | 26 bytes | Sortable, readable |
+| ULID Binary | `ulid_binary` | `binary(26)` | 26 bytes | Sortable, efficient |
+
+**Configuration** (`config/larabill.php`):
 ```php
-// Model with UUID
-use AichaDigital\Larabill\Concerns\HasUuid;
-
-class Invoice extends Model
-{
-    use HasUuid;
-    // Trait handles $incrementing and $keyType automatically
-}
-
-// Migration
-$table->uuid('id')->primary();
-$table->foreignUuid('user_id')->constrained()->cascadeOnDelete();
+'user_id_type' => env('LARABILL_USER_ID_TYPE', 'uuid_binary'),
 ```
 
-**UUID Models**: Invoice
-**Integer Models**: TaxRate, TaxCategory, CompanyFiscalConfig, CustomerFiscalData, UnitMeasure
+**For UUID Binary** (recommended for production):
+- Requires `dyrynda/laravel-model-uuid` package (included as dependency)
+- Uses `EfficientUuid` cast for automatic string↔binary conversion
+- 55% storage savings vs string UUID
+- Better index performance
+
+**The `HasUuid` trait** automatically configures the model based on `user_id_type` config.
 
 ### Monetary Values - Base 100
 
@@ -70,7 +73,7 @@ $table->foreignUuid('user_id')->constrained()->cascadeOnDelete();
 - 21.5% IVA → `2150`
 - €0.99 → `99`
 
-Use the `Base100Int` cast from `lara100` package.
+Package: `aichadigital/lara100` (v1.0 stable)
 
 ### Fiscal Architecture (ADR-001)
 
@@ -90,19 +93,19 @@ Invoice                → Invoice (immutable once issued)
 
 ```
 larabill/
-├── .claude/                    # AI agent context (this file)
 ├── config/larabill.php         # Package configuration
 ├── database/
 │   ├── migrations/             # Database migrations
 │   └── seeders/                # Tax categories, rates, etc.
 ├── docs/
+│   ├── AGENT_CONTEXT.md        # This file
 │   └── ARCHITECTURE.md         # Core architecture documentation
 ├── resources/
 │   ├── lang/                   # Translations (es, en)
 │   └── views/pdf/              # Invoice PDF templates
 ├── src/
-│   ├── Actions/                # Queue actions (billing, cancellations)
-│   ├── Concerns/               # Traits (HasUuid)
+│   ├── Concerns/
+│   │   └── HasUuid.php         # Agnostic UUID trait
 │   ├── Console/                # Artisan commands
 │   ├── Contracts/              # Interfaces
 │   ├── Database/Factories/     # Model factories
@@ -113,49 +116,62 @@ larabill/
 │   ├── Listeners/              # Event listeners
 │   ├── Models/                 # Eloquent models
 │   ├── Services/               # Business logic services
-│   └── Support/                # Helpers (MigrationHelper)
+│   └── Support/
+│       └── MigrationHelper.php # Agnostic migration support
 └── tests/                      # Pest tests
 ```
 
-## 🔧 Key Models
+## 🔧 Key Components
 
-### Invoice
-- UUID primary key
-- Immutable once status is not `draft`
-- Contains fiscal snapshot at creation
-- Linked to user via `user_id` (configurable type)
+### HasUuid Trait
 
-### CompanyFiscalConfig
-- Integer primary key
-- Temporal validity (`valid_from`, `valid_until`)
-- Company-wide fiscal settings (tax ID, address, OSS, etc.)
-- Only one active config at a time (where `valid_until` is null)
+Agnostic UUID trait that adapts to configuration:
 
-### CustomerFiscalData
-- Integer primary key
-- Historical records per customer
-- Changes apply forward from `valid_from`
-- Never modify past records
+```php
+use AichaDigital\Larabill\Concerns\HasUuid;
 
-### InvoiceItem
-- Snapshot of article/service at invoice time
-- Contains tax breakdown
-- No foreign key to articles (immutable copy)
+class Invoice extends Model
+{
+    use HasUuid;
+    // Automatically configures based on larabill.user_id_type
+}
+```
+
+### MigrationHelper
+
+Creates columns with correct type based on configuration:
+
+```php
+use AichaDigital\Larabill\Support\MigrationHelper;
+
+Schema::create('invoices', function (Blueprint $table) {
+    $table->uuid('id')->primary();
+    MigrationHelper::userIdColumn($table); // Adapts to user ID type
+});
+```
+
+### Key Models
+
+- **Invoice**: UUID primary key, immutable once issued
+- **CompanyFiscalConfig**: Company fiscal settings with temporal validity
+- **CustomerFiscalData**: Customer fiscal data (historical)
+- **InvoiceItem**: Line items with tax breakdown
 
 ## ⚙️ Configuration
 
-```php
-// config/larabill.php
-return [
-    'models' => [
-        'user' => \App\Models\User::class,
-        'invoice' => \AichaDigital\Larabill\Models\Invoice::class,
-        // ...
-    ],
-    'user_id_type' => 'uuid', // 'uuid', 'int', 'ulid'
-    'invoice_prefix' => 'FAC',
-    'proforma_prefix' => 'PRO',
-];
+### Environment Variables
+
+```env
+# ID Type (critical for storage strategy)
+LARABILL_USER_ID_TYPE=uuid_binary  # Options: int, uuid, uuid_binary, ulid, ulid_binary
+
+# Invoice Numbering
+LARABILL_INVOICE_PREFIX=FAC
+LARABILL_PROFORMA_PREFIX=PRO
+
+# VAT APIs
+LARABILL_ABSTRACTAPI_KEY=your_key
+LARABILL_APILAYER_KEY=your_key
 ```
 
 ## 🧪 Testing
@@ -167,78 +183,38 @@ composer test
 # Run specific tests
 composer test -- --filter=Invoice
 
-# Run with coverage
-composer test-coverage
-
 # Static analysis
 vendor/bin/phpstan analyse
 ```
-
-**Current status**: 866 tests passing, 34 skipped (external dependencies)
 
 ## ⚠️ Important Conventions
 
 ### Filament 4 Compatibility
 
 ```php
-// Correct type for navigation icon
 protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-text';
-
-// Use Schema for form method
-public function form(Schema $schema): Schema
 ```
 
 ### User ID Agnosticism
 
-The package supports any user ID type. Use `MigrationHelper`:
-
-```php
-use AichaDigital\Larabill\Support\MigrationHelper;
-
-Schema::create('invoices', function (Blueprint $table) {
-    $table->uuid('id')->primary();
-    MigrationHelper::addUserIdColumn($table, 'user_id');
-});
-```
-
-### Service Provider
-
-Migrations are loaded automatically via `loadMigrationsFrom()`. No need to publish unless customization is required.
-
-## 📝 Development Workflow
-
-### When editing this package from Larafactu:
-
-1. Edit in `packages/aichadigital/larabill/` (symlink)
-2. Changes reflect immediately
-3. Test with `vendor/bin/pest`
-4. Format with `vendor/bin/pint`
-
-### Committing changes:
-
-```bash
-# In the package directory
-cd /path/to/larabill
-git add -A && git commit -m "feat: ..." && git push
-
-# Then in the consuming app
-composer update aichadigital/larabill
-```
+The package supports any user ID type. Configure via `larabill.user_id_type`:
+- `int` for standard Laravel
+- `uuid_binary` for production with high volume (recommended)
+- `uuid` for human-readable UUIDs
 
 ## 🚫 Anti-Patterns
 
 **DON'T**:
-- ❌ Use float/decimal for monetary values
+- ❌ Use float/decimal for monetary values (use base100)
 - ❌ Modify issued invoices
-- ❌ Create FiscalSettings (deprecated, use CompanyFiscalConfig/CustomerFiscalData)
-- ❌ Use binary UUIDs (we use string UUID v7)
-- ❌ Over-engineer for hypothetical scenarios
+- ❌ Hardcode UUID type (use config)
+- ❌ Skip MigrationHelper for user_id columns
 
 **DO**:
+- ✅ Use `HasUuid` trait for UUID models
+- ✅ Use `MigrationHelper::userIdColumn()` in migrations
 - ✅ Use Base100Int for all monetary/percentage values
 - ✅ Follow temporal validity pattern for fiscal data
-- ✅ Test with factories
-- ✅ Keep it simple and Laravel-aligned
 
 ## 📚 Key Documentation
 
@@ -252,14 +228,11 @@ composer update aichadigital/larabill
 
 **Primary**: Spanish hosting companies operating as EU intra-community operators
 
-**Features prioritized for**:
-- Monthly/annual service billing
-- Spanish tax system (IVA, IGIC, IPSI)
-- EU reverse charge (B2B)
-- VeriFACTU compliance (Spain)
-- WHMCS migration path
+**Larafactu Configuration** (staging environment):
+- Uses `uuid_binary` for best performance
+- Configured for Spain + EU compliance
+- VeriFACTU integration enabled
 
 ---
 
-**Remember**: Pragmatism over perfection. Laravel conventions are the guide. This package must be stable by December 15, 2025.
-
+**Remember**: This package is **agnostic** - it adapts to the consuming application's ID strategy. Larafactu uses UUID v7 binary, but other projects may use different types. Always use the configuration, never hardcode.

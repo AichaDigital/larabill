@@ -5,18 +5,25 @@ declare(strict_types=1);
 return [
     /*
     |--------------------------------------------------------------------------
-    | User ID Type
+    | User ID Type (Agnostic Configuration)
     |--------------------------------------------------------------------------
     |
-    | Specify the type of primary key used in your users table:
-    | - 'int' (default): Auto-increment integer
-    | - 'uuid': String UUID (36 characters)
-    | - 'uuid_binary': Binary UUID (16 bytes)
-    | - 'ulid': ULID
+    | Specify the type of primary key used in your users table AND invoices.
+    | This setting affects how UUIDs are stored and queried.
+    |
+    | Options:
+    | - 'int': Auto-increment integer (standard Laravel default)
+    | - 'uuid': String UUID v7 (36 characters) - human readable
+    | - 'uuid_binary': Binary UUID (16 bytes) - 55% storage savings, best performance
+    | - 'ulid': ULID string (26 characters) - sortable, human readable
+    | - 'ulid_binary': ULID binary (26 bytes) - sortable, efficient
     | - 'auto': Auto-detect from users table
     |
+    | For production with high volume, 'uuid_binary' is recommended.
+    | Requires dyrynda/laravel-model-uuid package for binary support.
+    |
     */
-    'user_id_type' => env('LARABILL_USER_ID_TYPE', 'uuid'),
+    'user_id_type' => env('LARABILL_USER_ID_TYPE', 'uuid_binary'),
 
     /*
     |--------------------------------------------------------------------------
@@ -120,13 +127,14 @@ return [
 
     // Model mappings for extensibility
     'models' => [
-        'user'              => \AichaDigital\Larabill\Tests\Models\User::class, // Your application's User model
-        'user_tax_profile'  => \AichaDigital\Larabill\Models\UserTaxProfile::class,
-        'invoice'           => \AichaDigital\Larabill\Models\Invoice::class,
-        'invoice_item'      => \AichaDigital\Larabill\Models\InvoiceItem::class,
-        'tax_rate'          => \AichaDigital\Larabill\Models\TaxRate::class,
-        'vat_verification'  => \AichaDigital\Larabill\Models\VatVerification::class,
-        'fiscal_settings'   => \AichaDigital\Larabill\Models\FiscalSettings::class,
+        'user'                  => \AichaDigital\Larabill\Tests\Models\User::class, // Your application's User model
+        'user_tax_profile'      => \AichaDigital\Larabill\Models\UserTaxProfile::class,
+        'invoice'               => \AichaDigital\Larabill\Models\Invoice::class,
+        'invoice_item'          => \AichaDigital\Larabill\Models\InvoiceItem::class,
+        'tax_rate'              => \AichaDigital\Larabill\Models\TaxRate::class,
+        'vat_verification'      => \AichaDigital\Larabill\Models\VatVerification::class,
+        'company_fiscal_config' => \AichaDigital\Larabill\Models\CompanyFiscalConfig::class,
+        'customer_fiscal_data'  => \AichaDigital\Larabill\Models\CustomerFiscalData::class,
     ],
 
     // Field mappings for custom field names
@@ -141,9 +149,6 @@ return [
             // 'country' => 'country_code',
             // 'state' => 'region',
             // 'phone' => 'contact_phone',
-        ],
-        'fiscal_settings' => [
-            // 'user_id' => 'customer_id',
         ],
         'vat_verification' => [
             // 'vat_code' => 'tax_number',

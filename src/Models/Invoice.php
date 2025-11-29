@@ -17,15 +17,19 @@ use Illuminate\Support\Facades\Crypt;
  * Invoice Model
  *
  * Represents an invoice with fiscal compliance, immutability and encryption features.
- * Uses ordered UUID v4 for efficient binary storage and indexing.
+ * Uses agnostic UUID strategy (string or binary) based on configuration.
  * All monetary amounts are stored as base-100 integers (e.g., €12.34 => 1234).
+ *
+ * UUID Strategy (configurable via larabill.user_id_type):
+ * - 'uuid': String UUID v7 (36 chars) - human readable
+ * - 'uuid_binary': Binary UUID (16 bytes) - 55% storage savings
  *
  * v0.3.3: Enhanced for fiscal compliance (CEE/EU):
  * - Correlative numbering with serie separation
  * - Chronological validation with issued_at
  * - Support for proforma→invoice and rectificative invoices
  *
- * @property string $id UUID stored as binary(16)
+ * @property string $id UUID (string or binary based on config)
  * @property string $fiscal_number Complete display number (FAC-2025-000047)
  * @property string $prefix User customizable prefix
  * @property InvoiceSerieType $serie Invoice series type enum
