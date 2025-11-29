@@ -14,7 +14,7 @@ beforeEach(function () {
 
 it('can create customer fiscal data', function () {
     $user = User::factory()->create();
-    
+
     $data = CustomerFiscalData::factory()->forUser($user->id)->create();
 
     expect($data)->toBeInstanceOf(CustomerFiscalData::class)
@@ -67,7 +67,7 @@ it('does not close configs of different users', function () {
 
 it('retrieves active config for user', function () {
     $user = User::factory()->create();
-    
+
     CustomerFiscalData::factory()->forUser($user->id)->historical()->create();
     $active = CustomerFiscalData::factory()->forUser($user->id)->active()->create();
 
@@ -114,7 +114,7 @@ it('belongs to user', function () {
 
 it('distinguishes between companies and individuals', function () {
     $user = User::factory()->create();
-    
+
     $company = CustomerFiscalData::factory()->forUser($user->id)->company()->create();
     $individual = CustomerFiscalData::factory()->forUser($user->id)->individual()->create();
 
@@ -161,7 +161,7 @@ it('checks if customer requires VAT correctly', function () {
 
 it('formats full fiscal identity correctly', function () {
     $user = User::factory()->create();
-    
+
     $data = CustomerFiscalData::factory()->forUser($user->id)->create([
         'fiscal_name' => 'Test Customer',
         'tax_id'      => 'ESB12345678',
@@ -172,7 +172,7 @@ it('formats full fiscal identity correctly', function () {
 
 it('formats full address correctly', function () {
     $user = User::factory()->create();
-    
+
     $data = CustomerFiscalData::factory()->forUser($user->id)->create([
         'address'      => 'Calle Test 456',
         'zip_code'     => '08001',
@@ -188,7 +188,7 @@ it('formats full address correctly', function () {
 
 it('handles missing address gracefully', function () {
     $user = User::factory()->create();
-    
+
     $data = CustomerFiscalData::factory()->forUser($user->id)->withoutAddress()->create();
 
     expect($data->full_address)->toBe('');
@@ -210,7 +210,7 @@ it('scopes by user', function () {
 
 it('scopes companies only', function () {
     $user = User::factory()->create();
-    
+
     CustomerFiscalData::factory()->forUser($user->id)->company()->create();
     CustomerFiscalData::factory()->forUser($user->id)->individual()->create();
 
@@ -222,7 +222,7 @@ it('scopes companies only', function () {
 
 it('scopes individuals only', function () {
     $user = User::factory()->create();
-    
+
     CustomerFiscalData::factory()->forUser($user->id)->company()->create();
     CustomerFiscalData::factory()->forUser($user->id)->individual()->create();
 
@@ -234,7 +234,7 @@ it('scopes individuals only', function () {
 
 it('scopes EU VAT registered', function () {
     $user = User::factory()->create();
-    
+
     CustomerFiscalData::factory()->forUser($user->id)->euVatRegistered()->create();
     CustomerFiscalData::factory()->forUser($user->id)->create(['is_eu_vat_registered' => false]);
 
@@ -246,7 +246,7 @@ it('scopes EU VAT registered', function () {
 
 it('scopes VAT exempt', function () {
     $user = User::factory()->create();
-    
+
     CustomerFiscalData::factory()->forUser($user->id)->vatExempt()->create();
     CustomerFiscalData::factory()->forUser($user->id)->create(['is_exempt_vat' => false]);
 
@@ -258,7 +258,7 @@ it('scopes VAT exempt', function () {
 
 it('checks if config is currently active', function () {
     $user = User::factory()->create();
-    
+
     $active = CustomerFiscalData::factory()->forUser($user->id)->active()->create();
     $historical = CustomerFiscalData::factory()->forUser($user->id)->historical()->create();
 
@@ -268,7 +268,7 @@ it('checks if config is currently active', function () {
 
 it('checks if config was valid at date', function () {
     $user = User::factory()->create();
-    
+
     $data = CustomerFiscalData::factory()->forUser($user->id)->create([
         'valid_from'  => Carbon::parse('2023-01-01'),
         'valid_until' => Carbon::parse('2023-12-31'),
@@ -281,7 +281,7 @@ it('checks if config was valid at date', function () {
 
 it('formats validity range correctly', function () {
     $user = User::factory()->create();
-    
+
     $active = CustomerFiscalData::factory()->forUser($user->id)->create([
         'valid_from'  => Carbon::parse('2024-01-01'),
         'valid_until' => null,
