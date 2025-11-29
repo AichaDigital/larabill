@@ -31,7 +31,6 @@ _ide_helper_models.php
 phpunit.xml
 phpstan.neon
 testbench.yaml
-/docs
 /coverage
 
 .env
@@ -57,18 +56,20 @@ infection.log.text
 infection.log.summary
 
 # Internal documentation (development only)
-docs/
 ./PUBLISH.sh
 
 # Local helper scripts (do not track)
 /bin/
 
-# Docs no
-MIGRACIONES_INFORME.md
-REFACTOR_ARQUITECTÓNICO-LARABILL-v0.4.0.md
-REFACTOR_V040_PROGRESS.md
-TAX_SYSTEM_ANALYSIS_AND_RECOMMENDATIONS.md
+# Session/temporary documentation (do not track)
+SESSION_*.md
+HOTFIX_*.md
+BUG_*.md
+RESUMEN_*.md
+docs/SESSION_*.md
+docs/HOTFIX_*.md
+docs/BUG_*.md
+docs/RESUMEN_*.md
 
-# Internal documentation (development only)
-docs/
+# Local scripts
 ./PUBLISH.sh
