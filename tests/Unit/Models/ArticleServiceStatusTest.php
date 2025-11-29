@@ -58,11 +58,11 @@ it('casts booleans correctly', function () {
     expect($service->refund_unused)->toBeTrue();
 });
 
-it('casts effective_price to integer (Base100)', function () {
+it('casts effective_price to integer (Base100Int)', function () {
     $service = ArticleServiceStatus::factory()->create(['effective_price' => 2900]);
 
-    expect($service->effective_price)->toBeNumeric()
-        ->and($service->effective_price)->toBe(2900.0);
+    expect($service->effective_price)->toBeInt()
+        ->and($service->effective_price)->toBe(2900);
 });
 
 it('casts arrays correctly', function () {
@@ -292,7 +292,7 @@ it('updates effective price from override', function () {
 
     $service->updateEffectivePrice();
 
-    expect($service->fresh()->effective_price)->toBe(2400.0)
+    expect($service->fresh()->effective_price)->toBe(2400)
         ->and($service->fresh()->current_override_id)->toBe($override->id);
 });
 
@@ -306,7 +306,7 @@ it('updates effective price to base when no override', function () {
 
     $service->updateEffectivePrice();
 
-    expect($service->fresh()->effective_price)->toBe(2900.0)
+    expect($service->fresh()->effective_price)->toBe(2900)
         ->and($service->fresh()->current_override_id)->toBeNull();
 });
 

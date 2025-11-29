@@ -18,4 +18,3 @@ class ListInvoices extends ListRecords
         ];
     }
 }
-

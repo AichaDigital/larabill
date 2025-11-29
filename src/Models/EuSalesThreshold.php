@@ -499,6 +499,21 @@ class EuSalesThreshold extends Model
     }
 
     /**
+     * Add amount to total (without country breakdown).
+     */
+    public function addAmount(float $amount): self
+    {
+        $this->update([
+            'total_amount'  => $this->total_amount + $amount,
+            'last_updated'  => now(),
+        ]);
+
+        $this->checkThreshold();
+
+        return $this;
+    }
+
+    /**
      * Check if threshold is exceeded.
      */
     public function isThresholdExceeded(): bool

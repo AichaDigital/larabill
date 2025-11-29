@@ -17,4 +17,3 @@ return new class extends Migration
         // No rollback - ADR-001 architectural change
     }
 };
-

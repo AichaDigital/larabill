@@ -3,9 +3,8 @@
 declare(strict_types=1);
 
 use AichaDigital\Larabill\Models\CustomerFiscalData;
-use App\Models\User;
+use AichaDigital\Larabill\Tests\Models\User;
 use Carbon\Carbon;
-use function Pest\Laravel\assertDatabaseHas;
 
 beforeEach(function () {
     // Limpiar data previa
@@ -18,7 +17,7 @@ it('can create customer fiscal data', function () {
     $data = CustomerFiscalData::factory()->forUser($user->id)->create();
 
     expect($data)->toBeInstanceOf(CustomerFiscalData::class)
-        ->and($data->user_id)->toBe($user->id)
+        ->and($data->user_id)->toEqual((string) $user->id)
         ->and($data->fiscal_name)->toBeString()
         ->and($data->is_active)->toBeTrue()
         ->and($data->valid_until)->toBeNull();
@@ -109,13 +108,13 @@ it('belongs to user', function () {
     $data = CustomerFiscalData::factory()->forUser($user->id)->create();
 
     expect($data->user)->toBeInstanceOf(User::class)
-        ->and($data->user->id)->toBe($user->id);
+        ->and($data->user->id)->toEqual($user->id);
 });
 
 it('distinguishes between companies and individuals', function () {
     $user = User::factory()->create();
 
-    $company = CustomerFiscalData::factory()->forUser($user->id)->company()->create();
+    $company    = CustomerFiscalData::factory()->forUser($user->id)->company()->create();
     $individual = CustomerFiscalData::factory()->forUser($user->id)->individual()->create();
 
     expect($company->is_company)->toBeTrue()
@@ -259,7 +258,7 @@ it('scopes VAT exempt', function () {
 it('checks if config is currently active', function () {
     $user = User::factory()->create();
 
-    $active = CustomerFiscalData::factory()->forUser($user->id)->active()->create();
+    $active     = CustomerFiscalData::factory()->forUser($user->id)->active()->create();
     $historical = CustomerFiscalData::factory()->forUser($user->id)->historical()->create();
 
     expect($active->isCurrentlyActive())->toBeTrue()
@@ -295,4 +294,3 @@ it('formats validity range correctly', function () {
     expect($active->validity_range)->toContain('Actual')
         ->and($historical->validity_range)->toContain('31/12/2023');
 });
-

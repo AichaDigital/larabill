@@ -91,9 +91,9 @@ class CompanyFiscalConfigFactory extends Factory
     public function spanish(): self
     {
         return $this->state(fn (array $attributes) => [
-            'business_name'    => fake()->company().' S.L.',
-            'tax_id'           => 'ES'.fake()->numerify('B########'),
-            'country_code'     => 'ES',
+            'business_name'     => fake()->company().' S.L.',
+            'tax_id'            => 'ES'.fake()->numerify('B########'),
+            'country_code'      => 'ES',
             'legal_entity_type' => fake()->randomElement(['SL', 'SA', 'Autónomo']),
         ]);
     }
@@ -122,4 +122,3 @@ class CompanyFiscalConfigFactory extends Factory
         ]);
     }
 }
-

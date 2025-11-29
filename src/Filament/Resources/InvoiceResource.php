@@ -6,25 +6,24 @@ namespace AichaDigital\Larabill\Filament\Resources;
 
 use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Models\Invoice;
-use Filament\Forms;
-use Filament\Forms\Form;
+use BackedEnum;
+use Filament\{Actions, Forms, Tables};
 use Filament\Resources\Resource;
-use Filament\Tables;
+use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 
 /**
- * Invoice Resource for Filament
+ * Invoice Resource for Filament 4
  *
  * Provides CRUD interface for invoices with base100 monetary support.
  *
- * @package AichaDigital\Larabill\Filament
- * @version 1.0
+ * @note Updated for Filament 4 API (ADR-001)
  */
 class InvoiceResource extends LarabillResource
 {
     protected static ?string $model = Invoice::class;
 
-    protected static ?string $navigationIcon = 'heroicon-o-document-text';
+    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-text';
 
     protected static ?int $navigationSort = 1;
 
@@ -43,87 +42,65 @@ class InvoiceResource extends LarabillResource
         return __('larabill::filament.invoice.plural_label');
     }
 
-    public static function form(Form $form): Form
+    public static function form(Schema $schema): Schema
     {
-        return $form
-            ->schema([
-                Forms\Components\Section::make(__('larabill::filament.invoice.header'))
-                    ->schema([
-                        Forms\Components\Grid::make(3)
-                            ->schema([
-                                Forms\Components\TextInput::make('fiscal_number')
-                                    ->label(__('larabill::filament.invoice.fiscal_number'))
-                                    ->disabled()
-                                    ->dehydrated(false)
-                                    ->helperText(__('larabill::filament.invoice.fiscal_number_help')),
+        return $schema
+            ->components([
+                // Header section
+                Forms\Components\TextInput::make('fiscal_number')
+                    ->label(__('larabill::filament.invoice.fiscal_number'))
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->helperText(__('larabill::filament.invoice.fiscal_number_help')),
 
-                                Forms\Components\Select::make('status')
-                                    ->label(__('larabill::filament.invoice.status'))
-                                    ->options(InvoiceStatus::toArray())
-                                    ->required()
-                                    ->default(InvoiceStatus::DRAFT->value),
+                Forms\Components\Select::make('status')
+                    ->label(__('larabill::filament.invoice.status'))
+                    ->options(InvoiceStatus::toArray())
+                    ->required()
+                    ->default(InvoiceStatus::DRAFT->value),
 
-                                Forms\Components\Toggle::make('is_roi_taxed')
-                                    ->label(__('larabill::filament.invoice.reverse_charge'))
-                                    ->helperText(__('larabill::filament.invoice.reverse_charge_help')),
-                            ]),
-                    ]),
+                Forms\Components\Toggle::make('is_roi_taxed')
+                    ->label(__('larabill::filament.invoice.reverse_charge'))
+                    ->helperText(__('larabill::filament.invoice.reverse_charge_help')),
 
-                Forms\Components\Section::make(__('larabill::filament.invoice.customer_section'))
-                    ->schema([
-                        Forms\Components\Select::make('customer_id')
-                            ->label(__('larabill::filament.invoice.customer'))
-                            ->relationship('customer', 'display_name')
-                            ->searchable()
-                            ->preload()
-                            ->required(),
+                // Customer section
+                Forms\Components\Select::make('customer_id')
+                    ->label(__('larabill::filament.invoice.customer'))
+                    ->relationship('customer', 'display_name')
+                    ->searchable()
+                    ->preload()
+                    ->required(),
 
-                        Forms\Components\Grid::make(3)
-                            ->schema([
-                                Forms\Components\DatePicker::make('invoice_date')
-                                    ->label(__('larabill::filament.invoice.invoice_date'))
-                                    ->required()
-                                    ->default(now()),
+                Forms\Components\DatePicker::make('invoice_date')
+                    ->label(__('larabill::filament.invoice.invoice_date'))
+                    ->required()
+                    ->default(now()),
 
-                                Forms\Components\DatePicker::make('service_date')
-                                    ->label(__('larabill::filament.invoice.service_date')),
+                Forms\Components\DatePicker::make('service_date')
+                    ->label(__('larabill::filament.invoice.service_date')),
 
-                                Forms\Components\DatePicker::make('due_date')
-                                    ->label(__('larabill::filament.invoice.due_date'))
-                                    ->default(fn () => now()->addDays(15)),
-                            ]),
-                    ]),
+                Forms\Components\DatePicker::make('due_date')
+                    ->label(__('larabill::filament.invoice.due_date'))
+                    ->default(fn () => now()->addDays(15)),
 
-                Forms\Components\Section::make(__('larabill::filament.invoice.totals'))
-                    ->schema([
-                        Forms\Components\Placeholder::make('summary')
-                            ->label('')
-                            ->content(function (?Invoice $record) {
-                                if (! $record) {
-                                    return __('larabill::filament.invoice.save_to_see_totals', ['text' => 'Guarda para ver totales']);
-                                }
+                // Totals section (read-only)
+                Forms\Components\TextInput::make('taxable_amount_display')
+                    ->label(__('larabill::filament.invoice.taxable_amount'))
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->formatStateUsing(fn (?Invoice $record) => $record ? self::formatMoney($record->taxable_amount ?? 0) : '-'),
 
-                                return new \Illuminate\Support\HtmlString(sprintf(
-                                    '<div class="space-y-2 text-right">
-                                        <div class="text-sm text-gray-600 dark:text-gray-400">
-                                            <span class="font-medium">%s:</span> %s
-                                        </div>
-                                        <div class="text-sm text-gray-600 dark:text-gray-400">
-                                            <span class="font-medium">%s:</span> %s
-                                        </div>
-                                        <div class="text-lg font-bold text-gray-900 dark:text-white border-t pt-2">
-                                            <span class="font-medium">%s:</span> %s
-                                        </div>
-                                    </div>',
-                                    __('larabill::filament.invoice.taxable_amount'),
-                                    self::formatMoney($record->taxable_amount ?? 0),
-                                    __('larabill::filament.invoice.total_tax_amount'),
-                                    self::formatMoney($record->total_tax_amount ?? 0),
-                                    __('larabill::filament.invoice.total'),
-                                    self::formatMoney($record->total_amount ?? 0)
-                                ));
-                            }),
-                    ]),
+                Forms\Components\TextInput::make('total_tax_display')
+                    ->label(__('larabill::filament.invoice.total_tax_amount'))
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->formatStateUsing(fn (?Invoice $record) => $record ? self::formatMoney($record->total_tax_amount ?? 0) : '-'),
+
+                Forms\Components\TextInput::make('total_amount_display')
+                    ->label(__('larabill::filament.invoice.total'))
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->formatStateUsing(fn (?Invoice $record) => $record ? self::formatMoney($record->total_amount ?? 0) : '-'),
             ]);
     }
 
@@ -153,15 +130,17 @@ class InvoiceResource extends LarabillResource
                     ->sortable()
                     ->alignEnd(),
 
-                Tables\Columns\BadgeColumn::make('status')
+                Tables\Columns\TextColumn::make('status')
                     ->label(__('larabill::filament.invoice.status'))
+                    ->badge()
                     ->formatStateUsing(fn (int $state) => InvoiceStatus::from($state)->label())
-                    ->colors([
-                        'secondary' => InvoiceStatus::DRAFT->value,
-                        'warning' => InvoiceStatus::SENT->value,
-                        'success' => InvoiceStatus::PAID->value,
-                        'danger' => InvoiceStatus::OVERDUE->value,
-                    ]),
+                    ->color(fn (int $state): string => match ($state) {
+                        InvoiceStatus::DRAFT->value   => 'gray',
+                        InvoiceStatus::SENT->value    => 'warning',
+                        InvoiceStatus::PAID->value    => 'success',
+                        InvoiceStatus::OVERDUE->value => 'danger',
+                        default                       => 'gray',
+                    }),
 
                 Tables\Columns\IconColumn::make('is_roi_taxed')
                     ->label(__('larabill::filament.invoice.roi'))
@@ -190,7 +169,7 @@ class InvoiceResource extends LarabillResource
                     ->label(__('larabill::filament.invoice.immutable')),
 
                 Tables\Filters\Filter::make('invoice_date')
-                    ->form([
+                    ->schema([
                         Forms\Components\DatePicker::make('from')
                             ->label(__('larabill::filament.invoice.filter_date_from')),
                         Forms\Components\DatePicker::make('until')
@@ -202,16 +181,16 @@ class InvoiceResource extends LarabillResource
                             ->when($data['until'], fn ($q, $date) => $q->whereDate('invoice_date', '<=', $date));
                     }),
             ])
-            ->actions([
-                Tables\Actions\ViewAction::make(),
-                Tables\Actions\EditAction::make()
+            ->recordActions([
+                Actions\ViewAction::make(),
+                Actions\EditAction::make()
                     ->hidden(fn (Invoice $record) => $record->is_immutable),
-                Tables\Actions\DeleteAction::make()
+                Actions\DeleteAction::make()
                     ->hidden(fn (Invoice $record) => $record->is_immutable),
             ])
-            ->bulkActions([
-                Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DeleteBulkAction::make(),
+            ->toolbarActions([
+                Actions\BulkActionGroup::make([
+                    Actions\DeleteBulkAction::make(),
                 ]),
             ])
             ->defaultSort('invoice_date', 'desc');
@@ -220,19 +199,18 @@ class InvoiceResource extends LarabillResource
     public static function getPages(): array
     {
         return [
-            'index' => \AichaDigital\Larabill\Filament\Resources\InvoiceResource\Pages\ListInvoices::route('/'),
+            'index'  => \AichaDigital\Larabill\Filament\Resources\InvoiceResource\Pages\ListInvoices::route('/'),
             'create' => \AichaDigital\Larabill\Filament\Resources\InvoiceResource\Pages\CreateInvoice::route('/create'),
-            'edit' => \AichaDigital\Larabill\Filament\Resources\InvoiceResource\Pages\EditInvoice::route('/{record}/edit'),
-            'view' => \AichaDigital\Larabill\Filament\Resources\InvoiceResource\Pages\ViewInvoice::route('/{record}'),
+            'edit'   => \AichaDigital\Larabill\Filament\Resources\InvoiceResource\Pages\EditInvoice::route('/{record}/edit'),
+            'view'   => \AichaDigital\Larabill\Filament\Resources\InvoiceResource\Pages\ViewInvoice::route('/{record}'),
         ];
     }
 
     /**
-     * Check if resource should be registered
+     * Check if resource should be registered.
      */
     public static function shouldRegisterNavigation(): bool
     {
         return self::isResourceEnabled('invoice');
     }
 }
-

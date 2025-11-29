@@ -35,24 +35,24 @@ return [
 
         'navigation' => [
             'group' => env('LARABILL_NAVIGATION_GROUP', 'Billing'),
-            'sort' => (int) env('LARABILL_NAVIGATION_SORT', 10),
+            'sort'  => (int) env('LARABILL_NAVIGATION_SORT', 10),
         ],
 
         'resources' => [
             'invoice' => [
                 'enabled' => true,
-                'icon' => 'heroicon-o-document-text',
-                'sort' => 1,
+                'icon'    => 'heroicon-o-document-text',
+                'sort'    => 1,
             ],
             'customer' => [
                 'enabled' => true,
-                'icon' => 'heroicon-o-users',
-                'sort' => 2,
+                'icon'    => 'heroicon-o-users',
+                'sort'    => 2,
             ],
             'article' => [
                 'enabled' => true,
-                'icon' => 'heroicon-o-cube',
-                'sort' => 3,
+                'icon'    => 'heroicon-o-cube',
+                'sort'    => 3,
             ],
         ],
     ],

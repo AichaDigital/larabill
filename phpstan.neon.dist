@@ -6,7 +6,11 @@ parameters:
     paths:
         - src
 
-    # Exclude config directories (contain env() calls which are valid)
+    # Scan directories for class discovery (factories need to be known but not analyzed)
+    scanDirectories:
+        - src/Database/Factories
+
+    # Exclude from analysis (contain env() calls, migrations, factories)
     excludePaths:
         - bootstrap/cache (?)
         - storage/* (?)

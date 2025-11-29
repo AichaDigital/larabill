@@ -8,12 +8,12 @@ it('can create a commission', function () {
     $commission = Commission::factory()->create([
         'name'  => 'Test Commission',
         'level' => 'global',
-        'rate'  => 10.5,
+        'rate'  => 1050, // 10.50% in base100
     ]);
 
     expect($commission->name)->toBe('Test Commission')
         ->and($commission->level)->toBe('global')
-        ->and($commission->rate)->toBe(10.5)
+        ->and($commission->rate)->toBe(1050) // 10.50% in base100
         ->and($commission->exists)->toBeTrue();
 });
 

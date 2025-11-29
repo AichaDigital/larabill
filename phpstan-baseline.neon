@@ -31,12 +31,6 @@ parameters:
 			path: src/Models/ArticleServiceStatus.php
 
 		-
-			message: '#^Property AichaDigital\\Larabill\\Models\\FiscalSettings\:\:\$current_eu_sales_amount \(int\) does not accept float\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: src/Models/FiscalSettings.php
-
-		-
 			message: '#^Method AichaDigital\\Larabill\\Models\\TaxGroup\:\:taxRates\(\) should return Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<AichaDigital\\Larabill\\Models\\TaxRate, Illuminate\\Database\\Eloquent\\Relations\\Pivot, ''pivot''\> but returns Illuminate\\Database\\Eloquent\\Relations\\BelongsToMany\<AichaDigital\\Larabill\\Models\\TaxRate, \$this\(AichaDigital\\Larabill\\Models\\TaxGroup\), Illuminate\\Database\\Eloquent\\Relations\\Pivot, ''pivot''\>\.$#'
 			identifier: return.type
 			count: 1
@@ -85,104 +79,8 @@ parameters:
 			path: src/Services/BillingService.php
 
 		-
-			message: '#^Property AichaDigital\\Larabill\\Models\\FiscalSettings\:\:\$current_eu_sales_amount \(int\) does not accept float\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: src/Services/DestinationVatService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$address\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Services/InvoiceService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$address_line_2\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Services/InvoiceService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$city\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Services/InvoiceService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$commercial_name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Services/InvoiceService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$country_code\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Services/InvoiceService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$email\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Services/InvoiceService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$legal_entity_type_code\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Services/InvoiceService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$legal_name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Services/InvoiceService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$phone\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Services/InvoiceService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$postal_code\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Services/InvoiceService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$state\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Services/InvoiceService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$tax_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Services/InvoiceService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$vat_number\.$#'
-			identifier: property.notFound
-			count: 1
-			path: src/Services/InvoiceService.php
-
-		-
 			message: '#^Expression on left side of \?\? is not nullable\.$#'
 			identifier: nullCoalesce.expr
-			count: 1
-			path: src/Services/InvoiceService.php
-
-		-
-			message: '#^Offset ''verification_id'' does not exist on array\{success\: true, id\: string\|null, qr\: string\|null, hash\: string\|null, signature\: string\|null, timestamp\: string\|null, metadata\: array\<string, mixed\>\|null, error\: string\|null\}\.$#'
-			identifier: offsetAccess.notFound
-			count: 1
-			path: src/Services/InvoiceService.php
-
-		-
-			message: '#^Parameter \#1 \$invoiceData of method AichaDigital\\Larabill\\Contracts\\Services\\FiscalVerificationContract\:\:verify\(\) expects array\<string, mixed\>, AichaDigital\\Larabill\\Models\\Invoice given\.$#'
-			identifier: argument.type
 			count: 1
 			path: src/Services/InvoiceService.php
 

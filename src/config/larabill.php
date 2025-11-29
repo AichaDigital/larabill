@@ -43,18 +43,19 @@ return [
     |
     */
     'models' => [
-        'user'                  => 'App\\Models\\User',
-        'user_tax_profile'      => \AichaDigital\Larabill\Models\UserTaxProfile::class,
-        'invoice'               => \AichaDigital\Larabill\Models\Invoice::class,
-        'invoice_item'          => \AichaDigital\Larabill\Models\InvoiceItem::class,
-        'tax_rate'              => \AichaDigital\Larabill\Models\TaxRate::class,
-        'vat_verification'      => \AichaDigital\Larabill\Models\VatVerification::class,
-        'user_roi_verification' => \AichaDigital\Larabill\Models\UserRoiVerification::class,
-        'roi_query'             => \AichaDigital\Larabill\Models\RoiQuery::class,
-        'fiscal_settings'       => \AichaDigital\Larabill\Models\FiscalSettings::class,
-        'vat_category'          => \AichaDigital\Larabill\Models\VatCategory::class,
-        'eu_sales_threshold'    => \AichaDigital\Larabill\Models\EuSalesThreshold::class,
-        'country_vat_rate'      => \AichaDigital\Larabill\Models\CountryVatRate::class,
+        'user'                   => 'App\\Models\\User',
+        'user_tax_profile'       => \AichaDigital\Larabill\Models\UserTaxProfile::class,
+        'invoice'                => \AichaDigital\Larabill\Models\Invoice::class,
+        'invoice_item'           => \AichaDigital\Larabill\Models\InvoiceItem::class,
+        'tax_rate'               => \AichaDigital\Larabill\Models\TaxRate::class,
+        'vat_verification'       => \AichaDigital\Larabill\Models\VatVerification::class,
+        'user_roi_verification'  => \AichaDigital\Larabill\Models\UserRoiVerification::class,
+        'roi_query'              => \AichaDigital\Larabill\Models\RoiQuery::class,
+        'company_fiscal_config'  => \AichaDigital\Larabill\Models\CompanyFiscalConfig::class,
+        'customer_fiscal_data'   => \AichaDigital\Larabill\Models\CustomerFiscalData::class,
+        'vat_category'           => \AichaDigital\Larabill\Models\VatCategory::class,
+        'eu_sales_threshold'     => \AichaDigital\Larabill\Models\EuSalesThreshold::class,
+        'country_vat_rate'       => \AichaDigital\Larabill\Models\CountryVatRate::class,
     ],
 
     /*

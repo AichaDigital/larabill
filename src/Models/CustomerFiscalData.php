@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
+use AichaDigital\Larabill\Database\Factories\CustomerFiscalDataFactory;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\{Builder, Model, Relations\BelongsTo, SoftDeletes};
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use AichaDigital\Larabill\Database\Factories\CustomerFiscalDataFactory;
 
 /**
  * CustomerFiscalData Model
@@ -137,7 +137,7 @@ class CustomerFiscalData extends Model
     /**
      * Obtiene la config activa del usuario.
      */
-    public static function getActiveForUser(string $userId): ?self
+    public static function getActiveForUser(string|int $userId): ?self
     {
         return static::where('user_id', $userId)
             ->where('is_active', true)
@@ -148,7 +148,7 @@ class CustomerFiscalData extends Model
     /**
      * Obtiene la config vigente del usuario en una fecha específica.
      */
-    public static function getValidForUserAt(string $userId, Carbon $date): ?self
+    public static function getValidForUserAt(string|int $userId, Carbon $date): ?self
     {
         return static::where('user_id', $userId)
             ->where('valid_from', '<=', $date)
@@ -163,7 +163,7 @@ class CustomerFiscalData extends Model
     /**
      * Crea nueva config para usuario cerrando la anterior.
      */
-    public static function createForUser(string $userId, array $attributes): self
+    public static function createForUser(string|int $userId, array $attributes): self
     {
         // Asegurar user_id, activa y sin valid_until
         $attributes['user_id']     = $userId;
@@ -312,4 +312,3 @@ class CustomerFiscalData extends Model
         return true; // Requiere IVA normal
     }
 }
-

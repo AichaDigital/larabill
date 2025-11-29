@@ -14,7 +14,7 @@ beforeEach(function () {
         'name'         => 'Standard VAT',
         'tax_type'     => 'vat',
         'description'  => 'Standard VAT rate',
-        'default_rate' => 21.00,
+        'default_rate' => 2100, // 21.00% in base100
         'country_code' => 'ES',
         'region_code'  => null,
         'is_active'    => true,
@@ -26,18 +26,18 @@ it('can create a tax category', function () {
     expect($this->category->code)->toBe('vat_standard')
         ->and($this->category->name)->toBe('Standard VAT')
         ->and($this->category->tax_type)->toBe('vat')
-        ->and($this->category->default_rate)->toBe(21.00)
+        ->and($this->category->default_rate)->toBe(2100) // 21.00% in base100
         ->and($this->category->country_code)->toBe('ES')
         ->and($this->category->is_active)->toBeTrue()
         ->and($this->category->sort_order)->toBe(1);
 });
 
-it('can cast default_rate using Base100', function () {
+it('can cast default_rate using Base100Int', function () {
     $category = TaxCategory::factory()->create([
-        'default_rate' => 19.50,
+        'default_rate' => 1950, // 19.50% in base100
     ]);
 
-    expect($category->default_rate)->toBe(19.50);
+    expect($category->default_rate)->toBe(1950);
 });
 
 it('can scope active categories only', function () {
@@ -170,12 +170,12 @@ it('can create category with region', function () {
         'country_code' => 'US',
         'region_code'  => 'NY',
         'tax_type'     => 'sales_tax',
-        'default_rate' => 8.88,
+        'default_rate' => 888, // 8.88% in base100
     ]);
 
     expect($category->country_code)->toBe('US')
         ->and($category->region_code)->toBe('NY')
-        ->and($category->default_rate)->toBe(8.88);
+        ->and($category->default_rate)->toBe(888); // 8.88% in base100
 });
 
 it('can have null region_code', function () {

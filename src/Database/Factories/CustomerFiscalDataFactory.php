@@ -177,11 +177,10 @@ class CustomerFiscalDataFactory extends Factory
     /**
      * Config para un usuario específico.
      */
-    public function forUser(string $userId): self
+    public function forUser(string|int $userId): self
     {
         return $this->state(fn (array $attributes) => [
-            'user_id' => $userId,
+            'user_id' => (string) $userId,
         ]);
     }
 }
-

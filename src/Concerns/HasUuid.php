@@ -34,7 +34,7 @@ trait HasUuid
     protected function initializeHasUuid(): void
     {
         $this->incrementing = false;
-        $this->keyType = 'string';
+        $this->keyType      = 'string';
     }
 
     /**
@@ -45,4 +45,3 @@ trait HasUuid
         return $this->getAttribute($this->getRouteKeyName());
     }
 }
-

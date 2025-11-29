@@ -41,6 +41,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property float $total_tax_amount Base-100 integer - sum of all taxes
  * @property array $taxes_applied JSON snapshot of applied taxes (immutable)
  * @property float $total_amount Base-100 integer (€12.34 => 1234)
+ * @property int $tax_rate Computed from taxes_applied (first tax rate or 0)
  * @property \Carbon\Carbon|null $service_date_from Service start date
  * @property \Carbon\Carbon|null $service_date_to Service end date
  * @property array|null $metadata
@@ -160,6 +161,22 @@ class InvoiceItem extends Model
     public function getTaxBreakdown(): array
     {
         return $this->taxes_applied ?? [];
+    }
+
+    /**
+     * Accessor for tax_rate (computed from taxes_applied).
+     * Returns the first tax rate in base100 format, or 0 if no taxes.
+     */
+    public function getTaxRateAttribute(): int
+    {
+        $taxes = $this->taxes_applied ?? [];
+
+        if (empty($taxes)) {
+            return 0;
+        }
+
+        // Return the rate from the first tax
+        return (int) ($taxes[0]['rate'] ?? 0);
     }
 
     // ========================================

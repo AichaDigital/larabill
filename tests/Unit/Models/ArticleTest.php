@@ -33,16 +33,16 @@ it('casts billing_frequency to enum', function () {
         ->and($article->billing_frequency)->toBe(BillingFrequency::MONTHLY);
 });
 
-it('casts prices to Base100 (numeric)', function () {
+it('casts prices to Base100Int (integer)', function () {
     $article = Article::factory()->create([
-        'base_price' => 2900,
-        'cost_price' => 1500,
+        'base_price' => 2900, // €29.00 in base100
+        'cost_price' => 1500, // €15.00 in base100
     ]);
 
-    expect($article->base_price)->toBeNumeric()
-        ->and($article->base_price)->toBe(2900.0)
-        ->and($article->cost_price)->toBeNumeric()
-        ->and($article->cost_price)->toBe(1500.0);
+    expect($article->base_price)->toBeInt()
+        ->and($article->base_price)->toBe(2900)
+        ->and($article->cost_price)->toBeInt()
+        ->and($article->cost_price)->toBe(1500);
 });
 
 it('casts booleans correctly', function () {
@@ -193,13 +193,13 @@ it('validates instance identifier based on metadata rules', function () {
 it('returns base price when no customer provided', function () {
     $article = Article::factory()->create(['base_price' => 2900]);
 
-    expect($article->getEffectivePriceFor(null))->toBe(2900.0);
+    expect($article->getEffectivePriceFor(null))->toEqual(2900);
 });
 
 it('returns base price when customer has no override', function () {
     $article = Article::factory()->create(['base_price' => 2900]);
 
-    expect($article->getEffectivePriceFor(999))->toBe(2900.0);
+    expect($article->getEffectivePriceFor(999))->toEqual(2900);
 });
 
 it('returns override price when customer has active override', function () {
@@ -215,7 +215,7 @@ it('returns override price when customer has active override', function () {
         'is_active'    => true,
     ]);
 
-    expect($article->getEffectivePriceFor($customer->id))->toBe(2400.0);
+    expect($article->getEffectivePriceFor($customer->id))->toEqual(2400);
 });
 
 it('gets active override for customer', function () {
@@ -262,8 +262,7 @@ it('calculates profit margin', function () {
         'cost_price' => 1500,
     ]);
 
-    expect($article->getProfitMargin())->toBeFloat()
-        ->and($article->getProfitMargin())->toBe(1400.0);
+    expect($article->getProfitMargin())->toEqual(1400);
 });
 
 it('returns null profit margin when no cost price', function () {

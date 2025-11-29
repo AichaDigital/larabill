@@ -29,17 +29,20 @@ class VerifactuAdapter
         // Refresh invoice to ensure relationships are loaded
         $invoice = $invoice->fresh(['taxProfile', 'customer']);
 
+        // Determine if invoice is simplified (based on amount threshold or explicit flag)
+        $isSimplified = self::isSimplifiedInvoice($invoice);
+
         return [
             'serie'              => $invoice->serie->value ?? null,
             'number'             => (string) $invoice->series_number,
             'issue_date'         => $invoice->invoice_date,
             'issue_time'         => $invoice->invoice_date,
             'type'               => self::mapInvoiceType($invoice),
-            'simplified'         => $invoice->is_simplified      ?? false,
-            'rectification_type' => $invoice->rectification_type ?? null,
-            'base_amount'        => self::base100ToDecimal($invoice->taxable_amount),
-            'tax_amount'         => self::base100ToDecimal($invoice->total_tax_amount),
-            'total_amount'       => self::base100ToDecimal($invoice->total_amount),
+            'simplified'         => $isSimplified,
+            'rectification_type' => self::getRectificationType($invoice),
+            'base_amount'        => self::base100ToDecimal((int) $invoice->taxable_amount),
+            'tax_amount'         => self::base100ToDecimal((int) ($invoice->total_tax_amount ?? 0)),
+            'total_amount'       => self::base100ToDecimal((int) $invoice->total_amount),
             'currency'           => 'EUR',
             'recipient_nif'      => $invoice->taxProfile->tax_code ?? null,
             'recipient_id_type'  => self::mapRecipientIdType($invoice),
@@ -57,6 +60,37 @@ class VerifactuAdapter
     }
 
     /**
+     * Determine if invoice is simplified (factura simplificada).
+     *
+     * In Spain, simplified invoices are allowed for amounts under 400€ (or 3000€ in some cases).
+     */
+    private static function isSimplifiedInvoice(Invoice $invoice): bool
+    {
+        // Check if total amount is under 400€ (40000 in base100)
+        $simplifiedThreshold = 40000;
+
+        return (int) $invoice->total_amount < $simplifiedThreshold;
+    }
+
+    /**
+     * Get rectification type for rectificative invoices.
+     */
+    private static function getRectificationType(Invoice $invoice): ?string
+    {
+        if ($invoice->rectifies_invoice_id === null) {
+            return null;
+        }
+
+        // R1: Por diferencias (most common)
+        // R2: Por sustitución
+        // R3: Por corrección de errores registrales
+        // R4: Por corrección de errores de facturación
+        // R5: Por devolución de productos
+
+        return 'R1';
+    }
+
+    /**
      * Convert a Larabill InvoiceItem to Verifactu breakdown format.
      *
      * @param  InvoiceItem  $item  The invoice item to convert
@@ -66,12 +100,12 @@ class VerifactuAdapter
     {
         return [
             'description'  => $item->description ?? 'Item',
-            'quantity'     => self::base100ToDecimal($item->quantity),
-            'unit_price'   => self::base100ToDecimal($item->unit_price),
-            'base_amount'  => self::base100ToDecimal($item->taxable_amount),
-            'tax_rate'     => self::base10000ToDecimal($item->tax_rate ?? 0),
-            'tax_amount'   => self::base100ToDecimal($item->total_tax_amount),
-            'total_amount' => self::base100ToDecimal($item->total_amount),
+            'quantity'     => self::base100ToDecimal((int) $item->quantity),
+            'unit_price'   => self::base100ToDecimal((int) $item->unit_price),
+            'base_amount'  => self::base100ToDecimal((int) $item->taxable_amount),
+            'tax_rate'     => self::base10000ToDecimal((int) ($item->tax_rate * 100)),
+            'tax_amount'   => self::base100ToDecimal((int) $item->total_tax_amount),
+            'total_amount' => self::base100ToDecimal((int) $item->total_amount),
         ];
     }
 
@@ -113,16 +147,16 @@ class VerifactuAdapter
             return 'R1'; // Por diferencias (más común)
         }
 
-        return ($invoice->is_simplified ?? false) ? 'F2' : 'F1';
+        return self::isSimplifiedInvoice($invoice) ? 'F2' : 'F1';
     }
 
     /**
      * Map Larabill customer ID type to Verifactu IdTypeEnum.
      *
      * @param  Invoice  $invoice  The Larabill invoice
-     * @return string|null Verifactu ID type (02=NIF, 03=Pasaporte, etc.)
+     * @return string Verifactu ID type (02=NIF, 03=Pasaporte, etc.)
      */
-    private static function mapRecipientIdType(Invoice $invoice): ?string
+    private static function mapRecipientIdType(Invoice $invoice): string
     {
         $countryCode = $invoice->taxProfile->country_code ?? 'ES';
 

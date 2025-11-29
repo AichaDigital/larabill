@@ -19,6 +19,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $legal_name
  * @property string|null $commercial_name
  * @property string $tax_code NIF/CIF/NIE
+ * @property string $tax_id Alias for tax_code
  * @property string $legal_entity_type_code FK to legal_entity_types
  * @property string $address
  * @property string|null $address_line_2
@@ -99,6 +100,14 @@ class CustomerTaxProfile extends Model
             'is_current'            => 'boolean',
             'metadata'              => 'array',
         ];
+    }
+
+    /**
+     * Accessor for tax_id (alias for tax_code).
+     */
+    public function getTaxIdAttribute(): ?string
+    {
+        return $this->tax_code;
     }
 
     /**

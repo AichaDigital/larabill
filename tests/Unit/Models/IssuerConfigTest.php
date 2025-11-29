@@ -71,28 +71,28 @@ it('can get current issuer config (singleton)', function () {
 
 it('can update EU sales and check threshold', function () {
     $issuer = IssuerConfig::factory()->create([
-        'eu_sales_threshold' => 1000.0,
+        'eu_sales_threshold' => 100000, // €1000.00 in base100
         'current_eu_sales'   => 0,
         'threshold_exceeded' => false,
     ]);
 
     expect($issuer->threshold_exceeded)->toBeFalse();
 
-    // Add sales below threshold
-    $issuer->addEuSales(500.0);
-    expect($issuer->current_eu_sales)->toBe(500.0)
+    // Add sales below threshold (€500.00 in base100)
+    $issuer->addEuSales(50000);
+    expect($issuer->current_eu_sales)->toBe(50000)
         ->and($issuer->threshold_exceeded)->toBeFalse();
 
-    // Add sales to exceed threshold
-    $issuer->addEuSales(600.0);
-    expect($issuer->current_eu_sales)->toBe(1100.0)
+    // Add sales to exceed threshold (€600.00 in base100)
+    $issuer->addEuSales(60000);
+    expect($issuer->current_eu_sales)->toBe(110000)
         ->and($issuer->threshold_exceeded)->toBeTrue()
         ->and($issuer->threshold_exceeded_at)->not->toBeNull();
 });
 
 it('can reset EU sales for new fiscal year', function () {
     $issuer = IssuerConfig::factory()->create([
-        'current_eu_sales'               => 1500.0,
+        'current_eu_sales'               => 150000, // €1500.00 in base100
         'threshold_exceeded'             => true,
         'threshold_exceeded_at'          => now(),
         'threshold_notification_sent'    => true,
@@ -109,7 +109,7 @@ it('can reset EU sales for new fiscal year', function () {
     ]);
 
     expect($issuer->fiscal_year)->toBe(2025)
-        ->and($issuer->current_eu_sales)->toBe(0.0)
+        ->and($issuer->current_eu_sales)->toBe(0)
         ->and($issuer->threshold_exceeded)->toBeFalse()
         ->and($issuer->threshold_exceeded_at)->toBeNull()
         ->and($issuer->threshold_notification_sent)->toBeFalse();
@@ -117,33 +117,33 @@ it('can reset EU sales for new fiscal year', function () {
 
 it('can check remaining threshold amount', function () {
     $issuer = IssuerConfig::factory()->create([
-        'eu_sales_threshold' => 1000.0,
-        'current_eu_sales'   => 750.0,
+        'eu_sales_threshold' => 100000, // €1000.00 in base100
+        'current_eu_sales'   => 75000,  // €750.00 in base100
     ]);
 
-    expect($issuer->remaining_threshold)->toBe(250.0);
+    expect($issuer->remaining_threshold)->toEqual(25000); // €250.00 in base100
 
-    // After exceeding
-    $issuer->addEuSales(300.0);
+    // After exceeding (add €300.00)
+    $issuer->addEuSales(30000);
     $issuer->refresh();
-    expect($issuer->remaining_threshold)->toBe(0.0);
+    expect($issuer->remaining_threshold)->toEqual(0);
 });
 
 it('can get threshold percentage', function () {
     $issuer = IssuerConfig::factory()->create([
-        'eu_sales_threshold' => 1000.0,
-        'current_eu_sales'   => 750.0,
+        'eu_sales_threshold' => 100000, // €1000.00 in base100
+        'current_eu_sales'   => 75000,  // €750.00 in base100
     ]);
 
-    expect($issuer->threshold_percentage)->toBe(75.0);
+    expect($issuer->threshold_percentage)->toEqual(75); // 75% as int
 
     // Test at threshold
-    $issuer->update(['current_eu_sales' => 1000.0]);
+    $issuer->update(['current_eu_sales' => 100000]);
     $issuer->refresh();
-    expect($issuer->threshold_percentage)->toBe(100.0);
+    expect($issuer->threshold_percentage)->toEqual(100);
 
     // Test exceeding threshold (capped at 100%)
-    $issuer->update(['current_eu_sales' => 1200.0]);
+    $issuer->update(['current_eu_sales' => 120000]);
     $issuer->refresh();
-    expect($issuer->threshold_percentage)->toBe(100.0);
+    expect($issuer->threshold_percentage)->toEqual(100);
 });

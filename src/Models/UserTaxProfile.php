@@ -23,6 +23,7 @@ use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, HasOne};
  * @property string $city
  * @property string $postal_code
  * @property string $country
+ * @property string $country_code Alias for country
  * @property string|null $state
  * @property string|null $phone
  * @property \Illuminate\Support\Carbon|null $created_at
@@ -60,6 +61,14 @@ class UserTaxProfile extends Model
         return [
             'is_current' => 'boolean',
         ];
+    }
+
+    /**
+     * Accessor for country_code (alias for country).
+     */
+    public function getCountryCodeAttribute(): string
+    {
+        return $this->country ?? '';
     }
 
     /**
