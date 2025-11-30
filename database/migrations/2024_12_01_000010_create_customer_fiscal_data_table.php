@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use AichaDigital\Larabill\Support\MigrationHelper;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
@@ -19,7 +20,7 @@ return new class extends Migration
     {
         Schema::create('customer_fiscal_data', function (Blueprint $table) {
             $table->id();
-            $table->uuid('user_id')->comment('FK a users - El cliente/usuario');
+            MigrationHelper::userIdColumn($table, 'user_id');
 
             // Identidad fiscal del cliente
             $table->string('fiscal_name')->comment('Nombre fiscal (puede diferir de user.name)');
@@ -48,12 +49,6 @@ return new class extends Migration
 
             $table->timestamps();
             $table->softDeletes();
-
-            // Foreign key a users
-            $table->foreign('user_id')
-                ->references('id')
-                ->on('users')
-                ->cascadeOnDelete();
 
             // Índices para queries eficientes
             $table->index(['user_id', 'valid_from', 'valid_until', 'is_active'], 'idx_user_validity_active');
