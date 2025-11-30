@@ -32,7 +32,10 @@ class TestCase extends Orchestra
      */
     protected function defineDatabaseMigrations()
     {
-        // Load ALL migrations from database/migrations (includes test users now)
+        // Load test-only migrations first (users table for FK dependencies)
+        $this->loadMigrationsFrom(__DIR__.'/Database/migrations');
+
+        // Load package migrations
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
 
         // Load stub migrations (v0.4.1 ROI/VAT tables)

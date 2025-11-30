@@ -80,7 +80,7 @@ trait HasUuid
      */
     public function getCasts(): array
     {
-        $casts = parent::getCasts();
+        $casts  = parent::getCasts();
         $idType = MigrationHelper::getUserIdType();
 
         if ($idType === 'uuid_binary') {
