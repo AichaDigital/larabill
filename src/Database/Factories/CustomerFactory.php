@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Database\Factories;
 
+use AichaDigital\Larabill\Enums\RelationshipType;
 use AichaDigital\Larabill\Models\{Customer, CustomerTaxProfile};
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -28,7 +29,7 @@ class CustomerFactory extends Factory
     {
         return [
             'user_id'                 => null,
-            'relationship_type'       => 'client',
+            'relationship_type'       => RelationshipType::CLIENT,
             'display_name'            => $this->faker->name(),
             'internal_code'           => $this->faker->optional()->numerify('CUST-####'),
             'legal_entity_type_code'  => 'PERSONA_FISICA',
@@ -66,7 +67,7 @@ class CustomerFactory extends Factory
     public function self(): static
     {
         return $this->state(fn (array $attributes) => [
-            'relationship_type' => 'self',
+            'relationship_type' => RelationshipType::SELF,
         ]);
     }
 
@@ -76,7 +77,7 @@ class CustomerFactory extends Factory
     public function selfCompany(): static
     {
         return $this->state(fn (array $attributes) => [
-            'relationship_type'      => 'self_company',
+            'relationship_type'      => RelationshipType::SELF_COMPANY,
             'legal_entity_type_code' => 'SOCIEDAD_LIMITADA',
             'display_name'           => $this->faker->company(),
         ]);
@@ -88,7 +89,7 @@ class CustomerFactory extends Factory
     public function client(): static
     {
         return $this->state(fn (array $attributes) => [
-            'relationship_type' => 'client',
+            'relationship_type' => RelationshipType::CLIENT,
         ]);
     }
 

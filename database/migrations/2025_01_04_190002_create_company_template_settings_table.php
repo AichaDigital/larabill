@@ -17,14 +17,25 @@ return new class extends Migration
 
             // Agnostic user_id - auto-detects User model ID type (for multi-user support)
             MigrationHelper::userIdColumn($table);
-            $table->string('setting_type'); // 'template', 'notes', 'payment_terms'
-            $table->string('invoice_type')->default('fiscal'); // 'fiscal', 'proforma', 'reverse-charge', 'exempt'
-            $table->string('scope')->default('global'); // 'global', 'client', 'individual'
-            $table->string('client_id')->nullable(); // For client-specific settings
+
+            // Type fields as tinyint with PHP Enum casts
+            $table->unsignedTinyInteger('setting_type')
+                ->comment('0=template, 1=notes, 2=payment_terms (SettingType enum)');
+            $table->unsignedTinyInteger('invoice_type')
+                ->default(0)
+                ->comment('0=fiscal, 1=proforma, 2=reverse_charge, 3=exempt (TemplateInvoiceType enum)');
+            $table->unsignedTinyInteger('scope')
+                ->default(0)
+                ->comment('0=global, 1=client, 2=individual (SettingScope enum)');
+
+            // Client ID - agnostic type (nullable for global/individual scope)
+            MigrationHelper::agnosticIdColumn($table, 'client_id', nullable: true);
+
             $table->text('value'); // Setting value
             $table->boolean('is_active')->default(true);
             $table->timestamps();
 
+            // Unique constraint - now fits within index size limits
             $table->unique(['user_id', 'setting_type', 'invoice_type', 'scope', 'client_id'], 'user_setting_unique');
             $table->index(['user_id', 'invoice_type']);
             $table->index(['setting_type', 'is_active']);

@@ -5,9 +5,9 @@ declare(strict_types=1);
 use AichaDigital\Larabill\Enums\CancellationType;
 
 it('has correct values for each case', function () {
-    expect(CancellationType::IMMEDIATE->value)->toBe('I')
-        ->and(CancellationType::END_OF_PERIOD->value)->toBe('E')
-        ->and(CancellationType::NOTICE_PERIOD->value)->toBe('N');
+    expect(CancellationType::IMMEDIATE->value)->toBe(0)
+        ->and(CancellationType::END_OF_PERIOD->value)->toBe(1)
+        ->and(CancellationType::NOTICE_PERIOD->value)->toBe(2);
 });
 
 it('returns correct labels', function () {

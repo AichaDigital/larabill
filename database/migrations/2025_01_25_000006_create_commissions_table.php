@@ -17,24 +17,24 @@ return new class extends Migration
             $table->id();
 
             // Commission Level (priority: product > product_group > global)
-            $table->enum('level', ['global', 'product_group', 'product'])
-                ->comment('Nivel de comisión: global (todas las ventas), product_group (grupo), product (artículo específico)');
+            $table->unsignedTinyInteger('level')
+                ->comment('Nivel de comisión: 0=global, 1=product_group, 2=product (CommissionLevel enum)');
 
             // Reference (depends on level)
             $table->unsignedBigInteger('article_id')->nullable()->comment('FK a articles - Para level=product');
             $table->string('product_group')->nullable()->comment('Nombre del grupo de productos - Para level=product_group');
 
             // Commission Configuration
-            $table->enum('type', ['percentage', 'fixed'])
-                ->default('percentage')
-                ->comment('Tipo de comisión: porcentaje o monto fijo');
+            $table->unsignedTinyInteger('type')
+                ->default(0)
+                ->comment('Tipo de comisión: 0=percentage, 1=fixed (CommissionType enum)');
 
             $table->decimal('rate', 8, 4)->comment('Tasa de comisión (20.5000 = 20.5% o €20.50 fijo)');
             $table->integer('rate_base100')->nullable()->comment('Base-100 para cálculos (2050 = 20.50)');
 
-            $table->enum('applies_to', ['taxable_amount', 'total_amount'])
-                ->default('taxable_amount')
-                ->comment('Sobre qué se calcula: base imponible o total con impuestos');
+            $table->unsignedTinyInteger('applies_to')
+                ->default(0)
+                ->comment('Sobre qué se calcula: 0=taxable_amount, 1=total_amount (CommissionAppliesTo enum)');
 
             // Validity Period
             $table->date('valid_from')->comment('Fecha desde la cual es válida esta comisión');

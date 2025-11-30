@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
+use AichaDigital\Larabill\Enums\RelationshipType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\{Model, SoftDeletes};
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, HasOne};
@@ -16,7 +17,7 @@ use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, HasOne};
  *
  * @property int $id
  * @property int|string|null $user_id FK to users (nullable - customer can exist without User)
- * @property string $relationship_type self|self_company|client|other
+ * @property RelationshipType $relationship_type Customer relationship type
  * @property string $display_name
  * @property string $name Alias for display_name
  * @property string|null $relationship_to_user Alias for relationship_type
@@ -72,9 +73,10 @@ class Customer extends Model
     protected function casts(): array
     {
         return [
-            'is_active'      => 'boolean',
-            'inactive_since' => 'datetime',
-            'metadata'       => 'array',
+            'relationship_type' => RelationshipType::class,
+            'is_active'         => 'boolean',
+            'inactive_since'    => 'datetime',
+            'metadata'          => 'array',
         ];
     }
 
@@ -181,7 +183,7 @@ class Customer extends Model
     /**
      * Scope by relationship type.
      */
-    public function scopeRelationshipType($query, string $type)
+    public function scopeRelationshipType($query, RelationshipType $type)
     {
         return $query->where('relationship_type', $type);
     }

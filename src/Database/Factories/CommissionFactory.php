@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Database\Factories;
 
+use AichaDigital\Larabill\Enums\{CommissionAppliesTo, CommissionLevel, CommissionType};
 use AichaDigital\Larabill\Models\{Article, Commission};
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -29,13 +30,13 @@ class CommissionFactory extends Factory
         $rate = $this->faker->randomFloat(4, 1, 30);
 
         return [
-            'level'              => 'global',
+            'level'              => CommissionLevel::GLOBAL,
             'article_id'         => null,
             'product_group'      => null,
-            'type'               => 'percentage',
+            'type'               => CommissionType::PERCENTAGE,
             'rate'               => $rate,
             'rate_base100'       => (int) ($rate * 100),
-            'applies_to'         => 'taxable_amount',
+            'applies_to'         => CommissionAppliesTo::TAXABLE_AMOUNT,
             'valid_from'         => now(),
             'valid_until'        => null,
             'is_active'          => true,
@@ -54,7 +55,7 @@ class CommissionFactory extends Factory
     public function product(): static
     {
         return $this->state(fn (array $attributes) => [
-            'level'      => 'product',
+            'level'      => CommissionLevel::PRODUCT,
             'article_id' => Article::factory(),
         ]);
     }
@@ -65,7 +66,7 @@ class CommissionFactory extends Factory
     public function productGroup(?string $group = null): static
     {
         return $this->state(fn (array $attributes) => [
-            'level'         => 'product_group',
+            'level'         => CommissionLevel::PRODUCT_GROUP,
             'product_group' => $group ?? $this->faker->word(),
         ]);
     }
@@ -76,7 +77,7 @@ class CommissionFactory extends Factory
     public function global(): static
     {
         return $this->state(fn (array $attributes) => [
-            'level' => 'global',
+            'level' => CommissionLevel::GLOBAL,
         ]);
     }
 
@@ -88,7 +89,7 @@ class CommissionFactory extends Factory
         $fixedAmount = $amount ?? $this->faker->randomFloat(2, 1, 100);
 
         return $this->state(fn (array $attributes) => [
-            'type'         => 'fixed',
+            'type'         => CommissionType::FIXED,
             'rate'         => $fixedAmount,
             'rate_base100' => (int) ($fixedAmount * 100),
         ]);
@@ -102,7 +103,7 @@ class CommissionFactory extends Factory
         $percentageRate = $rate ?? $this->faker->randomFloat(4, 1, 30);
 
         return $this->state(fn (array $attributes) => [
-            'type'         => 'percentage',
+            'type'         => CommissionType::PERCENTAGE,
             'rate'         => $percentageRate,
             'rate_base100' => (int) ($percentageRate * 100),
         ]);

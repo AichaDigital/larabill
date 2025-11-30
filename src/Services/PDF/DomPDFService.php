@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services\PDF;
 
+use AichaDigital\Larabill\Enums\TemplateInvoiceType;
 use AichaDigital\Larabill\Models\Invoice;
 use Dompdf\{Dompdf, Options};
 use Illuminate\Support\Facades\View;
@@ -442,7 +443,7 @@ class DomPDFService
 
                 return \AichaDigital\Larabill\Models\CompanyTemplateSettings::getDefaultNotes(
                     $companyId,
-                    $invoice->getInvoiceType(),
+                    $this->convertToTemplateInvoiceType($invoice->getInvoiceType()),
                     (string) $invoice->user_id
                 );
             } catch (\Exception $e) {
@@ -473,7 +474,7 @@ class DomPDFService
 
                 return \AichaDigital\Larabill\Models\CompanyTemplateSettings::getPaymentTerms(
                     $companyId,
-                    $invoice->getInvoiceType(),
+                    $this->convertToTemplateInvoiceType($invoice->getInvoiceType()),
                     (string) $invoice->user_id
                 );
             } catch (\Exception $e) {
@@ -530,6 +531,22 @@ class DomPDFService
         // This should be configured based on your application's needs
         // For now, return a default company ID
         return $this->getConfigValue('larabill.default_company_id', 'default');
+    }
+
+    /**
+     * Convert invoice type string to TemplateInvoiceType enum
+     *
+     * @param  string  $invoiceType  Invoice type string (e.g., 'invoice', 'proforma')
+     * @return TemplateInvoiceType Corresponding enum value
+     */
+    protected function convertToTemplateInvoiceType(string $invoiceType): TemplateInvoiceType
+    {
+        return match (strtolower($invoiceType)) {
+            'proforma'      => TemplateInvoiceType::PROFORMA,
+            'reverse_charge', 'reverse-charge' => TemplateInvoiceType::REVERSE_CHARGE,
+            'exempt'        => TemplateInvoiceType::EXEMPT,
+            default         => TemplateInvoiceType::FISCAL, // invoice, simplified, rectificative -> fiscal
+        };
     }
 
     /**

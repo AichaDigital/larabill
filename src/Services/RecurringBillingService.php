@@ -206,7 +206,7 @@ final class RecurringBillingService
             ),
             pricingDetails: $pricingDetails,
             billingDetails: new BillingDetails(
-                billingCycle: $article->billing_frequency->value,
+                billingCycle: $article->billing_frequency->label(),
                 periodStart: $periodStart,
                 periodEnd: $periodEnd,
                 nextBillingDate: $nextBillingDate,

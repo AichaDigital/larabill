@@ -230,4 +230,35 @@ class MigrationHelper
             'ulid_binary',
         ], true);
     }
+
+    /**
+     * Add an agnostic ID column (non-user foreign key).
+     *
+     * Uses the same ID type as user_id for consistency.
+     * Useful for columns like client_id, customer_id, etc.
+     */
+    public static function agnosticIdColumn(
+        Blueprint $table,
+        string $columnName,
+        bool $nullable = false,
+        bool $index = false
+    ): void {
+        $idType = static::getUserIdType();
+
+        $column = match ($idType) {
+            'uuid'        => $table->uuid($columnName),
+            'uuid_binary' => $table->binary($columnName, 16),
+            'ulid'        => $table->ulid($columnName),
+            'ulid_binary' => $table->binary($columnName, 26),
+            default       => $table->unsignedBigInteger($columnName),
+        };
+
+        if ($nullable) {
+            $column->nullable();
+        }
+
+        if ($index) {
+            $table->index($columnName);
+        }
+    }
 }

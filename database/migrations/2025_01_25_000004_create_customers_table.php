@@ -21,9 +21,9 @@ return new class extends Migration
             MigrationHelper::userIdColumn($table, nullable: true);
 
             // Customer type and relationship to User
-            $table->enum('relationship_type', ['self', 'self_company', 'client', 'other'])
-                ->default('self')
-                ->comment('self=User mismo, self_company=empresa del User, client=cliente del User');
+            $table->unsignedTinyInteger('relationship_type')
+                ->default(0)
+                ->comment('0=self (User mismo), 1=self_company, 2=client, 3=other (RelationshipType enum)');
 
             // Basic Info
             $table->string('display_name')->comment('Nombre para mostrar (puede ser nombre legal o comercial)');

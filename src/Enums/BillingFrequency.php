@@ -6,12 +6,12 @@ namespace AichaDigital\Larabill\Enums;
 
 use Carbon\Carbon;
 
-enum BillingFrequency: string
+enum BillingFrequency: int
 {
-    case MONTHLY   = 'M';
-    case QUARTERLY = 'Q';
-    case YEARLY    = 'Y';
-    case LIFETIME  = 'L';
+    case MONTHLY   = 0;
+    case QUARTERLY = 1;
+    case YEARLY    = 2;
+    case LIFETIME  = 3;
 
     /**
      * Get human-readable label for the frequency

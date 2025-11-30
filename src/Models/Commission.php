@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Models;
 
 use AichaDigital\Lara100\Casts\Base100Int;
+use AichaDigital\Larabill\Enums\{CommissionAppliesTo, CommissionLevel, CommissionType};
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\{Model, SoftDeletes};
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,13 +21,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * Priority: product > product_group > global
  *
  * @property int $id
- * @property string $level global|product_group|product
+ * @property CommissionLevel $level Commission level enum
  * @property int|null $article_id FK to articles (for level=product)
  * @property string|null $product_group (for level=product_group)
- * @property string $type percentage|fixed
+ * @property CommissionType $type Commission type enum
  * @property float $rate Percentage (20.5000) or fixed amount (20.50)
  * @property int|null $rate_base100 Base-100 for calculations
- * @property string $applies_to taxable_amount|total_amount
+ * @property CommissionAppliesTo $applies_to What the commission applies to
  * @property \Illuminate\Support\Carbon $valid_from
  * @property \Illuminate\Support\Carbon|null $valid_until
  * @property bool $is_active
@@ -81,6 +82,9 @@ class Commission extends Model
     protected function casts(): array
     {
         return [
+            'level'              => CommissionLevel::class,
+            'type'               => CommissionType::class,
+            'applies_to'         => CommissionAppliesTo::class,
             'rate'               => Base100Int::class, // 10.5% ↔ 1050 or €20.50 ↔ 2050
             'rate_base100'       => 'integer',
             'valid_from'         => 'date',
@@ -124,7 +128,7 @@ class Commission extends Model
             return 0;
         }
 
-        if ($this->type === 'percentage') {
+        if ($this->type === CommissionType::PERCENTAGE) {
             return $baseAmount * ($this->rate / 100);
         }
 
@@ -154,10 +158,9 @@ class Commission extends Model
 
         // Check level matching
         return match ($this->level) {
-            'product'       => $this->article_id          === $articleId,
-            'product_group' => $this->product_group       === $productGroup,
-            'global'        => true,
-            default         => false,
+            CommissionLevel::PRODUCT       => $this->article_id    === $articleId,
+            CommissionLevel::PRODUCT_GROUP => $this->product_group === $productGroup,
+            CommissionLevel::GLOBAL        => true,
         };
     }
 
@@ -167,10 +170,9 @@ class Commission extends Model
     public function getPriorityAttribute(): int
     {
         return match ($this->level) {
-            'product'       => 3,
-            'product_group' => 2,
-            'global'        => 1,
-            default         => 0,
+            CommissionLevel::PRODUCT       => 3,
+            CommissionLevel::PRODUCT_GROUP => 2,
+            CommissionLevel::GLOBAL        => 1,
         };
     }
 
@@ -210,7 +212,7 @@ class Commission extends Model
     /**
      * Scope by level.
      */
-    public function scopeLevel($query, string $level)
+    public function scopeLevel($query, CommissionLevel $level)
     {
         return $query->where('level', $level);
     }
@@ -218,7 +220,7 @@ class Commission extends Model
     /**
      * Scope by level (alias for better readability).
      */
-    public function scopeForLevel($query, string $level)
+    public function scopeForLevel($query, CommissionLevel $level)
     {
         return $query->where('level', $level);
     }
@@ -226,7 +228,7 @@ class Commission extends Model
     /**
      * Scope by type.
      */
-    public function scopeForType($query, string $type)
+    public function scopeForType($query, CommissionType $type)
     {
         return $query->where('type', $type);
     }
@@ -236,7 +238,7 @@ class Commission extends Model
      */
     public function scopeForArticle($query, int $articleId)
     {
-        return $query->where('level', 'product')->where('article_id', $articleId);
+        return $query->where('level', CommissionLevel::PRODUCT)->where('article_id', $articleId);
     }
 
     /**
@@ -244,7 +246,7 @@ class Commission extends Model
      */
     public function scopeForProductGroup($query, string $productGroup)
     {
-        return $query->where('level', 'product_group')->where('product_group', $productGroup);
+        return $query->where('level', CommissionLevel::PRODUCT_GROUP)->where('product_group', $productGroup);
     }
 
     /**
@@ -252,7 +254,7 @@ class Commission extends Model
      */
     public function scopeGlobal($query)
     {
-        return $query->where('level', 'global');
+        return $query->where('level', CommissionLevel::GLOBAL);
     }
 
     /**
@@ -271,9 +273,11 @@ class Commission extends Model
 
     /**
      * Scope ordered by priority (product > product_group > global).
+     * CommissionLevel: PRODUCT=2, PRODUCT_GROUP=1, GLOBAL=0
+     * Order by level DESC puts PRODUCT first, then PRODUCT_GROUP, then GLOBAL
      */
     public function scopeByPriority($query)
     {
-        return $query->orderByRaw("FIELD(level, 'product', 'product_group', 'global')");
+        return $query->orderByDesc('level');
     }
 }

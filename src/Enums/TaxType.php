@@ -10,12 +10,12 @@ namespace AichaDigital\Larabill\Enums;
  * Represents different types of taxes supported by the system.
  * This enum is agnostic to regional implementations.
  */
-enum TaxType: string
+enum TaxType: int
 {
-    case VAT       = 'vat';           // Value Added Tax (EU/UK)
-    case SALES_TAX = 'sales_tax'; // Sales Tax (US/Canada)
-    case GST       = 'gst';           // Goods and Services Tax (Australia/NZ/India)
-    case OTHER     = 'other';       // Custom/Other tax types
+    case VAT       = 0;  // Value Added Tax (EU/UK)
+    case SALES_TAX = 1;  // Sales Tax (US/Canada)
+    case GST       = 2;  // Goods and Services Tax (Australia/NZ/India)
+    case OTHER     = 3;  // Custom/Other tax types
 
     /**
      * Get human-readable label for the tax type.
@@ -33,7 +33,7 @@ enum TaxType: string
     /**
      * Get all available values as array.
      *
-     * @return array<string>
+     * @return array<int>
      */
     public static function values(): array
     {

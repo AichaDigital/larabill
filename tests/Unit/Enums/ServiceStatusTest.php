@@ -5,11 +5,11 @@ declare(strict_types=1);
 use AichaDigital\Larabill\Enums\ServiceStatus;
 
 it('has correct values for each case', function () {
-    expect(ServiceStatus::ACTIVE->value)->toBe('A')
-        ->and(ServiceStatus::PENDING->value)->toBe('P')
-        ->and(ServiceStatus::SUSPENDED->value)->toBe('S')
-        ->and(ServiceStatus::CANCELLED->value)->toBe('C')
-        ->and(ServiceStatus::EXPIRED->value)->toBe('E');
+    expect(ServiceStatus::ACTIVE->value)->toBe(0)
+        ->and(ServiceStatus::PENDING->value)->toBe(1)
+        ->and(ServiceStatus::SUSPENDED->value)->toBe(2)
+        ->and(ServiceStatus::CANCELLED->value)->toBe(3)
+        ->and(ServiceStatus::EXPIRED->value)->toBe(4);
 });
 
 it('returns correct labels', function () {

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use AichaDigital\Larabill\Contracts\Services\FiscalVerificationContract;
+use AichaDigital\Larabill\Enums\RelationshipType;
 use AichaDigital\Larabill\Models\{Customer, Invoice, IssuerConfig};
 use AichaDigital\Larabill\Services\FiscalVerification\FakeFiscalVerification;
 use AichaDigital\Larabill\Services\InvoiceService;
@@ -114,14 +115,14 @@ it('can handle multi-customer billing for same user', function () {
     // Customer 1: Personal
     $customer1 = Customer::factory()->create([
         'user_id'           => $userId,
-        'relationship_type' => 'self',
+        'relationship_type' => RelationshipType::SELF,
         'display_name'      => 'John Doe (Personal)',
     ]);
 
     // Customer 2: Company
     $customer2 = Customer::factory()->create([
         'user_id'           => $userId,
-        'relationship_type' => 'self_company',
+        'relationship_type' => RelationshipType::SELF_COMPANY,
         'display_name'      => 'John Doe Ltd',
     ]);
 

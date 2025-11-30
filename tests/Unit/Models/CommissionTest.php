@@ -2,17 +2,18 @@
 
 declare(strict_types=1);
 
+use AichaDigital\Larabill\Enums\{CommissionLevel, CommissionType};
 use AichaDigital\Larabill\Models\Commission;
 
 it('can create a commission', function () {
     $commission = Commission::factory()->create([
         'name'  => 'Test Commission',
-        'level' => 'global',
+        'level' => CommissionLevel::GLOBAL,
         'rate'  => 1050, // 10.50% in base100
     ]);
 
     expect($commission->name)->toBe('Test Commission')
-        ->and($commission->level)->toBe('global')
+        ->and($commission->level)->toBe(CommissionLevel::GLOBAL)
         ->and($commission->rate)->toBe(1050) // 10.50% in base100
         ->and($commission->exists)->toBeTrue();
 });
@@ -28,23 +29,23 @@ it('can scope active commissions', function () {
 });
 
 it('can scope by level', function () {
-    Commission::factory()->create(['level' => 'global']);
-    Commission::factory()->create(['level' => 'product']);
+    Commission::factory()->create(['level' => CommissionLevel::GLOBAL]);
+    Commission::factory()->create(['level' => CommissionLevel::PRODUCT]);
 
-    $globalCommissions = Commission::forLevel('global')->get();
+    $globalCommissions = Commission::forLevel(CommissionLevel::GLOBAL)->get();
 
     expect($globalCommissions)->toHaveCount(1)
-        ->and($globalCommissions->first()->level)->toBe('global');
+        ->and($globalCommissions->first()->level)->toBe(CommissionLevel::GLOBAL);
 });
 
 it('can scope by type', function () {
-    Commission::factory()->create(['type' => 'percentage']);
-    Commission::factory()->create(['type' => 'fixed']);
+    Commission::factory()->create(['type' => CommissionType::PERCENTAGE]);
+    Commission::factory()->create(['type' => CommissionType::FIXED]);
 
-    $percentageCommissions = Commission::forType('percentage')->get();
+    $percentageCommissions = Commission::forType(CommissionType::PERCENTAGE)->get();
 
     expect($percentageCommissions)->toHaveCount(1)
-        ->and($percentageCommissions->first()->type)->toBe('percentage');
+        ->and($percentageCommissions->first()->type)->toBe(CommissionType::PERCENTAGE);
 });
 
 it('can check if commission is currently valid', function () {
@@ -75,13 +76,13 @@ it('handles commission without end date as always valid', function () {
 });
 
 it('supports multi-level commission structure', function () {
-    $global  = Commission::factory()->create(['level' => 'global', 'rate' => 5.0]);
-    $group   = Commission::factory()->create(['level' => 'product_group', 'rate' => 7.5]);
-    $product = Commission::factory()->create(['level' => 'product', 'rate' => 10.0]);
+    $global  = Commission::factory()->create(['level' => CommissionLevel::GLOBAL, 'rate' => 5.0]);
+    $group   = Commission::factory()->create(['level' => CommissionLevel::PRODUCT_GROUP, 'rate' => 7.5]);
+    $product = Commission::factory()->create(['level' => CommissionLevel::PRODUCT, 'rate' => 10.0]);
 
-    expect($global->level)->toBe('global')
-        ->and($group->level)->toBe('product_group')
-        ->and($product->level)->toBe('product')
+    expect($global->level)->toBe(CommissionLevel::GLOBAL)
+        ->and($group->level)->toBe(CommissionLevel::PRODUCT_GROUP)
+        ->and($product->level)->toBe(CommissionLevel::PRODUCT)
         ->and($product->rate)->toBeGreaterThan($group->rate);
 });
 

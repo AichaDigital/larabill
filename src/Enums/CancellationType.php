@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Enums;
 
-enum CancellationType: string
+enum CancellationType: int
 {
-    case IMMEDIATE     = 'I';
-    case END_OF_PERIOD = 'E';
-    case NOTICE_PERIOD = 'N';
+    case IMMEDIATE     = 0;
+    case END_OF_PERIOD = 1;
+    case NOTICE_PERIOD = 2;
 
     /**
      * Get human-readable label for the cancellation type

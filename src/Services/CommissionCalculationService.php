@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services;
 
+use AichaDigital\Larabill\Enums\{CommissionLevel, CommissionType};
 use AichaDigital\Larabill\Models\{Article, Commission};
 
 /**
@@ -28,9 +29,9 @@ class CommissionCalculationService
      *     commission_id: int|null,
      *     commission_name: string|null,
      *     commission_rate: float|null,
-     *     commission_type: string|null,
+     *     commission_type: int|null,
      *     commission_amount: float,
-     *     commission_level: string|null
+     *     commission_level: int|null
      * }
      */
     public function calculateForItem(
@@ -51,7 +52,7 @@ class CommissionCalculationService
                 'commission_name'   => null,
                 'commission_rate'   => null,
                 'commission_type'   => null,
-                'commission_amount' => 0,
+                'commission_amount' => 0.0,
                 'commission_level'  => null,
             ];
         }
@@ -62,9 +63,9 @@ class CommissionCalculationService
             'commission_id'     => $commission->id,
             'commission_name'   => $commission->name,
             'commission_rate'   => $commission->rate,
-            'commission_type'   => $commission->type,
+            'commission_type'   => $commission->type->value,
             'commission_amount' => $amount,
-            'commission_level'  => $commission->level,
+            'commission_level'  => $commission->level->value,
         ];
     }
 
@@ -133,7 +134,7 @@ class CommissionCalculationService
         // Try product-level first (highest priority)
         if ($articleId) {
             $commission = Commission::active()
-                ->level('product')
+                ->level(CommissionLevel::PRODUCT)
                 ->forArticle($articleId)
                 ->validForDate($date)
                 ->first();
@@ -146,7 +147,7 @@ class CommissionCalculationService
         // Try product-group level (medium priority)
         if ($productGroup) {
             $commission = Commission::active()
-                ->level('product_group')
+                ->level(CommissionLevel::PRODUCT_GROUP)
                 ->forProductGroup($productGroup)
                 ->validForDate($date)
                 ->first();
@@ -158,7 +159,7 @@ class CommissionCalculationService
 
         // Fall back to global level (lowest priority)
         return Commission::active()
-            ->level('global')
+            ->level(CommissionLevel::GLOBAL)
             ->validForDate($date)
             ->first();
     }
@@ -177,9 +178,9 @@ class CommissionCalculationService
         $commissions = Commission::active()->get()->groupBy('level');
 
         return [
-            'global'        => $commissions->get('global', collect()),
-            'product_group' => $commissions->get('product_group', collect()),
-            'product'       => $commissions->get('product', collect()),
+            'global'        => $commissions->get(CommissionLevel::GLOBAL->value, collect()),
+            'product_group' => $commissions->get(CommissionLevel::PRODUCT_GROUP->value, collect()),
+            'product'       => $commissions->get(CommissionLevel::PRODUCT->value, collect()),
         ];
     }
 
@@ -252,13 +253,13 @@ class CommissionCalculationService
         return [
             'total_active' => $commissions->count(),
             'by_level'     => [
-                'global'        => $commissions->where('level', 'global')->count(),
-                'product_group' => $commissions->where('level', 'product_group')->count(),
-                'product'       => $commissions->where('level', 'product')->count(),
+                'global'        => $commissions->where('level', CommissionLevel::GLOBAL)->count(),
+                'product_group' => $commissions->where('level', CommissionLevel::PRODUCT_GROUP)->count(),
+                'product'       => $commissions->where('level', CommissionLevel::PRODUCT)->count(),
             ],
             'by_type' => [
-                'percentage' => $commissions->where('type', 'percentage')->count(),
-                'fixed'      => $commissions->where('type', 'fixed')->count(),
+                'percentage' => $commissions->where('type', CommissionType::PERCENTAGE)->count(),
+                'fixed'      => $commissions->where('type', CommissionType::FIXED)->count(),
             ],
         ];
     }

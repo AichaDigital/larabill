@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use AichaDigital\Larabill\Enums\RelationshipType;
 use AichaDigital\Larabill\Models\Customer;
 
 it('can create a customer', function () {
@@ -76,13 +77,13 @@ it('can scope active customers', function () {
 });
 
 it('can scope by relationship type', function () {
-    Customer::factory()->create(['relationship_type' => 'self']);
-    Customer::factory()->create(['relationship_type' => 'client']);
+    Customer::factory()->create(['relationship_type' => RelationshipType::SELF]);
+    Customer::factory()->create(['relationship_type' => RelationshipType::CLIENT]);
 
-    $selfCustomers = Customer::relationshipType('self')->get();
+    $selfCustomers = Customer::relationshipType(RelationshipType::SELF)->get();
 
     expect($selfCustomers)->toHaveCount(1)
-        ->and($selfCustomers->first()->relationship_type)->toBe('self');
+        ->and($selfCustomers->first()->relationship_type)->toBe(RelationshipType::SELF);
 });
 
 it('uses soft deletes', function () {

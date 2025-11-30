@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Enums;
 
-enum ServiceStatus: string
+enum ServiceStatus: int
 {
-    case ACTIVE    = 'A';
-    case PENDING   = 'P';
-    case SUSPENDED = 'S';
-    case CANCELLED = 'C';
-    case EXPIRED   = 'E';
+    case ACTIVE    = 0;
+    case PENDING   = 1;
+    case SUSPENDED = 2;
+    case CANCELLED = 3;
+    case EXPIRED   = 4;
 
     /**
      * Get human-readable label for the status

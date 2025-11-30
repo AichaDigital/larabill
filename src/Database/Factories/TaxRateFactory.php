@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Database\Factories;
 
+use AichaDigital\Larabill\Enums\TaxType;
 use AichaDigital\Larabill\Models\TaxRate;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -30,7 +31,7 @@ class TaxRateFactory extends Factory
             'name'               => fake()->words(3, true),
             'rate'               => fake()->randomElement([2100, 1000, 400]),
             'region'             => fake()->countryCode(),
-            'type'               => 'vat',
+            'type'               => TaxType::VAT,
             'special_conditions' => null,
         ];
     }

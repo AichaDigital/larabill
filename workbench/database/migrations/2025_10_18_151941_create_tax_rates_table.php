@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('name')->comment('Ej: "IVA General", "MA State Sales Tax"');
             $table->integer('rate')->comment('Base-100 integer, ej: 2100 para 21%');
             $table->string('region')->nullable()->comment('Ej: "ES", "US-MA"');
-            $table->enum('type', ['vat', 'sales_tax', 'gst', 'other'])->default('vat');
+            $table->unsignedTinyInteger('type')->default(0)->comment('0=vat, 1=sales_tax, 2=gst, 3=other (TaxType enum)');
             $table->timestamps();
         });
     }

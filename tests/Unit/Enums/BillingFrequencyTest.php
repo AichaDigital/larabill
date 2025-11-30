@@ -6,10 +6,10 @@ use AichaDigital\Larabill\Enums\BillingFrequency;
 use Carbon\Carbon;
 
 it('has correct values for each case', function () {
-    expect(BillingFrequency::MONTHLY->value)->toBe('M')
-        ->and(BillingFrequency::QUARTERLY->value)->toBe('Q')
-        ->and(BillingFrequency::YEARLY->value)->toBe('Y')
-        ->and(BillingFrequency::LIFETIME->value)->toBe('L');
+    expect(BillingFrequency::MONTHLY->value)->toBe(0)
+        ->and(BillingFrequency::QUARTERLY->value)->toBe(1)
+        ->and(BillingFrequency::YEARLY->value)->toBe(2)
+        ->and(BillingFrequency::LIFETIME->value)->toBe(3);
 });
 
 it('returns correct labels', function () {

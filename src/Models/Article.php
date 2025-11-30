@@ -22,7 +22,7 @@ use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
  * @property int $base_price
  * @property int|null $cost_price
  * @property bool $is_recurring
- * @property string|null $billing_frequency
+ * @property BillingFrequency|null $billing_frequency
  * @property int|null $billing_interval
  * @property int|null $billing_days_in_advance
  * @property string|null $subscription_type
