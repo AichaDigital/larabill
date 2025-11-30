@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Models\{LegalEntityType};
+use AichaDigital\Larabill\Models\LegalEntityType;
 
 it('can create a legal entity type', function () {
     $type = LegalEntityType::factory()->create([

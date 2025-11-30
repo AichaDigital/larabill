@@ -7,7 +7,7 @@ namespace Tests\Unit\Support;
 use AichaDigital\Larabill\Support\MigrationHelper;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\{Schema};
+use Illuminate\Support\Facades\Schema;
 
 uses(RefreshDatabase::class);
 

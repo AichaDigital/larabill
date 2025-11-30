@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use AichaDigital\Larabill\Actions\ProcessRecurringBilling;
-use AichaDigital\Larabill\Enums\{ServiceStatus};
+use AichaDigital\Larabill\Enums\ServiceStatus;
 use AichaDigital\Larabill\Models\{Article, ArticleServiceStatus, Invoice};
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
