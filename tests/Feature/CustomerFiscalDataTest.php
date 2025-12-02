@@ -107,7 +107,8 @@ it('belongs to user', function () {
     $user = User::factory()->create();
     $data = CustomerFiscalData::factory()->forUser($user->id)->create();
 
-    expect($data->user)->toBeInstanceOf(User::class)
+    $userModel = config('larabill.user_model');
+    expect($data->user)->toBeInstanceOf($userModel)
         ->and($data->user->id)->toEqual($user->id);
 });
 
