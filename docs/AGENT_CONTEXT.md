@@ -224,6 +224,39 @@ composer test -- --filter=Invoice
 vendor/bin/phpstan analyse
 ```
 
+### Testing Patterns - User Model Agnosticism
+
+**CRITICAL**: This package is agnostic to the host application's User model.
+
+The `user_model` is configurable via `config('larabill.user_model')`. In tests:
+
+- `TestCase.php` sets `larabill.user_model` to `TestUser::class`
+- The `HasUserRelation` trait reads this config dynamically
+- Models use `tests/Models/User.php` for creating test users (with factory)
+- But relationships return whatever class is configured in `larabill.user_model`
+
+**Pattern for testing user relationships**:
+
+```php
+// ✅ CORRECT - Agnostic pattern (uses configured model dynamically)
+it('belongs to user', function () {
+    $user = User::factory()->create();
+    $data = Model::factory()->forUser($user->id)->create();
+
+    $userModel = config('larabill.user_model');
+    expect($data->user)->toBeInstanceOf($userModel);
+});
+
+// ❌ WRONG - Hardcoded class breaks agnosticism
+expect($data->user)->toBeInstanceOf(User::class);
+```
+
+**Reference tests that follow this pattern**:
+
+- `tests/Unit/Models/InvoiceSeriesControlTest.php:52-55`
+- `tests/Unit/Models/ArticleServiceStatusTest.php`
+- `tests/Unit/Models/ArticleOverrideTest.php`
+
 ## ⚠️ Important Conventions
 
 ### Filament 4 Compatibility
