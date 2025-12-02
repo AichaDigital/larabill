@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Models;
 
 use AichaDigital\Lara100\Casts\Base100Int;
-use AichaDigital\Larabill\Concerns\HasUuid;
+use AichaDigital\Larabill\Concerns\{HasUserRelation, HasUuid};
 use AichaDigital\Larabill\Enums\{InvoiceSerieType, InvoiceStatus};
 use Illuminate\Database\Eloquent\{Builder, Model};
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -79,7 +79,7 @@ use Illuminate\Support\Facades\Crypt;
  */
 class Invoice extends Model
 {
-    use HasFactory, HasUuid;
+    use HasFactory, HasUserRelation, HasUuid;
 
     /**
      * Create a new factory instance for the model.

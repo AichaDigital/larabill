@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
+use AichaDigital\Larabill\Concerns\HasUserRelation;
 use Illuminate\Database\Eloquent\{Builder, Model};
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, HasOne};
 
@@ -31,6 +32,8 @@ use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, HasOne};
  */
 class UserTaxProfile extends Model
 {
+    use HasUserRelation;
+
     /**
      * The table associated with the model.
      */

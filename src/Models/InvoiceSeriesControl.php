@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
+use AichaDigital\Larabill\Concerns\HasUserRelation;
 use AichaDigital\Larabill\Database\Factories\InvoiceSeriesControlFactory;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -36,7 +37,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class InvoiceSeriesControl extends Model
 {
-    use HasFactory;
+    use HasFactory, HasUserRelation;
 
     protected $table = 'invoice_series_control';
 

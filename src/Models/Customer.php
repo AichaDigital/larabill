@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
+use AichaDigital\Larabill\Concerns\HasUserRelation;
 use AichaDigital\Larabill\Enums\RelationshipType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\{Model, SoftDeletes};
@@ -35,7 +36,7 @@ use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, HasOne};
  */
 class Customer extends Model
 {
-    use HasFactory, SoftDeletes;
+    use HasFactory, HasUserRelation, SoftDeletes;
 
     /**
      * The table associated with the model.

@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
+use AichaDigital\Larabill\Concerns\HasUserRelation;
 use AichaDigital\Larabill\Database\Factories\CustomerFiscalDataFactory;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\{Builder, Model, Relations\BelongsTo, SoftDeletes};
+use Illuminate\Database\Eloquent\{Builder, Model, SoftDeletes};
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 /**
@@ -39,6 +40,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 class CustomerFiscalData extends Model
 {
     use HasFactory;
+    use HasUserRelation;
     use SoftDeletes;
 
     /**
@@ -70,6 +72,8 @@ class CustomerFiscalData extends Model
 
     /**
      * Casts for attributes.
+     *
+     * Note: user_id cast is handled by HasUserRelation trait.
      */
     protected function casts(): array
     {
@@ -123,16 +127,7 @@ class CustomerFiscalData extends Model
             ]);
     }
 
-    /**
-     * Relación con User.
-     */
-    public function user(): BelongsTo
-    {
-        $userModel = \AichaDigital\Larabill\Services\ModelMappingService::getModelClass('user');
-
-        // @phpstan-ignore-next-line return.type,argument.templateType
-        return $this->belongsTo($userModel);
-    }
+    // user() relationship is provided by HasUserRelation trait
 
     /**
      * Obtiene la config activa del usuario.

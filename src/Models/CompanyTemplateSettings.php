@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
+use AichaDigital\Larabill\Concerns\HasUserRelation;
 use AichaDigital\Larabill\Enums\{SettingScope, SettingType, TemplateInvoiceType};
 use Illuminate\Database\Eloquent\{Builder, Model};
 
@@ -23,6 +24,8 @@ use Illuminate\Database\Eloquent\{Builder, Model};
  */
 class CompanyTemplateSettings extends Model
 {
+    use HasUserRelation;
+
     /**
      * The attributes that are mass assignable.
      */

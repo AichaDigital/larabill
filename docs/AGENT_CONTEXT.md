@@ -65,6 +65,43 @@ aichadigital/
 
 **The `HasUuid` trait** automatically configures the model based on `user_id_type` config.
 
+### UUID Binary + Filament 4 (CRITICAL)
+
+When using `uuid_binary` with Filament, there are special considerations:
+
+#### Select Fields with User Relations
+
+```php
+// ❌ WRONG - Query Builder pluck() does NOT apply model casts
+Forms\Components\Select::make('user_id')
+    ->options(fn () => User::pluck('name', 'id'))  // Returns binary!
+
+// ✅ CORRECT - Load models FIRST, then pluck (casts are applied)
+Forms\Components\Select::make('user_id')
+    ->options(fn () => User::all()->pluck('name', 'id'))  // Returns UUID string
+```
+
+**Why?** `Model::pluck()` uses Query Builder directly, bypassing Eloquent casts.
+`Model::all()->pluck()` loads models first, applying all casts including `EfficientUuid`.
+
+#### Models with user_id Foreign Key
+
+Use the `HasUserRelation` trait for models that have a `user_id` FK:
+
+```php
+use AichaDigital\Larabill\Concerns\HasUserRelation;
+
+class CustomerFiscalData extends Model
+{
+    use HasUserRelation;  // Adds EfficientUuid cast + user() relationship
+}
+```
+
+The trait automatically:
+1. Adds `EfficientUuid` cast to `user_id` when `uuid_binary` is configured
+2. Provides the `user()` BelongsTo relationship
+3. Resolves the User model class from configuration
+
 ### Monetary Values - Base 100
 
 **NEVER use float/decimal for money**. Always integers in base 100:
@@ -193,6 +230,35 @@ vendor/bin/phpstan analyse
 
 ```php
 protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-text';
+```
+
+#### Filament 4 API Changes (vs Filament 3)
+
+```php
+// Table Actions - CHANGED
+->actions([...])     // ❌ Filament 3
+->recordActions([...])  // ✅ Filament 4
+
+// Bulk Actions - CHANGED
+->bulkActions([...])    // ❌ Filament 3
+->toolbarActions([      // ✅ Filament 4
+    BulkActionGroup::make([...])
+])
+
+// Date columns with nullable values
+->default('Text')       // ❌ Tries to parse as date
+->placeholder('Text')   // ✅ Shows text when null
+```
+
+#### Action Imports
+
+```php
+// Filament 4 - Use Filament\Actions namespace
+use Filament\Actions\ViewAction;
+use Filament\Actions\EditAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\BulkActionGroup;
+use Filament\Actions\DeleteBulkAction;
 ```
 
 ### User ID Agnosticism

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
+use AichaDigital\Larabill\Concerns\HasUserRelation;
 use Illuminate\Database\Eloquent\{Builder, Model};
 use Illuminate\Support\Carbon;
 
@@ -26,6 +27,8 @@ use Illuminate\Support\Carbon;
  */
 class EuSalesThreshold extends Model
 {
+    use HasUserRelation;
+
     /**
      * The attributes that are mass assignable.
      */
