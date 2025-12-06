@@ -256,6 +256,7 @@ class VatVerificationService
                 'api_source'      => $result['api_source'],
                 'response_data'   => $result['response_data'] ?? null,
                 'checked_at'      => now(),
+                'verified_at'     => now(),
                 'expires_at'      => now()->addDays(30), // Cache for 30 days
             ]
         );

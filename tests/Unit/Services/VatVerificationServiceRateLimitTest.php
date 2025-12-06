@@ -87,6 +87,7 @@ it('handles rate limiting with cache fallback', function () {
         'api_source'      => 'abstractapi',
         'response_data'   => ['valid' => true, 'rate_limit_hit' => true],
         'checked_at'      => now(),
+        'verified_at'     => now(),
         'expires_at'      => now()->addDays(30),
     ]);
 
@@ -131,6 +132,7 @@ it('handles rate limiting with expired cache', function () {
         'api_source'      => 'abstractapi',
         'response_data'   => ['valid' => true],
         'checked_at'      => now()->subDays(35),
+        'verified_at'     => now()->subDays(35),
         'expires_at'      => now()->subDays(5), // Expired
     ]);
 

@@ -28,11 +28,14 @@ return new class extends Migration
             $table->string('api_source')->nullable();
             $table->json('response_data')->nullable();
             $table->timestamp('checked_at')->nullable();
+            $table->timestamp('verified_at')->nullable();
             $table->timestamp('expires_at')->nullable();
             $table->timestamps();
+            $table->softDeletes();
 
             // Indexes
             $table->index(['vat_code', 'is_valid']);
+            $table->index(['is_valid', 'verified_at']);
             $table->unique(['vat_code', 'country_code']);
         });
     }

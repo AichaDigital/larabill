@@ -286,6 +286,49 @@ vendor/bin/phpstan analyse
 
 **Current status**: 866 tests passing, 34 skipped (external dependencies)
 
+### ⚠️ SQLite In-Memory Testing with Binary UUIDs
+
+By default, Larabill uses `uuid_binary` (16-byte binary storage) for optimal MySQL performance. However, **SQLite has limitations with binary UUIDs that cause foreign key constraint failures**.
+
+**The Problem**:
+
+When using SQLite in-memory testing (common in CI/CD and `phpunit.xml`), binary UUID storage creates issues with foreign key references. SQLite cannot properly match binary columns across tables, resulting in:
+
+```
+SQLSTATE[23000]: Integrity constraint violation: 19 FOREIGN KEY constraint failed
+```
+
+**The Solution**:
+
+Add this environment variable to your `phpunit.xml`:
+
+```xml
+<php>
+    <!-- Other env vars... -->
+    <env name="LARABILL_USER_ID_TYPE" value="uuid"/>
+</php>
+```
+
+This forces Larabill to use string UUIDs (36 characters) during testing, which SQLite handles correctly.
+
+**Why This Matters**:
+
+- **Production (MySQL/PostgreSQL)**: Use `uuid_binary` for 55% storage savings and better performance
+- **Testing (SQLite in-memory)**: Use `uuid` for compatibility
+
+This is a known limitation of SQLite's binary handling, not a bug in Larabill. For production-like testing, consider using MySQL or PostgreSQL test databases.
+
+**Alternative Approach**:
+
+If you prefer to test with the same configuration as production, use a real MySQL database in your test environment:
+
+```xml
+<php>
+    <env name="DB_CONNECTION" value="mysql"/>
+    <env name="DB_DATABASE" value="larabill_test"/>
+</php>
+```
+
 ## 📚 Documentation
 
 | Document | Description |

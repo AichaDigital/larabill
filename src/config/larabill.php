@@ -30,6 +30,16 @@ return [
     |
     | Auto-detect with: php artisan larabill:detect-user-id
     |
+    | ⚠️ SQLite TESTING WARNING:
+    | When using SQLite in-memory databases (common in phpunit.xml), binary
+    | UUIDs cause foreign key constraint failures. Set LARABILL_USER_ID_TYPE=uuid
+    | in your phpunit.xml for testing with SQLite:
+    |
+    |     <env name="LARABILL_USER_ID_TYPE" value="uuid"/>
+    |
+    | This is a known SQLite limitation, not a Larabill bug. For production-like
+    | testing, use MySQL/PostgreSQL test databases instead.
+    |
     */
     'user_id_type' => env('LARABILL_USER_ID_TYPE', 'int'),
 

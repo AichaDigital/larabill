@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use Illuminate\Database\Eloquent\{Builder, Model};
+use Illuminate\Database\Eloquent\{Builder, Model, SoftDeletes};
 
 /**
  * VatVerification Model
@@ -21,12 +21,16 @@ use Illuminate\Database\Eloquent\{Builder, Model};
  * @property string|null $api_source
  * @property array<string, mixed>|null $response_data
  * @property \Illuminate\Support\Carbon|null $checked_at
+ * @property \Illuminate\Support\Carbon|null $verified_at
  * @property \Illuminate\Support\Carbon|null $expires_at
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
  */
 class VatVerification extends Model
 {
+    use SoftDeletes;
+
     /**
      * The attributes that are mass assignable.
      */
@@ -39,6 +43,7 @@ class VatVerification extends Model
         'api_source',
         'response_data',
         'checked_at',
+        'verified_at',
         'expires_at',
     ];
 
@@ -49,6 +54,7 @@ class VatVerification extends Model
         'is_valid'      => 'boolean',
         'response_data' => 'array',
         'checked_at'    => 'datetime',
+        'verified_at'   => 'datetime',
         'expires_at'    => 'datetime',
     ];
 
