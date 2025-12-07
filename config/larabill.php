@@ -12,28 +12,20 @@ return [
     | This setting affects how UUIDs are stored and queried.
     |
     | Options:
+    |
     | - 'int': Auto-increment integer (standard Laravel default)
-    | - 'uuid': String UUID v7 (36 characters) - human readable
-    | - 'uuid_binary': Binary UUID (16 bytes) - 55% storage savings, best performance
+    | - 'uuid': String UUID v7 (36 characters) - recommended, ordered
     | - 'ulid': ULID string (26 characters) - sortable, human readable
-    | - 'ulid_binary': ULID binary (26 bytes) - sortable, efficient
     | - 'auto': Auto-detect from users table
     |
-    | For production with high volume, 'uuid_binary' is recommended.
-    | Requires dyrynda/laravel-model-uuid package for binary support.
+    | For production, 'uuid' is recommended. Uses Laravel 12 native
+    | Str::orderedUuid() which generates UUID v7 with chronological ordering.
     |
-    | ⚠️ SQLite TESTING WARNING:
-    | When using SQLite in-memory databases (common in phpunit.xml), binary
-    | UUIDs cause foreign key constraint failures. Set LARABILL_USER_ID_TYPE=uuid
-    | in your phpunit.xml for testing with SQLite:
-    |
-    |     <env name="LARABILL_USER_ID_TYPE" value="uuid"/>
-    |
-    | This is a known SQLite limitation, not a Larabill bug. For production-like
-    | testing, use MySQL/PostgreSQL test databases instead.
+    | Note: uuid_binary was removed in v1.0 due to incompatibility with
+    | FilamentPHP v4 + Livewire. See ADR-002 for migration guide.
     |
     */
-    'user_id_type' => env('LARABILL_USER_ID_TYPE', 'uuid_binary'),
+    'user_id_type' => env('LARABILL_USER_ID_TYPE', 'uuid'),
 
     /*
     |--------------------------------------------------------------------------
@@ -138,28 +130,17 @@ return [
     // Model mappings for extensibility
     'models' => [
         'user'                  => \AichaDigital\Larabill\Tests\Models\User::class, // Your application's User model
-        'user_tax_profile'      => \AichaDigital\Larabill\Models\UserTaxProfile::class,
         'invoice'               => \AichaDigital\Larabill\Models\Invoice::class,
         'invoice_item'          => \AichaDigital\Larabill\Models\InvoiceItem::class,
         'tax_rate'              => \AichaDigital\Larabill\Models\TaxRate::class,
         'vat_verification'      => \AichaDigital\Larabill\Models\VatVerification::class,
         'company_fiscal_config' => \AichaDigital\Larabill\Models\CompanyFiscalConfig::class,
         'customer_fiscal_data'  => \AichaDigital\Larabill\Models\CustomerFiscalData::class,
+        'customer'              => \AichaDigital\Larabill\Models\Customer::class,
     ],
 
     // Field mappings for custom field names
     'field_mappings' => [
-        'user_tax_profile' => [
-            // 'user_id' => 'customer_id',
-            // 'tax_code' => 'fiscal_code',
-            // 'business_name' => 'company_name',
-            // 'address' => 'street_address',
-            // 'city' => 'municipality',
-            // 'postal_code' => 'zip_code',
-            // 'country' => 'country_code',
-            // 'state' => 'region',
-            // 'phone' => 'contact_phone',
-        ],
         'vat_verification' => [
             // 'vat_code' => 'tax_number',
         ],

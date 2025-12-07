@@ -4,27 +4,18 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Concerns;
 
-use AichaDigital\Larabill\Support\MigrationHelper;
-use Dyrynda\Database\Support\Casts\EfficientUuid;
 use Illuminate\Support\Str;
 
 /**
  * Agnostic UUID trait for Eloquent models.
  *
- * Supports multiple UUID strategies based on configuration:
- * - 'uuid': String UUID v7 (36 chars) - uses Laravel native
- * - 'uuid_binary': Binary UUID (16 bytes) - uses Dyrynda EfficientUuid cast
- *
- * For binary UUID, requires dyrynda/laravel-model-uuid package.
- * The trait automatically configures the model based on larabill.user_id_type config.
+ * Uses Laravel 12 native UUID v7 (ordered) for optimal index performance.
+ * Configures the model for string UUID primary keys.
  *
  * Usage:
  *   use HasUuid;
  *
- * For binary UUID, ensure your migration uses:
- *   $table->binary('id', 16)->primary();
- *
- * For string UUID:
+ * Migration:
  *   $table->uuid('id')->primary();
  */
 trait HasUuid
@@ -38,19 +29,8 @@ trait HasUuid
             $keyName = $model->getKeyName();
 
             if (empty($model->{$keyName})) {
-                $idType = MigrationHelper::getUserIdType();
-
                 // Generate UUID v7 (ordered) for better index performance
-                $uuid = (string) Str::orderedUuid();
-
-                if ($idType === 'uuid_binary') {
-                    // For binary storage, the EfficientUuid cast handles conversion
-                    // We just set the string value, cast converts to binary on save
-                    $model->{$keyName} = $uuid;
-                } else {
-                    // For string storage, use directly
-                    $model->{$keyName} = $uuid;
-                }
+                $model->{$keyName} = (string) Str::orderedUuid();
             }
         });
     }
@@ -61,40 +41,27 @@ trait HasUuid
     protected function initializeHasUuid(): void
     {
         $this->incrementing = false;
-
-        $idType = MigrationHelper::getUserIdType();
-
-        if ($idType === 'uuid_binary') {
-            // Binary UUID: key type is string (EfficientUuid cast handles conversion)
-            $this->keyType = 'string';
-        } else {
-            // String UUID: key type is string
-            $this->keyType = 'string';
-        }
+        $this->keyType      = 'string';
     }
 
     /**
-     * Get the casts array, adding EfficientUuid for binary UUID if needed.
-     *
-     * @return array<string, string>
+     * Get the value indicating whether the IDs are incrementing.
      */
-    public function getCasts(): array
+    public function getIncrementing(): bool
     {
-        $casts  = parent::getCasts();
-        $idType = MigrationHelper::getUserIdType();
+        return false;
+    }
 
-        if ($idType === 'uuid_binary') {
-            // Add EfficientUuid cast for binary storage
-            $casts[$this->getKeyName()] = EfficientUuid::class;
-        }
-
-        return $casts;
+    /**
+     * Get the auto-incrementing key type.
+     */
+    public function getKeyType(): string
+    {
+        return 'string';
     }
 
     /**
      * Get the route key for the model.
-     *
-     * For binary UUID, this returns the string representation.
      */
     public function getRouteKey(): mixed
     {
@@ -103,8 +70,6 @@ trait HasUuid
 
     /**
      * Resolve the route binding for UUID.
-     *
-     * Handles both string and binary UUID lookups.
      *
      * @param  mixed  $value
      * @param  string|null  $field
@@ -118,15 +83,7 @@ trait HasUuid
     }
 
     /**
-     * Check if the model is using binary UUID storage.
-     */
-    public function usesBinaryUuid(): bool
-    {
-        return MigrationHelper::getUserIdType() === 'uuid_binary';
-    }
-
-    /**
-     * Get the UUID column name (for compatibility with dyrynda package).
+     * Get the UUID column name.
      */
     public function uuidColumn(): string
     {
@@ -134,7 +91,7 @@ trait HasUuid
     }
 
     /**
-     * Get the UUID columns (for compatibility with dyrynda package).
+     * Get the UUID columns.
      *
      * @return array<string>
      */

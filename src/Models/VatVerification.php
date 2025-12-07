@@ -77,13 +77,13 @@ class VatVerification extends Model
     }
 
     /**
-     * Get tax profiles that use this VAT code.
+     * Get customer fiscal data records that use this VAT code.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany<UserTaxProfile, $this>
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<CustomerFiscalData, $this>
      */
-    public function taxProfiles(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function customerFiscalData(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(UserTaxProfile::class, 'tax_code', 'vat_code');
+        return $this->hasMany(CustomerFiscalData::class, 'tax_id', 'vat_code');
     }
 
     /**

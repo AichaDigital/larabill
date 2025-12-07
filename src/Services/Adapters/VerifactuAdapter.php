@@ -20,6 +20,7 @@ class VerifactuAdapter
      * Convert a Larabill Invoice to Verifactu-compatible array.
      *
      * Converts base100 integers to decimal(2) format for AEAT XML.
+     * Uses encrypted snapshots for fiscal data (ADR-001 architecture).
      *
      * @param  Invoice  $invoice  The Larabill invoice to convert
      * @return array<string, mixed> Verifactu-compatible invoice data
@@ -27,7 +28,10 @@ class VerifactuAdapter
     public static function toVerifactuInvoice(Invoice $invoice): array
     {
         // Refresh invoice to ensure relationships are loaded
-        $invoice = $invoice->fresh(['taxProfile', 'customer']);
+        $invoice = $invoice->fresh(['customer', 'customerFiscalData']);
+
+        // Get customer fiscal data from snapshot or relationship
+        $customerData = $invoice->getCustomerSnapshotData() ?? [];
 
         // Determine if invoice is simplified (based on amount threshold or explicit flag)
         $isSimplified = self::isSimplifiedInvoice($invoice);
@@ -44,11 +48,11 @@ class VerifactuAdapter
             'tax_amount'         => self::base100ToDecimal((int) ($invoice->total_tax_amount ?? 0)),
             'total_amount'       => self::base100ToDecimal((int) $invoice->total_amount),
             'currency'           => 'EUR',
-            'recipient_nif'      => $invoice->taxProfile->tax_code ?? null,
-            'recipient_id_type'  => self::mapRecipientIdType($invoice),
-            'recipient_id'       => $invoice->taxProfile->tax_code     ?? null,
-            'recipient_name'     => $invoice->customer->display_name   ?? null,
-            'recipient_country'  => $invoice->taxProfile->country_code ?? 'ES',
+            'recipient_nif'      => $customerData['tax_id'] ?? null,
+            'recipient_id_type'  => self::mapRecipientIdType($invoice, $customerData),
+            'recipient_id'       => $customerData['tax_id']        ?? null,
+            'recipient_name'     => $customerData['customer_name'] ?? $invoice->customer->display_name ?? null,
+            'recipient_country'  => $customerData['country_code']  ?? 'ES',
             'regime_type'        => self::mapRegimeType($invoice),
             'operation_key'      => self::mapOperationKey($invoice),
             'description'        => $invoice->notes ?? null,
@@ -154,11 +158,12 @@ class VerifactuAdapter
      * Map Larabill customer ID type to Verifactu IdTypeEnum.
      *
      * @param  Invoice  $invoice  The Larabill invoice
+     * @param  array<string, mixed>  $customerData  Customer fiscal data from snapshot
      * @return string Verifactu ID type (02=NIF, 03=Pasaporte, etc.)
      */
-    private static function mapRecipientIdType(Invoice $invoice): string
+    private static function mapRecipientIdType(Invoice $invoice, array $customerData = []): string
     {
-        $countryCode = $invoice->taxProfile->country_code ?? 'ES';
+        $countryCode = $customerData['country_code'] ?? 'ES';
 
         // 02: NIF (España)
         // 03: Pasaporte

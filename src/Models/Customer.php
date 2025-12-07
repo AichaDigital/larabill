@@ -8,7 +8,7 @@ use AichaDigital\Larabill\Concerns\HasUserRelation;
 use AichaDigital\Larabill\Enums\RelationshipType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\{Model, SoftDeletes};
-use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, HasOne};
+use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
 
 /**
  * Customer Model
@@ -24,7 +24,6 @@ use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, HasOne};
  * @property string|null $relationship_to_user Alias for relationship_type
  * @property string|null $internal_code
  * @property string $legal_entity_type_code FK to legal_entity_types
- * @property int|null $current_tax_profile_id FK to customer_tax_profiles
  * @property bool $is_active
  * @property \Illuminate\Support\Carbon|null $inactive_since
  * @property string|null $inactive_reason
@@ -60,7 +59,6 @@ class Customer extends Model
         'display_name',
         'internal_code',
         'legal_entity_type_code',
-        'current_tax_profile_id',
         'is_active',
         'inactive_since',
         'inactive_reason',
@@ -98,22 +96,6 @@ class Customer extends Model
     public function legalEntityType(): BelongsTo
     {
         return $this->belongsTo(LegalEntityType::class, 'legal_entity_type_code', 'code');
-    }
-
-    /**
-     * Get the current tax profile.
-     */
-    public function currentTaxProfile(): HasOne
-    {
-        return $this->hasOne(CustomerTaxProfile::class, 'id', 'current_tax_profile_id');
-    }
-
-    /**
-     * Get all tax profiles (historical).
-     */
-    public function taxProfiles(): HasMany
-    {
-        return $this->hasMany(CustomerTaxProfile::class)->orderBy('valid_from', 'desc');
     }
 
     /**

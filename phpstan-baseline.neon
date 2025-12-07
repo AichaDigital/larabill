@@ -1,28 +1,10 @@
 parameters:
 	ignoreErrors:
 		-
-			message: '#^Method AichaDigital\\Larabill\\Database\\Query\\BinaryUuidBuilder\:\:where\(\) should return \$this\(AichaDigital\\Larabill\\Database\\Query\\BinaryUuidBuilder\<TModel of Illuminate\\Database\\Eloquent\\Model\>\) but returns static\(AichaDigital\\Larabill\\Database\\Query\\BinaryUuidBuilder\<TModel of Illuminate\\Database\\Eloquent\\Model\>\)\.$#'
-			identifier: return.type
-			count: 3
-			path: src/Database/Query/BinaryUuidBuilder.php
-
-		-
-			message: '#^Method AichaDigital\\Larabill\\Database\\Query\\BinaryUuidBuilder\:\:whereIn\(\) should return \$this\(AichaDigital\\Larabill\\Database\\Query\\BinaryUuidBuilder\<TModel of Illuminate\\Database\\Eloquent\\Model\>\) but returns Illuminate\\Database\\Eloquent\\Builder\<TModel of Illuminate\\Database\\Eloquent\\Model\>\.$#'
-			identifier: return.type
-			count: 1
-			path: src/Database/Query/BinaryUuidBuilder.php
-
-		-
 			message: '#^Method AichaDigital\\Larabill\\Models\\Article\:\:getActiveOverrideFor\(\) should return AichaDigital\\Larabill\\Models\\ArticleOverride\|null but returns Illuminate\\Database\\Eloquent\\Model\|null\.$#'
 			identifier: return.type
 			count: 1
 			path: src/Models/Article.php
-
-		-
-			message: '#^Cannot call method addToDate\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: src/Models/ArticleServiceStatus.php
 
 		-
 			message: '#^Cannot call method canBill\(\) on string\.$#'
@@ -91,6 +73,12 @@ parameters:
 			path: src/Services/InvoiceService.php
 
 		-
+			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$taxProfile\.$#'
+			identifier: property.notFound
+			count: 1
+			path: src/Services/InvoiceVerifactuService.php
+
+		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Relations\\HasMany\:\:active\(\)\.$#'
 			identifier: method.notFound
 			count: 1
@@ -109,19 +97,13 @@ parameters:
 			path: src/Services/RecurringBillingService.php
 
 		-
-			message: '#^Cannot access property \$value on string\.$#'
-			identifier: property.nonObject
-			count: 1
-			path: src/Services/RecurringBillingService.php
-
-		-
-			message: '#^Cannot call method subtractFromDate\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 1
-			path: src/Services/ServiceLifecycleService.php
-
-		-
 			message: '#^Parameter \#2 \$type of event class AichaDigital\\Larabill\\Events\\ServiceCancelled constructor expects AichaDigital\\Larabill\\Enums\\CancellationType in AichaDigital\\Larabill\\Events\\ServiceCancelled\:\:dispatch\(\), string\|null given\.$#'
 			identifier: argument.type
 			count: 1
 			path: src/Services/ServiceLifecycleService.php
+
+		-
+			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$taxProfile\.$#'
+			identifier: property.notFound
+			count: 2
+			path: src/Services/Validators/AeatInvoiceValidator.php

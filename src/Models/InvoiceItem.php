@@ -180,23 +180,6 @@ class InvoiceItem extends Model
     }
 
     // ========================================
-    // QUERY BUILDER
-    // ========================================
-
-    /**
-     * Create a new Eloquent query builder for the model.
-     *
-     * Uses custom BinaryUuidBuilder to handle UUID binary conversions in relationships.
-     *
-     * @param  \Illuminate\Database\Query\Builder  $query
-     * @return \AichaDigital\Larabill\Database\Query\BinaryUuidBuilder
-     */
-    public function newEloquentBuilder($query)
-    {
-        return new \AichaDigital\Larabill\Database\Query\BinaryUuidBuilder($query);
-    }
-
-    // ========================================
     // SCOPES
     // ========================================
 

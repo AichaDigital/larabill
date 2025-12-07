@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 use AichaDigital\Larabill\Contracts\Services\FiscalVerificationContract;
 use AichaDigital\Larabill\Enums\RelationshipType;
-use AichaDigital\Larabill\Models\{Customer, Invoice, IssuerConfig};
+use AichaDigital\Larabill\Models\{CompanyFiscalConfig, Customer, Invoice};
 use AichaDigital\Larabill\Services\FiscalVerification\FakeFiscalVerification;
 use AichaDigital\Larabill\Services\InvoiceService;
 
 beforeEach(function () {
-    // Clean singleton IssuerConfig
-    IssuerConfig::query()->delete();
+    // Clean CompanyFiscalConfig
+    CompanyFiscalConfig::query()->delete();
 
     // Bind fake fiscal verification
     app()->bind(FiscalVerificationContract::class, FakeFiscalVerification::class);
@@ -19,9 +19,9 @@ beforeEach(function () {
 });
 
 it('can complete full direct billing flow', function () {
-    // 1. Setup: Create issuer and customer
-    $issuer   = IssuerConfig::factory()->create();
-    $customer = Customer::factory()->create([
+    // 1. Setup: Create company fiscal config and customer
+    $companyConfig = CompanyFiscalConfig::factory()->create();
+    $customer      = Customer::factory()->create([
         'display_name' => 'Test Customer Ltd',
         'is_active'    => true,
     ]);
@@ -73,8 +73,8 @@ it('can complete full direct billing flow', function () {
 
 it('can complete full proforma to invoice flow', function () {
     // 1. Setup
-    $issuer   = IssuerConfig::factory()->create();
-    $customer = Customer::factory()->create();
+    $companyConfig = CompanyFiscalConfig::factory()->create();
+    $customer      = Customer::factory()->create();
 
     // 2. Create proforma
     $proforma = $this->invoiceService->createProforma([
@@ -109,8 +109,8 @@ it('can complete full proforma to invoice flow', function () {
 
 it('can handle multi-customer billing for same user', function () {
     // Scenario: User manages multiple customers (e.g., personal + company)
-    $issuer = IssuerConfig::factory()->create();
-    $userId = 1;
+    $companyConfig = CompanyFiscalConfig::factory()->create();
+    $userId        = 1;
 
     // Customer 1: Personal
     $customer1 = Customer::factory()->create([
@@ -153,8 +153,8 @@ it('can handle multi-customer billing for same user', function () {
 });
 
 it('can handle fiscal verification integration', function () {
-    $issuer   = IssuerConfig::factory()->create();
-    $customer = Customer::factory()->create();
+    $companyConfig = CompanyFiscalConfig::factory()->create();
+    $customer      = Customer::factory()->create();
 
     $invoice = $this->invoiceService->createInvoice([
         'customer_id' => $customer->id,

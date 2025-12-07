@@ -22,7 +22,7 @@ afterEach(function () {
 
 it('can detect user id type from existing users table', function () {
     $idType = MigrationHelper::detectUserIdType();
-    expect($idType)->toBeString()->toBeIn(['int', 'uuid', 'ulid', 'uuid_binary', 'ulid_binary']);
+    expect($idType)->toBeString()->toBeIn(['int', 'uuid', 'ulid']);
 });
 
 it('can add user_id column with detected type', function () {
@@ -43,17 +43,8 @@ it('can add nullable user_id column', function () {
     expect(Schema::hasColumn('test_migration_helper', 'user_id'))->toBeTrue();
 });
 
-it('can add indexed user_id column', function () {
-    Schema::create('test_migration_helper', function (Blueprint $table) {
-        $table->id();
-        MigrationHelper::userIdColumn($table, 'user_id', false, true);
-    });
-
-    expect(Schema::hasColumn('test_migration_helper', 'user_id'))->toBeTrue();
-});
-
 it('supports all valid id types', function () {
-    $types = ['int', 'uuid', 'ulid', 'uuid_binary', 'ulid_binary'];
+    $types = ['int', 'uuid', 'ulid'];
 
     foreach ($types as $type) {
         expect(MigrationHelper::isSupportedIdType($type))->toBeTrue();
@@ -64,15 +55,15 @@ it('rejects invalid id types', function () {
     expect(MigrationHelper::isSupportedIdType('invalid'))->toBeFalse();
     expect(MigrationHelper::isSupportedIdType('string'))->toBeFalse();
     expect(MigrationHelper::isSupportedIdType(''))->toBeFalse();
+    expect(MigrationHelper::isSupportedIdType('uuid_binary'))->toBeFalse(); // Removed in v1.0
+    expect(MigrationHelper::isSupportedIdType('ulid_binary'))->toBeFalse(); // Removed in v1.0
 });
 
 it('provides description for each id type', function () {
     $descriptions = [
-        'int'          => MigrationHelper::getIdTypeDescription('int'),
-        'uuid'         => MigrationHelper::getIdTypeDescription('uuid'),
-        'ulid'         => MigrationHelper::getIdTypeDescription('ulid'),
-        'uuid_binary'  => MigrationHelper::getIdTypeDescription('uuid_binary'),
-        'ulid_binary'  => MigrationHelper::getIdTypeDescription('ulid_binary'),
+        'int'  => MigrationHelper::getIdTypeDescription('int'),
+        'uuid' => MigrationHelper::getIdTypeDescription('uuid'),
+        'ulid' => MigrationHelper::getIdTypeDescription('ulid'),
     ];
 
     foreach ($descriptions as $type => $description) {
@@ -82,6 +73,7 @@ it('provides description for each id type', function () {
 
 it('returns unknown for invalid id type description', function () {
     expect(MigrationHelper::getIdTypeDescription('invalid'))->toBe('Unknown ID type');
+    expect(MigrationHelper::getIdTypeDescription('uuid_binary'))->toBe('Unknown ID type'); // Removed in v1.0
 });
 
 it('can use custom column name', function () {
@@ -126,28 +118,6 @@ it('handles ulid type correctly', function () {
     expect(Schema::hasColumn('test_migration_helper', 'user_id'))->toBeTrue();
 });
 
-it('handles uuid_binary type correctly', function () {
-    config(['larabill.user_id_type' => 'uuid_binary']);
-
-    Schema::create('test_migration_helper', function (Blueprint $table) {
-        $table->id();
-        MigrationHelper::userIdColumn($table, 'user_id');
-    });
-
-    expect(Schema::hasColumn('test_migration_helper', 'user_id'))->toBeTrue();
-});
-
-it('handles ulid_binary type correctly', function () {
-    config(['larabill.user_id_type' => 'ulid_binary']);
-
-    Schema::create('test_migration_helper', function (Blueprint $table) {
-        $table->id();
-        MigrationHelper::userIdColumn($table, 'user_id');
-    });
-
-    expect(Schema::hasColumn('test_migration_helper', 'user_id'))->toBeTrue();
-});
-
 it('can add multiple user_id columns', function () {
     Schema::create('test_migration_helper', function (Blueprint $table) {
         $table->id();
@@ -170,7 +140,7 @@ it('falls back to config when detection fails', function () {
     expect(Schema::hasColumn('test_migration_helper', 'user_id'))->toBeTrue();
 });
 
-it('defaults to int when no config is set', function () {
+it('defaults to uuid when auto config is set', function () {
     config(['larabill.user_id_type' => 'auto']);
 
     Schema::create('test_migration_helper', function (Blueprint $table) {
@@ -185,12 +155,10 @@ it('can validate all id types', function () {
     expect(MigrationHelper::isSupportedIdType('int'))->toBeTrue();
     expect(MigrationHelper::isSupportedIdType('uuid'))->toBeTrue();
     expect(MigrationHelper::isSupportedIdType('ulid'))->toBeTrue();
-    expect(MigrationHelper::isSupportedIdType('uuid_binary'))->toBeTrue();
-    expect(MigrationHelper::isSupportedIdType('ulid_binary'))->toBeTrue();
 });
 
 it('provides meaningful descriptions for all types', function () {
-    $types = ['int', 'uuid', 'ulid', 'uuid_binary', 'ulid_binary'];
+    $types = ['int', 'uuid', 'ulid'];
 
     foreach ($types as $type) {
         $description = MigrationHelper::getIdTypeDescription($type);

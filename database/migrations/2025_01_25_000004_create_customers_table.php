@@ -32,9 +32,6 @@ return new class extends Migration
             // Legal Entity Type
             $table->string('legal_entity_type_code', 20)->comment('Tipo de entidad jurídica (FK a legal_entity_types)');
 
-            // Current Tax Profile (points to active profile)
-            $table->unsignedBigInteger('current_tax_profile_id')->nullable()->comment('FK a customer_tax_profiles - Perfil fiscal activo');
-
             // Status
             $table->boolean('is_active')->default(true)->comment('Si el cliente está activo');
             $table->timestamp('inactive_since')->nullable()->comment('Cuándo se inactivó');

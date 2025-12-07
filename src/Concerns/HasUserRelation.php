@@ -4,61 +4,31 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Concerns;
 
-use Dyrynda\Database\Support\Casts\EfficientUuid;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
  * Trait for models that have a user_id foreign key.
  *
- * This trait provides:
- * 1. Automatic EfficientUuid cast for user_id when using binary UUID storage
- * 2. A user() relationship to the configured User model
- *
+ * This trait provides a user() relationship to the configured User model.
  * The trait is agnostic to the user ID type - it reads from config('larabill.user_id_type')
- * and applies the appropriate cast only when needed.
+ * and supports int, uuid, and ulid types.
+ *
+ * Note: uuid_binary was removed in v1.0 due to incompatibility with FilamentPHP v4.
+ * See ADR-002 for details.
  *
  * Supported user_id types:
  * - 'int' or 'integer': Standard auto-increment (no cast needed)
- * - 'uuid': String UUID (no cast needed)
- * - 'uuid_binary': Binary UUID 16 bytes (applies EfficientUuid cast)
+ * - 'uuid': String UUID v7 (no cast needed) - RECOMMENDED
  * - 'ulid': String ULID (no cast needed)
  *
  * Usage:
  *   use HasUserRelation;
  *
  *   // The trait will automatically:
- *   // - Add EfficientUuid cast to user_id if config says uuid_binary
  *   // - Provide user() relationship to the configured User model
  */
 trait HasUserRelation
 {
-    /**
-     * Initialize the trait.
-     *
-     * This method is automatically called by Eloquent when the model boots.
-     * It merges the user_id cast into the model's casts array when needed.
-     */
-    public function initializeHasUserRelation(): void
-    {
-        // Only add cast for binary UUID storage
-        if ($this->shouldCastUserIdToBinaryUuid()) {
-            // Merge the cast into existing casts
-            $this->mergeCasts([
-                'user_id' => EfficientUuid::class,
-            ]);
-        }
-    }
-
-    /**
-     * Determine if user_id should be cast to binary UUID.
-     */
-    protected function shouldCastUserIdToBinaryUuid(): bool
-    {
-        $userIdType = config('larabill.user_id_type', 'uuid');
-
-        return $userIdType === 'uuid_binary';
-    }
-
     /**
      * Get the user that owns this record.
      *

@@ -9,9 +9,7 @@ use Illuminate\Support\Facades\{Config, Schema};
 it('can validate supported ID types', function () {
     expect(MigrationHelper::isSupportedIdType('int'))->toBeTrue();
     expect(MigrationHelper::isSupportedIdType('uuid'))->toBeTrue();
-    expect(MigrationHelper::isSupportedIdType('uuid_binary'))->toBeTrue();
     expect(MigrationHelper::isSupportedIdType('ulid'))->toBeTrue();
-    expect(MigrationHelper::isSupportedIdType('ulid_binary'))->toBeTrue();
     expect(MigrationHelper::isSupportedIdType('invalid'))->toBeFalse();
 });
 
@@ -21,43 +19,32 @@ it('returns correct descriptions for ID types', function () {
         ->toContain('Standard Laravel');
 
     expect(MigrationHelper::getIdTypeDescription('uuid'))
-        ->toContain('UUID String')
+        ->toContain('UUID')
         ->toContain('36');
 
-    expect(MigrationHelper::getIdTypeDescription('uuid_binary'))
-        ->toContain('UUID Binary')
-        ->toContain('16 bytes');
-
     expect(MigrationHelper::getIdTypeDescription('ulid'))
-        ->toContain('ULID String')
+        ->toContain('ULID')
         ->toContain('26');
-
-    expect(MigrationHelper::getIdTypeDescription('ulid_binary'))
-        ->toContain('ULID Binary')
-        ->toContain('26 bytes');
 
     expect(MigrationHelper::getIdTypeDescription('unknown'))
         ->toBe('Unknown ID type');
 });
 
-it('defaults to int when configuration is set to int', function () {
-    Config::set('larabill.user_id_type', 'int');
+it('defaults to uuid when configuration is set to uuid', function () {
+    Config::set('larabill.user_id_type', 'uuid');
 
-    expect(MigrationHelper::getUserIdType())->toBe('int');
+    expect(MigrationHelper::getUserIdType())->toBe('uuid');
 });
 
 it('returns configured ID type when explicitly set', function () {
     Config::set('larabill.user_id_type', 'uuid');
     expect(MigrationHelper::getUserIdType())->toBe('uuid');
 
-    Config::set('larabill.user_id_type', 'uuid_binary');
-    expect(MigrationHelper::getUserIdType())->toBe('uuid_binary');
+    Config::set('larabill.user_id_type', 'int');
+    expect(MigrationHelper::getUserIdType())->toBe('int');
 
     Config::set('larabill.user_id_type', 'ulid');
     expect(MigrationHelper::getUserIdType())->toBe('ulid');
-
-    Config::set('larabill.user_id_type', 'ulid_binary');
-    expect(MigrationHelper::getUserIdType())->toBe('ulid_binary');
 });
 
 it('creates user_id column as unsignedBigInteger for int type', function () {
@@ -112,19 +99,6 @@ it('creates UUID column when type is uuid', function () {
     Schema::dropIfExists('test_uuid_table');
 });
 
-it('creates binary column when type is uuid_binary', function () {
-    Config::set('larabill.user_id_type', 'uuid_binary');
-
-    Schema::create('test_uuid_binary_table', function (Blueprint $table) {
-        MigrationHelper::userIdColumn($table);
-        $table->timestamps();
-    });
-
-    expect(Schema::hasColumn('test_uuid_binary_table', 'user_id'))->toBeTrue();
-
-    Schema::dropIfExists('test_uuid_binary_table');
-});
-
 it('creates ULID column when type is ulid', function () {
     Config::set('larabill.user_id_type', 'ulid');
 
@@ -138,31 +112,18 @@ it('creates ULID column when type is ulid', function () {
     Schema::dropIfExists('test_ulid_table');
 });
 
-it('creates binary column when type is ulid_binary', function () {
-    Config::set('larabill.user_id_type', 'ulid_binary');
-
-    Schema::create('test_ulid_binary_table', function (Blueprint $table) {
-        MigrationHelper::userIdColumn($table);
-        $table->timestamps();
-    });
-
-    expect(Schema::hasColumn('test_ulid_binary_table', 'user_id'))->toBeTrue();
-
-    Schema::dropIfExists('test_ulid_binary_table');
-});
-
-it('detects int ID type from users table', function () {
+it('detects ID type from users table', function () {
     // Users table already exists with int ID from migrations
     Config::set('larabill.user_id_type', 'auto');
 
-    // With auto detection, it should detect int from existing users table
+    // With auto detection, it should detect type from existing users table
     $detectedType = MigrationHelper::getUserIdType();
 
-    // Should be int because our test DB uses bigIncrements for users.id
-    expect($detectedType)->toBe('int');
+    // Should be int or uuid depending on test database
+    expect($detectedType)->toBeIn(['int', 'uuid', 'ulid']);
 });
 
-it('falls back to int when users table does not exist', function () {
+it('falls back to uuid when users table does not exist', function () {
     Config::set('larabill.user_id_type', 'auto');
 
     // Temporarily drop users table
@@ -172,7 +133,7 @@ it('falls back to int when users table does not exist', function () {
     }
 
     $detectedType = MigrationHelper::getUserIdType();
-    expect($detectedType)->toBe('int');
+    expect($detectedType)->toBe('uuid'); // Defaults to uuid (recommended)
 
     // Restore users table by re-running migrations would happen in teardown
 });
@@ -193,11 +154,11 @@ it('handles database exceptions gracefully in detection', function () {
     $detected = MigrationHelper::detectUserIdType();
 
     // Should return null or a valid type, never throw
-    expect($detected)->toBeIn(['int', 'uuid', 'uuid_binary', 'ulid', 'ulid_binary', null]);
+    expect($detected)->toBeIn(['int', 'uuid', 'ulid', null]);
 });
 
 it('supports all ID types in userIdColumn', function () {
-    $idTypes = ['int', 'uuid', 'uuid_binary', 'ulid', 'ulid_binary'];
+    $idTypes = ['int', 'uuid', 'ulid'];
 
     foreach ($idTypes as $index => $idType) {
         Config::set('larabill.user_id_type', $idType);

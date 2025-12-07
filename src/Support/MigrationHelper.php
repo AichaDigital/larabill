@@ -12,11 +12,13 @@ use Ramsey\Uuid\Uuid;
  * Migration Helper for User ID Type Detection
  *
  * Provides agnostic support for different User ID types:
- * - int (unsignedBigInteger)
- * - uuid (string char 36)
- * - uuid_binary (binary 16)
- * - ulid (string char 26)
- * - ulid_binary (binary 26)
+ *
+ * - int (unsignedBigInteger) - Standard Laravel default
+ * - uuid (string char 36) - UUID v7, recommended
+ * - ulid (string char 26) - ULID alternative
+ *
+ * Note: uuid_binary was removed due to incompatibility with FilamentPHP v4.
+ * See ADR-002 for details.
  */
 class MigrationHelper
 {
@@ -33,11 +35,9 @@ class MigrationHelper
         $idType = static::getUserIdType();
 
         $column = match ($idType) {
-            'uuid'        => $table->uuid($columnName),
-            'uuid_binary' => $table->binary($columnName, 16),
-            'ulid'        => $table->ulid($columnName),
-            'ulid_binary' => $table->binary($columnName, 26),
-            default       => $table->unsignedBigInteger($columnName),
+            'uuid'  => $table->uuid($columnName),
+            'ulid'  => $table->ulid($columnName),
+            default => $table->unsignedBigInteger($columnName),
         };
 
         if ($nullable) {
@@ -52,11 +52,14 @@ class MigrationHelper
      */
     public static function getUserIdType(): string
     {
-        $configured = config('larabill.user_id_type', 'int');
+        $configured = config('larabill.user_id_type', 'uuid');
 
         // If explicitly configured, use it
         if ($configured !== 'int' && $configured !== 'auto') {
-            return $configured;
+            // Validate supported types
+            if (in_array($configured, ['uuid', 'ulid'], true)) {
+                return $configured;
+            }
         }
 
         // Try auto-detection if users table exists
@@ -67,8 +70,8 @@ class MigrationHelper
             }
         }
 
-        // Default to int (standard Laravel)
-        return 'int';
+        // Default to uuid (recommended)
+        return 'uuid';
     }
 
     /**
@@ -97,18 +100,6 @@ class MigrationHelper
                     return 'int';
                 }
 
-                if (str_contains($type, 'binary')) {
-                    // Check size to differentiate UUID from ULID
-                    if (str_contains($type, 'binary(16)')) {
-                        return 'uuid_binary';
-                    }
-                    if (str_contains($type, 'binary(26)')) {
-                        return 'ulid_binary';
-                    }
-
-                    return 'uuid_binary'; // Default for binary
-                }
-
                 if (str_contains($type, 'char') || str_contains($type, 'varchar')) {
                     // Try to get a sample ID to determine UUID vs ULID
                     $user = DB::table('users')->first();
@@ -127,8 +118,8 @@ class MigrationHelper
                 }
             } elseif ($driver === 'pgsql') {
                 $column = DB::selectOne(
-                    "SELECT data_type, character_maximum_length 
-                     FROM information_schema.columns 
+                    "SELECT data_type, character_maximum_length
+                     FROM information_schema.columns
                      WHERE table_name = 'users' AND column_name = 'id'"
                 );
 
@@ -144,22 +135,6 @@ class MigrationHelper
 
                 if ($type === 'uuid') {
                     return 'uuid';
-                }
-
-                if ($type === 'bytea') {
-                    // PostgreSQL binary type - check length with sample
-                    $user = DB::table('users')->first();
-                    if ($user && isset($user->id)) {
-                        $length = strlen($user->id);
-                        if ($length === 16) {
-                            return 'uuid_binary';
-                        }
-                        if ($length === 26) {
-                            return 'ulid_binary';
-                        }
-                    }
-
-                    return 'uuid_binary';
                 }
 
                 if ($type === 'character varying' || $type === 'character') {
@@ -192,7 +167,7 @@ class MigrationHelper
                     }
                 }
 
-                return 'int'; // SQLite default
+                return 'uuid'; // Default to uuid for SQLite
             }
 
             return null;
@@ -208,12 +183,10 @@ class MigrationHelper
     public static function getIdTypeDescription(string $idType): string
     {
         return match ($idType) {
-            'int'         => 'Integer (unsignedBigInteger) - Standard Laravel default',
-            'uuid'        => 'UUID String (char 36) - Human readable, larger storage',
-            'uuid_binary' => 'UUID Binary (16 bytes) - Most efficient UUID storage',
-            'ulid'        => 'ULID String (char 26) - Sortable, human readable',
-            'ulid_binary' => 'ULID Binary (26 bytes) - Sortable, efficient storage',
-            default       => 'Unknown ID type',
+            'int'   => 'Integer (unsignedBigInteger) - Standard Laravel default',
+            'uuid'  => 'UUID v7 String (char 36) - Ordered, recommended',
+            'ulid'  => 'ULID String (char 26) - Sortable, human readable',
+            default => 'Unknown ID type',
         };
     }
 
@@ -225,9 +198,7 @@ class MigrationHelper
         return in_array($idType, [
             'int',
             'uuid',
-            'uuid_binary',
             'ulid',
-            'ulid_binary',
         ], true);
     }
 
@@ -246,11 +217,9 @@ class MigrationHelper
         $idType = static::getUserIdType();
 
         $column = match ($idType) {
-            'uuid'        => $table->uuid($columnName),
-            'uuid_binary' => $table->binary($columnName, 16),
-            'ulid'        => $table->ulid($columnName),
-            'ulid_binary' => $table->binary($columnName, 26),
-            default       => $table->unsignedBigInteger($columnName),
+            'uuid'  => $table->uuid($columnName),
+            'ulid'  => $table->ulid($columnName),
+            default => $table->unsignedBigInteger($columnName),
         };
 
         if ($nullable) {

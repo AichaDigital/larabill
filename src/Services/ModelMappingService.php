@@ -18,13 +18,13 @@ class ModelMappingService
     {
         $defaultModels = [
             'user'                   => \AichaDigital\Larabill\Tests\Models\User::class,
-            'user_tax_profile'       => \AichaDigital\Larabill\Models\UserTaxProfile::class,
             'invoice'                => \AichaDigital\Larabill\Models\Invoice::class,
             'invoice_item'           => \AichaDigital\Larabill\Models\InvoiceItem::class,
             'tax_rate'               => \AichaDigital\Larabill\Models\TaxRate::class,
             'vat_verification'       => \AichaDigital\Larabill\Models\VatVerification::class,
             'company_fiscal_config'  => \AichaDigital\Larabill\Models\CompanyFiscalConfig::class,
             'customer_fiscal_data'   => \AichaDigital\Larabill\Models\CustomerFiscalData::class,
+            'customer'               => \AichaDigital\Larabill\Models\Customer::class,
         ];
 
         $configuredModel = config("larabill.models.{$modelType}");

@@ -15,11 +15,9 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('invoices', function (Blueprint $table) {
-            // UUID primary key - agnostic storage based on larabill.user_id_type config:
-            // - 'uuid': char(36) string storage - human readable
-            // - 'uuid_binary': binary(16) with EfficientUuid cast - 55% storage savings
-            // Note: $table->uuid() creates char(36). For binary, use HasUuid trait with EfficientUuid cast.
-            $table->uuid('id')->primary()->comment('UUID v7 primary key (agnostic: string or binary via cast)');
+            // UUID primary key - UUID v7 string storage (char 36)
+            // See ADR-002: UUID v7 consolidation for rationale
+            $table->uuid('id')->primary()->comment('UUID v7 primary key');
 
             // Fiscal numbering (CEE compliance)
             $table->string('fiscal_number')->unique()->comment('Complete fiscal number for display: FAC-2025-000047');
@@ -38,17 +36,18 @@ return new class extends Migration
             // Status
             $table->unsignedTinyInteger('status')->default(0)->comment('InvoiceStatus enum: 0=draft, 1=sent, 2=paid, 3=overdue, 4=cancelled');
 
-            // Relations
+            // Relations (ADR-001: CompanyFiscalConfig + CustomerFiscalData architecture)
             MigrationHelper::userIdColumn($table);
-            $table->unsignedBigInteger('tax_profile_id')->nullable()->comment('Snapshot of user tax info at invoice creation time');
+            $table->unsignedBigInteger('customer_id')->nullable()->comment('FK to customers');
+            $table->unsignedBigInteger('company_fiscal_config_id')->nullable()->comment('FK to company_fiscal_configs - Issuer snapshot');
+            $table->unsignedBigInteger('customer_fiscal_data_id')->nullable()->comment('FK to customer_fiscal_data - Customer fiscal snapshot');
             $table->foreignUuid('proforma_id')->nullable()->constrained('invoices')->nullOnDelete()->comment('UUID FK if this invoice was converted from a proforma');
             $table->foreignUuid('rectifies_invoice_id')->nullable()->constrained('invoices')->nullOnDelete()->comment('UUID FK if this is a rectificative invoice, references original');
 
-            // Tax & Customer data
-            $table->text('user_tax_info_encrypted')->nullable()->comment('Encrypted snapshot of user tax data for immutability');
-            $table->json('customer_data')->nullable()->comment('Customer information at invoice time');
-            $table->json('fiscal_data')->nullable()->comment('Tax calculation details and special conditions');
-            $table->json('vat_verification')->nullable()->comment('VAT/Tax number verification response (if B2B)');
+            // Encrypted snapshots (immutable at invoice creation time)
+            $table->text('issuer_snapshot')->nullable()->comment('Encrypted snapshot of issuer (company) fiscal data');
+            $table->text('customer_snapshot')->nullable()->comment('Encrypted snapshot of customer fiscal data');
+            $table->text('fiscal_snapshot')->nullable()->comment('Encrypted snapshot of fiscal context and tax rules applied');
             $table->boolean('is_roi_taxed')->default(false)->comment('If true, applies reverse charge mechanism (EU B2B)');
 
             // Amounts (Base-100 integer storage)
@@ -67,9 +66,19 @@ return new class extends Migration
             $table->timestamps();
 
             // Foreign keys
-            $table->foreign('tax_profile_id')
+            $table->foreign('customer_id')
                 ->references('id')
-                ->on('user_tax_profiles')
+                ->on('customers')
+                ->nullOnDelete();
+
+            $table->foreign('company_fiscal_config_id')
+                ->references('id')
+                ->on('company_fiscal_configs')
+                ->nullOnDelete();
+
+            $table->foreign('customer_fiscal_data_id')
+                ->references('id')
+                ->on('customer_fiscal_data')
                 ->nullOnDelete();
 
             // Optimized indexes

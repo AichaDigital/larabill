@@ -6,13 +6,14 @@ namespace AichaDigital\Larabill\Services;
 
 use AichaDigital\Larabill\Contracts\Services\FiscalVerificationContract;
 use AichaDigital\Larabill\Enums\{InvoiceSerieType, InvoiceStatus};
-use AichaDigital\Larabill\Models\{Customer, Invoice, InvoiceItem, IssuerConfig};
+use AichaDigital\Larabill\Models\{CompanyFiscalConfig, Customer, CustomerFiscalData, Invoice, InvoiceItem};
 use Illuminate\Support\Facades\Crypt;
 
 /**
- * Invoice Service (v0.4.0)
+ * Invoice Service
  *
  * Modern service with encrypted snapshots and fiscal verification integration.
+ * Uses CompanyFiscalConfig for issuer data and CustomerFiscalData for customer data (ADR-001).
  */
 class InvoiceService
 {
@@ -40,8 +41,18 @@ class InvoiceService
      */
     public function createInvoice(array $invoiceData, array $options = []): Invoice
     {
-        $customer = Customer::with('currentTaxProfile')->findOrFail($invoiceData['customer_id']);
-        $issuer   = IssuerConfig::with('currentTaxProfile')->firstOrFail();
+        $customer      = Customer::findOrFail($invoiceData['customer_id']);
+        $companyConfig = CompanyFiscalConfig::getActive();
+
+        if (! $companyConfig) {
+            throw new \RuntimeException('No valid CompanyFiscalConfig found for invoice creation');
+        }
+
+        // Get customer fiscal data
+        $customerFiscalData = CustomerFiscalData::getValidForUserAt(
+            $customer->user_id,
+            now()
+        );
 
         // Determine invoice type and serie
         $invoiceType = $invoiceData['type'] ?? 'invoice';
@@ -50,19 +61,22 @@ class InvoiceService
 
         // Create invoice record
         $invoice = Invoice::create([
-            'fiscal_number'    => $this->generateInvoiceNumber($invoiceType),
-            'prefix'           => $invoiceType === 'proforma' ? 'PRO' : 'FAC',
-            'serie'            => $serie,
-            'series_number'    => $this->getTempSeriesNumber((string) $serie, now()->year),
-            'fiscal_year'      => now()->year,
-            'invoice_date'     => now()->toDateString(),
-            'issued_at'        => now(),
-            'status'           => $status,
-            'customer_id'      => $customer->id,
-            'is_immutable'     => false,
-            'due_date'         => $invoiceData['due_date']      ?? null,
-            'payment_terms'    => $invoiceData['payment_terms'] ?? null,
-            'template_name'    => $invoiceData['template_name'] ?? null,
+            'fiscal_number'             => $this->generateInvoiceNumber($invoiceType),
+            'prefix'                    => $invoiceType === 'proforma' ? 'PRO' : 'FAC',
+            'serie'                     => $serie,
+            'series_number'             => $this->getTempSeriesNumber((string) $serie, now()->year),
+            'fiscal_year'               => now()->year,
+            'invoice_date'              => now()->toDateString(),
+            'issued_at'                 => now(),
+            'status'                    => $status,
+            'customer_id'               => $customer->id,
+            'user_id'                   => $customer->user_id,
+            'company_fiscal_config_id'  => $companyConfig->id,
+            'customer_fiscal_data_id'   => $customerFiscalData?->id,
+            'is_immutable'              => false,
+            'due_date'                  => $invoiceData['due_date']      ?? null,
+            'payment_terms'             => $invoiceData['payment_terms'] ?? null,
+            'template_name'             => $invoiceData['template_name'] ?? null,
         ]);
 
         // Create invoice items
@@ -77,9 +91,9 @@ class InvoiceService
         $invoice->total_amount     = $invoice->items->sum('total_amount');
 
         // Generate encrypted snapshots
-        $invoice->issuer_snapshot   = $this->generateIssuerSnapshot($issuer);
-        $invoice->customer_snapshot = $this->generateCustomerSnapshot($customer);
-        $invoice->fiscal_snapshot   = $this->generateFiscalSnapshot($invoice, $customer, $issuer);
+        $invoice->issuer_snapshot   = $this->generateIssuerSnapshot($companyConfig);
+        $invoice->customer_snapshot = $this->generateCustomerSnapshot($customer, $customerFiscalData);
+        $invoice->fiscal_snapshot   = $this->generateFiscalSnapshot($invoice, $companyConfig, $customerFiscalData);
 
         $invoice->save();
 
@@ -97,60 +111,49 @@ class InvoiceService
     }
 
     /**
-     * Generate encrypted issuer snapshot.
+     * Generate encrypted issuer snapshot from CompanyFiscalConfig.
      */
-    protected function generateIssuerSnapshot(IssuerConfig $issuer): string
+    protected function generateIssuerSnapshot(CompanyFiscalConfig $config): string
     {
-        /** @var \AichaDigital\Larabill\Models\IssuerTaxProfile $profile */
-        $profile = $issuer->currentTaxProfile;
-
         $data = [
-            'legal_name'             => $profile->legal_name,
-            'commercial_name'        => $profile->commercial_name,
-            'tax_id'                 => $profile->tax_id,
-            'legal_entity_type_code' => $profile->legal_entity_type_code,
-            'address'                => $profile->address,
-            'address_line_2'         => $profile->address_line_2,
-            'city'                   => $profile->city,
-            'state'                  => $profile->state,
-            'postal_code'            => $profile->postal_code,
-            'country_code'           => $profile->country_code,
-            'phone'                  => $profile->phone,
-            'email'                  => $profile->email,
-            'vat_number'             => $profile->vat_number,
-            'roi_enabled'            => (bool) $profile->is_roi_registered,
-            'snapshot_at'            => now()->toIso8601String(),
+            'business_name'     => $config->business_name,
+            'tax_id'            => $config->tax_id,
+            'legal_entity_type' => $config->legal_entity_type,
+            'address'           => $config->address,
+            'city'              => $config->city,
+            'state'             => $config->state,
+            'zip_code'          => $config->zip_code,
+            'country_code'      => $config->country_code,
+            'is_oss'            => $config->is_oss,
+            'is_roi'            => $config->is_roi,
+            'currency'          => $config->currency,
+            'snapshot_at'       => now()->toIso8601String(),
         ];
 
         return Crypt::encryptString(json_encode($data));
     }
 
     /**
-     * Generate encrypted customer snapshot.
+     * Generate encrypted customer snapshot from CustomerFiscalData.
      */
-    protected function generateCustomerSnapshot(Customer $customer): string
+    protected function generateCustomerSnapshot(Customer $customer, ?CustomerFiscalData $fiscalData): string
     {
-        /** @var \AichaDigital\Larabill\Models\CustomerTaxProfile $profile */
-        $profile = $customer->currentTaxProfile;
-
         $data = [
-            'customer_id'            => $customer->id,
-            'customer_name'          => $customer->name,
-            'relationship_to_user'   => $customer->relationship_to_user,
-            'legal_name'             => $profile->legal_name,
-            'commercial_name'        => $profile->commercial_name,
-            'tax_id'                 => $profile->tax_id,
-            'legal_entity_type_code' => $profile->legal_entity_type_code,
-            'address'                => $profile->address,
-            'address_line_2'         => $profile->address_line_2,
-            'city'                   => $profile->city,
-            'state'                  => $profile->state,
-            'postal_code'            => $profile->postal_code,
-            'country_code'           => $profile->country_code,
-            'phone'                  => $profile->phone,
-            'email'                  => $profile->email,
-            'vat_number'             => $profile->vat_number,
-            'snapshot_at'            => now()->toIso8601String(),
+            'customer_id'          => $customer->id,
+            'customer_name'        => $customer->display_name,
+            'relationship_type'    => $customer->relationship_type->value ?? null,
+            'fiscal_name'          => $fiscalData->fiscal_name            ?? $customer->display_name,
+            'tax_id'               => $fiscalData->tax_id                 ?? null,
+            'legal_entity_type'    => $fiscalData->legal_entity_type      ?? $customer->legal_entity_type_code,
+            'address'              => $fiscalData->address                ?? null,
+            'city'                 => $fiscalData->city                   ?? null,
+            'state'                => $fiscalData->state                  ?? null,
+            'zip_code'             => $fiscalData->zip_code               ?? null,
+            'country_code'         => $fiscalData->country_code           ?? null,
+            'is_company'           => $fiscalData->is_company             ?? false,
+            'is_eu_vat_registered' => $fiscalData->is_eu_vat_registered   ?? false,
+            'is_exempt_vat'        => $fiscalData->is_exempt_vat          ?? false,
+            'snapshot_at'          => now()->toIso8601String(),
         ];
 
         return Crypt::encryptString(json_encode($data));
@@ -159,21 +162,19 @@ class InvoiceService
     /**
      * Generate encrypted fiscal snapshot.
      */
-    protected function generateFiscalSnapshot(Invoice $invoice, Customer $customer, IssuerConfig $issuer): string
-    {
-        /** @var \AichaDigital\Larabill\Models\IssuerTaxProfile $issuerProfile */
-        $issuerProfile = $issuer->currentTaxProfile;
-        /** @var \AichaDigital\Larabill\Models\CustomerTaxProfile $customerProfile */
-        $customerProfile = $customer->currentTaxProfile;
-
+    protected function generateFiscalSnapshot(
+        Invoice $invoice,
+        CompanyFiscalConfig $companyConfig,
+        ?CustomerFiscalData $customerData
+    ): string {
         $data = [
             'fiscal_year'       => $invoice->fiscal_year,
             'serie'             => $invoice->serie,
             'series_number'     => $invoice->series_number,
             'fiscal_number'     => $invoice->fiscal_number,
             'invoice_date'      => $invoice->invoice_date,
-            'issuer_country'    => $issuerProfile->country_code,
-            'customer_country'  => $customerProfile->country_code,
+            'issuer_country'    => $companyConfig->country_code,
+            'customer_country'  => $customerData?->country_code,
             'currency'          => 'EUR', // TODO: Make configurable
             'exchange_rate'     => 1.0,   // TODO: Implement multi-currency
             'tax_rules_applied' => [], // TODO: Add tax calculation details
@@ -207,9 +208,9 @@ class InvoiceService
 
         if ($result['success']) {
             $invoice->update([
-                'fiscal_verification_id'       => $result['id']    ?? null,
-                'fiscal_verification_qr'       => $result['qr']    ?? null,
-                'fiscal_verification_hash'     => $result['hash']  ?? null,
+                'fiscal_verification_id'       => $result['id']   ?? null,
+                'fiscal_verification_qr'       => $result['qr']   ?? null,
+                'fiscal_verification_hash'     => $result['hash'] ?? null,
                 'fiscal_verified_at'           => now(),
                 'fiscal_verification_metadata' => $result['metadata'] ?? [],
             ]);
@@ -221,8 +222,8 @@ class InvoiceService
      */
     protected function createInvoiceItem(Invoice $invoice, array $itemData): InvoiceItem
     {
-        $quantity  = $itemData['quantity']   ?? 1;
-        $basePrice = $itemData['base_price'] ?? ($itemData['unit_price'] ?? 0);
+        $quantity  = $itemData['quantity']    ?? 1;
+        $basePrice = $itemData['base_price']  ?? ($itemData['unit_price'] ?? 0);
 
         // Calculate taxes using TaxCalculationService
         $taxCalculation = $this->taxCalculationService->calculateForInvoiceItem([

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Database\Factories;
 
 use AichaDigital\Larabill\Enums\RelationshipType;
-use AichaDigital\Larabill\Models\{Customer, CustomerTaxProfile};
+use AichaDigital\Larabill\Models\Customer;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -33,32 +33,12 @@ class CustomerFactory extends Factory
             'display_name'            => $this->faker->name(),
             'internal_code'           => $this->faker->optional()->numerify('CUST-####'),
             'legal_entity_type_code'  => 'PERSONA_FISICA',
-            'current_tax_profile_id'  => null,
             'is_active'               => true,
             'inactive_since'          => null,
             'inactive_reason'         => null,
             'notes'                   => $this->faker->optional()->sentence(),
             'metadata'                => null,
         ];
-    }
-
-    /**
-     * Configure the model factory.
-     */
-    public function configure(): static
-    {
-        return $this->afterCreating(function (Customer $customer) {
-            // Create default tax profile if none exists
-            if (! $customer->currentTaxProfile) {
-                $profile = CustomerTaxProfile::factory()->create([
-                    'customer_id' => $customer->id,
-                    'is_current'  => true,
-                ]);
-
-                $customer->update(['current_tax_profile_id' => $profile->id]);
-                $customer->refresh(); // Ensure relationship is loaded
-            }
-        });
     }
 
     /**

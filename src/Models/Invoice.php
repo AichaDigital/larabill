@@ -17,14 +17,14 @@ use Illuminate\Support\Facades\Crypt;
  * Invoice Model
  *
  * Represents an invoice with fiscal compliance, immutability and encryption features.
- * Uses agnostic UUID strategy (string or binary) based on configuration.
+ * Uses UUID v7 string (36 chars) for primary key.
  * All monetary amounts are stored as base-100 integers (e.g., €12.34 => 1234).
  *
- * UUID Strategy (configurable via larabill.user_id_type):
- * - 'uuid': String UUID v7 (36 chars) - human readable
- * - 'uuid_binary': Binary UUID (16 bytes) - 55% storage savings
+ * Fiscal data architecture (ADR-001 + ADR-002):
+ * - CompanyFiscalConfig: Issuer data with temporal validity
+ * - CustomerFiscalData: Customer data with temporal validity
  *
- * v0.3.3: Enhanced for fiscal compliance (CEE/EU):
+ * v1.0: Enhanced for fiscal compliance (CEE/EU):
  * - Correlative numbering with serie separation
  * - Chronological validation with issued_at
  * - Support for proforma→invoice and rectificative invoices
@@ -42,8 +42,7 @@ use Illuminate\Support\Facades\Crypt;
  * @property Carbon|null $paid_at Actual payment timestamp
  * @property InvoiceStatus $status Invoice status enum
  * @property int|string $user_id
- * @property int|null $customer_id FK to customers (v0.4.0)
- * @property int|null $tax_profile_id
+ * @property int|null $customer_id FK to customers
  * @property int|null $company_fiscal_config_id FK to company_fiscal_configs (ADR-001)
  * @property int|null $customer_fiscal_data_id FK to customer_fiscal_data (ADR-001)
  * @property string|null $proforma_id UUID if converted from proforma
@@ -124,9 +123,8 @@ class Invoice extends Model
         'status',
         'user_id',
         'customer_id',
-        'tax_profile_id',
-        'company_fiscal_config_id', // ADR-001
-        'customer_fiscal_data_id',  // ADR-001
+        'company_fiscal_config_id',
+        'customer_fiscal_data_id',
         'proforma_id',
         'rectifies_invoice_id',
         'user_tax_info_encrypted',
@@ -259,17 +257,6 @@ class Invoice extends Model
     public function customer(): BelongsTo
     {
         return $this->belongsTo(\AichaDigital\Larabill\Models\Customer::class);
-    }
-
-    /**
-     * Get the tax profile snapshot for this invoice.
-     * This maintains a reference to the user's tax information at invoice creation time.
-     *
-     * @return BelongsTo<UserTaxProfile, $this>
-     */
-    public function taxProfile(): BelongsTo
-    {
-        return $this->belongsTo(UserTaxProfile::class, 'tax_profile_id');
     }
 
     /**
