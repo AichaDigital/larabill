@@ -65,21 +65,8 @@ return new class extends Migration
             $table->string('template_name')->nullable();
             $table->timestamps();
 
-            // Foreign keys
-            $table->foreign('customer_id')
-                ->references('id')
-                ->on('customers')
-                ->nullOnDelete();
-
-            $table->foreign('company_fiscal_config_id')
-                ->references('id')
-                ->on('company_fiscal_configs')
-                ->nullOnDelete();
-
-            $table->foreign('customer_fiscal_data_id')
-                ->references('id')
-                ->on('customer_fiscal_data')
-                ->nullOnDelete();
+            // Foreign keys are added in a later migration (2025_01_26_000001_add_invoices_foreign_keys)
+            // to avoid circular dependency issues with customers, company_fiscal_configs, customer_fiscal_data
 
             // Optimized indexes
             $table->unique(['serie', 'series_number', 'fiscal_year']);
