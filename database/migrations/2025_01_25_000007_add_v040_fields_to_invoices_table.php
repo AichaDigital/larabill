@@ -11,31 +11,15 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * Adds v0.4.0 fields to invoices table:
-     * - customer_id (replaces user_id as billable entity)
-     * - Encrypted snapshots (issuer, customer, fiscal)
-     * - Fiscal verification fields (Verifactu, TicketBAI)
+     * Adds v0.4.0 fiscal verification fields to invoices table.
+     *
+     * NOTE: customer_id, issuer_snapshot, customer_snapshot, and fiscal_snapshot
+     * are now created directly in create_invoices_table.php as part of ADR-001.
+     * This migration now only adds fiscal verification columns.
      */
     public function up(): void
     {
         Schema::table('invoices', function (Blueprint $table) {
-            // v0.4.0: Make user_id nullable (legacy, replaced by customer_id)
-            $table->unsignedBigInteger('user_id')->nullable()->change();
-
-            // v0.4.0: Customer reference (new billable entity)
-            $table->unsignedBigInteger('customer_id')->nullable()->after('user_id')
-                ->comment('FK a customers - Entidad facturable (reemplaza user_id en v0.4.0)');
-
-            // v0.4.0: Encrypted snapshots (immutable fiscal data)
-            $table->text('issuer_snapshot')->nullable()->after('user_tax_info_encrypted')
-                ->comment('ENCRYPTED JSON: Snapshot del emisor en el momento de emisión');
-
-            $table->text('customer_snapshot')->nullable()->after('issuer_snapshot')
-                ->comment('ENCRYPTED JSON: Snapshot del cliente en el momento de emisión');
-
-            $table->text('fiscal_snapshot')->nullable()->after('customer_snapshot')
-                ->comment('ENCRYPTED JSON: Snapshot del contexto fiscal (ROI, OSS, thresholds, etc.)');
-
             // v0.4.0: Digital Fiscal Verification (Verifactu, TicketBAI, etc.)
             $table->string('fiscal_verification_id')->nullable()->after('fiscal_snapshot')
                 ->comment('ID de verificación fiscal (ej: Verifactu, TicketBAI)');
@@ -53,15 +37,8 @@ return new class extends Migration
                 ->comment('Metadatos adicionales de la verificación fiscal');
 
             // Indexes
-            $table->index('customer_id');
             $table->index('fiscal_verification_id');
             $table->index('fiscal_verified_at');
-
-            // Foreign keys
-            $table->foreign('customer_id')
-                ->references('id')
-                ->on('customers')
-                ->nullOnDelete();
         });
     }
 
@@ -71,20 +48,12 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('invoices', function (Blueprint $table) {
-            // Drop foreign keys first
-            $table->dropForeign(['customer_id']);
-
             // Drop indexes
-            $table->dropIndex(['customer_id']);
             $table->dropIndex(['fiscal_verification_id']);
             $table->dropIndex(['fiscal_verified_at']);
 
             // Drop columns
             $table->dropColumn([
-                'customer_id',
-                'issuer_snapshot',
-                'customer_snapshot',
-                'fiscal_snapshot',
                 'fiscal_verification_id',
                 'fiscal_verification_qr',
                 'fiscal_verification_hash',

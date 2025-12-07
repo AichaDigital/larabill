@@ -3,43 +3,22 @@
 declare(strict_types=1);
 
 use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
     /**
      * Run the migrations.
      *
-     * Añade columnas para snapshot de configs fiscales en invoices.
-     * Estas columnas almacenan IDs de las configs vigentes al momento de emisión.
+     * DEPRECATED: This migration is now a no-op.
+     * The columns company_fiscal_config_id and customer_fiscal_data_id are now
+     * created directly in create_invoices_table.php as part of ADR-001 architecture.
+     * Foreign keys are added in 2025_01_26_000001_add_invoices_foreign_keys.php.
      */
     public function up(): void
     {
-        Schema::table('invoices', function (Blueprint $table) {
-            // FK a CompanyFiscalConfig (config de empresa vigente en invoice_date)
-            $table->unsignedBigInteger('company_fiscal_config_id')
-                ->nullable()
-                ->after('user_id')
-                ->comment('FK to company_fiscal_configs - Snapshot fiscal empresa');
-
-            // FK a CustomerFiscalData (config de cliente vigente en invoice_date)
-            $table->unsignedBigInteger('customer_fiscal_data_id')
-                ->nullable()
-                ->after('company_fiscal_config_id')
-                ->comment('FK to customer_fiscal_data - Snapshot fiscal cliente');
-
-            // Índices para queries eficientes
-            $table->foreign('company_fiscal_config_id')
-                ->references('id')
-                ->on('company_fiscal_configs')
-                ->nullOnDelete(); // Si se elimina config, mantener invoice
-
-            $table->foreign('customer_fiscal_data_id')
-                ->references('id')
-                ->on('customer_fiscal_data')
-                ->nullOnDelete(); // Si se elimina data, mantener invoice
-        });
+        // No-op: columns and foreign keys are now handled in:
+        // - 2024_12_01_000003_create_invoices_table.php (columns)
+        // - 2025_01_26_000001_add_invoices_foreign_keys.php (foreign keys)
     }
 
     /**
@@ -47,10 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('invoices', function (Blueprint $table) {
-            $table->dropForeign(['company_fiscal_config_id']);
-            $table->dropForeign(['customer_fiscal_data_id']);
-            $table->dropColumn(['company_fiscal_config_id', 'customer_fiscal_data_id']);
-        });
+        // No-op: see up() comment
     }
 };
