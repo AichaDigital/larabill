@@ -5,10 +5,25 @@ declare(strict_types=1);
 use AichaDigital\Larabill\Actions\ProcessRecurringBilling;
 use AichaDigital\Larabill\Enums\ServiceStatus;
 use AichaDigital\Larabill\Models\{Article, ArticleServiceStatus, Invoice};
+use AichaDigital\Larabill\Services\RecurringBillingService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
+
+it('has correct command signature', function () {
+    $service = app(RecurringBillingService::class);
+    $action  = new ProcessRecurringBilling($service);
+
+    expect($action->commandSignature)->toBe('larabill:process-recurring {--date=} {--dry-run}');
+});
+
+it('has correct command description', function () {
+    $service = app(RecurringBillingService::class);
+    $action  = new ProcessRecurringBilling($service);
+
+    expect($action->commandDescription)->toBe('Process recurring billing for services due');
+});
 
 it('can be executed as a direct call', function () {
     $userModel = config('larabill.user_model', 'App\\Models\\User');

@@ -211,3 +211,47 @@ it('can handle multiple sequential calculations', function () {
         expect($result['total_tax'])->toBe($amount * 0.21);
     }
 });
+
+it('can calculate for invoice item', function () {
+    $itemData = [
+        'article_id'  => 1,
+        'quantity'    => 100, // 1.0 unit in base100
+        'base_price'  => 10000, // €100.00 in base100
+        'customer_id' => 1,
+    ];
+
+    $result = $this->service->calculateForInvoiceItem($itemData);
+
+    expect($result)->toBeArray();
+    expect($result)->toHaveKeys(['taxable_amount', 'tax_group_id', 'total_tax_amount', 'total_amount']);
+    expect($result['taxable_amount'])->toBe(10000);
+    expect($result['total_tax_amount'])->toBe(0);
+    expect($result['total_amount'])->toBe(10000);
+});
+
+it('calculates taxable amount correctly for invoice item', function () {
+    $itemData = [
+        'article_id'  => 1,
+        'quantity'    => 200, // 2.0 units in base100
+        'base_price'  => 5000, // €50.00 in base100
+        'customer_id' => 1,
+    ];
+
+    $result = $this->service->calculateForInvoiceItem($itemData);
+
+    // 200 * 5000 / 100 = 10000 (€100.00)
+    expect($result['taxable_amount'])->toBe(10000);
+});
+
+it('returns null tax_group_id for invoice item by default', function () {
+    $itemData = [
+        'article_id'  => 1,
+        'quantity'    => 100,
+        'base_price'  => 10000,
+        'customer_id' => 1,
+    ];
+
+    $result = $this->service->calculateForInvoiceItem($itemData);
+
+    expect($result['tax_group_id'])->toBeNull();
+});
