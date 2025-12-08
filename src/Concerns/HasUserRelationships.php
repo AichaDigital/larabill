@@ -37,6 +37,8 @@ use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, HasOne};
  *   }
  *
  * @see ADR-003 for architectural decisions
+ *
+ * @phpstan-require-extends \Illuminate\Database\Eloquent\Model
  */
 trait HasUserRelationships
 {

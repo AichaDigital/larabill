@@ -84,14 +84,22 @@ class LegalEntityType extends Model
 
     /**
      * Get the formatted name with abbreviation.
+     *
+     * Uses getTranslation() to get string values from translatable fields.
      */
     public function getFormattedNameAttribute(): string
     {
-        if ($this->abbreviation) {
-            return "{$this->name} ({$this->abbreviation})";
+        /** @var string $name */
+        $name = $this->getTranslation('name', app()->getLocale());
+
+        /** @var string|null $abbreviation */
+        $abbreviation = $this->getTranslation('abbreviation', app()->getLocale());
+
+        if ($abbreviation) {
+            return "{$name} ({$abbreviation})";
         }
 
-        return $this->name;
+        return $name;
     }
 
     /**
