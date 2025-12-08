@@ -25,6 +25,10 @@ parameters:
         -
             message: "#Called 'env' outside of the config directory#"
             path: src/config/*.php
+        # Traits meant for package consumers (not used internally)
+        -
+            message: "#Trait .+ is used zero times and is not analysed#"
+            path: src/Concerns/HasUserRelationships.php
 
     # Basic strict rules that are supported
     checkMissingCallableSignature: true
