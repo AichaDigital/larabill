@@ -54,15 +54,12 @@ class MigrationHelper
     {
         $configured = config('larabill.user_id_type', 'uuid');
 
-        // If explicitly configured, use it
-        if ($configured !== 'int' && $configured !== 'auto') {
-            // Validate supported types
-            if (in_array($configured, ['uuid', 'ulid'], true)) {
-                return $configured;
-            }
+        // If explicitly configured with a valid type, use it
+        if ($configured !== 'auto' && static::isSupportedIdType($configured)) {
+            return $configured;
         }
 
-        // Try auto-detection if users table exists
+        // Try auto-detection if users table exists (for 'auto' mode)
         if (Schema::hasTable('users')) {
             $detected = static::detectUserIdType();
             if ($detected) {

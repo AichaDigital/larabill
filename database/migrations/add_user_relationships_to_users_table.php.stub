@@ -1,0 +1,59 @@
+<?php
+
+declare(strict_types=1);
+
+use AichaDigital\Larabill\Support\MigrationHelper;
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     *
+     * Adds self-referencing relationship columns to users table.
+     * This enables the User unification architecture (ADR-003).
+     *
+     * - parent_user_id: NULL = DIRECT client, ID = DELEGATED client of that user
+     * - relationship_type: PHP Enum UserRelationshipType (0 = DIRECT, 1 = DELEGATED)
+     *
+     * @see ADR-003 for architectural decisions
+     */
+    public function up(): void
+    {
+        Schema::table('users', function (Blueprint $table) {
+            // Self-reference: parent user for delegated clients
+            // Uses same ID type as the users table primary key
+            MigrationHelper::userIdColumn($table, 'parent_user_id', nullable: true);
+
+            // Relationship type (PHP Enum → unsignedTinyInteger)
+            // 0 = DIRECT (client of Company), 1 = DELEGATED (client of User)
+            $table->unsignedTinyInteger('relationship_type')->default(0)
+                ->comment('0=DIRECT (client of Company), 1=DELEGATED (client of User)');
+
+            // Foreign key to self
+            $table->foreign('parent_user_id')
+                ->references('id')
+                ->on('users')
+                ->nullOnDelete();
+
+            // Index for efficient child queries
+            $table->index('parent_user_id', 'idx_users_parent');
+            $table->index('relationship_type', 'idx_users_relationship_type');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::table('users', function (Blueprint $table) {
+            $table->dropForeign(['parent_user_id']);
+            $table->dropIndex('idx_users_parent');
+            $table->dropIndex('idx_users_relationship_type');
+            $table->dropColumn(['parent_user_id', 'relationship_type']);
+        });
+    }
+};

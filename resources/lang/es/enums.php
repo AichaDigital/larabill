@@ -20,6 +20,8 @@ return [
         'paid'      => 'Pagada',
         'overdue'   => 'Vencida',
         'cancelled' => 'Cancelada',
+        'pending'   => 'Pendiente',
+        'converted' => 'Convertida',
     ],
 
     'unit_category' => [
@@ -29,5 +31,10 @@ return [
         'length' => 'Longitud',
         'area'   => 'Área',
         'time'   => 'Tiempo',
+    ],
+
+    'user_relationship' => [
+        'direct'    => 'Cliente Directo',
+        'delegated' => 'Cliente Delegado',
     ],
 ];

@@ -132,22 +132,6 @@ class Customer extends Model
     }
 
     /**
-     * Check if customer is a person (not company).
-     */
-    public function isPerson(): bool
-    {
-        return ! optional($this->legalEntityType)->is_company;
-    }
-
-    /**
-     * Check if customer is a company.
-     */
-    public function isCompany(): bool
-    {
-        return optional($this->legalEntityType)->is_company ?? false;
-    }
-
-    /**
      * Scope active customers only.
      */
     public function scopeActive($query)
@@ -177,25 +161,5 @@ class Customer extends Model
     public function scopeForUser($query, $userId)
     {
         return $query->where('user_id', $userId);
-    }
-
-    /**
-     * Scope companies only.
-     */
-    public function scopeCompanies($query)
-    {
-        return $query->whereHas('legalEntityType', function ($q) {
-            $q->where('is_company', true);
-        });
-    }
-
-    /**
-     * Scope individuals only.
-     */
-    public function scopeIndividuals($query)
-    {
-        return $query->whereHas('legalEntityType', function ($q) {
-            $q->where('is_company', false);
-        });
     }
 }

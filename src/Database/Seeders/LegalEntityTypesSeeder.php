@@ -24,7 +24,6 @@ class LegalEntityTypesSeeder extends Seeder
                 'country_code'    => 'ES',
                 'description'     => 'Persona física que realiza actividades económicas o profesionales',
                 'requires_tax_id' => true,
-                'is_company'      => false,
                 'is_active'       => true,
                 'sort_order'      => 10,
                 'metadata'        => json_encode([
@@ -42,7 +41,6 @@ class LegalEntityTypesSeeder extends Seeder
                 'country_code'    => 'ES',
                 'description'     => 'Sociedad mercantil de capital con responsabilidad limitada al capital aportado',
                 'requires_tax_id' => true,
-                'is_company'      => true,
                 'is_active'       => true,
                 'sort_order'      => 20,
                 'metadata'        => json_encode([
@@ -59,7 +57,6 @@ class LegalEntityTypesSeeder extends Seeder
                 'country_code'    => 'ES',
                 'description'     => 'Sociedad mercantil de capital con acciones libremente transmisibles',
                 'requires_tax_id' => true,
-                'is_company'      => true,
                 'is_active'       => true,
                 'sort_order'      => 30,
                 'metadata'        => json_encode([
@@ -76,7 +73,6 @@ class LegalEntityTypesSeeder extends Seeder
                 'country_code'    => 'ES',
                 'description'     => 'Variante de SL con constitución simplificada para emprendedores',
                 'requires_tax_id' => true,
-                'is_company'      => true,
                 'is_active'       => true,
                 'sort_order'      => 40,
                 'metadata'        => json_encode([
@@ -95,7 +91,6 @@ class LegalEntityTypesSeeder extends Seeder
                 'country_code'    => 'ES',
                 'description'     => 'Sociedad de economía social donde mayoría del capital es de trabajadores',
                 'requires_tax_id' => true,
-                'is_company'      => true,
                 'is_active'       => true,
                 'sort_order'      => 50,
                 'metadata'        => json_encode([
@@ -114,7 +109,6 @@ class LegalEntityTypesSeeder extends Seeder
                 'country_code'    => 'ES',
                 'description'     => 'Sociedad personalista con responsabilidad ilimitada y solidaria',
                 'requires_tax_id' => true,
-                'is_company'      => true,
                 'is_active'       => true,
                 'sort_order'      => 60,
                 'metadata'        => json_encode([
@@ -131,7 +125,6 @@ class LegalEntityTypesSeeder extends Seeder
                 'country_code'    => 'ES',
                 'description'     => 'Sociedad con socios colectivos (resp. ilimitada) y comanditarios (resp. limitada)',
                 'requires_tax_id' => true,
-                'is_company'      => true,
                 'is_active'       => true,
                 'sort_order'      => 70,
                 'metadata'        => json_encode([
@@ -147,7 +140,6 @@ class LegalEntityTypesSeeder extends Seeder
                 'country_code'    => 'ES',
                 'description'     => 'Sociedad comanditaria donde el capital se divide en acciones',
                 'requires_tax_id' => true,
-                'is_company'      => true,
                 'is_active'       => true,
                 'sort_order'      => 80,
                 'metadata'        => json_encode([
@@ -166,7 +158,6 @@ class LegalEntityTypesSeeder extends Seeder
                 'country_code'    => 'ES',
                 'description'     => 'Sociedad de economía social basada en principios cooperativos',
                 'requires_tax_id' => true,
-                'is_company'      => true,
                 'is_active'       => true,
                 'sort_order'      => 90,
                 'metadata'        => json_encode([
@@ -183,7 +174,6 @@ class LegalEntityTypesSeeder extends Seeder
                 'country_code'    => 'ES',
                 'description'     => 'Sociedad civil dedicada a actividades agrarias',
                 'requires_tax_id' => true,
-                'is_company'      => true,
                 'is_active'       => true,
                 'sort_order'      => 100,
                 'metadata'        => json_encode([
@@ -202,7 +192,6 @@ class LegalEntityTypesSeeder extends Seeder
                 'country_code'    => 'ES',
                 'description'     => 'Entidad sin ánimo de lucro con fines sociales, culturales, deportivos, etc.',
                 'requires_tax_id' => true,
-                'is_company'      => false,
                 'is_active'       => true,
                 'sort_order'      => 110,
                 'metadata'        => json_encode([
@@ -219,7 +208,6 @@ class LegalEntityTypesSeeder extends Seeder
                 'country_code'    => 'ES',
                 'description'     => 'Entidad sin ánimo de lucro con dotación patrimonial para fines de interés general',
                 'requires_tax_id' => true,
-                'is_company'      => false,
                 'is_active'       => true,
                 'sort_order'      => 120,
                 'metadata'        => json_encode([
@@ -239,7 +227,6 @@ class LegalEntityTypesSeeder extends Seeder
                 'country_code'    => 'ES',
                 'description'     => 'Persona física que realiza actividad económica de forma habitual por cuenta propia',
                 'requires_tax_id' => true,
-                'is_company'      => false,
                 'is_active'       => true,
                 'sort_order'      => 130,
                 'metadata'        => json_encode([
@@ -258,7 +245,6 @@ class LegalEntityTypesSeeder extends Seeder
                 'country_code'    => 'ES',
                 'description'     => 'Agrupación de personas físicas con propiedad compartida de bienes o derechos',
                 'requires_tax_id' => true,
-                'is_company'      => true,
                 'is_active'       => true,
                 'sort_order'      => 140,
                 'metadata'        => json_encode([
@@ -278,7 +264,6 @@ class LegalEntityTypesSeeder extends Seeder
                 'country_code'    => 'ES',
                 'description'     => 'Entidad de derecho público (Administración, organismos autónomos, etc.)',
                 'requires_tax_id' => true,
-                'is_company'      => false,
                 'is_active'       => true,
                 'sort_order'      => 150,
                 'metadata'        => json_encode([
@@ -297,7 +282,6 @@ class LegalEntityTypesSeeder extends Seeder
                 'country_code'    => 'ES',
                 'description'     => 'Otras formas jurídicas no especificadas anteriormente',
                 'requires_tax_id' => true,
-                'is_company'      => true,
                 'is_active'       => true,
                 'sort_order'      => 999,
                 'metadata'        => json_encode([

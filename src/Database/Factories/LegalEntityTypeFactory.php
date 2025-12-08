@@ -30,13 +30,11 @@ class LegalEntityTypeFactory extends Factory
 
         return [
             'code'            => $code,
-            'name'            => $this->faker->company(),
-            'name_en'         => $this->faker->companySuffix(),
-            'abbreviation'    => strtoupper($this->faker->lexify('??')),
+            'name'            => ['en' => $this->faker->company(), 'es' => $this->faker->company()],
+            'abbreviation'    => ['en' => strtoupper($this->faker->lexify('??'))],
             'country_code'    => 'ES',
-            'description'     => $this->faker->sentence(),
+            'description'     => ['en' => $this->faker->sentence()],
             'requires_tax_id' => true,
-            'is_company'      => $this->faker->boolean(70),
             'is_active'       => true,
             'sort_order'      => $this->faker->numberBetween(0, 100),
             'metadata'        => [
@@ -46,28 +44,35 @@ class LegalEntityTypeFactory extends Factory
     }
 
     /**
-     * Indicate that the entity is a person (not company).
+     * Indicate that the entity is a person type.
      */
     public function person(): static
     {
         return $this->state(fn (array $attributes) => [
-            'code'       => 'PERSONA_FISICA',
-            'name'       => 'Persona Física',
-            'name_en'    => 'Individual/Natural Person',
-            'is_company' => false,
+            'code' => 'PERSONA_FISICA',
+            'name' => ['es' => 'Persona Física', 'en' => 'Individual/Natural Person'],
         ]);
     }
 
     /**
-     * Indicate that the entity is a company.
+     * Indicate that the entity is a limited company type.
      */
-    public function company(): static
+    public function limitedCompany(): static
     {
         return $this->state(fn (array $attributes) => [
-            'code'       => 'SOCIEDAD_LIMITADA',
-            'name'       => 'Sociedad de Responsabilidad Limitada',
-            'name_en'    => 'Limited Liability Company',
-            'is_company' => true,
+            'code' => 'SOCIEDAD_LIMITADA',
+            'name' => ['es' => 'Sociedad de Responsabilidad Limitada', 'en' => 'Limited Liability Company'],
+        ]);
+    }
+
+    /**
+     * Indicate that the entity is a self-employed type.
+     */
+    public function selfEmployed(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'code' => 'AUTONOMO',
+            'name' => ['es' => 'Trabajador Autónomo', 'en' => 'Self-Employed/Freelancer'],
         ]);
     }
 

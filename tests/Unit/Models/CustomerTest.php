@@ -39,33 +39,6 @@ it('can activate a customer', function () {
         ->and($customer->inactive_since)->toBeNull();
 });
 
-it('can check if is person', function () {
-    $customer = Customer::factory()->create([
-        'legal_entity_type_code' => 'PERSONA_FISICA',
-    ]);
-
-    expect($customer->isPerson())->toBeTrue();
-});
-
-it('can check if is company', function () {
-    // Create legal entity type first
-    $legalType = \AichaDigital\Larabill\Models\LegalEntityType::create([
-        'code'        => 'SOCIEDAD_LIMITADA',
-        'name'        => 'Sociedad Limitada',
-        'category'    => 'company',
-        'is_company'  => true,
-        'description' => 'Test SL',
-    ]);
-
-    $customer = Customer::factory()->create([
-        'legal_entity_type_code' => $legalType->code,
-    ]);
-
-    $customer->load('legalEntityType');
-
-    expect($customer->isCompany())->toBeTrue();
-});
-
 it('can scope active customers', function () {
     Customer::factory()->create(['is_active' => true]);
     Customer::factory()->create(['is_active' => false]);

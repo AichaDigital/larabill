@@ -6,15 +6,13 @@ use AichaDigital\Larabill\Models\LegalEntityType;
 
 it('can create a legal entity type', function () {
     $type = LegalEntityType::factory()->create([
-        'code'        => 'TEST_TYPE',
-        'name'        => 'Test Legal Entity',
-        'is_company'  => false,
-        'is_active'   => true,
+        'code'      => 'TEST_TYPE',
+        'name'      => 'Test Legal Entity',
+        'is_active' => true,
     ]);
 
     expect($type->code)->toBe('TEST_TYPE')
         ->and($type->name)->toBe('Test Legal Entity')
-        ->and($type->is_company)->toBeFalse()
         ->and($type->is_active)->toBeTrue()
         ->and($type->exists)->toBeTrue();
 });
@@ -37,19 +35,19 @@ it('can scope active types', function () {
         ->and($activeTypes->first()->is_active)->toBeTrue();
 });
 
-it('can distinguish companies from individuals', function () {
+it('can create different legal entity types by code', function () {
     $person = LegalEntityType::factory()->create([
-        'code'       => 'PERSONA_FISICA',
-        'is_company' => false,
+        'code' => 'PERSONA_FISICA',
+        'name' => 'Persona Física',
     ]);
 
     $company = LegalEntityType::factory()->create([
-        'code'       => 'SOCIEDAD_LIMITADA',
-        'is_company' => true,
+        'code' => 'SOCIEDAD_LIMITADA',
+        'name' => 'Sociedad Limitada',
     ]);
 
-    expect($person->is_company)->toBeFalse()
-        ->and($company->is_company)->toBeTrue();
+    expect($person->code)->toBe('PERSONA_FISICA')
+        ->and($company->code)->toBe('SOCIEDAD_LIMITADA');
 });
 
 it('has relationship with customers', function () {

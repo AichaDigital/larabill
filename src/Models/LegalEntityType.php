@@ -7,21 +7,21 @@ namespace AichaDigital\Larabill\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\Translatable\HasTranslations;
 
 /**
  * LegalEntityType Model
  *
  * Catalog of legal entity types (personas físicas, sociedades, etc.)
+ * Uses spatie/laravel-translatable for name and description fields.
  *
  * @property int $id
- * @property string $code Unique code (PERSONA_FISICA, SOCIEDAD_LIMITADA, etc.)
- * @property string $name Name in Spanish
- * @property string|null $name_en Name in English
- * @property string|null $abbreviation Official abbreviation (SL, SA, etc.)
+ * @property string $code Unique code in English (INDIVIDUAL, LIMITED_COMPANY, etc.)
+ * @property array $name Name (translatable JSON)
+ * @property array|null $abbreviation Official abbreviation (translatable JSON: SL, Ltd, etc.)
  * @property string $country_code ISO 3166-1 alpha-2
- * @property string|null $description
+ * @property array|null $description Description (translatable JSON)
  * @property bool $requires_tax_id
- * @property bool $is_company
  * @property bool $is_active
  * @property int $sort_order
  * @property array|null $metadata
@@ -31,6 +31,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class LegalEntityType extends Model
 {
     use HasFactory;
+    use HasTranslations;
 
     /**
      * The table associated with the model.
@@ -43,17 +44,26 @@ class LegalEntityType extends Model
     protected $primaryKey = 'id';
 
     /**
+     * Translatable attributes (spatie/laravel-translatable).
+     *
+     * @var array<string>
+     */
+    public array $translatable = [
+        'name',
+        'abbreviation',
+        'description',
+    ];
+
+    /**
      * The attributes that are mass assignable.
      */
     protected $fillable = [
         'code',
         'name',
-        'name_en',
         'abbreviation',
         'country_code',
         'description',
         'requires_tax_id',
-        'is_company',
         'is_active',
         'sort_order',
         'metadata',
@@ -66,23 +76,10 @@ class LegalEntityType extends Model
     {
         return [
             'requires_tax_id' => 'boolean',
-            'is_company'      => 'boolean',
             'is_active'       => 'boolean',
             'sort_order'      => 'integer',
             'metadata'        => 'array',
         ];
-    }
-
-    /**
-     * Get the display name (localized if available).
-     */
-    public function getDisplayNameAttribute(): string
-    {
-        $locale = app()->getLocale();
-
-        return $locale === 'en' && $this->name_en
-            ? $this->name_en
-            : $this->name;
     }
 
     /**
@@ -95,14 +92,6 @@ class LegalEntityType extends Model
         }
 
         return $this->name;
-    }
-
-    /**
-     * Check if this entity type requires a company structure.
-     */
-    public function requiresCompanyStructure(): bool
-    {
-        return $this->is_company;
     }
 
     /**
@@ -119,22 +108,6 @@ class LegalEntityType extends Model
     public function scopeCountry($query, string $countryCode)
     {
         return $query->where('country_code', $countryCode);
-    }
-
-    /**
-     * Scope company types only.
-     */
-    public function scopeCompanies($query)
-    {
-        return $query->where('is_company', true);
-    }
-
-    /**
-     * Scope individual/natural person types.
-     */
-    public function scopeIndividuals($query)
-    {
-        return $query->where('is_company', false);
     }
 
     /**

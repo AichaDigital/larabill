@@ -2,14 +2,14 @@
 
 > **Read this file first** to understand the package's purpose, architecture, and conventions.
 
-## 🎯 Package Identity
+## Package Identity
 
 **Larabill** is the **core billing package** for the Larafactu ecosystem. It provides:
 
 - Invoice management with immutability
 - Tax calculation (Spain, EU, worldwide)
 - VAT verification services
-- Fiscal data management (company and customer)
+- Fiscal data management (issuer and recipients)
 - PDF invoice generation
 - Filament 4 admin resources
 
@@ -38,116 +38,116 @@ aichadigital/
 
 **Primary staging environment**: [Larafactu](https://github.com/AichaDigital/larafactu)
 
-## 🏗️ Architecture
+## Architecture
 
-### UUID Strategy - AGNOSTIC
+### UUID Strategy - UUID v7 String
 
-**CRITICAL**: This package is **agnostic** regarding ID types. It supports:
+**IMPORTANT**: This package uses UUID v7 **STRING** storage (char 36).
+
+> **Note**: Binary UUID (`uuid_binary`) was removed in ADR-002 due to incompatibility with Filament 4.
 
 | Type | Config Value | Storage | Size | Use Case |
 |------|-------------|---------|------|----------|
 | Integer | `int` | `unsignedBigInteger` | 8 bytes | Standard Laravel |
-| UUID String | `uuid` | `char(36)` | 36 bytes | Human readable |
-| UUID Binary | `uuid_binary` | `binary(16)` + cast | 16 bytes | **Best performance** |
+| UUID String | `uuid` | `char(36)` | 36 bytes | **Recommended** - Human readable, Filament compatible |
 | ULID String | `ulid` | `char(26)` | 26 bytes | Sortable, readable |
-| ULID Binary | `ulid_binary` | `binary(26)` | 26 bytes | Sortable, efficient |
 
 **Configuration** (`config/larabill.php`):
-```php
-'user_id_type' => env('LARABILL_USER_ID_TYPE', 'uuid_binary'),
-```
 
-**For UUID Binary** (recommended for production):
-- Requires `dyrynda/laravel-model-uuid` package (included as dependency)
-- Uses `EfficientUuid` cast for automatic string↔binary conversion
-- 55% storage savings vs string UUID
-- Better index performance
+```php
+'user_id_type' => env('LARABILL_USER_ID_TYPE', 'uuid'),
+```
 
 **The `HasUuid` trait** automatically configures the model based on `user_id_type` config.
-
-### UUID Binary + Filament 4 (CRITICAL)
-
-When using `uuid_binary` with Filament, there are special considerations:
-
-#### Select Fields with User Relations
-
-```php
-// ❌ WRONG - Query Builder pluck() does NOT apply model casts
-Forms\Components\Select::make('user_id')
-    ->options(fn () => User::pluck('name', 'id'))  // Returns binary!
-
-// ✅ CORRECT - Load models FIRST, then pluck (casts are applied)
-Forms\Components\Select::make('user_id')
-    ->options(fn () => User::all()->pluck('name', 'id'))  // Returns UUID string
-```
-
-**Why?** `Model::pluck()` uses Query Builder directly, bypassing Eloquent casts.
-`Model::all()->pluck()` loads models first, applying all casts including `EfficientUuid`.
-
-#### Models with user_id Foreign Key
-
-Use the `HasUserRelation` trait for models that have a `user_id` FK:
-
-```php
-use AichaDigital\Larabill\Concerns\HasUserRelation;
-
-class CustomerFiscalData extends Model
-{
-    use HasUserRelation;  // Adds EfficientUuid cast + user() relationship
-}
-```
-
-The trait automatically:
-1. Adds `EfficientUuid` cast to `user_id` when `uuid_binary` is configured
-2. Provides the `user()` BelongsTo relationship
-3. Resolves the User model class from configuration
 
 ### Monetary Values - Base 100
 
 **NEVER use float/decimal for money**. Always integers in base 100:
 
-- €12.34 → `1234`
+- 12.34 EUR → `1234`
 - 21.5% IVA → `2150`
-- €0.99 → `99`
+- 0.99 EUR → `99`
 
 Package: `aichadigital/lara100` (v1.0 stable)
 
-### Fiscal Architecture (ADR-001)
+### Fiscal Architecture (ADR-001 + ADR-003)
 
 ```
-CompanyFiscalConfig    → Company fiscal settings (temporal validity)
-CustomerFiscalData     → Customer fiscal data (historical)
-Invoice                → Invoice (immutable once issued)
+ISSUER (single):
+  CompanyFiscalConfig    → Issuer fiscal settings (temporal validity)
+
+RECIPIENTS (unified under Users):
+  Users                  → All billable entities (direct + delegated)
+    ├── parent_user_id   → Self-reference for delegation
+    └── relationship_type → UserRelationshipType enum
+
+  UserTaxProfile         → Recipient fiscal data (historical per User)
+
+INVOICES:
+  Invoice                → Immutable once issued
+    ├── user_id          → Owner/requester (NOT issuer)
+    ├── company_fiscal_config_id → Issuer snapshot
+    └── user_tax_profile_id → Recipient fiscal snapshot
 ```
 
 **Key principles**:
-- Company fiscal config has temporal validity (`valid_from`, `valid_until`)
-- Customer fiscal data is historical (changes apply forward, never backward)
-- Invoices capture fiscal snapshot at creation time
-- Invoices are **absolutely immutable** once issued
 
-## 📁 Package Structure
+- **Issuer**: `CompanyFiscalConfig` with temporal validity (`valid_from`, `valid_until`)
+- **Recipients**: Unified under `Users` with self-referencing (`parent_user_id`)
+- **Fiscal history**: `UserTaxProfile` tracks changes over time per User
+- **Invoices**: Capture fiscal snapshots at creation, absolutely immutable once issued
+
+### User Relationship Model (ADR-003)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  users                                                          │
+│  ══════                                                         │
+│  - id (UUID v7 string)                                          │
+│  - parent_user_id (nullable) → FK self-reference                │
+│  - relationship_type (UserRelationshipType enum)                │
+│                                                                 │
+│  parent_user_id = NULL   → DIRECT (client of the Company)       │
+│  parent_user_id = X      → DELEGATED (client of User X)         │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**UserRelationshipType Enum**:
+
+```php
+enum UserRelationshipType: int implements HasLabel, HasColor, HasIcon
+{
+    case DIRECT = 0;      // Direct client of the Company
+    case DELEGATED = 1;   // Client of a User (delegated billing)
+}
+```
+
+## Package Structure
 
 ```
 larabill/
 ├── config/larabill.php         # Package configuration
 ├── database/
-│   ├── migrations/             # Database migrations
+│   ├── migrations/             # Database migrations + stubs
 │   └── seeders/                # Tax categories, rates, etc.
 ├── docs/
 │   ├── AGENT_CONTEXT.md        # This file
-│   └── ARCHITECTURE.md         # Core architecture documentation
+│   ├── ARCHITECTURE.md         # Core architecture (articles, invoicing)
+│   ├── ADR-001-*.md            # Fiscal architecture decision
+│   ├── ADR-002-*.md            # UUID v7 string decision
+│   └── ADR-003-*.md            # User/Customer unification decision
 ├── resources/
 │   ├── lang/                   # Translations (es, en)
 │   └── views/pdf/              # Invoice PDF templates
 ├── src/
 │   ├── Concerns/
-│   │   └── HasUuid.php         # Agnostic UUID trait
+│   │   ├── HasUuid.php         # UUID trait
+│   │   └── HasUserRelation.php # User relationship trait
 │   ├── Console/                # Artisan commands
 │   ├── Contracts/              # Interfaces
 │   ├── Database/Factories/     # Model factories
 │   ├── DataTransferObjects/    # DTOs
-│   ├── Enums/                  # Status enums
+│   ├── Enums/                  # Status enums + UserRelationshipType
 │   ├── Events/                 # Domain events
 │   ├── Filament/               # Filament 4 resources
 │   ├── Listeners/              # Event listeners
@@ -158,11 +158,11 @@ larabill/
 └── tests/                      # Pest tests
 ```
 
-## 🔧 Key Components
+## Key Components
 
 ### HasUuid Trait
 
-Agnostic UUID trait that adapts to configuration:
+UUID trait that adapts to configuration:
 
 ```php
 use AichaDigital\Larabill\Concerns\HasUuid;
@@ -189,18 +189,27 @@ Schema::create('invoices', function (Blueprint $table) {
 
 ### Key Models
 
-- **Invoice**: UUID primary key, immutable once issued
-- **CompanyFiscalConfig**: Company fiscal settings with temporal validity
-- **CustomerFiscalData**: Customer fiscal data (historical)
-- **InvoiceItem**: Line items with tax breakdown
+| Model | Purpose |
+|-------|---------|
+| **Invoice** | UUID primary key, immutable once issued |
+| **CompanyFiscalConfig** | Issuer fiscal settings with temporal validity |
+| **UserTaxProfile** | Recipient fiscal data (historical per User) |
+| **InvoiceItem** | Line items with tax breakdown |
 
-## ⚙️ Configuration
+### Deprecated Models (ADR-003)
+
+| Model | Status | Replacement |
+|-------|--------|-------------|
+| `Customer` | **DEPRECATED** | Use `User` with `parent_user_id` |
+| `CustomerFiscalData` | **DEPRECATED** | Use `UserTaxProfile` |
+
+## Configuration
 
 ### Environment Variables
 
 ```env
-# ID Type (critical for storage strategy)
-LARABILL_USER_ID_TYPE=uuid_binary  # Options: int, uuid, uuid_binary, ulid, ulid_binary
+# ID Type
+LARABILL_USER_ID_TYPE=uuid  # Options: int, uuid, ulid
 
 # Invoice Numbering
 LARABILL_INVOICE_PREFIX=FAC
@@ -211,7 +220,7 @@ LARABILL_ABSTRACTAPI_KEY=your_key
 LARABILL_APILAYER_KEY=your_key
 ```
 
-## 🧪 Testing
+## Testing
 
 ```bash
 # Run all tests
@@ -238,7 +247,7 @@ The `user_model` is configurable via `config('larabill.user_model')`. In tests:
 **Pattern for testing user relationships**:
 
 ```php
-// ✅ CORRECT - Agnostic pattern (uses configured model dynamically)
+// CORRECT - Agnostic pattern (uses configured model dynamically)
 it('belongs to user', function () {
     $user = User::factory()->create();
     $data = Model::factory()->forUser($user->id)->create();
@@ -247,17 +256,11 @@ it('belongs to user', function () {
     expect($data->user)->toBeInstanceOf($userModel);
 });
 
-// ❌ WRONG - Hardcoded class breaks agnosticism
+// WRONG - Hardcoded class breaks agnosticism
 expect($data->user)->toBeInstanceOf(User::class);
 ```
 
-**Reference tests that follow this pattern**:
-
-- `tests/Unit/Models/InvoiceSeriesControlTest.php:52-55`
-- `tests/Unit/Models/ArticleServiceStatusTest.php`
-- `tests/Unit/Models/ArticleOverrideTest.php`
-
-## ⚠️ Important Conventions
+## Important Conventions
 
 ### Filament 4 Compatibility
 
@@ -269,18 +272,18 @@ protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-t
 
 ```php
 // Table Actions - CHANGED
-->actions([...])     // ❌ Filament 3
-->recordActions([...])  // ✅ Filament 4
+->actions([...])        // Filament 3
+->recordActions([...])  // Filament 4
 
 // Bulk Actions - CHANGED
-->bulkActions([...])    // ❌ Filament 3
-->toolbarActions([      // ✅ Filament 4
+->bulkActions([...])    // Filament 3
+->toolbarActions([      // Filament 4
     BulkActionGroup::make([...])
 ])
 
 // Date columns with nullable values
-->default('Text')       // ❌ Tries to parse as date
-->placeholder('Text')   // ✅ Shows text when null
+->default('Text')       // Tries to parse as date
+->placeholder('Text')   // Shows text when null
 ```
 
 #### Action Imports
@@ -294,44 +297,71 @@ use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 ```
 
-### User ID Agnosticism
+### PHP Enums with Filament
 
-The package supports any user ID type. Configure via `larabill.user_id_type`:
-- `int` for standard Laravel
-- `uuid_binary` for production with high volume (recommended)
-- `uuid` for human-readable UUIDs
+All enums implement Filament interfaces for seamless integration:
 
-## 🚫 Anti-Patterns
+```php
+use Filament\Support\Contracts\HasColor;
+use Filament\Support\Contracts\HasIcon;
+use Filament\Support\Contracts\HasLabel;
+
+enum UserRelationshipType: int implements HasLabel, HasColor, HasIcon
+{
+    case DIRECT = 0;
+    case DELEGATED = 1;
+
+    public function getLabel(): string { /* ... */ }
+    public function getColor(): string { /* ... */ }
+    public function getIcon(): string { /* ... */ }
+}
+```
+
+See: [Filament Enums Documentation](https://filamentphp.com/docs/4.x/advanced/enums)
+
+## Anti-Patterns
 
 **DON'T**:
-- ❌ Use float/decimal for monetary values (use base100)
-- ❌ Modify issued invoices
-- ❌ Hardcode UUID type (use config)
-- ❌ Skip MigrationHelper for user_id columns
+
+- Use float/decimal for monetary values (use base100)
+- Modify issued invoices
+- Hardcode UUID type (use config)
+- Skip MigrationHelper for user_id columns
+- Use binary UUID (incompatible with Filament 4)
+- Create separate Customer entities (use User with parent_user_id)
 
 **DO**:
-- ✅ Use `HasUuid` trait for UUID models
-- ✅ Use `MigrationHelper::userIdColumn()` in migrations
-- ✅ Use Base100Int for all monetary/percentage values
-- ✅ Follow temporal validity pattern for fiscal data
 
-## 📚 Key Documentation
+- Use `HasUuid` trait for UUID models
+- Use `MigrationHelper::userIdColumn()` in migrations
+- Use Base100Int for all monetary/percentage values
+- Follow temporal validity pattern for fiscal data
+- Use PHP Enums with Filament interfaces
+- Implement self-referencing Users for delegation
+
+## Key Documentation
 
 | File | Purpose |
 |------|---------|
 | `docs/ARCHITECTURE.md` | Core architecture (articles, invoicing) |
+| `docs/ADR-001-*.md` | Fiscal architecture decision |
+| `docs/ADR-002-*.md` | UUID v7 string decision |
+| `docs/ADR-003-*.md` | User/Customer unification |
 | `CHANGELOG.md` | Version history and breaking changes |
 | `README.md` | Installation and usage guide |
 
-## 🎯 Target Use Case
+## Target Use Case
 
 **Primary**: Spanish hosting companies operating as EU intra-community operators
 
-**Larafactu Configuration** (staging environment):
-- Uses `uuid_binary` for best performance
-- Configured for Spain + EU compliance
-- VeriFACTU integration enabled
+**Features prioritized for**:
+
+- Monthly/annual service billing
+- Spanish tax system (IVA, IGIC, IPSI)
+- EU reverse charge (B2B)
+- VeriFACTU compliance (Spain)
+- WHMCS migration path
 
 ---
 
-**Remember**: This package is **agnostic** - it adapts to the consuming application's ID strategy. Larafactu uses UUID v7 binary, but other projects may use different types. Always use the configuration, never hardcode.
+**Remember**: This package uses UUID v7 **string** (not binary). Always use the configuration, never hardcode ID types.
