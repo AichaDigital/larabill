@@ -25,15 +25,8 @@ return new class extends Migration
             $table->char('item_type', 1)->comment('G=Good (product), S=Service');
             $table->string('category', 100)->nullable()->comment('Article category for grouping');
 
-            // Pricing (Base100: €12.34 = 1234)
-            $table->integer('base_price')->comment('Standard price in Base100 format');
-            $table->integer('cost_price')->nullable()->comment('Cost price for margin calculations');
-
-            // Recurrencia (solo para Services)
-            $table->boolean('is_recurring')->default(false)->comment('If true, service is recurring');
-            $table->char('billing_frequency', 1)->nullable()->comment('M=Monthly, Q=Quarterly, Y=Yearly, L=Lifetime');
-            $table->unsignedTinyInteger('billing_interval')->default(1)->comment('Bill every X periods (e.g., every 2 months)');
-            $table->unsignedTinyInteger('billing_days_in_advance')->nullable()->comment('Days in advance to generate invoice (overrides global config)');
+            // Pricing moved to article_prices table
+            $table->integer('cost_price')->nullable()->comment('Cost price for margin calculations (Base100)');
 
             // Integración externa
             $table->string('subscription_type', 100)->nullable()->comment('External system identifier: stripe:price_xxx, cpanel:account, etc.');
@@ -53,7 +46,7 @@ return new class extends Migration
 
             // Índices
             $table->index(['code', 'is_active']);
-            $table->index(['item_type', 'is_recurring']);
+            $table->index(['item_type']);
             $table->index(['category']);
         });
     }

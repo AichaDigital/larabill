@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Services;
 
 use AichaDigital\Larabill\DataTransferObjects\PricingDetails;
-use AichaDigital\Larabill\Models\{Article, ArticleOverride};
+use AichaDigital\Larabill\Enums\BillingFrequency;
+use AichaDigital\Larabill\Models\{Article, ArticleOverride, ArticleServiceStatus};
 
 /**
  * PricingService
@@ -16,18 +17,36 @@ use AichaDigital\Larabill\Models\{Article, ArticleOverride};
 class PricingService
 {
     /**
-     * Get the effective price for a customer.
-     * Returns the base price if no customer or no active override exists.
+     * Get the effective price for a customer at a specific frequency.
+     * Returns the ArticlePrice for the frequency if no customer or no active override exists.
      */
-    public function getEffectivePrice(Article $article, ?int $customerId): float
+    public function getEffectivePrice(Article $article, BillingFrequency $frequency, ?int $customerId): ?float
     {
+        $basePrice = $article->getPriceFor($frequency);
+
+        if ($basePrice === null) {
+            return null;
+        }
+
         if (! $customerId) {
-            return $article->base_price;
+            return $basePrice;
         }
 
         $override = $this->getActiveOverride($article, $customerId);
 
-        return $override->custom_price ?? $article->base_price;
+        return $override->custom_price ?? $basePrice;
+    }
+
+    /**
+     * Get the effective price for a service (uses the service's billing frequency).
+     */
+    public function getEffectivePriceForService(ArticleServiceStatus $service): ?float
+    {
+        return $this->getEffectivePrice(
+            $service->article,
+            $service->billing_frequency,
+            $service->customer_id
+        );
     }
 
     /**
@@ -72,11 +91,14 @@ class PricingService
     }
 
     /**
-     * Create pricing details DTO for an article and customer.
+     * Create pricing details DTO for an article, frequency and customer.
      */
-    public function createPricingDetails(Article $article, ?int $customerId): PricingDetails
-    {
-        $basePrice    = $article->base_price;
+    public function createPricingDetails(
+        Article $article,
+        BillingFrequency $frequency,
+        ?int $customerId
+    ): PricingDetails {
+        $basePrice    = $article->getPriceFor($frequency) ?? 0.0;
         $override     = $customerId ? $this->getActiveOverride($article, $customerId) : null;
         $appliedPrice = $override?->custom_price ?? $basePrice;
 
@@ -90,6 +112,18 @@ class PricingService
             discountAmount: $discountAmount         > 0 ? $discountAmount : null,
             discountPercentage: $discountPercentage > 0 ? $discountPercentage : null,
             overrideId: $override?->id,
+        );
+    }
+
+    /**
+     * Create pricing details DTO for a service (uses service's billing frequency).
+     */
+    public function createPricingDetailsForService(ArticleServiceStatus $service): PricingDetails
+    {
+        return $this->createPricingDetails(
+            $service->article,
+            $service->billing_frequency,
+            $service->customer_id
         );
     }
 

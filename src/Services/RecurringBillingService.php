@@ -135,12 +135,12 @@ final class RecurringBillingService
     /**
      * Check if invoice should be generated based on days_in_advance
      *
-     * Uses article-specific days_in_advance if set, otherwise uses global config
+     * Uses ArticlePrice-specific days_in_advance if set, otherwise uses global config
      */
     protected function shouldGenerateInvoice(ArticleServiceStatus $service, Carbon $date): bool
     {
-        // Get days in advance (article-specific or global)
-        $daysInAdvance = $service->article->billing_days_in_advance
+        // Get days in advance from ArticlePrice for the service's frequency, or global config
+        $daysInAdvance = $service->article->getBillingDaysInAdvanceFor($service->billing_frequency)
             ?? config('larabill.recurring_billing.days_in_advance', 7);
 
         // Calculate the date when we should start generating the invoice
@@ -164,11 +164,8 @@ final class RecurringBillingService
         $periodStart = $service->next_billing_date;
         $periodEnd   = $this->calculatePeriodEnd($service);
 
-        // Get effective pricing (with customer overrides)
-        $pricingDetails = $this->pricingService->createPricingDetails(
-            $article,
-            $customer->id
-        );
+        // Get effective pricing (with customer overrides) using service's billing frequency
+        $pricingDetails = $this->pricingService->createPricingDetailsForService($service);
 
         // Calculate next billing date (for metadata)
         $nextBillingDate = $this->calculateNextBillingDate($service);
@@ -206,11 +203,11 @@ final class RecurringBillingService
             ),
             pricingDetails: $pricingDetails,
             billingDetails: new BillingDetails(
-                billingCycle: $article->billing_frequency->label(),
+                billingCycle: $service->billing_frequency->label(),
                 periodStart: $periodStart,
                 periodEnd: $periodEnd,
                 nextBillingDate: $nextBillingDate,
-                billingInterval: $article->billing_interval
+                billingInterval: 1
             )
         );
 
@@ -229,37 +226,26 @@ final class RecurringBillingService
     }
 
     /**
-     * Calculate period end based on billing frequency
+     * Calculate period end based on service billing frequency
      *
-     * Uses addMonthsNoOverflow to prevent day overflow issues
+     * Uses the BillingFrequency enum's addToDate method and subtracts 1 day
      */
     protected function calculatePeriodEnd(ArticleServiceStatus $service): Carbon
     {
         $start = $service->next_billing_date->copy();
 
-        return match ($service->article->billing_frequency) {
-            BillingFrequency::MONTHLY   => $start->addMonthsNoOverflow($service->article->billing_interval)->subDay(),
-            BillingFrequency::QUARTERLY => $start->addMonthsNoOverflow(3 * $service->article->billing_interval)->subDay(),
-            BillingFrequency::YEARLY    => $start->addYearsNoOverflow($service->article->billing_interval)->subDay(),
-            default                     => $start->addMonthNoOverflow()->subDay(),
-        };
+        // Use the enum's addToDate method which handles all frequencies
+        return $service->billing_frequency->addToDate($start)->subDay();
     }
 
     /**
-     * Calculate next billing date using addMonths/addYears
+     * Calculate next billing date using the service's billing frequency
      *
-     * Uses addMonthsNoOverflow to prevent day overflow (Jan 31 + 1 month = Feb 28/29, not Mar 2/3)
+     * Delegates to the BillingFrequency enum's addToDate method
      */
     protected function calculateNextBillingDate(ArticleServiceStatus $service): Carbon
     {
-        $current = $service->next_billing_date->copy();
-
-        return match ($service->article->billing_frequency) {
-            BillingFrequency::MONTHLY   => $current->addMonthsNoOverflow($service->article->billing_interval),
-            BillingFrequency::QUARTERLY => $current->addMonthsNoOverflow(3 * $service->article->billing_interval),
-            BillingFrequency::YEARLY    => $current->addYearsNoOverflow($service->article->billing_interval),
-            default                     => $current->addMonthNoOverflow(),
-        };
+        return $service->calculateNextBillingDate();
     }
 
     /**

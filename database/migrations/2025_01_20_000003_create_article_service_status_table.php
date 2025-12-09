@@ -41,8 +41,12 @@ return new class extends Migration
             $table->date('cancellation_effective_at')->nullable()->comment('When cancellation becomes effective');
             $table->boolean('refund_unused')->default(false)->comment('If true, refund unused time');
 
+            // Billing configuration (from ArticlePrice at contract time)
+            $table->unsignedTinyInteger('billing_frequency')
+                ->comment('BillingFrequency enum value selected at contract time');
+
             // Pricing efectivo (cache)
-            $table->integer('effective_price')->comment('Currently applied price in Base100 (from base_price or override)');
+            $table->integer('effective_price')->comment('Currently applied price in Base100 (from ArticlePrice or override)');
             $table->foreignId('current_override_id')->nullable()
                 ->constrained('article_overrides')
                 ->nullOnDelete()

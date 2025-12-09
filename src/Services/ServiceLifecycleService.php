@@ -196,12 +196,12 @@ final class ServiceLifecycleService
             return now();
         }
 
-        $frequency = $service->article->billing_frequency;
-        $interval  = $service->article->billing_interval;
+        // Use the service's billing frequency (stored at contract time)
+        $frequency = $service->billing_frequency;
 
         return $frequency->subtractFromDate(
             $service->next_billing_date->copy(),
-            $interval
+            1
         );
     }
 }

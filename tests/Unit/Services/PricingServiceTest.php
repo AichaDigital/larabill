@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Models\{Article, ArticleOverride};
 use AichaDigital\Larabill\Services\PricingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -14,24 +15,24 @@ beforeEach(function () {
 });
 
 it('returns base price when no customer provided', function () {
-    $article = Article::factory()->create(['base_price' => 2900]);
+    $article = Article::factory()->monthly(2900)->create();
 
-    $price = $this->service->getEffectivePrice($article, null);
+    $price = $this->service->getEffectivePrice($article, BillingFrequency::MONTHLY, null);
 
     expect($price)->toBe(2900.0);
 });
 
 it('returns base price when customer has no override', function () {
-    $article = Article::factory()->create(['base_price' => 2900]);
+    $article = Article::factory()->monthly(2900)->create();
 
-    $price = $this->service->getEffectivePrice($article, 999);
+    $price = $this->service->getEffectivePrice($article, BillingFrequency::MONTHLY, 999);
 
     expect($price)->toBe(2900.0);
 });
 
 it('returns override price when customer has active override', function () {
     $customer = $this->userModel::factory()->create();
-    $article  = Article::factory()->create(['base_price' => 2900]);
+    $article  = Article::factory()->monthly(2900)->create();
 
     ArticleOverride::factory()->create([
         'article_id'   => $article->id,
@@ -40,7 +41,7 @@ it('returns override price when customer has active override', function () {
         'is_active'    => true,
     ]);
 
-    $price = $this->service->getEffectivePrice($article, $customer->id);
+    $price = $this->service->getEffectivePrice($article, BillingFrequency::MONTHLY, $customer->id);
 
     expect($price)->toBe(2400.0);
 });
@@ -116,9 +117,9 @@ it('returns zero discount percentage when base price is zero', function () {
 });
 
 it('creates pricing details without override', function () {
-    $article = Article::factory()->create(['base_price' => 2900]);
+    $article = Article::factory()->monthly(2900)->create();
 
-    $details = $this->service->createPricingDetails($article, null);
+    $details = $this->service->createPricingDetails($article, BillingFrequency::MONTHLY, null);
 
     expect($details->basePrice)->toBe(2900.0)
         ->and($details->appliedPrice)->toBe(2900.0)
@@ -130,7 +131,7 @@ it('creates pricing details without override', function () {
 
 it('creates pricing details with customer override', function () {
     $customer = $this->userModel::factory()->create();
-    $article  = Article::factory()->create(['base_price' => 2900]);
+    $article  = Article::factory()->monthly(2900)->create();
 
     $override = ArticleOverride::factory()->create([
         'article_id'   => $article->id,
@@ -139,7 +140,7 @@ it('creates pricing details with customer override', function () {
         'is_active'    => true,
     ]);
 
-    $details = $this->service->createPricingDetails($article, $customer->id);
+    $details = $this->service->createPricingDetails($article, BillingFrequency::MONTHLY, $customer->id);
 
     expect($details->basePrice)->toBe(2900.0)
         ->and($details->appliedPrice)->toBe(2400.0)
@@ -150,8 +151,7 @@ it('creates pricing details with customer override', function () {
 });
 
 it('validates price is not negative', function () {
-    $article = Article::factory()->create([
-        'base_price' => 2900,
+    $article = Article::factory()->monthly(2900)->create([
         'cost_price' => null,
     ]);
 
@@ -161,8 +161,7 @@ it('validates price is not negative', function () {
 });
 
 it('validates price is above cost price', function () {
-    $article = Article::factory()->create([
-        'base_price' => 2900,
+    $article = Article::factory()->monthly(2900)->create([
         'cost_price' => 1500,
     ]);
 
@@ -172,8 +171,7 @@ it('validates price is above cost price', function () {
 });
 
 it('calculates profit margin', function () {
-    $article = Article::factory()->create([
-        'base_price' => 2900,
+    $article = Article::factory()->monthly(2900)->create([
         'cost_price' => 1500,
     ]);
 
@@ -183,8 +181,7 @@ it('calculates profit margin', function () {
 });
 
 it('returns null profit margin when no cost price', function () {
-    $article = Article::factory()->create([
-        'base_price' => 2900,
+    $article = Article::factory()->monthly(2900)->create([
         'cost_price' => null,
     ]);
 
@@ -194,8 +191,7 @@ it('returns null profit margin when no cost price', function () {
 });
 
 it('calculates profit margin percentage', function () {
-    $article = Article::factory()->create([
-        'base_price' => 2900,
+    $article = Article::factory()->monthly(2900)->create([
         'cost_price' => 1500,
     ]);
 
@@ -205,8 +201,7 @@ it('calculates profit margin percentage', function () {
 });
 
 it('returns null profit margin percentage when no cost price', function () {
-    $article = Article::factory()->create([
-        'base_price' => 2900,
+    $article = Article::factory()->monthly(2900)->create([
         'cost_price' => null,
     ]);
 
@@ -216,12 +211,37 @@ it('returns null profit margin percentage when no cost price', function () {
 });
 
 it('returns null profit margin percentage when price is zero', function () {
-    $article = Article::factory()->create([
-        'base_price' => 2900,
+    $article = Article::factory()->monthly(2900)->create([
         'cost_price' => 1500,
     ]);
 
     $percentage = $this->service->calculateProfitMarginPercentage($article, 0.0);
 
     expect($percentage)->toBeNull();
+});
+
+it('returns null when no price for frequency', function () {
+    $article = Article::factory()->monthly(2900)->create();
+
+    // Request yearly price but article only has monthly
+    $price = $this->service->getEffectivePrice($article, BillingFrequency::YEARLY, null);
+
+    expect($price)->toBeNull();
+});
+
+it('creates pricing details for service', function () {
+    $customer = $this->userModel::factory()->create();
+    $article  = Article::factory()->monthly(2900)->create();
+
+    $service = \AichaDigital\Larabill\Models\ArticleServiceStatus::factory()->create([
+        'customer_id'       => $customer->id,
+        'article_id'        => $article->id,
+        'billing_frequency' => BillingFrequency::MONTHLY,
+    ]);
+
+    $details = $this->service->createPricingDetailsForService($service);
+
+    expect($details->basePrice)->toBe(2900.0)
+        ->and($details->appliedPrice)->toBe(2900.0)
+        ->and($details->pricingRule)->toBe('base_price');
 });

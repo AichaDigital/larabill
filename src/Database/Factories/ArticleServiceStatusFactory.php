@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Database\Factories;
 
-use AichaDigital\Larabill\Enums\{CancellationType, ServiceStatus};
+use AichaDigital\Larabill\Enums\{BillingFrequency, CancellationType, ServiceStatus};
 use AichaDigital\Larabill\Models\{Article, ArticleOverride, ArticleServiceStatus};
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -24,7 +24,7 @@ class ArticleServiceStatusFactory extends Factory
 
         return [
             'customer_id'               => $userModel::factory(),
-            'article_id'                => Article::factory()->service()->recurring(),
+            'article_id'                => Article::factory()->service(),
             'instance_identifier'       => $this->faker->domainName(),
             'instance_name'             => 'Service for '.$this->faker->domainWord(),
             'started_at'                => now(),
@@ -35,12 +35,47 @@ class ArticleServiceStatusFactory extends Factory
             'cancellation_requested_at' => null,
             'cancellation_effective_at' => null,
             'refund_unused'             => false,
+            'billing_frequency'         => BillingFrequency::MONTHLY,
             'effective_price'           => 2900, // Default price in Base100 (€29.00)
             'current_override_id'       => null,
             'external_reference'        => null,
             'instance_data'             => [],
             'metadata'                  => [],
         ];
+    }
+
+    /**
+     * Set billing frequency.
+     */
+    public function frequency(BillingFrequency $frequency): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'billing_frequency' => $frequency,
+        ]);
+    }
+
+    /**
+     * Set monthly billing frequency.
+     */
+    public function monthly(): static
+    {
+        return $this->frequency(BillingFrequency::MONTHLY);
+    }
+
+    /**
+     * Set quarterly billing frequency.
+     */
+    public function quarterly(): static
+    {
+        return $this->frequency(BillingFrequency::QUARTERLY);
+    }
+
+    /**
+     * Set yearly billing frequency.
+     */
+    public function yearly(): static
+    {
+        return $this->frequency(BillingFrequency::YEARLY);
     }
 
     /**
@@ -151,13 +186,27 @@ class ArticleServiceStatusFactory extends Factory
     }
 
     /**
-     * Set for a specific article.
+     * Set for a specific article with frequency.
      */
-    public function forArticle(Article $article): static
+    public function forArticle(Article $article, ?BillingFrequency $frequency = null): static
+    {
+        $frequency = $frequency                        ?? BillingFrequency::MONTHLY;
+        $price     = $article->getPriceFor($frequency) ?? 2900;
+
+        return $this->state(fn (array $attributes) => [
+            'article_id'        => $article->id,
+            'billing_frequency' => $frequency,
+            'effective_price'   => $price,
+        ]);
+    }
+
+    /**
+     * Set effective price.
+     */
+    public function price(int $price): static
     {
         return $this->state(fn (array $attributes) => [
-            'article_id'      => $article->id,
-            'effective_price' => $article->base_price,
+            'effective_price' => $price,
         ]);
     }
 
@@ -189,6 +238,7 @@ class ArticleServiceStatusFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'instance_identifier' => $domainName,
             'instance_name'       => "Domain {$domainName}",
+            'billing_frequency'   => BillingFrequency::YEARLY, // Domains are typically yearly
             'instance_data'       => [
                 'domain' => [
                     'name'           => $domainName,

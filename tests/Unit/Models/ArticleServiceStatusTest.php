@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Enums\{CancellationType, ServiceStatus};
+use AichaDigital\Larabill\Enums\{BillingFrequency, CancellationType, ServiceStatus};
 use AichaDigital\Larabill\Models\{Article, ArticleOverride, ArticleServiceStatus};
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -12,11 +12,12 @@ uses(RefreshDatabase::class);
 it('can create a service status', function () {
     $userModel = config('larabill.user_model', 'App\\Models\\User');
     $customer  = $userModel::factory()->create();
-    $article   = Article::factory()->service()->recurring()->create();
+    $article   = Article::factory()->service()->monthly(2900)->create();
 
     $service = ArticleServiceStatus::factory()->create([
         'customer_id'         => $customer->id,
         'article_id'          => $article->id,
+        'billing_frequency'   => BillingFrequency::MONTHLY,
         'instance_identifier' => 'example.com',
     ]);
 
@@ -76,8 +77,11 @@ it('casts arrays correctly', function () {
 });
 
 it('has article relationship', function () {
-    $article = Article::factory()->service()->recurring()->create();
-    $service = ArticleServiceStatus::factory()->create(['article_id' => $article->id]);
+    $article = Article::factory()->service()->monthly(2900)->create();
+    $service = ArticleServiceStatus::factory()->create([
+        'article_id'        => $article->id,
+        'billing_frequency' => BillingFrequency::MONTHLY,
+    ]);
 
     expect($service->article)->toBeInstanceOf(Article::class)
         ->and($service->article->id)->toBe($article->id);
@@ -147,11 +151,17 @@ it('scopes for customer', function () {
 });
 
 it('scopes for article', function () {
-    $article1 = Article::factory()->service()->recurring()->create();
-    $article2 = Article::factory()->service()->recurring()->create();
+    $article1 = Article::factory()->service()->monthly(2900)->create();
+    $article2 = Article::factory()->service()->monthly(2900)->create();
 
-    ArticleServiceStatus::factory()->count(2)->create(['article_id' => $article1->id]);
-    ArticleServiceStatus::factory()->count(3)->create(['article_id' => $article2->id]);
+    ArticleServiceStatus::factory()->count(2)->create([
+        'article_id'        => $article1->id,
+        'billing_frequency' => BillingFrequency::MONTHLY,
+    ]);
+    ArticleServiceStatus::factory()->count(3)->create([
+        'article_id'        => $article2->id,
+        'billing_frequency' => BillingFrequency::MONTHLY,
+    ]);
 
     $services = ArticleServiceStatus::forArticle($article1->id)->get();
 
@@ -238,9 +248,10 @@ it('can expire a service', function () {
 });
 
 it('calculates next billing date monthly', function () {
-    $article = Article::factory()->monthly()->create();
+    $article = Article::factory()->monthly(2900)->create();
     $service = ArticleServiceStatus::factory()->create([
         'article_id'        => $article->id,
+        'billing_frequency' => BillingFrequency::MONTHLY,
         'next_billing_date' => Carbon::parse('2024-01-15'),
     ]);
 
@@ -250,9 +261,10 @@ it('calculates next billing date monthly', function () {
 });
 
 it('calculates next billing date quarterly', function () {
-    $article = Article::factory()->quarterly()->create();
+    $article = Article::factory()->quarterly(7900)->create();
     $service = ArticleServiceStatus::factory()->create([
         'article_id'        => $article->id,
+        'billing_frequency' => BillingFrequency::QUARTERLY,
         'next_billing_date' => Carbon::parse('2024-01-15'),
     ]);
 
@@ -262,9 +274,10 @@ it('calculates next billing date quarterly', function () {
 });
 
 it('calculates next billing date yearly', function () {
-    $article = Article::factory()->yearly()->create();
+    $article = Article::factory()->yearly(29000)->create();
     $service = ArticleServiceStatus::factory()->create([
         'article_id'        => $article->id,
+        'billing_frequency' => BillingFrequency::YEARLY,
         'next_billing_date' => Carbon::parse('2024-01-15'),
     ]);
 
@@ -276,7 +289,7 @@ it('calculates next billing date yearly', function () {
 it('updates effective price from override', function () {
     $userModel = config('larabill.user_model', 'App\\Models\\User');
     $customer  = $userModel::factory()->create();
-    $article   = Article::factory()->create(['base_price' => 2900]);
+    $article   = Article::factory()->monthly(2900)->create();
 
     $override = ArticleOverride::factory()->create([
         'customer_id'  => $customer->id,
@@ -285,9 +298,10 @@ it('updates effective price from override', function () {
     ]);
 
     $service = ArticleServiceStatus::factory()->create([
-        'customer_id'     => $customer->id,
-        'article_id'      => $article->id,
-        'effective_price' => 2900,
+        'customer_id'       => $customer->id,
+        'article_id'        => $article->id,
+        'billing_frequency' => BillingFrequency::MONTHLY,
+        'effective_price'   => 2900,
     ]);
 
     $service->updateEffectivePrice();
@@ -297,11 +311,12 @@ it('updates effective price from override', function () {
 });
 
 it('updates effective price to base when no override', function () {
-    $article = Article::factory()->create(['base_price' => 2900]);
+    $article = Article::factory()->monthly(2900)->create();
 
     $service = ArticleServiceStatus::factory()->create([
-        'article_id'      => $article->id,
-        'effective_price' => 2400,
+        'article_id'        => $article->id,
+        'billing_frequency' => BillingFrequency::MONTHLY,
+        'effective_price'   => 2400,
     ]);
 
     $service->updateEffectivePrice();

@@ -17,14 +17,9 @@ use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
  * @property string $code
  * @property string $name
  * @property string|null $description
- * @property string $item_type
+ * @property ItemType $item_type
  * @property string|null $category
- * @property int $base_price
  * @property int|null $cost_price
- * @property bool $is_recurring
- * @property BillingFrequency|null $billing_frequency
- * @property int|null $billing_interval
- * @property int|null $billing_days_in_advance
  * @property string|null $subscription_type
  * @property int|null $tax_group_id
  * @property int|null $unit_measure_id
@@ -35,6 +30,7 @@ use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
  * @property \Illuminate\Support\Carbon|null $deleted_at
  * @property-read \AichaDigital\Larabill\Models\TaxGroup|null $taxGroup
  * @property-read \AichaDigital\Larabill\Models\UnitMeasure|null $unitMeasure
+ * @property-read \Illuminate\Database\Eloquent\Collection|\AichaDigital\Larabill\Models\ArticlePrice[] $prices
  * @property-read \Illuminate\Database\Eloquent\Collection|\AichaDigital\Larabill\Models\ArticleOverride[] $overrides
  * @property-read \Illuminate\Database\Eloquent\Collection|\AichaDigital\Larabill\Models\ArticleServiceStatus[] $serviceStatuses
  */
@@ -57,12 +53,7 @@ class Article extends Model
         'description',
         'item_type',
         'category',
-        'base_price',
         'cost_price',
-        'is_recurring',
-        'billing_frequency',
-        'billing_interval',
-        'billing_days_in_advance',
         'subscription_type',
         'tax_group_id',
         'unit_measure_id',
@@ -74,15 +65,10 @@ class Article extends Model
      * The attributes that should be cast.
      */
     protected $casts = [
-        'item_type'                => ItemType::class,
-        'billing_frequency'        => BillingFrequency::class,
-        'base_price'               => Base100Int::class,
-        'cost_price'               => Base100Int::class,
-        'is_recurring'             => 'boolean',
-        'is_active'                => 'boolean',
-        'billing_interval'         => 'integer',
-        'billing_days_in_advance'  => 'integer',
-        'metadata'                 => 'array',
+        'item_type'  => ItemType::class,
+        'cost_price' => Base100Int::class,
+        'is_active'  => 'boolean',
+        'metadata'   => 'array',
     ];
 
     /**
@@ -99,6 +85,31 @@ class Article extends Model
     public function unitMeasure(): BelongsTo
     {
         return $this->belongsTo(UnitMeasure::class);
+    }
+
+    /**
+     * Get all prices for this article.
+     */
+    public function prices(): HasMany
+    {
+        return $this->hasMany(ArticlePrice::class);
+    }
+
+    /**
+     * Get currently active prices for this article.
+     */
+    public function activePrices(): HasMany
+    {
+        return $this->prices()
+            ->where('is_active', true)
+            ->where(function ($q) {
+                $q->whereNull('valid_from')
+                    ->orWhere('valid_from', '<=', now());
+            })
+            ->where(function ($q) {
+                $q->whereNull('valid_to')
+                    ->orWhere('valid_to', '>=', now());
+            });
     }
 
     /**
@@ -142,11 +153,13 @@ class Article extends Model
     }
 
     /**
-     * Scope to filter only recurring articles.
+     * Scope to filter articles that have recurring prices.
      */
     public function scopeRecurring(Builder $query): void
     {
-        $query->where('is_recurring', true);
+        $query->whereHas('activePrices', function ($q) {
+            $q->where('billing_frequency', '!=', BillingFrequency::ONE_TIME);
+        });
     }
 
     /**
@@ -171,6 +184,16 @@ class Article extends Model
     public function isGood(): bool
     {
         return $this->item_type === ItemType::GOOD;
+    }
+
+    /**
+     * Check if this article has any recurring prices.
+     */
+    public function isRecurring(): bool
+    {
+        return $this->activePrices()
+            ->where('billing_frequency', '!=', BillingFrequency::ONE_TIME)
+            ->exists();
     }
 
     /**
@@ -219,18 +242,59 @@ class Article extends Model
     }
 
     /**
-     * Get the effective price for a customer.
-     * Checks for active overrides first, falls back to base price.
+     * Get price for a specific billing frequency.
      */
-    public function getEffectivePriceFor(?int $customerId): float
+    public function getPriceFor(BillingFrequency $frequency): ?float
     {
-        if (! $customerId) {
-            return $this->base_price;
+        return $this->activePrices()
+            ->where('billing_frequency', $frequency)
+            ->value('price');
+    }
+
+    /**
+     * Get all available billing frequencies for this article.
+     *
+     * @return \Illuminate\Support\Collection<int, BillingFrequency>
+     */
+    public function getAvailableFrequencies(): \Illuminate\Support\Collection
+    {
+        return $this->activePrices()
+            ->pluck('billing_frequency')
+            ->unique()
+            ->values();
+    }
+
+    /**
+     * Get the default price (ONE_TIME or first available).
+     */
+    public function getDefaultPrice(): ?float
+    {
+        $oneTimePrice = $this->getPriceFor(BillingFrequency::ONE_TIME);
+
+        if ($oneTimePrice !== null) {
+            return $oneTimePrice;
         }
 
-        $override = $this->getActiveOverrideFor($customerId);
+        /** @var ArticlePrice|null $firstPrice */
+        $firstPrice = $this->activePrices()->first();
 
-        return $override->custom_price ?? $this->base_price;
+        return $firstPrice?->price;
+    }
+
+    /**
+     * Get the effective price for a customer at a specific frequency.
+     * Checks for active overrides first, falls back to standard price.
+     */
+    public function getEffectivePriceFor(?int $customerId, BillingFrequency $frequency): ?float
+    {
+        if ($customerId) {
+            $override = $this->getActiveOverrideFor($customerId);
+            if ($override) {
+                return $override->custom_price;
+            }
+        }
+
+        return $this->getPriceFor($frequency);
     }
 
     /**
@@ -261,29 +325,13 @@ class Article extends Model
     }
 
     /**
-     * Get profit margin (difference between base_price and cost_price).
+     * Get billing days in advance for a specific frequency.
      */
-    public function getProfitMargin(): ?float
+    public function getBillingDaysInAdvanceFor(BillingFrequency $frequency): ?int
     {
-        if (! $this->cost_price) {
-            return null;
-        }
-
-        return $this->base_price - $this->cost_price;
-    }
-
-    /**
-     * Get profit margin as percentage (rounded to int).
-     */
-    public function getProfitMarginPercentage(): ?int
-    {
-        if (! $this->cost_price || $this->base_price == 0) {
-            return null;
-        }
-
-        $margin = $this->getProfitMargin();
-
-        return (int) (($margin / $this->base_price) * 100);
+        return $this->activePrices()
+            ->where('billing_frequency', $frequency)
+            ->value('billing_days_in_advance');
     }
 
     /**

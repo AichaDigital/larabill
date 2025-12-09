@@ -64,6 +64,7 @@ class LegalEntityType extends Model
         'country_code',
         'description',
         'requires_tax_id',
+        'is_company',
         'is_active',
         'sort_order',
         'metadata',

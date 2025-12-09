@@ -21,6 +21,7 @@ return new class extends Migration
             $table->string('country_code', 2)->default('ES')->comment('Código ISO 3166-1 alpha-2 del país');
             $table->json('description')->nullable()->comment('Descripción del tipo de entidad (translatable)');
             $table->boolean('requires_tax_id')->default(true)->comment('Si requiere identificación fiscal (CIF/NIF)');
+            $table->boolean('is_company')->default(false)->comment('Si es entidad empresarial (true) vs persona física (false)');
             $table->boolean('is_active')->default(true)->comment('Si está activo para nuevas entidades');
             $table->unsignedInteger('sort_order')->default(0)->comment('Orden de presentación');
             $table->json('metadata')->nullable()->comment('Metadatos adicionales (requisitos legales, etc.)');

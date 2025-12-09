@@ -114,6 +114,7 @@ class LarabillServiceProvider extends PackageServiceProvider
             ->name('larabill')
             ->hasConfigFile()
             ->hasViews()
+            ->hasTranslations()
             ->hasCommand(\AichaDigital\Larabill\Console\DetectUserIdTypeCommand::class);
 
         // Note: Migrations load automatically via loadMigrationsFrom() in boot()

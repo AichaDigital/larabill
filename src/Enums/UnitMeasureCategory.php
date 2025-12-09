@@ -10,8 +10,11 @@ namespace AichaDigital\Larabill\Enums;
  * Represents the category of unit measurement.
  * Used to group unit measures logically (weight, volume, etc.)
  *
- * @method string label() Get human-readable label
- * @method static array<int, string> toArray() Get all cases as [value => label] array
+ * Usage in Filament (agnostic - no Filament dependency):
+ * ```php
+ * Forms\Components\Select::make('category')
+ *     ->options(UnitMeasureCategory::toArray())
+ * ```
  */
 enum UnitMeasureCategory: int
 {

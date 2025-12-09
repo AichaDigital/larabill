@@ -41,11 +41,12 @@ it('returns zero when no services are expired', function () {
 // ProcessPendingCancellations tests
 it('can process pending cancellations via action', function () {
     $customer = $this->userModel::factory()->create();
-    $article  = Article::factory()->service()->recurring()->create();
+    $article  = Article::factory()->service()->monthly(2900)->create();
 
     ArticleServiceStatus::factory()->count(3)->create([
         'customer_id'               => $customer->id,
         'article_id'                => $article->id,
+        'billing_frequency'         => \AichaDigital\Larabill\Enums\BillingFrequency::MONTHLY,
         'status'                    => ServiceStatus::ACTIVE,
         'cancellation_type'         => CancellationType::END_OF_PERIOD,
         'cancellation_effective_at' => now()->subDay(),

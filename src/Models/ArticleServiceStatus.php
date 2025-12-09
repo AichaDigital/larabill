@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Models;
 
 use AichaDigital\Lara100\Casts\Base100Int;
-use AichaDigital\Larabill\Enums\{CancellationType, ServiceStatus};
+use AichaDigital\Larabill\Enums\{BillingFrequency, CancellationType, ServiceStatus};
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\{Builder, Model};
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\Auth;
  * @property \Illuminate\Support\Carbon|null $cancellation_requested_at
  * @property \Illuminate\Support\Carbon|null $cancellation_effective_at
  * @property bool $refund_unused
+ * @property BillingFrequency $billing_frequency
  * @property int|null $effective_price
  * @property int|null $current_override_id
  * @property string|null $external_reference
@@ -63,6 +64,7 @@ class ArticleServiceStatus extends Model
         'cancellation_requested_at',
         'cancellation_effective_at',
         'refund_unused',
+        'billing_frequency',
         'effective_price',
         'current_override_id',
         'external_reference',
@@ -82,6 +84,7 @@ class ArticleServiceStatus extends Model
         'cancellation_requested_at' => 'date',
         'cancellation_effective_at' => 'date',
         'refund_unused'             => 'boolean',
+        'billing_frequency'         => BillingFrequency::class,
         'effective_price'           => Base100Int::class,
         'instance_data'             => 'array',
         'metadata'                  => 'array',
@@ -237,16 +240,13 @@ class ArticleServiceStatus extends Model
     }
 
     /**
-     * Calculate the next billing date based on article frequency.
+     * Calculate the next billing date based on service billing frequency.
      */
     public function calculateNextBillingDate(): Carbon
     {
         $currentDate = $this->next_billing_date ?? $this->started_at;
 
-        return $this->article->billing_frequency->addToDate(
-            $currentDate,
-            $this->article->billing_interval
-        );
+        return $this->billing_frequency->addToDate($currentDate);
     }
 
     /**
@@ -256,8 +256,11 @@ class ArticleServiceStatus extends Model
     {
         $override = $this->article->getActiveOverrideFor($this->customer_id);
 
+        // Get price from ArticlePrice for current billing frequency
+        $basePrice = $this->article->getPriceFor($this->billing_frequency);
+
         $this->update([
-            'effective_price'     => $override->custom_price ?? $this->article->base_price,
+            'effective_price'     => $override->custom_price ?? $basePrice,
             'current_override_id' => $override?->id,
         ]);
     }

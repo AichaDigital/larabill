@@ -28,11 +28,12 @@ it('has correct command description', function () {
 it('can be executed as a direct call', function () {
     $userModel = config('larabill.user_model', 'App\\Models\\User');
     $customer  = $userModel::factory()->create();
-    $article   = Article::factory()->service()->recurring()->create();
+    $article   = Article::factory()->service()->monthly(2900)->create();
 
     ArticleServiceStatus::factory()->create([
         'customer_id'       => $customer->id,
         'article_id'        => $article->id,
+        'billing_frequency' => \AichaDigital\Larabill\Enums\BillingFrequency::MONTHLY,
         'status'            => ServiceStatus::ACTIVE,
         'next_billing_date' => now()->addDays(7),
     ]);
@@ -46,11 +47,12 @@ it('can be executed as a direct call', function () {
 it('supports custom date parameter', function () {
     $userModel = config('larabill.user_model', 'App\\Models\\User');
     $customer  = $userModel::factory()->create();
-    $article   = Article::factory()->service()->recurring()->create();
+    $article   = Article::factory()->service()->monthly(2900)->create();
 
     ArticleServiceStatus::factory()->create([
         'customer_id'       => $customer->id,
         'article_id'        => $article->id,
+        'billing_frequency' => \AichaDigital\Larabill\Enums\BillingFrequency::MONTHLY,
         'status'            => ServiceStatus::ACTIVE,
         'next_billing_date' => Carbon::parse('2024-01-31'),
     ]);
@@ -63,11 +65,12 @@ it('supports custom date parameter', function () {
 it('supports dry-run mode', function () {
     $userModel = config('larabill.user_model', 'App\\Models\\User');
     $customer  = $userModel::factory()->create();
-    $article   = Article::factory()->service()->recurring()->create();
+    $article   = Article::factory()->service()->monthly(2900)->create();
 
     ArticleServiceStatus::factory()->create([
         'customer_id'       => $customer->id,
         'article_id'        => $article->id,
+        'billing_frequency' => \AichaDigital\Larabill\Enums\BillingFrequency::MONTHLY,
         'status'            => ServiceStatus::ACTIVE,
         'next_billing_date' => now()->addDays(7),
     ]);

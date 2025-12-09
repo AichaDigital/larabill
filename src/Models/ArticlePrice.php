@@ -5,19 +5,24 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Models;
 
 use AichaDigital\Lara100\Casts\Base100Int;
+use AichaDigital\Larabill\Enums\BillingFrequency;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\{Builder, Model};
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * Article Override Model
+ * Article Price Model
+ *
+ * Represents a price for an article at a specific billing frequency.
+ * Allows the same article to have different prices based on billing cycle
+ * (e.g., monthly: €29, quarterly: €79, yearly: €290).
  *
  * @property int $id
- * @property int|string $customer_id
  * @property int $article_id
- * @property int|null $custom_price
- * @property string|null $reason
+ * @property BillingFrequency $billing_frequency
+ * @property int $price
+ * @property int|null $billing_days_in_advance
  * @property \Illuminate\Support\Carbon|null $valid_from
  * @property \Illuminate\Support\Carbon|null $valid_to
  * @property bool $is_active
@@ -25,23 +30,23 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read \AichaDigital\Larabill\Models\Article $article
  */
-class ArticleOverride extends Model
+class ArticlePrice extends Model
 {
     use HasFactory;
 
     /**
      * The table associated with the model.
      */
-    protected $table = 'article_overrides';
+    protected $table = 'article_prices';
 
     /**
      * The attributes that are mass assignable.
      */
     protected $fillable = [
-        'customer_id',
         'article_id',
-        'custom_price',
-        'reason',
+        'billing_frequency',
+        'price',
+        'billing_days_in_advance',
         'valid_from',
         'valid_to',
         'is_active',
@@ -51,14 +56,16 @@ class ArticleOverride extends Model
      * The attributes that should be cast.
      */
     protected $casts = [
-        'custom_price' => Base100Int::class,
-        'valid_from'   => 'date',
-        'valid_to'     => 'date',
-        'is_active'    => 'boolean',
+        'billing_frequency'        => BillingFrequency::class,
+        'price'                    => Base100Int::class,
+        'billing_days_in_advance'  => 'integer',
+        'valid_from'               => 'date',
+        'valid_to'                 => 'date',
+        'is_active'                => 'boolean',
     ];
 
     /**
-     * Get the article for this override.
+     * Get the article for this price.
      */
     public function article(): BelongsTo
     {
@@ -66,18 +73,7 @@ class ArticleOverride extends Model
     }
 
     /**
-     * Get the customer for this override.
-     * Note: Relationship is agnostic, uses configured user model.
-     */
-    public function customer(): BelongsTo
-    {
-        $userModel = config('larabill.user_model', 'App\\Models\\User');
-
-        return $this->belongsTo($userModel, 'customer_id');
-    }
-
-    /**
-     * Scope to filter only active overrides.
+     * Scope to filter only active prices.
      */
     public function scopeActive(Builder $query): void
     {
@@ -85,7 +81,7 @@ class ArticleOverride extends Model
     }
 
     /**
-     * Scope to filter overrides valid at a specific date.
+     * Scope to filter prices valid at a specific date.
      */
     public function scopeValidAt(Builder $query, Carbon $date): void
     {
@@ -100,11 +96,27 @@ class ArticleOverride extends Model
     }
 
     /**
-     * Scope to filter by customer.
+     * Scope to filter currently valid prices.
      */
-    public function scopeForCustomer(Builder $query, int $customerId): void
+    public function scopeCurrentlyValid(Builder $query): void
     {
-        $query->where('customer_id', $customerId);
+        $query->where('is_active', true)
+            ->where(function ($q) {
+                $q->whereNull('valid_from')
+                    ->orWhere('valid_from', '<=', now());
+            })
+            ->where(function ($q) {
+                $q->whereNull('valid_to')
+                    ->orWhere('valid_to', '>=', now());
+            });
+    }
+
+    /**
+     * Scope to filter by billing frequency.
+     */
+    public function scopeForFrequency(Builder $query, BillingFrequency $frequency): void
+    {
+        $query->where('billing_frequency', $frequency);
     }
 
     /**
@@ -116,7 +128,7 @@ class ArticleOverride extends Model
     }
 
     /**
-     * Check if this override is valid at a specific date.
+     * Check if this price is valid at a specific date.
      */
     public function isValidAt(Carbon $date): bool
     {
@@ -136,7 +148,7 @@ class ArticleOverride extends Model
     }
 
     /**
-     * Check if this override is currently valid.
+     * Check if this price is currently valid.
      */
     public function isCurrentlyValid(): bool
     {
@@ -144,7 +156,7 @@ class ArticleOverride extends Model
     }
 
     /**
-     * Check if this override has expired.
+     * Check if this price has expired.
      */
     public function isExpired(): bool
     {
@@ -173,29 +185,39 @@ class ArticleOverride extends Model
     }
 
     /**
-     * Get the discount amount compared to base price.
-     * Note: Requires a billing frequency to determine the base price.
+     * Calculate monthly equivalent price for comparison.
+     * Useful for displaying "equivalent to €X/month" on longer frequencies.
      */
-    public function getDiscountAmount(\AichaDigital\Larabill\Enums\BillingFrequency $frequency): float
+    public function getMonthlyEquivalent(): ?float
     {
-        $basePrice = $this->article->getPriceFor($frequency) ?? 0.0;
+        $months = $this->billing_frequency->months();
 
-        return $basePrice - $this->custom_price;
+        if ($months === null) {
+            // For weekly/biweekly, calculate based on approximate 4.33 weeks/month
+            $days = $this->billing_frequency->days();
+            if ($days === null) {
+                return null; // ONE_TIME has no monthly equivalent
+            }
+
+            // Convert to monthly: price * (30 / days)
+            return $this->price * (30 / $days);
+        }
+
+        return $this->price / $months;
     }
 
     /**
-     * Get the discount percentage compared to base price.
-     * Note: Requires a billing frequency to determine the base price.
+     * Calculate yearly equivalent price for comparison.
      */
-    public function getDiscountPercentage(\AichaDigital\Larabill\Enums\BillingFrequency $frequency): int
+    public function getYearlyEquivalent(): ?float
     {
-        $basePrice = $this->article->getPriceFor($frequency);
+        $days = $this->billing_frequency->approximateDays();
 
-        if ($basePrice === null || $basePrice === 0.0 || $basePrice === 0) {
-            return 0;
+        if ($days === null) {
+            return null; // ONE_TIME has no yearly equivalent
         }
 
-        return (int) ((($basePrice - $this->custom_price) / $basePrice) * 100);
+        return $this->price * (365 / $days);
     }
 
     /**
@@ -203,6 +225,6 @@ class ArticleOverride extends Model
      */
     protected static function newFactory()
     {
-        return \AichaDigital\Larabill\Database\Factories\ArticleOverrideFactory::new();
+        return \AichaDigital\Larabill\Database\Factories\ArticlePriceFactory::new();
     }
 }

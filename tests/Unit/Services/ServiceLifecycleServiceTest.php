@@ -21,12 +21,13 @@ it('can activate a service', function () {
     Event::fake([ServiceActivated::class]);
 
     $customer = $this->userModel::factory()->create();
-    $article  = Article::factory()->service()->recurring()->create();
+    $article  = Article::factory()->service()->monthly(2900)->create();
     $service  = ArticleServiceStatus::factory()->create([
-        'customer_id' => $customer->id,
-        'article_id'  => $article->id,
-        'status'      => ServiceStatus::PENDING,
-        'started_at'  => now()->subDay(), // Provide a started_at value
+        'customer_id'       => $customer->id,
+        'article_id'        => $article->id,
+        'billing_frequency' => BillingFrequency::MONTHLY,
+        'status'            => ServiceStatus::PENDING,
+        'started_at'        => now()->subDay(),
     ]);
 
     // Clear started_at to test auto-setting
@@ -47,11 +48,12 @@ it('can suspend a service with reason', function () {
     Event::fake([ServiceSuspended::class]);
 
     $customer = $this->userModel::factory()->create();
-    $article  = Article::factory()->service()->recurring()->create();
+    $article  = Article::factory()->service()->monthly(2900)->create();
     $service  = ArticleServiceStatus::factory()->create([
-        'customer_id' => $customer->id,
-        'article_id'  => $article->id,
-        'status'      => ServiceStatus::ACTIVE,
+        'customer_id'       => $customer->id,
+        'article_id'        => $article->id,
+        'billing_frequency' => BillingFrequency::MONTHLY,
+        'status'            => ServiceStatus::ACTIVE,
     ]);
 
     $this->service->suspend($service, 'Payment overdue');
@@ -71,11 +73,12 @@ it('can cancel a service immediately', function () {
     Event::fake([ServiceCancelled::class]);
 
     $customer = $this->userModel::factory()->create();
-    $article  = Article::factory()->service()->recurring()->create();
+    $article  = Article::factory()->service()->monthly(2900)->create();
     $service  = ArticleServiceStatus::factory()->create([
-        'customer_id' => $customer->id,
-        'article_id'  => $article->id,
-        'status'      => ServiceStatus::ACTIVE,
+        'customer_id'       => $customer->id,
+        'article_id'        => $article->id,
+        'billing_frequency' => BillingFrequency::MONTHLY,
+        'status'            => ServiceStatus::ACTIVE,
     ]);
 
     $this->service->cancel($service, CancellationType::IMMEDIATE, 'Customer request');
@@ -93,10 +96,11 @@ it('can cancel a service at end of period', function () {
     Event::fake([ServiceCancelled::class]);
 
     $customer = $this->userModel::factory()->create();
-    $article  = Article::factory()->service()->recurring()->create();
+    $article  = Article::factory()->service()->monthly(2900)->create();
     $service  = ArticleServiceStatus::factory()->create([
         'customer_id'       => $customer->id,
         'article_id'        => $article->id,
+        'billing_frequency' => BillingFrequency::MONTHLY,
         'status'            => ServiceStatus::ACTIVE,
         'next_billing_date' => now()->addMonth(),
     ]);
@@ -116,13 +120,14 @@ it('can cancel a service with notice period', function () {
     Event::fake([ServiceCancelled::class]);
 
     $customer = $this->userModel::factory()->create();
-    $article  = Article::factory()->service()->recurring()->create([
+    $article  = Article::factory()->service()->monthly(2900)->create([
         'metadata' => ['notice_period_days' => 15],
     ]);
     $service = ArticleServiceStatus::factory()->create([
-        'customer_id' => $customer->id,
-        'article_id'  => $article->id,
-        'status'      => ServiceStatus::ACTIVE,
+        'customer_id'       => $customer->id,
+        'article_id'        => $article->id,
+        'billing_frequency' => BillingFrequency::MONTHLY,
+        'status'            => ServiceStatus::ACTIVE,
     ]);
 
     $this->service->cancel($service, CancellationType::NOTICE_PERIOD);
@@ -141,10 +146,11 @@ it('can expire a service', function () {
     $customer = $this->userModel::factory()->create();
     $article  = Article::factory()->service()->create();
     $service  = ArticleServiceStatus::factory()->create([
-        'customer_id' => $customer->id,
-        'article_id'  => $article->id,
-        'status'      => ServiceStatus::ACTIVE,
-        'expires_at'  => now()->subDay(),
+        'customer_id'       => $customer->id,
+        'article_id'        => $article->id,
+        'billing_frequency' => BillingFrequency::MONTHLY,
+        'status'            => ServiceStatus::ACTIVE,
+        'expires_at'        => now()->subDay(),
     ]);
 
     $this->service->expire($service);
@@ -157,10 +163,7 @@ it('can expire a service', function () {
 
 it('can calculate refund for unused period', function () {
     $customer = $this->userModel::factory()->create();
-    $article  = Article::factory()->service()->recurring()->create([
-        'billing_frequency' => BillingFrequency::MONTHLY,
-        'base_price'        => 3000, // €30.00
-    ]);
+    $article  = Article::factory()->service()->monthly(3000)->create();
 
     // Service billed on 1st of month, next billing in 30 days, cancelled after 10 days
     $lastBillingDate = now()->startOfMonth();
@@ -169,6 +172,7 @@ it('can calculate refund for unused period', function () {
     $service = ArticleServiceStatus::factory()->create([
         'customer_id'       => $customer->id,
         'article_id'        => $article->id,
+        'billing_frequency' => BillingFrequency::MONTHLY,
         'status'            => ServiceStatus::ACTIVE,
         'next_billing_date' => $nextBillingDate,
         'effective_price'   => 3000,
@@ -180,7 +184,7 @@ it('can calculate refund for unused period', function () {
 
     $refund = $this->service->calculateRefund($service);
 
-    // Unused: 20 days out of 30 = 66.67% = €20.00
+    // Unused: approximately 20 days out of ~30 = 66.67% = ~€20.00
     expect($refund)->toBeGreaterThan(1900)
         ->and($refund)->toBeLessThan(2100);
 
@@ -189,11 +193,12 @@ it('can calculate refund for unused period', function () {
 
 it('returns null refund when refund_unused is false', function () {
     $customer = $this->userModel::factory()->create();
-    $article  = Article::factory()->service()->recurring()->create();
+    $article  = Article::factory()->service()->monthly(2900)->create();
     $service  = ArticleServiceStatus::factory()->create([
-        'customer_id'   => $customer->id,
-        'article_id'    => $article->id,
-        'refund_unused' => false,
+        'customer_id'       => $customer->id,
+        'article_id'        => $article->id,
+        'billing_frequency' => BillingFrequency::MONTHLY,
+        'refund_unused'     => false,
     ]);
 
     $refund = $this->service->calculateRefund($service);
@@ -207,18 +212,20 @@ it('can process expired services', function () {
 
     // Create 3 expired services
     ArticleServiceStatus::factory()->count(3)->create([
-        'customer_id' => $customer->id,
-        'article_id'  => $article->id,
-        'status'      => ServiceStatus::ACTIVE,
-        'expires_at'  => now()->subDay(),
+        'customer_id'       => $customer->id,
+        'article_id'        => $article->id,
+        'billing_frequency' => BillingFrequency::MONTHLY,
+        'status'            => ServiceStatus::ACTIVE,
+        'expires_at'        => now()->subDay(),
     ]);
 
     // Create 1 not expired
     ArticleServiceStatus::factory()->create([
-        'customer_id' => $customer->id,
-        'article_id'  => $article->id,
-        'status'      => ServiceStatus::ACTIVE,
-        'expires_at'  => now()->addMonth(),
+        'customer_id'       => $customer->id,
+        'article_id'        => $article->id,
+        'billing_frequency' => BillingFrequency::MONTHLY,
+        'status'            => ServiceStatus::ACTIVE,
+        'expires_at'        => now()->addMonth(),
     ]);
 
     $count = $this->service->processExpiredServices();
@@ -234,12 +241,13 @@ it('can process expired services', function () {
 
 it('can process pending cancellations', function () {
     $customer = $this->userModel::factory()->create();
-    $article  = Article::factory()->service()->recurring()->create();
+    $article  = Article::factory()->service()->monthly(2900)->create();
 
     // Create 2 services with pending cancellations
     ArticleServiceStatus::factory()->count(2)->create([
         'customer_id'               => $customer->id,
         'article_id'                => $article->id,
+        'billing_frequency'         => BillingFrequency::MONTHLY,
         'status'                    => ServiceStatus::ACTIVE,
         'cancellation_type'         => CancellationType::END_OF_PERIOD,
         'cancellation_effective_at' => now()->subDay(),
@@ -249,6 +257,7 @@ it('can process pending cancellations', function () {
     ArticleServiceStatus::factory()->create([
         'customer_id'               => $customer->id,
         'article_id'                => $article->id,
+        'billing_frequency'         => BillingFrequency::MONTHLY,
         'status'                    => ServiceStatus::ACTIVE,
         'cancellation_type'         => CancellationType::END_OF_PERIOD,
         'cancellation_effective_at' => now()->addMonth(),

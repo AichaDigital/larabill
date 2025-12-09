@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Database\Factories;
 
+use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Models\{Article, ArticleOverride};
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -97,11 +98,12 @@ class ArticleOverrideFactory extends Factory
 
     /**
      * Set a specific discount percentage.
+     * Note: Uses MONTHLY frequency by default to calculate base price.
      */
-    public function withDiscount(int $discountPercentage): static
+    public function withDiscount(int $discountPercentage, BillingFrequency $frequency = BillingFrequency::MONTHLY): static
     {
-        return $this->afterMaking(function (ArticleOverride $override) use ($discountPercentage) {
-            $basePrice              = $override->article->base_price;
+        return $this->afterMaking(function (ArticleOverride $override) use ($discountPercentage, $frequency) {
+            $basePrice              = $override->article->getPriceFor($frequency) ?? 0;
             $override->custom_price = (int) ($basePrice * (1 - $discountPercentage / 100));
         });
     }

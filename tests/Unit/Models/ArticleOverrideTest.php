@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Models\{Article, ArticleOverride};
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -193,39 +194,39 @@ it('returns null days until expiration when already expired', function () {
 });
 
 it('calculates discount amount', function () {
-    $article = Article::factory()->create(['base_price' => 2900]);
+    $article = Article::factory()->monthly(2900)->create();
 
     $override = ArticleOverride::factory()->create([
         'article_id'   => $article->id,
         'custom_price' => 2400,
     ]);
 
-    expect($override->getDiscountAmount())->toEqual(500);
+    expect($override->getDiscountAmount(BillingFrequency::MONTHLY))->toEqual(500);
 });
 
 it('calculates discount percentage', function () {
-    $article = Article::factory()->create(['base_price' => 2900]);
+    $article = Article::factory()->monthly(2900)->create();
 
     $override = ArticleOverride::factory()->create([
         'article_id'   => $article->id,
         'custom_price' => 2320, // 20% discount
     ]);
 
-    $percentage = $override->getDiscountPercentage();
+    $percentage = $override->getDiscountPercentage(BillingFrequency::MONTHLY);
 
     expect($percentage)->toBeInt()
         ->and($percentage)->toBe(20);
 });
 
 it('returns zero discount percentage when base price is zero', function () {
-    $article = Article::factory()->create(['base_price' => 0]);
+    $article = Article::factory()->withoutPrices()->create();
 
     $override = ArticleOverride::factory()->create([
         'article_id'   => $article->id,
         'custom_price' => 0,
     ]);
 
-    expect($override->getDiscountPercentage())->toBe(0);
+    expect($override->getDiscountPercentage(BillingFrequency::MONTHLY))->toBe(0);
 });
 
 it('factory creates active override by default', function () {
@@ -265,11 +266,11 @@ it('factory can create override valid for specific days', function () {
 });
 
 it('factory can create override with specific discount', function () {
-    $article = Article::factory()->create(['base_price' => 10000]); // €100 in base100
+    $article = Article::factory()->monthly(10000)->create(); // €100 in base100
 
     $override = ArticleOverride::factory()
         ->forArticle($article)
-        ->withDiscount(20)
+        ->withDiscount(20) // Uses MONTHLY by default
         ->create();
 
     expect($override->custom_price)->toBe(8000); // €80 (20% off) in base100

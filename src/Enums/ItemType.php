@@ -10,9 +10,12 @@ namespace AichaDigital\Larabill\Enums;
  * Represents the type of invoice item: good (physical product) or service.
  * Critical for EU tax rules where services have different treatment.
  *
- * @method string label() Get human-readable label
- * @method bool requiresServiceDates() Check if service dates are required
- * @method static array<int, string> toArray() Get all cases as [value => label] array
+ * Usage in Filament (agnostic - no Filament dependency):
+ * ```php
+ * Forms\Components\Select::make('type')
+ *     ->options(ItemType::toArray())
+ *     ->label(__('larabill::fields.item_type'))
+ * ```
  */
 enum ItemType: int
 {
@@ -20,7 +23,7 @@ enum ItemType: int
     case SERVICE = 1;
 
     /**
-     * Get human-readable label (basic method, NOT Filament contract)
+     * Get a human-readable label (basic method, NOT Filament contract)
      */
     public function label(): string
     {

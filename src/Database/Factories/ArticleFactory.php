@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Database\Factories;
 
 use AichaDigital\Larabill\Enums\{BillingFrequency, ItemType};
-use AichaDigital\Larabill\Models\{Article, TaxGroup, UnitMeasure};
+use AichaDigital\Larabill\Models\{Article, ArticlePrice, TaxGroup, UnitMeasure};
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class ArticleFactory extends Factory
@@ -26,11 +26,7 @@ class ArticleFactory extends Factory
             'description'       => $this->faker->sentence(),
             'item_type'         => ItemType::SERVICE,
             'category'          => $this->faker->randomElement(['hosting', 'domains', 'licenses', 'software', 'hardware']),
-            'base_price'        => $this->faker->numberBetween(1000, 50000), // €10 to €500
             'cost_price'        => $this->faker->numberBetween(500, 30000), // €5 to €300
-            'is_recurring'      => true,
-            'billing_frequency' => BillingFrequency::MONTHLY,
-            'billing_interval'  => 1,
             'subscription_type' => null,
             'tax_group_id'      => null,
             'unit_measure_id'   => null,
@@ -40,14 +36,32 @@ class ArticleFactory extends Factory
     }
 
     /**
+     * Configure the model factory.
+     */
+    public function configure(): static
+    {
+        return $this->afterCreating(function (Article $article) {
+            // Create a default price if none specified via states
+            if ($article->prices()->count() === 0) {
+                ArticlePrice::factory()
+                    ->for($article)
+                    ->create([
+                        'billing_frequency' => $article->isService()
+                            ? BillingFrequency::MONTHLY
+                            : BillingFrequency::ONE_TIME,
+                        'price' => $this->faker->numberBetween(1000, 50000),
+                    ]);
+            }
+        });
+    }
+
+    /**
      * Indicate that the article is a service.
      */
     public function service(): static
     {
         return $this->state(fn (array $attributes) => [
-            'item_type'         => ItemType::SERVICE,
-            'is_recurring'      => true,
-            'billing_frequency' => BillingFrequency::MONTHLY,
+            'item_type' => ItemType::SERVICE,
         ]);
     }
 
@@ -57,68 +71,125 @@ class ArticleFactory extends Factory
     public function good(): static
     {
         return $this->state(fn (array $attributes) => [
-            'item_type'         => ItemType::GOOD,
-            'is_recurring'      => false,
-            'billing_frequency' => null,
-            'billing_interval'  => 1,
+            'item_type' => ItemType::GOOD,
         ]);
     }
 
     /**
-     * Indicate that the article is recurring.
+     * Add a price with specific frequency.
+     * Note: This replaces all auto-created prices with the specified one.
      */
-    public function recurring(?BillingFrequency $frequency = null): static
+    public function withPrice(BillingFrequency $frequency, int $price, ?int $daysInAdvance = null): static
     {
-        return $this->state(fn (array $attributes) => [
-            'is_recurring'      => true,
-            'billing_frequency' => $frequency ?? BillingFrequency::MONTHLY,
+        return $this->afterCreating(function (Article $article) use ($frequency, $price, $daysInAdvance) {
+            // Delete all auto-created prices to ensure deterministic state
+            $article->prices()->delete();
+
+            ArticlePrice::factory()
+                ->for($article)
+                ->create([
+                    'billing_frequency'        => $frequency,
+                    'price'                    => $price,
+                    'billing_days_in_advance'  => $daysInAdvance,
+                ]);
+        });
+    }
+
+    /**
+     * Add multiple prices for different frequencies.
+     *
+     * @param  array<int, array{frequency: BillingFrequency, price: int}>|array<BillingFrequency, int>  $prices
+     */
+    public function withPrices(array $prices): static
+    {
+        return $this->afterCreating(function (Article $article) use ($prices) {
+            // Delete any auto-created prices first to avoid duplicates
+            $article->prices()->delete();
+
+            foreach ($prices as $key => $value) {
+                // Support both formats:
+                // 1. [['frequency' => BillingFrequency::MONTHLY, 'price' => 2900], ...]
+                // 2. [BillingFrequency::MONTHLY->value => 2900, ...] (using value as key)
+                if (is_array($value)) {
+                    $frequency = $value['frequency'];
+                    $price     = $value['price'];
+                } elseif ($key instanceof BillingFrequency) {
+                    $frequency = $key;
+                    $price     = $value;
+                } else {
+                    // Key is int (enum value), value is price
+                    $frequency = BillingFrequency::from($key);
+                    $price     = $value;
+                }
+
+                ArticlePrice::factory()
+                    ->for($article)
+                    ->create([
+                        'billing_frequency' => $frequency,
+                        'price'             => $price,
+                    ]);
+            }
+        });
+    }
+
+    /**
+     * Add a monthly price.
+     */
+    public function monthly(int $price = 2900): static
+    {
+        return $this->withPrice(BillingFrequency::MONTHLY, $price);
+    }
+
+    /**
+     * Add a quarterly price.
+     */
+    public function quarterly(int $price = 7900): static
+    {
+        return $this->withPrice(BillingFrequency::QUARTERLY, $price);
+    }
+
+    /**
+     * Add a yearly price.
+     */
+    public function yearly(int $price = 29000): static
+    {
+        return $this->withPrice(BillingFrequency::YEARLY, $price);
+    }
+
+    /**
+     * Add a one-time price.
+     */
+    public function oneTime(int $price = 9900): static
+    {
+        return $this->withPrice(BillingFrequency::ONE_TIME, $price);
+    }
+
+    /**
+     * Add typical service prices (monthly, quarterly, yearly).
+     */
+    public function withTypicalPrices(int $monthlyPrice = 2900): static
+    {
+        return $this->withPrices([
+            BillingFrequency::MONTHLY->value   => $monthlyPrice,
+            BillingFrequency::QUARTERLY->value => (int) ($monthlyPrice * 2.7),  // ~10% discount
+            BillingFrequency::YEARLY->value    => (int) ($monthlyPrice * 10),   // ~17% discount
         ]);
     }
 
     /**
-     * Indicate that the article is not recurring (one-time).
+     * Track if prices should be auto-created.
      */
-    public function oneTime(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'is_recurring'      => false,
-            'billing_frequency' => null,
-        ]);
-    }
+    protected bool $skipAutoPrices = false;
 
     /**
-     * Indicate that the article is monthly recurring.
+     * Skip automatic price creation.
      */
-    public function monthly(): static
+    public function withoutPrices(): static
     {
-        return $this->recurring(BillingFrequency::MONTHLY);
-    }
-
-    /**
-     * Indicate that the article is quarterly recurring.
-     */
-    public function quarterly(): static
-    {
-        return $this->recurring(BillingFrequency::QUARTERLY);
-    }
-
-    /**
-     * Indicate that the article is yearly recurring.
-     */
-    public function yearly(): static
-    {
-        return $this->recurring(BillingFrequency::YEARLY);
-    }
-
-    /**
-     * Indicate that the article is a lifetime purchase.
-     */
-    public function lifetime(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'is_recurring'      => false,
-            'billing_frequency' => BillingFrequency::LIFETIME,
-        ]);
+        return $this->afterCreating(function (Article $article) {
+            // Delete any auto-created prices
+            $article->prices()->delete();
+        });
     }
 
     /**
@@ -172,12 +243,11 @@ class ArticleFactory extends Factory
     }
 
     /**
-     * Set specific pricing.
+     * Set cost price.
      */
-    public function pricing(int $basePrice, ?int $costPrice = null): static
+    public function costPrice(int $costPrice): static
     {
         return $this->state(fn (array $attributes) => [
-            'base_price' => $basePrice,
             'cost_price' => $costPrice,
         ]);
     }
@@ -188,9 +258,9 @@ class ArticleFactory extends Factory
     public function hosting(): static
     {
         return $this->service()
-            ->monthly()
             ->category('hosting')
-            ->pricing(2900, 1500) // €29 base, €15 cost
+            ->costPrice(1500)
+            ->withTypicalPrices(2900)
             ->state(fn (array $attributes) => [
                 'name'     => 'Hosting '.$this->faker->randomElement(['Basic', 'Pro', 'Premium', 'Enterprise']),
                 'metadata' => [
@@ -212,9 +282,9 @@ class ArticleFactory extends Factory
     public function domain(string $tld = 'com'): static
     {
         return $this->service()
-            ->yearly()
             ->category('domains')
-            ->pricing(1200, 800) // €12 base, €8 cost
+            ->costPrice(800)
+            ->yearly(1200)
             ->state(fn (array $attributes) => [
                 'name'     => "Domain .{$tld}",
                 'code'     => 'DOMAIN-'.strtoupper($tld),
@@ -233,9 +303,9 @@ class ArticleFactory extends Factory
     public function license(): static
     {
         return $this->service()
-            ->monthly()
             ->category('licenses')
-            ->pricing(9900, 5000) // €99 base, €50 cost
+            ->costPrice(5000)
+            ->withTypicalPrices(9900)
             ->state(fn (array $attributes) => [
                 'name'     => $this->faker->company().' License',
                 'metadata' => [
@@ -253,7 +323,8 @@ class ArticleFactory extends Factory
     {
         return $this->good()
             ->category('hardware')
-            ->pricing(50000, 30000) // €500 base, €300 cost
+            ->costPrice(30000)
+            ->oneTime(50000)
             ->state(fn (array $attributes) => [
                 'name'     => $this->faker->words(2, true).' '.$this->faker->randomElement(['Pro', 'Plus', 'Max']),
                 'metadata' => [
