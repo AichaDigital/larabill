@@ -1,11 +1,10 @@
 # Larabill - Professional Billing & Invoicing for Laravel
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/aichadigital/larabill.svg?style=flat-square)](https://packagist.org/packages/aichadigital/larabill)
-[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/aichadigital/larabill/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/aichadigital/larabill/actions/workflows/tests.yml)
-[![Total Downloads](https://img.shields.io/packagist/dt/aichadigital/larabill.svg?style=flat-square)](https://packagist.org/packages/aichadigital/larabill)
-[![PHP Version](https://img.shields.io/packagist/dependency-v/aichadigital/larabill/php?style=flat-square)](https://packagist.org/packages/aichadigital/larabill)
-[![Laravel](https://img.shields.io/packagist/dependency-v/aichadigital/larabill/illuminate/contracts?style=flat-square&label=laravel)](https://packagist.org/packages/aichadigital/larabill)
-[![License](https://img.shields.io/packagist/l/aichadigital/larabill.svg?style=flat-square)](https://packagist.org/packages/aichadigital/larabill)
+[![Tests](https://img.shields.io/github/actions/workflow/status/AichaDigital/larabill/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/AichaDigital/larabill/actions/workflows/tests.yml)
+[![codecov](https://codecov.io/gh/AichaDigital/larabill/branch/main/graph/badge.svg?style=flat-square)](https://codecov.io/gh/AichaDigital/larabill)
+[![PHP Version](https://img.shields.io/badge/php-%5E8.3-blue?style=flat-square)](https://php.net)
+[![Laravel](https://img.shields.io/badge/laravel-%5E11.0%20%7C%20%5E12.0-red?style=flat-square)](https://laravel.com)
+[![License](https://img.shields.io/badge/license-AGPL--3.0--or--later-green?style=flat-square)](LICENSE.md)
 
 > ⚠️ **DEVELOPMENT VERSION** - This package is under active development (dev-main). Target: v1.0 stable by December 15, 2025.
 
