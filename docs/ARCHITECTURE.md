@@ -1,7 +1,20 @@
 # 📦 Larabill: Arquitectura de Artículos y Facturación
 
-> **Documento de Arquitectura v1.0**  
+> **Documento de Arquitectura v1.1**
 > Sistema agnóstico de facturación para servicios digitales y productos tangibles
+
+---
+
+> ⚠️ **NOTA ADR-004 (Diciembre 2024)**: La arquitectura de precios ha sido refactorizada.
+>
+> **Cambios principales**:
+>
+> - `Article.base_price` → Movido a `ArticlePrice.price`
+> - `Article.billing_frequency` → Movido a `ArticlePrice.billing_frequency`
+> - Un Article ahora puede tener múltiples precios por frecuencia
+> - `ArticleServiceStatus.billing_frequency` almacena la frecuencia contratada (inmutable)
+>
+> Ver [ADR-004-article-price-by-frequency.md](./ADR-004-article-price-by-frequency.md) para detalles completos.
 
 ---
 

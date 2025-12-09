@@ -122,6 +122,60 @@ enum UserRelationshipType: int implements HasLabel, HasColor, HasIcon
 }
 ```
 
+### Article Pricing by Frequency (ADR-004)
+
+**IMPORTANT**: Pricing is separated from Article into `ArticlePrice` model.
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Article (Catálogo)                                             │
+│  ═══════════════════                                            │
+│  - id, code, name, item_type                                    │
+│  - cost_price (Base100Int)                                      │
+│                                                                 │
+│  └─→ ArticlePrice[] (1:N)                                       │
+│      ├── billing_frequency: BillingFrequency enum               │
+│      ├── price: Base100Int                                      │
+│      ├── billing_days_in_advance: ?int                          │
+│      └── valid_from / valid_to: temporal validity               │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│  ArticleServiceStatus (Contracted Instance)                     │
+│  ══════════════════════════════════════════                     │
+│  - customer_id, article_id                                      │
+│  - billing_frequency: BillingFrequency (contract immutability)  │
+│  - effective_price: Base100Int (cached at contract)             │
+│  - next_billing_date, instance_identifier                       │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+**BillingFrequency Enum**:
+
+```php
+enum BillingFrequency: int
+{
+    case ONE_TIME = 0;      // Single purchase
+    case WEEKLY = 1;        // Every week
+    case BIWEEKLY = 2;      // Every 2 weeks
+    case MONTHLY = 3;       // Every month
+    case BIMONTHLY = 4;     // Every 2 months
+    case QUARTERLY = 5;     // Every 3 months
+    case SEMIANNUALLY = 6;  // Every 6 months
+    case YEARLY = 7;        // Every year
+}
+```
+
+**Key Methods on Article**:
+
+```php
+$article->getPriceFor(BillingFrequency::MONTHLY);      // Get price for frequency
+$article->getAvailableFrequencies();                    // Get all available frequencies
+$article->isRecurring();                                // Has non-ONE_TIME prices?
+$article->getBillingDaysInAdvanceFor($frequency);       // Days in advance for billing
+$article->getEffectivePriceFor($customerId, $freq);     // Price with override applied
+```
+
 ## Package Structure
 
 ```
@@ -135,7 +189,8 @@ larabill/
 │   ├── ARCHITECTURE.md         # Core architecture (articles, invoicing)
 │   ├── ADR-001-*.md            # Fiscal architecture decision
 │   ├── ADR-002-*.md            # UUID v7 string decision
-│   └── ADR-003-*.md            # User/Customer unification decision
+│   ├── ADR-003-*.md            # User/Customer unification decision
+│   └── ADR-004-*.md            # Article pricing by frequency
 ├── resources/
 │   ├── lang/                   # Translations (es, en)
 │   └── views/pdf/              # Invoice PDF templates
@@ -195,6 +250,10 @@ Schema::create('invoices', function (Blueprint $table) {
 | **CompanyFiscalConfig** | Issuer fiscal settings with temporal validity |
 | **UserTaxProfile** | Recipient fiscal data (historical per User) |
 | **InvoiceItem** | Line items with tax breakdown |
+| **Article** | Catalog item (product or service) |
+| **ArticlePrice** | Frequency-based pricing for Article (ADR-004) |
+| **ArticleServiceStatus** | Contracted service instance with billing schedule |
+| **ArticleOverride** | Customer-specific price override |
 
 ### Deprecated Models (ADR-003)
 
@@ -347,6 +406,7 @@ See: [Filament Enums Documentation](https://filamentphp.com/docs/4.x/advanced/en
 | `docs/ADR-001-*.md` | Fiscal architecture decision |
 | `docs/ADR-002-*.md` | UUID v7 string decision |
 | `docs/ADR-003-*.md` | User/Customer unification |
+| `docs/ADR-004-*.md` | Article pricing by frequency |
 | `CHANGELOG.md` | Version history and breaking changes |
 | `README.md` | Installation and usage guide |
 
