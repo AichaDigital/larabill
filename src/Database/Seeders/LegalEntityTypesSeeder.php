@@ -50,13 +50,13 @@ class LegalEntityTypesSeeder extends Seeder
                 ],
                 'abbreviation' => null,
                 'country_code' => 'ES',
-                'description'  => [
+                'description' => [
                     'es' => 'Persona física sin actividad empresarial formal',
                     'en' => 'Individual without formal business activity',
                 ],
                 'requires_tax_id' => true,
-                'is_active'       => true,
-                'sort_order'      => 1,
+                'is_active' => true,
+                'sort_order' => 1,
             ],
             [
                 'code' => 'SELF_EMPLOYED',
@@ -66,13 +66,13 @@ class LegalEntityTypesSeeder extends Seeder
                 ],
                 'abbreviation' => null,
                 'country_code' => 'ES',
-                'description'  => [
+                'description' => [
                     'es' => 'Persona física que realiza actividad económica por cuenta propia',
                     'en' => 'Individual performing economic activity on their own account',
                 ],
                 'requires_tax_id' => true,
-                'is_active'       => true,
-                'sort_order'      => 2,
+                'is_active' => true,
+                'sort_order' => 2,
             ],
 
             // Commercial companies / Sociedades mercantiles
@@ -87,13 +87,13 @@ class LegalEntityTypesSeeder extends Seeder
                     'en' => 'Ltd.',
                 ],
                 'country_code' => 'ES',
-                'description'  => [
+                'description' => [
                     'es' => 'Sociedad mercantil con responsabilidad limitada al capital aportado',
                     'en' => 'Commercial company with liability limited to contributed capital',
                 ],
                 'requires_tax_id' => true,
-                'is_active'       => true,
-                'sort_order'      => 10,
+                'is_active' => true,
+                'sort_order' => 10,
             ],
             [
                 'code' => 'PUBLIC_LIMITED_COMPANY',
@@ -106,13 +106,13 @@ class LegalEntityTypesSeeder extends Seeder
                     'en' => 'PLC / Corp.',
                 ],
                 'country_code' => 'ES',
-                'description'  => [
+                'description' => [
                     'es' => 'Sociedad mercantil cuyo capital está dividido en acciones',
                     'en' => 'Commercial company with capital divided into shares',
                 ],
                 'requires_tax_id' => true,
-                'is_active'       => true,
-                'sort_order'      => 11,
+                'is_active' => true,
+                'sort_order' => 11,
             ],
             [
                 'code' => 'NEW_ENTERPRISE_LIMITED',
@@ -125,13 +125,13 @@ class LegalEntityTypesSeeder extends Seeder
                     'en' => 'NELC',
                 ],
                 'country_code' => 'ES',
-                'description'  => [
+                'description' => [
                     'es' => 'Variante simplificada de la S.L. para nuevos emprendedores',
                     'en' => 'Simplified variant of Ltd. for new entrepreneurs',
                 ],
                 'requires_tax_id' => true,
-                'is_active'       => true,
-                'sort_order'      => 12,
+                'is_active' => true,
+                'sort_order' => 12,
             ],
 
             // Worker-owned companies / Sociedades laborales
@@ -146,13 +146,13 @@ class LegalEntityTypesSeeder extends Seeder
                     'en' => 'WOL',
                 ],
                 'country_code' => 'ES',
-                'description'  => [
+                'description' => [
                     'es' => 'Sociedad limitada donde la mayoría del capital pertenece a los trabajadores',
                     'en' => 'Limited company where majority of capital belongs to workers',
                 ],
                 'requires_tax_id' => true,
-                'is_active'       => true,
-                'sort_order'      => 20,
+                'is_active' => true,
+                'sort_order' => 20,
             ],
             [
                 'code' => 'WORKER_OWNED_PUBLIC',
@@ -165,13 +165,13 @@ class LegalEntityTypesSeeder extends Seeder
                     'en' => 'WOP',
                 ],
                 'country_code' => 'ES',
-                'description'  => [
+                'description' => [
                     'es' => 'Sociedad anónima donde la mayoría del capital pertenece a los trabajadores',
                     'en' => 'Public company where majority of capital belongs to workers',
                 ],
                 'requires_tax_id' => true,
-                'is_active'       => true,
-                'sort_order'      => 21,
+                'is_active' => true,
+                'sort_order' => 21,
             ],
 
             // Cooperatives / Cooperativas
@@ -186,13 +186,13 @@ class LegalEntityTypesSeeder extends Seeder
                     'en' => 'Coop.',
                 ],
                 'country_code' => 'ES',
-                'description'  => [
+                'description' => [
                     'es' => 'Asociación autónoma de personas unidas voluntariamente para satisfacer necesidades comunes',
                     'en' => 'Autonomous association of persons united voluntarily to meet common needs',
                 ],
                 'requires_tax_id' => true,
-                'is_active'       => true,
-                'sort_order'      => 30,
+                'is_active' => true,
+                'sort_order' => 30,
             ],
 
             // Partnerships / Sociedades personalistas
@@ -207,13 +207,13 @@ class LegalEntityTypesSeeder extends Seeder
                     'en' => 'GP',
                 ],
                 'country_code' => 'ES',
-                'description'  => [
+                'description' => [
                     'es' => 'Sociedad mercantil donde los socios responden ilimitadamente',
                     'en' => 'Commercial company where partners have unlimited liability',
                 ],
                 'requires_tax_id' => true,
-                'is_active'       => true,
-                'sort_order'      => 40,
+                'is_active' => true,
+                'sort_order' => 40,
             ],
             [
                 'code' => 'LIMITED_PARTNERSHIP',
@@ -226,13 +226,13 @@ class LegalEntityTypesSeeder extends Seeder
                     'en' => 'LP',
                 ],
                 'country_code' => 'ES',
-                'description'  => [
+                'description' => [
                     'es' => 'Sociedad con socios colectivos (responsabilidad ilimitada) y comanditarios (responsabilidad limitada)',
                     'en' => 'Partnership with general partners (unlimited) and limited partners',
                 ],
                 'requires_tax_id' => true,
-                'is_active'       => true,
-                'sort_order'      => 41,
+                'is_active' => true,
+                'sort_order' => 41,
             ],
             [
                 'code' => 'LIMITED_PARTNERSHIP_SHARES',
@@ -245,13 +245,13 @@ class LegalEntityTypesSeeder extends Seeder
                     'en' => 'PTLP',
                 ],
                 'country_code' => 'ES',
-                'description'  => [
+                'description' => [
                     'es' => 'Sociedad comanditaria cuyo capital está dividido en acciones',
                     'en' => 'Limited partnership with capital divided into shares',
                 ],
                 'requires_tax_id' => true,
-                'is_active'       => true,
-                'sort_order'      => 42,
+                'is_active' => true,
+                'sort_order' => 42,
             ],
 
             // Other legal forms / Otras formas jurídicas
@@ -266,13 +266,13 @@ class LegalEntityTypesSeeder extends Seeder
                     'en' => 'CoG',
                 ],
                 'country_code' => 'ES',
-                'description'  => [
+                'description' => [
                     'es' => 'Contrato por el cual la propiedad de una cosa o derecho pertenece pro indiviso a varias personas',
                     'en' => 'Contract where ownership of a thing or right belongs undivided to several persons',
                 ],
                 'requires_tax_id' => true,
-                'is_active'       => true,
-                'sort_order'      => 50,
+                'is_active' => true,
+                'sort_order' => 50,
             ],
             [
                 'code' => 'CIVIL_PARTNERSHIP',
@@ -285,13 +285,13 @@ class LegalEntityTypesSeeder extends Seeder
                     'en' => 'CP',
                 ],
                 'country_code' => 'ES',
-                'description'  => [
+                'description' => [
                     'es' => 'Contrato por el cual dos o más personas ponen en común dinero, bienes o industria',
                     'en' => 'Contract where two or more persons pool money, goods or industry',
                 ],
                 'requires_tax_id' => true,
-                'is_active'       => true,
-                'sort_order'      => 51,
+                'is_active' => true,
+                'sort_order' => 51,
             ],
 
             // Non-profit entities / Entidades sin ánimo de lucro
@@ -306,13 +306,13 @@ class LegalEntityTypesSeeder extends Seeder
                     'en' => 'Assoc.',
                 ],
                 'country_code' => 'ES',
-                'description'  => [
+                'description' => [
                     'es' => 'Agrupación de personas físicas o jurídicas para un fin común sin ánimo de lucro',
                     'en' => 'Group of natural or legal persons for a common purpose without profit motive',
                 ],
                 'requires_tax_id' => true,
-                'is_active'       => true,
-                'sort_order'      => 60,
+                'is_active' => true,
+                'sort_order' => 60,
             ],
             [
                 'code' => 'FOUNDATION',
@@ -325,13 +325,13 @@ class LegalEntityTypesSeeder extends Seeder
                     'en' => 'Found.',
                 ],
                 'country_code' => 'ES',
-                'description'  => [
+                'description' => [
                     'es' => 'Organización sin ánimo de lucro dotada de patrimonio propio para fines de interés general',
                     'en' => 'Non-profit organization with its own assets for general interest purposes',
                 ],
                 'requires_tax_id' => true,
-                'is_active'       => true,
-                'sort_order'      => 61,
+                'is_active' => true,
+                'sort_order' => 61,
             ],
 
             // Business groupings / Agrupaciones empresariales
@@ -346,13 +346,13 @@ class LegalEntityTypesSeeder extends Seeder
                     'en' => 'EIG',
                 ],
                 'country_code' => 'ES',
-                'description'  => [
+                'description' => [
                     'es' => 'Entidad para facilitar o desarrollar la actividad económica de sus miembros',
                     'en' => 'Entity to facilitate or develop the economic activity of its members',
                 ],
                 'requires_tax_id' => true,
-                'is_active'       => true,
-                'sort_order'      => 70,
+                'is_active' => true,
+                'sort_order' => 70,
             ],
             [
                 'code' => 'JOINT_VENTURE',
@@ -365,13 +365,13 @@ class LegalEntityTypesSeeder extends Seeder
                     'en' => 'JV',
                 ],
                 'country_code' => 'ES',
-                'description'  => [
+                'description' => [
                     'es' => 'Sistema de colaboración entre empresarios por tiempo cierto para el desarrollo de una obra o servicio',
                     'en' => 'Collaboration system between entrepreneurs for a specific time to develop a work or service',
                 ],
                 'requires_tax_id' => true,
-                'is_active'       => true,
-                'sort_order'      => 71,
+                'is_active' => true,
+                'sort_order' => 71,
             ],
         ];
     }

@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Database\Factories;
 
 use AichaDigital\Larabill\Enums\RelationshipType;
-use AichaDigital\Larabill\Models\{Customer, UserTaxProfile};
+use AichaDigital\Larabill\Models\Customer;
+use AichaDigital\Larabill\Models\UserTaxProfile;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -105,10 +106,10 @@ class CustomerFactory extends Factory
             // Auto-create UserTaxProfile for the customer's user (ADR-003)
             if ($customer->user_id) {
                 UserTaxProfile::factory()->create([
-                    'user_id'     => $customer->user_id,
-                    'valid_from'  => now()->subYear(),
+                    'user_id' => $customer->user_id,
+                    'valid_from' => now()->subYear(),
                     'valid_until' => null,
-                    'is_active'   => true,
+                    'is_active' => true,
                 ]);
             }
         });
