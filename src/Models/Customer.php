@@ -99,6 +99,19 @@ class Customer extends Model
     }
 
     /**
+     * Get the current tax profile for this customer's user (ADR-003).
+     *
+     * Returns the active UserTaxProfile (valid_until = null) for the linked user.
+     */
+    public function currentTaxProfile(): BelongsTo
+    {
+        return $this->belongsTo(UserTaxProfile::class, 'user_id', 'user_id')
+            ->whereNull('valid_until')
+            ->where('is_active', true)
+            ->latest('valid_from');
+    }
+
+    /**
      * Get all invoices for this customer.
      */
     public function invoices(): HasMany

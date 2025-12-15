@@ -4,9 +4,16 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Database\Seeders;
 
+use AichaDigital\Larabill\Models\LegalEntityType;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
 
+/**
+ * Seeder for Spanish legal entity types.
+ *
+ * Creates the catalog of legal entity types used in Spain
+ * with translations for Spanish and English.
+ * Codes are in English for OpenSource compatibility.
+ */
 class LegalEntityTypesSeeder extends Seeder
 {
     /**
@@ -14,287 +21,358 @@ class LegalEntityTypesSeeder extends Seeder
      */
     public function run(): void
     {
-        $entityTypes = [
-            // Personas Físicas
+        $types = $this->getSpanishLegalEntityTypes();
+
+        foreach ($types as $type) {
+            LegalEntityType::updateOrCreate(
+                ['code' => $type['code']],
+                $type
+            );
+        }
+
+        $this->command->info('Legal entity types for Spain seeded successfully.');
+    }
+
+    /**
+     * Get Spanish legal entity types with translations.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    private function getSpanishLegalEntityTypes(): array
+    {
+        return [
+            // Natural persons / Personas físicas
             [
-                'code'            => 'PERSONA_FISICA',
-                'name'            => 'Persona Física',
-                'name_en'         => 'Individual/Natural Person',
-                'abbreviation'    => null,
-                'country_code'    => 'ES',
-                'description'     => 'Persona física que realiza actividades económicas o profesionales',
+                'code' => 'INDIVIDUAL',
+                'name' => [
+                    'es' => 'Persona Física',
+                    'en' => 'Individual / Natural Person',
+                ],
+                'abbreviation' => null,
+                'country_code' => 'ES',
+                'description'  => [
+                    'es' => 'Persona física sin actividad empresarial formal',
+                    'en' => 'Individual without formal business activity',
+                ],
+                'requires_tax_id' => true,
+                'is_active'       => true,
+                'sort_order'      => 1,
+            ],
+            [
+                'code' => 'SELF_EMPLOYED',
+                'name' => [
+                    'es' => 'Trabajador Autónomo',
+                    'en' => 'Self-Employed / Sole Proprietor',
+                ],
+                'abbreviation' => null,
+                'country_code' => 'ES',
+                'description'  => [
+                    'es' => 'Persona física que realiza actividad económica por cuenta propia',
+                    'en' => 'Individual performing economic activity on their own account',
+                ],
+                'requires_tax_id' => true,
+                'is_active'       => true,
+                'sort_order'      => 2,
+            ],
+
+            // Commercial companies / Sociedades mercantiles
+            [
+                'code' => 'LIMITED_COMPANY',
+                'name' => [
+                    'es' => 'Sociedad de Responsabilidad Limitada',
+                    'en' => 'Private Limited Company',
+                ],
+                'abbreviation' => [
+                    'es' => 'S.L.',
+                    'en' => 'Ltd.',
+                ],
+                'country_code' => 'ES',
+                'description'  => [
+                    'es' => 'Sociedad mercantil con responsabilidad limitada al capital aportado',
+                    'en' => 'Commercial company with liability limited to contributed capital',
+                ],
                 'requires_tax_id' => true,
                 'is_active'       => true,
                 'sort_order'      => 10,
-                'metadata'        => json_encode([
-                    'tax_id_format'  => 'NIF (DNI o NIE)',
-                    'tax_id_pattern' => '/^[0-9]{8}[A-Z]$|^[XYZ][0-9]{7}[A-Z]$/',
-                ]),
+            ],
+            [
+                'code' => 'PUBLIC_LIMITED_COMPANY',
+                'name' => [
+                    'es' => 'Sociedad Anónima',
+                    'en' => 'Public Limited Company / Corporation',
+                ],
+                'abbreviation' => [
+                    'es' => 'S.A.',
+                    'en' => 'PLC / Corp.',
+                ],
+                'country_code' => 'ES',
+                'description'  => [
+                    'es' => 'Sociedad mercantil cuyo capital está dividido en acciones',
+                    'en' => 'Commercial company with capital divided into shares',
+                ],
+                'requires_tax_id' => true,
+                'is_active'       => true,
+                'sort_order'      => 11,
+            ],
+            [
+                'code' => 'NEW_ENTERPRISE_LIMITED',
+                'name' => [
+                    'es' => 'Sociedad Limitada Nueva Empresa',
+                    'en' => 'New Enterprise Limited Company',
+                ],
+                'abbreviation' => [
+                    'es' => 'S.L.N.E.',
+                    'en' => 'NELC',
+                ],
+                'country_code' => 'ES',
+                'description'  => [
+                    'es' => 'Variante simplificada de la S.L. para nuevos emprendedores',
+                    'en' => 'Simplified variant of Ltd. for new entrepreneurs',
+                ],
+                'requires_tax_id' => true,
+                'is_active'       => true,
+                'sort_order'      => 12,
             ],
 
-            // Sociedades Mercantiles
+            // Worker-owned companies / Sociedades laborales
             [
-                'code'            => 'SOCIEDAD_LIMITADA',
-                'name'            => 'Sociedad de Responsabilidad Limitada',
-                'name_en'         => 'Limited Liability Company',
-                'abbreviation'    => 'SL',
-                'country_code'    => 'ES',
-                'description'     => 'Sociedad mercantil de capital con responsabilidad limitada al capital aportado',
+                'code' => 'WORKER_OWNED_LIMITED',
+                'name' => [
+                    'es' => 'Sociedad Limitada Laboral',
+                    'en' => 'Worker-Owned Limited Company',
+                ],
+                'abbreviation' => [
+                    'es' => 'S.L.L.',
+                    'en' => 'WOL',
+                ],
+                'country_code' => 'ES',
+                'description'  => [
+                    'es' => 'Sociedad limitada donde la mayoría del capital pertenece a los trabajadores',
+                    'en' => 'Limited company where majority of capital belongs to workers',
+                ],
                 'requires_tax_id' => true,
                 'is_active'       => true,
                 'sort_order'      => 20,
-                'metadata'        => json_encode([
-                    'tax_id_format'  => 'CIF',
-                    'tax_id_pattern' => '/^[A-HJ-NP-SUVW][0-9]{7}[0-9A-J]$/',
-                    'capital_minimo' => 3000,
-                ]),
             ],
             [
-                'code'            => 'SOCIEDAD_ANONIMA',
-                'name'            => 'Sociedad Anónima',
-                'name_en'         => 'Public Limited Company',
-                'abbreviation'    => 'SA',
-                'country_code'    => 'ES',
-                'description'     => 'Sociedad mercantil de capital con acciones libremente transmisibles',
+                'code' => 'WORKER_OWNED_PUBLIC',
+                'name' => [
+                    'es' => 'Sociedad Anónima Laboral',
+                    'en' => 'Worker-Owned Public Company',
+                ],
+                'abbreviation' => [
+                    'es' => 'S.A.L.',
+                    'en' => 'WOP',
+                ],
+                'country_code' => 'ES',
+                'description'  => [
+                    'es' => 'Sociedad anónima donde la mayoría del capital pertenece a los trabajadores',
+                    'en' => 'Public company where majority of capital belongs to workers',
+                ],
+                'requires_tax_id' => true,
+                'is_active'       => true,
+                'sort_order'      => 21,
+            ],
+
+            // Cooperatives / Cooperativas
+            [
+                'code' => 'COOPERATIVE',
+                'name' => [
+                    'es' => 'Sociedad Cooperativa',
+                    'en' => 'Cooperative Society',
+                ],
+                'abbreviation' => [
+                    'es' => 'S.Coop.',
+                    'en' => 'Coop.',
+                ],
+                'country_code' => 'ES',
+                'description'  => [
+                    'es' => 'Asociación autónoma de personas unidas voluntariamente para satisfacer necesidades comunes',
+                    'en' => 'Autonomous association of persons united voluntarily to meet common needs',
+                ],
                 'requires_tax_id' => true,
                 'is_active'       => true,
                 'sort_order'      => 30,
-                'metadata'        => json_encode([
-                    'tax_id_format'  => 'CIF',
-                    'tax_id_pattern' => '/^[A-HJ-NP-SUVW][0-9]{7}[0-9A-J]$/',
-                    'capital_minimo' => 60000,
-                ]),
             ],
+
+            // Partnerships / Sociedades personalistas
             [
-                'code'            => 'SOCIEDAD_LIMITADA_NUEVA_EMPRESA',
-                'name'            => 'Sociedad Limitada Nueva Empresa',
-                'name_en'         => 'New Enterprise Limited Company',
-                'abbreviation'    => 'SLNE',
-                'country_code'    => 'ES',
-                'description'     => 'Variante de SL con constitución simplificada para emprendedores',
+                'code' => 'GENERAL_PARTNERSHIP',
+                'name' => [
+                    'es' => 'Sociedad Colectiva',
+                    'en' => 'General Partnership',
+                ],
+                'abbreviation' => [
+                    'es' => 'S.C.',
+                    'en' => 'GP',
+                ],
+                'country_code' => 'ES',
+                'description'  => [
+                    'es' => 'Sociedad mercantil donde los socios responden ilimitadamente',
+                    'en' => 'Commercial company where partners have unlimited liability',
+                ],
                 'requires_tax_id' => true,
                 'is_active'       => true,
                 'sort_order'      => 40,
-                'metadata'        => json_encode([
-                    'tax_id_format'  => 'CIF',
-                    'tax_id_pattern' => '/^[A-HJ-NP-SUVW][0-9]{7}[0-9A-J]$/',
-                    'capital_minimo' => 3000,
-                    'capital_maximo' => 120000,
-                    'socios_maximo'  => 5,
-                ]),
             ],
             [
-                'code'            => 'SOCIEDAD_LIMITADA_LABORAL',
-                'name'            => 'Sociedad Limitada Laboral',
-                'name_en'         => 'Labor Limited Company',
-                'abbreviation'    => 'SLL',
-                'country_code'    => 'ES',
-                'description'     => 'Sociedad de economía social donde mayoría del capital es de trabajadores',
+                'code' => 'LIMITED_PARTNERSHIP',
+                'name' => [
+                    'es' => 'Sociedad Comanditaria Simple',
+                    'en' => 'Limited Partnership',
+                ],
+                'abbreviation' => [
+                    'es' => 'S.Com.',
+                    'en' => 'LP',
+                ],
+                'country_code' => 'ES',
+                'description'  => [
+                    'es' => 'Sociedad con socios colectivos (responsabilidad ilimitada) y comanditarios (responsabilidad limitada)',
+                    'en' => 'Partnership with general partners (unlimited) and limited partners',
+                ],
+                'requires_tax_id' => true,
+                'is_active'       => true,
+                'sort_order'      => 41,
+            ],
+            [
+                'code' => 'LIMITED_PARTNERSHIP_SHARES',
+                'name' => [
+                    'es' => 'Sociedad Comanditaria por Acciones',
+                    'en' => 'Publicly Traded Limited Partnership',
+                ],
+                'abbreviation' => [
+                    'es' => 'S.Com.A.',
+                    'en' => 'PTLP',
+                ],
+                'country_code' => 'ES',
+                'description'  => [
+                    'es' => 'Sociedad comanditaria cuyo capital está dividido en acciones',
+                    'en' => 'Limited partnership with capital divided into shares',
+                ],
+                'requires_tax_id' => true,
+                'is_active'       => true,
+                'sort_order'      => 42,
+            ],
+
+            // Other legal forms / Otras formas jurídicas
+            [
+                'code' => 'COMMUNITY_OF_GOODS',
+                'name' => [
+                    'es' => 'Comunidad de Bienes',
+                    'en' => 'Community of Goods / Joint Ownership',
+                ],
+                'abbreviation' => [
+                    'es' => 'C.B.',
+                    'en' => 'CoG',
+                ],
+                'country_code' => 'ES',
+                'description'  => [
+                    'es' => 'Contrato por el cual la propiedad de una cosa o derecho pertenece pro indiviso a varias personas',
+                    'en' => 'Contract where ownership of a thing or right belongs undivided to several persons',
+                ],
                 'requires_tax_id' => true,
                 'is_active'       => true,
                 'sort_order'      => 50,
-                'metadata'        => json_encode([
-                    'tax_id_format'  => 'CIF',
-                    'tax_id_pattern' => '/^[A-HJ-NP-SUVW][0-9]{7}[0-9A-J]$/',
-                    'capital_minimo' => 3000,
-                ]),
+            ],
+            [
+                'code' => 'CIVIL_PARTNERSHIP',
+                'name' => [
+                    'es' => 'Sociedad Civil',
+                    'en' => 'Civil Partnership',
+                ],
+                'abbreviation' => [
+                    'es' => 'S.C.',
+                    'en' => 'CP',
+                ],
+                'country_code' => 'ES',
+                'description'  => [
+                    'es' => 'Contrato por el cual dos o más personas ponen en común dinero, bienes o industria',
+                    'en' => 'Contract where two or more persons pool money, goods or industry',
+                ],
+                'requires_tax_id' => true,
+                'is_active'       => true,
+                'sort_order'      => 51,
             ],
 
-            // Sociedades Colectivas y Comanditarias
+            // Non-profit entities / Entidades sin ánimo de lucro
             [
-                'code'            => 'SOCIEDAD_COLECTIVA',
-                'name'            => 'Sociedad Colectiva',
-                'name_en'         => 'General Partnership',
-                'abbreviation'    => 'SC',
-                'country_code'    => 'ES',
-                'description'     => 'Sociedad personalista con responsabilidad ilimitada y solidaria',
+                'code' => 'ASSOCIATION',
+                'name' => [
+                    'es' => 'Asociación',
+                    'en' => 'Association / Non-profit Organization',
+                ],
+                'abbreviation' => [
+                    'es' => 'Asoc.',
+                    'en' => 'Assoc.',
+                ],
+                'country_code' => 'ES',
+                'description'  => [
+                    'es' => 'Agrupación de personas físicas o jurídicas para un fin común sin ánimo de lucro',
+                    'en' => 'Group of natural or legal persons for a common purpose without profit motive',
+                ],
                 'requires_tax_id' => true,
                 'is_active'       => true,
                 'sort_order'      => 60,
-                'metadata'        => json_encode([
-                    'tax_id_format'   => 'CIF',
-                    'tax_id_pattern'  => '/^[A-HJ-NP-SUVW][0-9]{7}[0-9A-J]$/',
-                    'responsabilidad' => 'ilimitada',
-                ]),
             ],
             [
-                'code'            => 'SOCIEDAD_COMANDITARIA_SIMPLE',
-                'name'            => 'Sociedad Comanditaria Simple',
-                'name_en'         => 'Limited Partnership',
-                'abbreviation'    => 'SComS',
-                'country_code'    => 'ES',
-                'description'     => 'Sociedad con socios colectivos (resp. ilimitada) y comanditarios (resp. limitada)',
+                'code' => 'FOUNDATION',
+                'name' => [
+                    'es' => 'Fundación',
+                    'en' => 'Foundation',
+                ],
+                'abbreviation' => [
+                    'es' => 'Fund.',
+                    'en' => 'Found.',
+                ],
+                'country_code' => 'ES',
+                'description'  => [
+                    'es' => 'Organización sin ánimo de lucro dotada de patrimonio propio para fines de interés general',
+                    'en' => 'Non-profit organization with its own assets for general interest purposes',
+                ],
+                'requires_tax_id' => true,
+                'is_active'       => true,
+                'sort_order'      => 61,
+            ],
+
+            // Business groupings / Agrupaciones empresariales
+            [
+                'code' => 'ECONOMIC_INTEREST_GROUPING',
+                'name' => [
+                    'es' => 'Agrupación de Interés Económico',
+                    'en' => 'Economic Interest Grouping',
+                ],
+                'abbreviation' => [
+                    'es' => 'A.I.E.',
+                    'en' => 'EIG',
+                ],
+                'country_code' => 'ES',
+                'description'  => [
+                    'es' => 'Entidad para facilitar o desarrollar la actividad económica de sus miembros',
+                    'en' => 'Entity to facilitate or develop the economic activity of its members',
+                ],
                 'requires_tax_id' => true,
                 'is_active'       => true,
                 'sort_order'      => 70,
-                'metadata'        => json_encode([
-                    'tax_id_format'  => 'CIF',
-                    'tax_id_pattern' => '/^[A-HJ-NP-SUVW][0-9]{7}[0-9A-J]$/',
-                ]),
             ],
             [
-                'code'            => 'SOCIEDAD_COMANDITARIA_ACCIONES',
-                'name'            => 'Sociedad Comanditaria por Acciones',
-                'name_en'         => 'Partnership Limited by Shares',
-                'abbreviation'    => 'SComA',
-                'country_code'    => 'ES',
-                'description'     => 'Sociedad comanditaria donde el capital se divide en acciones',
+                'code' => 'JOINT_VENTURE',
+                'name' => [
+                    'es' => 'Unión Temporal de Empresas',
+                    'en' => 'Temporary Business Association / Joint Venture',
+                ],
+                'abbreviation' => [
+                    'es' => 'U.T.E.',
+                    'en' => 'JV',
+                ],
+                'country_code' => 'ES',
+                'description'  => [
+                    'es' => 'Sistema de colaboración entre empresarios por tiempo cierto para el desarrollo de una obra o servicio',
+                    'en' => 'Collaboration system between entrepreneurs for a specific time to develop a work or service',
+                ],
                 'requires_tax_id' => true,
                 'is_active'       => true,
-                'sort_order'      => 80,
-                'metadata'        => json_encode([
-                    'tax_id_format'  => 'CIF',
-                    'tax_id_pattern' => '/^[A-HJ-NP-SUVW][0-9]{7}[0-9A-J]$/',
-                    'capital_minimo' => 60000,
-                ]),
-            ],
-
-            // Cooperativas y Economía Social
-            [
-                'code'            => 'COOPERATIVA',
-                'name'            => 'Sociedad Cooperativa',
-                'name_en'         => 'Cooperative Society',
-                'abbreviation'    => 'COOP',
-                'country_code'    => 'ES',
-                'description'     => 'Sociedad de economía social basada en principios cooperativos',
-                'requires_tax_id' => true,
-                'is_active'       => true,
-                'sort_order'      => 90,
-                'metadata'        => json_encode([
-                    'tax_id_format'  => 'CIF',
-                    'tax_id_pattern' => '/^[FG][0-9]{7}[0-9A-J]$/',
-                    'socios_minimo'  => 3,
-                ]),
-            ],
-            [
-                'code'            => 'SOCIEDAD_AGRARIA_TRANSFORMACION',
-                'name'            => 'Sociedad Agraria de Transformación',
-                'name_en'         => 'Agricultural Transformation Society',
-                'abbreviation'    => 'SAT',
-                'country_code'    => 'ES',
-                'description'     => 'Sociedad civil dedicada a actividades agrarias',
-                'requires_tax_id' => true,
-                'is_active'       => true,
-                'sort_order'      => 100,
-                'metadata'        => json_encode([
-                    'tax_id_format'  => 'CIF',
-                    'tax_id_pattern' => '/^[FG][0-9]{7}[0-9A-J]$/',
-                    'socios_minimo'  => 3,
-                ]),
-            ],
-
-            // Entidades Sin Ánimo de Lucro
-            [
-                'code'            => 'ASOCIACION',
-                'name'            => 'Asociación',
-                'name_en'         => 'Association',
-                'abbreviation'    => null,
-                'country_code'    => 'ES',
-                'description'     => 'Entidad sin ánimo de lucro con fines sociales, culturales, deportivos, etc.',
-                'requires_tax_id' => true,
-                'is_active'       => true,
-                'sort_order'      => 110,
-                'metadata'        => json_encode([
-                    'tax_id_format'  => 'CIF',
-                    'tax_id_pattern' => '/^[G][0-9]{7}[0-9A-J]$/',
-                    'animo_lucro'    => false,
-                ]),
-            ],
-            [
-                'code'            => 'FUNDACION',
-                'name'            => 'Fundación',
-                'name_en'         => 'Foundation',
-                'abbreviation'    => null,
-                'country_code'    => 'ES',
-                'description'     => 'Entidad sin ánimo de lucro con dotación patrimonial para fines de interés general',
-                'requires_tax_id' => true,
-                'is_active'       => true,
-                'sort_order'      => 120,
-                'metadata'        => json_encode([
-                    'tax_id_format'   => 'CIF',
-                    'tax_id_pattern'  => '/^[G][0-9]{7}[0-9A-J]$/',
-                    'animo_lucro'     => false,
-                    'dotacion_minima' => 30000,
-                ]),
-            ],
-
-            // Autónomos
-            [
-                'code'            => 'AUTONOMO',
-                'name'            => 'Trabajador Autónomo',
-                'name_en'         => 'Self-Employed/Freelancer',
-                'abbreviation'    => null,
-                'country_code'    => 'ES',
-                'description'     => 'Persona física que realiza actividad económica de forma habitual por cuenta propia',
-                'requires_tax_id' => true,
-                'is_active'       => true,
-                'sort_order'      => 130,
-                'metadata'        => json_encode([
-                    'tax_id_format'  => 'NIF',
-                    'tax_id_pattern' => '/^[0-9]{8}[A-Z]$|^[XYZ][0-9]{7}[A-Z]$/',
-                    'regimen_fiscal' => 'estimacion_directa',
-                ]),
-            ],
-
-            // Comunidades
-            [
-                'code'            => 'COMUNIDAD_BIENES',
-                'name'            => 'Comunidad de Bienes',
-                'name_en'         => 'Community of Goods',
-                'abbreviation'    => 'CB',
-                'country_code'    => 'ES',
-                'description'     => 'Agrupación de personas físicas con propiedad compartida de bienes o derechos',
-                'requires_tax_id' => true,
-                'is_active'       => true,
-                'sort_order'      => 140,
-                'metadata'        => json_encode([
-                    'tax_id_format'   => 'CIF',
-                    'tax_id_pattern'  => '/^[EH][0-9]{7}[0-9A-J]$/',
-                    'socios_minimo'   => 2,
-                    'responsabilidad' => 'ilimitada',
-                ]),
-            ],
-
-            // Administraciones Públicas
-            [
-                'code'            => 'ORGANISMO_PUBLICO',
-                'name'            => 'Organismo Público',
-                'name_en'         => 'Public Entity',
-                'abbreviation'    => null,
-                'country_code'    => 'ES',
-                'description'     => 'Entidad de derecho público (Administración, organismos autónomos, etc.)',
-                'requires_tax_id' => true,
-                'is_active'       => true,
-                'sort_order'      => 150,
-                'metadata'        => json_encode([
-                    'tax_id_format'  => 'CIF',
-                    'tax_id_pattern' => '/^[PQRS][0-9]{7}[0-9A-J]$/',
-                    'sector'         => 'publico',
-                ]),
-            ],
-
-            // Otros
-            [
-                'code'            => 'OTRO',
-                'name'            => 'Otro Tipo de Entidad',
-                'name_en'         => 'Other Entity Type',
-                'abbreviation'    => null,
-                'country_code'    => 'ES',
-                'description'     => 'Otras formas jurídicas no especificadas anteriormente',
-                'requires_tax_id' => true,
-                'is_active'       => true,
-                'sort_order'      => 999,
-                'metadata'        => json_encode([
-                    'tax_id_format' => 'Variable',
-                ]),
+                'sort_order'      => 71,
             ],
         ];
-
-        foreach ($entityTypes as $entityType) {
-            DB::table('legal_entity_types')->insert(array_merge($entityType, [
-                'created_at' => now(),
-                'updated_at' => now(),
-            ]));
-        }
     }
 }

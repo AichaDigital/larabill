@@ -29,10 +29,10 @@ return new class extends Migration
                 ->on('company_fiscal_configs')
                 ->nullOnDelete();
 
-            // Add foreign key for customer_fiscal_data_id -> customer_fiscal_data
-            $table->foreign('customer_fiscal_data_id')
+            // Add foreign key for user_tax_profile_id -> user_tax_profiles (ADR-003)
+            $table->foreign('user_tax_profile_id')
                 ->references('id')
-                ->on('customer_fiscal_data')
+                ->on('user_tax_profiles')
                 ->nullOnDelete();
         });
     }
@@ -45,7 +45,7 @@ return new class extends Migration
         Schema::table('invoices', function (Blueprint $table) {
             $table->dropForeign(['customer_id']);
             $table->dropForeign(['company_fiscal_config_id']);
-            $table->dropForeign(['customer_fiscal_data_id']);
+            $table->dropForeign(['user_tax_profile_id']);
         });
     }
 };

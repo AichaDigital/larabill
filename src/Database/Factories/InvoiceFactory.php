@@ -51,11 +51,11 @@ class InvoiceFactory extends Factory
                 InvoiceStatus::OVERDUE->value,
             ]),
 
-            // Relations (ADR-001: CompanyFiscalConfig + CustomerFiscalData architecture)
+            // Relations (ADR-001 + ADR-003: CompanyFiscalConfig + UserTaxProfile architecture)
             'user_id'                   => $this->faker->numberBetween(1, 100),
             'customer_id'               => null,
             'company_fiscal_config_id'  => null,
-            'customer_fiscal_data_id'   => null,
+            'user_tax_profile_id'       => null,
             'proforma_id'               => null,
             'rectifies_invoice_id'      => null,
 

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Database\Factories;
 
 use AichaDigital\Larabill\Enums\RelationshipType;
-use AichaDigital\Larabill\Models\Customer;
+use AichaDigital\Larabill\Models\{Customer, UserTaxProfile};
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -32,7 +32,7 @@ class CustomerFactory extends Factory
             'relationship_type'       => RelationshipType::CLIENT,
             'display_name'            => $this->faker->name(),
             'internal_code'           => $this->faker->optional()->numerify('CUST-####'),
-            'legal_entity_type_code'  => 'PERSONA_FISICA',
+            'legal_entity_type_code'  => 'INDIVIDUAL',
             'is_active'               => true,
             'inactive_since'          => null,
             'inactive_reason'         => null,
@@ -58,7 +58,7 @@ class CustomerFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'relationship_type'      => RelationshipType::SELF_COMPANY,
-            'legal_entity_type_code' => 'SOCIEDAD_LIMITADA',
+            'legal_entity_type_code' => 'LIMITED_COMPANY',
             'display_name'           => $this->faker->company(),
         ]);
     }
@@ -79,7 +79,7 @@ class CustomerFactory extends Factory
     public function company(): static
     {
         return $this->state(fn (array $attributes) => [
-            'legal_entity_type_code' => 'SOCIEDAD_LIMITADA',
+            'legal_entity_type_code' => 'LIMITED_COMPANY',
             'display_name'           => $this->faker->company(),
         ]);
     }
@@ -94,5 +94,23 @@ class CustomerFactory extends Factory
             'inactive_since'  => now(),
             'inactive_reason' => 'Test deactivation',
         ]);
+    }
+
+    /**
+     * Configure the model factory.
+     */
+    public function configure(): static
+    {
+        return $this->afterCreating(function (Customer $customer) {
+            // Auto-create UserTaxProfile for the customer's user (ADR-003)
+            if ($customer->user_id) {
+                UserTaxProfile::factory()->create([
+                    'user_id'     => $customer->user_id,
+                    'valid_from'  => now()->subYear(),
+                    'valid_until' => null,
+                    'is_active'   => true,
+                ]);
+            }
+        });
     }
 }

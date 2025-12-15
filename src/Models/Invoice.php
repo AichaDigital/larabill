@@ -20,9 +20,9 @@ use Illuminate\Support\Facades\Crypt;
  * Uses UUID v7 string (36 chars) for primary key.
  * All monetary amounts are stored as base-100 integers (e.g., €12.34 => 1234).
  *
- * Fiscal data architecture (ADR-001 + ADR-002):
+ * Fiscal data architecture (ADR-001 + ADR-003):
  * - CompanyFiscalConfig: Issuer data with temporal validity
- * - CustomerFiscalData: Customer data with temporal validity
+ * - UserTaxProfile: Customer/User fiscal data with temporal validity
  *
  * v1.0: Enhanced for fiscal compliance (CEE/EU):
  * - Correlative numbering with serie separation
@@ -44,7 +44,7 @@ use Illuminate\Support\Facades\Crypt;
  * @property int|string $user_id
  * @property int|null $customer_id FK to customers
  * @property int|null $company_fiscal_config_id FK to company_fiscal_configs (ADR-001)
- * @property int|null $customer_fiscal_data_id FK to customer_fiscal_data (ADR-001)
+ * @property int|null $user_tax_profile_id FK to user_tax_profiles (ADR-003)
  * @property string|null $proforma_id UUID if converted from proforma
  * @property string|null $rectifies_invoice_id UUID if rectificative
  * @property string|null $user_tax_info_encrypted
@@ -124,7 +124,7 @@ class Invoice extends Model
         'user_id',
         'customer_id',
         'company_fiscal_config_id',
-        'customer_fiscal_data_id',
+        'user_tax_profile_id',
         'proforma_id',
         'rectifies_invoice_id',
         'user_tax_info_encrypted',
@@ -313,16 +313,16 @@ class Invoice extends Model
     }
 
     /**
-     * Get the customer fiscal data snapshot for this invoice (ADR-001).
+     * Get the user tax profile snapshot for this invoice (ADR-003).
      *
-     * This maintains a reference to the customer's fiscal identity at invoice creation time.
+     * This maintains a reference to the user's fiscal identity at invoice creation time.
      * IMMUTABLE: Once invoice is created, this relationship NEVER changes.
      *
-     * @return BelongsTo<CustomerFiscalData, $this>
+     * @return BelongsTo<UserTaxProfile, $this>
      */
-    public function customerFiscalData(): BelongsTo
+    public function userTaxProfile(): BelongsTo
     {
-        return $this->belongsTo(CustomerFiscalData::class, 'customer_fiscal_data_id');
+        return $this->belongsTo(UserTaxProfile::class, 'user_tax_profile_id');
     }
 
     // ========================================
@@ -552,11 +552,11 @@ class Invoice extends Model
             $this->company_fiscal_config_id = $companyConfig->id;
         }
 
-        // 2. Customer fiscal data (receptor)
+        // 2. User tax profile (receptor)
         if ($this->user_id) {
-            $customerData = CustomerFiscalData::getValidForUserAt($this->user_id, $this->invoice_date ?? now());
-            if ($customerData) {
-                $this->customer_fiscal_data_id = $customerData->id;
+            $userTaxProfile = UserTaxProfile::getValidForUserAt($this->user_id, $this->invoice_date ?? now());
+            if ($userTaxProfile) {
+                $this->user_tax_profile_id = $userTaxProfile->id;
             }
         }
     }
@@ -573,14 +573,14 @@ class Invoice extends Model
     }
 
     /**
-     * Get full customer fiscal identity at invoice creation.
+     * Get full user fiscal identity at invoice creation.
      *
-     * Returns the CustomerFiscalData snapshot.
+     * Returns the UserTaxProfile snapshot.
      * IMMUTABLE: Always returns the data valid at invoice_date.
      */
-    public function getCustomerFiscalSnapshot(): ?CustomerFiscalData
+    public function getUserTaxProfileSnapshot(): ?UserTaxProfile
     {
-        return $this->customerFiscalData;
+        return $this->userTaxProfile;
     }
 
     /**
@@ -588,7 +588,7 @@ class Invoice extends Model
      */
     public function hasFiscalSnapshots(): bool
     {
-        return $this->company_fiscal_config_id !== null && $this->customer_fiscal_data_id !== null;
+        return $this->company_fiscal_config_id !== null && $this->user_tax_profile_id !== null;
     }
 
     /**
