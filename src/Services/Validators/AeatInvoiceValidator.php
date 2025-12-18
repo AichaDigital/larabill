@@ -53,11 +53,11 @@ class AeatInvoiceValidator
             $this->validateTaxProfile($invoice, $errors, $warnings);
         }
 
-        // 5. Customer validation
-        if (! $invoice->customer) {
-            $errors[] = 'Customer is required for AEAT';
+        // 5. Billable user validation (ADR-003: User replaces Customer)
+        if (! $invoice->billableUser) {
+            $errors[] = 'Billable user is required for AEAT';
         } else {
-            $this->validateCustomer($invoice, $errors, $warnings);
+            $this->validateBillableUser($invoice, $errors, $warnings);
         }
 
         // 6. Amounts validation
@@ -111,18 +111,18 @@ class AeatInvoiceValidator
     }
 
     /**
-     * Validate customer data.
+     * Validate billable user data (ADR-003: User replaces Customer).
      */
-    private function validateCustomer(Invoice $invoice, array &$errors, array &$warnings): void
+    private function validateBillableUser(Invoice $invoice, array &$errors, array &$warnings): void
     {
-        $customer = $invoice->customer;
+        $billableUser = $invoice->billableUser;
 
-        if (empty($customer->display_name)) {
-            $errors[] = 'Customer must have a display_name';
+        if (empty($billableUser->display_name) && empty($billableUser->name)) {
+            $errors[] = 'Billable user must have a display_name or name';
         }
 
-        if (empty($customer->legal_entity_type_code)) {
-            $errors[] = 'Customer must have a legal_entity_type_code';
+        if (empty($billableUser->legal_entity_type_code)) {
+            $warnings[] = 'Billable user legal_entity_type_code is recommended for AEAT';
         }
     }
 

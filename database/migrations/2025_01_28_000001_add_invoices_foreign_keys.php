@@ -17,10 +17,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('invoices', function (Blueprint $table) {
-            // Add foreign key for customer_id -> customers
-            $table->foreign('customer_id')
+            // Add foreign key for billable_user_id -> users (ADR-003: replaces customer_id)
+            $table->foreign('billable_user_id')
                 ->references('id')
-                ->on('customers')
+                ->on('users')
                 ->nullOnDelete();
 
             // Add foreign key for company_fiscal_config_id -> company_fiscal_configs
@@ -43,7 +43,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('invoices', function (Blueprint $table) {
-            $table->dropForeign(['customer_id']);
+            $table->dropForeign(['billable_user_id']);
             $table->dropForeign(['company_fiscal_config_id']);
             $table->dropForeign(['user_tax_profile_id']);
         });

@@ -29,6 +29,26 @@ parameters:
         -
             message: "#Trait .+ is used zero times and is not analysed#"
             path: src/Concerns/HasUserRelationships.php
+        # Dynamic User model from config (ADR-003: User replaces Customer)
+        # Properties like display_name, relationship_type, legal_entity_type_code are expected
+        -
+            message: "#Access to an undefined property Illuminate\\\\Database\\\\Eloquent\\\\Model::#"
+            paths:
+                - src/Models/Invoice.php
+                - src/Services/InvoiceService.php
+                - src/Services/Validators/AeatInvoiceValidator.php
+        -
+            message: "#Access to an undefined property Illuminate\\\\Foundation\\\\Auth\\\\User::#"
+            paths:
+                - src/Services/Adapters/VerifactuAdapter.php
+                - src/Services/Validators/AeatInvoiceValidator.php
+        # Nullsafe operator warnings - these are intentional for nullable relationships
+        -
+            identifier: nullsafe.neverNull
+            paths:
+                - src/Models/Invoice.php
+                - src/Services/InvoiceService.php
+                - src/Services/Adapters/VerifactuAdapter.php
 
     # Basic strict rules that are supported
     checkMissingCallableSignature: true

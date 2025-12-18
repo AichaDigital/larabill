@@ -50,11 +50,13 @@ class TaxCalculationService
     /**
      * Calculate taxes for an invoice item (v0.4.0).
      *
+     * ADR-003: Uses billable_user_id instead of customer_id.
+     *
      * @param  array{
-     *     article_id: int,
-     *     quantity: int,
-     *     base_price: float,
-     *     customer_id: int
+     *     article_id: int|mixed,
+     *     quantity: int|mixed,
+     *     base_price: float|mixed,
+     *     billable_user_id?: string|null
      * }  $itemData
      * @return array{
      *     taxable_amount: float,
@@ -71,7 +73,7 @@ class TaxCalculationService
         // Example: qty=100 (1.0 unit) * price=10000 (€100.00) / 100 = 10000 (€100.00)
         $taxableAmount = (int) (($quantity * $basePrice) / 100);
 
-        // TODO: Get tax group from article or customer location
+        // TODO: Get tax group from article or billable user location
         // For now, return basic calculation without taxes
         $taxGroupId     = null;
         $totalTaxAmount = 0;
@@ -81,7 +83,7 @@ class TaxCalculationService
         // $taxGroup = TaxGroup::find($taxGroupId);
         // if ($taxGroup) {
         //     $result = $this->calculate($taxableAmount, $taxGroup, [
-        //         'customer_id' => $itemData['customer_id'],
+        //         'billable_user_id' => $itemData['billable_user_id'],
         //     ]);
         //     $totalTaxAmount = $result['total_tax_amount'];
         //     $totalAmount = $result['total_amount'];

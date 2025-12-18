@@ -16,6 +16,7 @@ class ModelMappingService
      */
     public static function getModelClass(string $modelType): string
     {
+        // ADR-003: Customer removed, unified into User with billable_user_id
         $defaultModels = [
             'user'                   => \AichaDigital\Larabill\Tests\Models\User::class,
             'invoice'                => \AichaDigital\Larabill\Models\Invoice::class,
@@ -24,7 +25,6 @@ class ModelMappingService
             'vat_verification'       => \AichaDigital\Larabill\Models\VatVerification::class,
             'company_fiscal_config'  => \AichaDigital\Larabill\Models\CompanyFiscalConfig::class,
             'user_tax_profile'       => \AichaDigital\Larabill\Models\UserTaxProfile::class,
-            'customer'               => \AichaDigital\Larabill\Models\Customer::class,
         ];
 
         $configuredModel = config("larabill.models.{$modelType}");

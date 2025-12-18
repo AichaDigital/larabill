@@ -128,10 +128,13 @@ class LegalEntityType extends Model
     }
 
     /**
-     * Get all customers of this legal entity type.
+     * Get all users of this legal entity type (ADR-003).
      */
-    public function customers(): HasMany
+    public function users(): HasMany
     {
-        return $this->hasMany(Customer::class, 'legal_entity_type_code', 'code');
+        $userModel = \AichaDigital\Larabill\Services\ModelMappingService::getModelClass('user');
+
+        // @phpstan-ignore-next-line return.type
+        return $this->hasMany($userModel, 'legal_entity_type_code', 'code');
     }
 }

@@ -7,6 +7,7 @@ namespace AichaDigital\Larabill\Models;
 use AichaDigital\Lara100\Casts\Base100Int;
 use AichaDigital\Larabill\Concerns\{HasUserRelation, HasUuid};
 use AichaDigital\Larabill\Enums\{InvoiceSerieType, InvoiceStatus};
+use AichaDigital\Larabill\Services\FiscalIntegrityChecker;
 use Illuminate\Database\Eloquent\{Builder, Model};
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
@@ -42,7 +43,7 @@ use Illuminate\Support\Facades\Crypt;
  * @property Carbon|null $paid_at Actual payment timestamp
  * @property InvoiceStatus $status Invoice status enum
  * @property int|string $user_id
- * @property int|null $customer_id FK to customers
+ * @property string|null $billable_user_id UUID FK to users - User being billed (ADR-003)
  * @property int|null $company_fiscal_config_id FK to company_fiscal_configs (ADR-001)
  * @property int|null $user_tax_profile_id FK to user_tax_profiles (ADR-003)
  * @property string|null $proforma_id UUID if converted from proforma
@@ -92,14 +93,27 @@ class Invoice extends Model
      * Boot the model (ADR-001).
      *
      * Auto-load fiscal configs on invoice creation for immutability.
+     * Validates fiscal integrity before allowing invoice creation.
      */
     protected static function boot(): void
     {
         parent::boot();
 
-        // Al crear factura, snapshot fiscal automático
+        // Al crear factura, verificar integridad fiscal y snapshot automático
         static::creating(function (Invoice $invoice) {
-            // Solo si no es proforma Y no tiene configs ya asignadas
+            // 1. Verificar integridad fiscal antes de crear
+            // CRÍTICO: Bloquea facturación si hay configs duplicadas
+            $integrityChecker = app(FiscalIntegrityChecker::class);
+
+            // Check global (CompanyFiscalConfig)
+            $integrityChecker->assertCanInvoice();
+
+            // Check específico del usuario (UserTaxProfile) si hay billable_user_id
+            if ($invoice->billable_user_id) {
+                $integrityChecker->assertCanInvoiceUser($invoice->billable_user_id);
+            }
+
+            // 2. Solo si no es proforma Y no tiene configs ya asignadas
             if ($invoice->serie !== InvoiceSerieType::PROFORMA && ! $invoice->company_fiscal_config_id) {
                 $invoice->snapshotFiscalConfigs();
             }
@@ -122,7 +136,7 @@ class Invoice extends Model
         'paid_at',
         'status',
         'user_id',
-        'customer_id',
+        'billable_user_id',
         'company_fiscal_config_id',
         'user_tax_profile_id',
         'proforma_id',
@@ -164,25 +178,25 @@ class Invoice extends Model
     public function casts(): array
     {
         return [
-            'serie'                         => InvoiceSerieType::class, // PHP Enum
-            'status'                        => InvoiceStatus::class,    // PHP Enum
-            'fiscal_year'                   => 'integer',
-            'invoice_date'                  => 'date',
-            'issued_at'                     => 'datetime',
-            'service_date'                  => 'date',
-            'due_date'                      => 'date',
-            'paid_at'                       => 'datetime',
-            'fiscal_verified_at'            => 'datetime',
-            'is_immutable'                  => 'boolean',
-            'immutable_at'                  => 'datetime',
-            'taxable_amount'                => Base100Int::class, // €12.34 ↔ 1234
-            'total_tax_amount'              => Base100Int::class,
-            'total_amount'                  => Base100Int::class, // €12.34 ↔ 1234
-            'fiscal_data'                   => 'array',
-            'fiscal_verification_metadata'  => 'array',
-            'vat_verification'              => 'array',
-            'customer_data'                 => 'array',
-            'is_roi_taxed'                  => 'boolean',
+            'serie'                        => InvoiceSerieType::class, // PHP Enum
+            'status'                       => InvoiceStatus::class,    // PHP Enum
+            'fiscal_year'                  => 'integer',
+            'invoice_date'                 => 'date',
+            'issued_at'                    => 'datetime',
+            'service_date'                 => 'date',
+            'due_date'                     => 'date',
+            'paid_at'                      => 'datetime',
+            'fiscal_verified_at'           => 'datetime',
+            'is_immutable'                 => 'boolean',
+            'immutable_at'                 => 'datetime',
+            'taxable_amount'               => Base100Int::class, // €12.34 ↔ 1234
+            'total_tax_amount'             => Base100Int::class,
+            'total_amount'                 => Base100Int::class, // €12.34 ↔ 1234
+            'fiscal_data'                  => 'array',
+            'fiscal_verification_metadata' => 'array',
+            'vat_verification'             => 'array',
+            'customer_data'                => 'array',
+            'is_roi_taxed'                 => 'boolean',
         ];
     }
 
@@ -250,13 +264,16 @@ class Invoice extends Model
     }
 
     /**
-     * Get the customer (billable entity) for this invoice (v0.4.0).
+     * Get the billable user (user being billed) for this invoice (ADR-003).
      *
-     * @return BelongsTo<\AichaDigital\Larabill\Models\Customer, $this>
+     * @return BelongsTo<\Illuminate\Foundation\Auth\User, $this>
      */
-    public function customer(): BelongsTo
+    public function billableUser(): BelongsTo
     {
-        return $this->belongsTo(\AichaDigital\Larabill\Models\Customer::class);
+        $userModel = \AichaDigital\Larabill\Services\ModelMappingService::getModelClass('user');
+
+        // @phpstan-ignore-next-line return.type,argument.templateType
+        return $this->belongsTo($userModel, 'billable_user_id');
     }
 
     /**
@@ -542,23 +559,174 @@ class Invoice extends Model
      * of both company (issuer) and customer (recipient) at the moment
      * of invoice creation, ensuring IMMUTABILITY.
      *
+     * Includes:
+     * - FK references to CompanyFiscalConfig and UserTaxProfile
+     * - Encrypted snapshots for complete audit trail
+     *
      * Called automatically on invoice creation (boot::creating).
+     *
+     * @param  bool  $generateEncrypted  Whether to generate encrypted snapshots (default: true)
      */
-    public function snapshotFiscalConfigs(): void
+    public function snapshotFiscalConfigs(bool $generateEncrypted = true): void
     {
+        $invoiceDate = $this->invoice_date ?? now();
+
         // 1. Company fiscal config (emisor)
-        $companyConfig = CompanyFiscalConfig::getValidAt($this->invoice_date ?? now());
+        $companyConfig = CompanyFiscalConfig::getValidAt($invoiceDate);
         if ($companyConfig) {
             $this->company_fiscal_config_id = $companyConfig->id;
+
+            // Generate encrypted issuer snapshot (ADR-001)
+            if ($generateEncrypted && ! $this->issuer_snapshot) {
+                $this->issuer_snapshot = $this->generateIssuerSnapshot($companyConfig);
+            }
         }
 
-        // 2. User tax profile (receptor)
-        if ($this->user_id) {
-            $userTaxProfile = UserTaxProfile::getValidForUserAt($this->user_id, $this->invoice_date ?? now());
+        // 2. User tax profile (receptor - billable user, ADR-003)
+        $userTaxProfile = null;
+        if ($this->billable_user_id) {
+            $userTaxProfile = UserTaxProfile::getValidForUserAt($this->billable_user_id, $invoiceDate);
             if ($userTaxProfile) {
                 $this->user_tax_profile_id = $userTaxProfile->id;
             }
+
+            // Generate encrypted customer snapshot (ADR-001)
+            if ($generateEncrypted && ! $this->customer_snapshot) {
+                $billableUser = $this->billableUser;
+                if ($billableUser) {
+                    $this->customer_snapshot = $this->generateBillableUserSnapshot($billableUser, $userTaxProfile);
+                }
+            }
         }
+
+        // 3. Generate fiscal context snapshot (ADR-001)
+        if ($generateEncrypted && ! $this->fiscal_snapshot && $companyConfig) {
+            $this->fiscal_snapshot = $this->generateFiscalContextSnapshot($companyConfig, $userTaxProfile);
+        }
+    }
+
+    /**
+     * Generate encrypted issuer snapshot from CompanyFiscalConfig (ADR-001).
+     *
+     * @param  CompanyFiscalConfig  $config  Active company config at invoice date
+     * @return string Encrypted JSON snapshot
+     */
+    protected function generateIssuerSnapshot(CompanyFiscalConfig $config): string
+    {
+        $data = [
+            'config_id'         => $config->id,
+            'business_name'     => $config->business_name,
+            'tax_id'            => $config->tax_id,
+            'legal_entity_type' => $config->legal_entity_type,
+            'address'           => $config->address,
+            'city'              => $config->city,
+            'state'             => $config->state,
+            'zip_code'          => $config->zip_code,
+            'country_code'      => $config->country_code,
+            'is_oss'            => $config->is_oss,
+            'is_roi'            => $config->is_roi,
+            'currency'          => $config->currency,
+            'valid_from'        => $config->valid_from->toIso8601String(),
+            'valid_until'       => $config->valid_until?->toIso8601String(),
+            'snapshot_at'       => now()->toIso8601String(),
+        ];
+
+        return Crypt::encryptString(json_encode($data));
+    }
+
+    /**
+     * Generate encrypted billable user snapshot (ADR-001 + ADR-003).
+     *
+     * @param  \Illuminate\Database\Eloquent\Model  $billableUser  The user being billed
+     * @param  UserTaxProfile|null  $taxProfile  User's tax profile at invoice date
+     * @return string Encrypted JSON snapshot
+     */
+    protected function generateBillableUserSnapshot(\Illuminate\Database\Eloquent\Model $billableUser, ?UserTaxProfile $taxProfile): string
+    {
+        $data = [
+            'billable_user_id'     => $billableUser->id,
+            'user_name'            => $billableUser->display_name              ?? $billableUser->name ?? null,
+            'user_email'           => $billableUser->email                     ?? null,
+            'relationship_type'    => $billableUser->relationship_type?->value ?? 0,
+            'parent_user_id'       => $billableUser->parent_user_id            ?? null,
+            'legal_entity_code'    => $billableUser->legal_entity_type_code    ?? null,
+            'tax_profile_id'       => $taxProfile?->id,
+            'fiscal_name'          => $taxProfile?->fiscal_name ?? $billableUser->display_name ?? $billableUser->name ?? null,
+            'tax_id'               => $taxProfile?->tax_id,
+            'legal_entity_type'    => $taxProfile?->legal_entity_type_code ?? $billableUser->legal_entity_type_code ?? null,
+            'address'              => $taxProfile?->address,
+            'city'                 => $taxProfile?->city,
+            'state'                => $taxProfile?->state,
+            'zip_code'             => $taxProfile?->zip_code,
+            'country_code'         => $taxProfile?->country_code,
+            'is_company'           => $taxProfile?->is_company           ?? false,
+            'is_eu_vat_registered' => $taxProfile?->is_eu_vat_registered ?? false,
+            'is_exempt_vat'        => $taxProfile?->is_exempt_vat        ?? false,
+            'profile_valid_from'   => $taxProfile?->valid_from?->toIso8601String(),
+            'profile_valid_until'  => $taxProfile?->valid_until?->toIso8601String(),
+            'snapshot_at'          => now()->toIso8601String(),
+        ];
+
+        return Crypt::encryptString(json_encode($data));
+    }
+
+    /**
+     * Generate encrypted fiscal context snapshot (ADR-001).
+     *
+     * Contains fiscal rules and context at time of invoice creation.
+     *
+     * @param  CompanyFiscalConfig  $companyConfig  Active company config
+     * @param  UserTaxProfile|null  $customerProfile  Customer's tax profile
+     * @return string Encrypted JSON snapshot
+     */
+    protected function generateFiscalContextSnapshot(CompanyFiscalConfig $companyConfig, ?UserTaxProfile $customerProfile): string
+    {
+        $data = [
+            'fiscal_year'              => $this->fiscal_year   ?? now()->year,
+            'serie'                    => $this->serie?->value ?? $this->serie,
+            'series_number'            => $this->series_number,
+            'fiscal_number'            => $this->fiscal_number,
+            'invoice_date'             => ($this->invoice_date ?? now())->toIso8601String(),
+            'issuer_country'           => $companyConfig->country_code,
+            'customer_country'         => $customerProfile?->country_code,
+            'is_intra_community'       => $this->isIntraCommunityTransaction($companyConfig, $customerProfile),
+            'is_roi_applied'           => $this->is_roi_taxed ?? false,
+            'issuer_is_oss'            => $companyConfig->is_oss,
+            'customer_is_vat_reg'      => $customerProfile?->is_eu_vat_registered ?? false,
+            'currency'                 => $companyConfig->currency                ?? 'EUR',
+            'exchange_rate'            => 1.0, // TODO: Implement multi-currency
+            'company_fiscal_config_id' => $companyConfig->id,
+            'user_tax_profile_id'      => $customerProfile?->id,
+            'snapshot_at'              => now()->toIso8601String(),
+        ];
+
+        return Crypt::encryptString(json_encode($data));
+    }
+
+    /**
+     * Check if transaction is intra-community (EU cross-border B2B).
+     *
+     * @param  CompanyFiscalConfig  $issuer  Issuer's fiscal config
+     * @param  UserTaxProfile|null  $customer  Customer's tax profile
+     * @return bool True if intra-community transaction
+     */
+    protected function isIntraCommunityTransaction(CompanyFiscalConfig $issuer, ?UserTaxProfile $customer): bool
+    {
+        if (! $customer) {
+            return false;
+        }
+
+        // Both must be in EU
+        $euCountries = ['AT', 'BE', 'BG', 'CY', 'CZ', 'DE', 'DK', 'EE', 'ES', 'FI', 'FR', 'GR', 'HR', 'HU', 'IE', 'IT', 'LT', 'LU', 'LV', 'MT', 'NL', 'PL', 'PT', 'RO', 'SE', 'SI', 'SK'];
+
+        $issuerInEU   = in_array($issuer->country_code, $euCountries, true);
+        $customerInEU = in_array($customer->country_code, $euCountries, true);
+
+        // Different countries, both in EU, customer is VAT registered
+        return $issuerInEU
+            && $customerInEU
+            && $issuer->country_code !== $customer->country_code
+            && $customer->is_eu_vat_registered;
     }
 
     /**
@@ -584,11 +752,57 @@ class Invoice extends Model
     }
 
     /**
-     * Check if invoice has fiscal snapshots loaded.
+     * Check if invoice has fiscal reference FKs loaded.
+     *
+     * @param  bool  $includeEncrypted  Also check encrypted snapshots (default: false)
      */
-    public function hasFiscalSnapshots(): bool
+    public function hasFiscalSnapshots(bool $includeEncrypted = false): bool
     {
-        return $this->company_fiscal_config_id !== null && $this->user_tax_profile_id !== null;
+        $hasReferences = $this->company_fiscal_config_id !== null && $this->user_tax_profile_id !== null;
+
+        if (! $includeEncrypted) {
+            return $hasReferences;
+        }
+
+        return $hasReferences && $this->hasEncryptedSnapshots();
+    }
+
+    /**
+     * Check if invoice has all encrypted snapshots (ADR-001).
+     *
+     * All three snapshots are required for full fiscal audit trail:
+     * - issuer_snapshot: Company fiscal identity
+     * - customer_snapshot: Billable user identity
+     * - fiscal_snapshot: Fiscal context and rules
+     */
+    public function hasEncryptedSnapshots(): bool
+    {
+        return $this->issuer_snapshot   !== null
+            && $this->customer_snapshot !== null
+            && $this->fiscal_snapshot   !== null;
+    }
+
+    /**
+     * Regenerate encrypted snapshots (ADR-001).
+     *
+     * Forces regeneration of all encrypted snapshots.
+     * Use with caution - only for draft/pending invoices.
+     *
+     * @throws \Exception If invoice is immutable
+     */
+    public function regenerateEncryptedSnapshots(): void
+    {
+        if ($this->is_immutable) {
+            throw new \Exception('Cannot regenerate snapshots on immutable invoice');
+        }
+
+        // Clear existing snapshots
+        $this->issuer_snapshot   = null;
+        $this->customer_snapshot = null;
+        $this->fiscal_snapshot   = null;
+
+        // Regenerate
+        $this->snapshotFiscalConfigs(true);
     }
 
     /**

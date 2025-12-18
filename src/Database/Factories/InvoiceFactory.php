@@ -52,8 +52,8 @@ class InvoiceFactory extends Factory
             ]),
 
             // Relations (ADR-001 + ADR-003: CompanyFiscalConfig + UserTaxProfile architecture)
-            'user_id'                   => $this->faker->numberBetween(1, 100),
-            'customer_id'               => null,
+            'user_id'                   => null, // Owner of invoice (issuer)
+            'billable_user_id'          => null, // User being billed (ADR-003 replaces customer_id)
             'company_fiscal_config_id'  => null,
             'user_tax_profile_id'       => null,
             'proforma_id'               => null,

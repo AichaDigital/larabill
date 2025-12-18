@@ -51,7 +51,7 @@ class VerifactuAdapter
             'recipient_nif'      => $customerData['tax_id'] ?? null,
             'recipient_id_type'  => self::mapRecipientIdType($invoice, $customerData),
             'recipient_id'       => $customerData['tax_id']        ?? null,
-            'recipient_name'     => $customerData['customer_name'] ?? $invoice->customer->display_name ?? null,
+            'recipient_name'     => $customerData['customer_name'] ?? $invoice->billableUser?->display_name ?? $invoice->billableUser?->name ?? null,
             'recipient_country'  => $customerData['country_code']  ?? 'ES',
             'regime_type'        => self::mapRegimeType($invoice),
             'operation_key'      => self::mapOperationKey($invoice),

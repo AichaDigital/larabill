@@ -6,7 +6,8 @@ namespace AichaDigital\Larabill\Services;
 
 use AichaDigital\Larabill\Contracts\Services\FiscalVerificationContract;
 use AichaDigital\Larabill\Enums\{InvoiceSerieType, InvoiceStatus};
-use AichaDigital\Larabill\Models\{CompanyFiscalConfig, Customer, Invoice, InvoiceItem, UserTaxProfile};
+use AichaDigital\Larabill\Models\{CompanyFiscalConfig, Invoice, InvoiceItem, UserTaxProfile};
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Crypt;
 
 /**
@@ -25,8 +26,11 @@ class InvoiceService
     /**
      * Create a new invoice with encrypted snapshots.
      *
+     * ADR-003: Uses billable_user_id (User) instead of customer_id.
+     *
      * @param  array{
-     *     customer_id: int,
+     *     billable_user_id: string,
+     *     user_id?: string,
      *     items: array<array{article_id: int, quantity: int, base_price: float}>,
      *     type?: string,
      *     status?: string,
@@ -41,16 +45,19 @@ class InvoiceService
      */
     public function createInvoice(array $invoiceData, array $options = []): Invoice
     {
-        $customer      = Customer::findOrFail($invoiceData['customer_id']);
+        // Get billable user (ADR-003)
+        $userModel    = ModelMappingService::getModelClass('user');
+        $billableUser = $userModel::findOrFail($invoiceData['billable_user_id']);
+
         $companyConfig = CompanyFiscalConfig::getActive();
 
         if (! $companyConfig) {
             throw new \RuntimeException('No valid CompanyFiscalConfig found for invoice creation');
         }
 
-        // Get user tax profile
+        // Get user tax profile for billable user
         $userTaxProfile = UserTaxProfile::getValidForUserAt(
-            $customer->user_id,
+            $billableUser->id,
             now()
         );
 
@@ -58,6 +65,9 @@ class InvoiceService
         $invoiceType = $invoiceData['type'] ?? 'invoice';
         $serie       = $invoiceType === 'proforma' ? InvoiceSerieType::PROFORMA->value : InvoiceSerieType::INVOICE->value;
         $status      = isset($invoiceData['status']) ? $this->mapStatusToEnum($invoiceData['status']) : InvoiceStatus::DRAFT->value;
+
+        // user_id = owner of invoice (issuer), defaults to billable_user's parent or self
+        $userId = $invoiceData['user_id'] ?? $billableUser->parent_user_id ?? $billableUser->id;
 
         // Create invoice record
         $invoice = Invoice::create([
@@ -69,8 +79,8 @@ class InvoiceService
             'invoice_date'              => now()->toDateString(),
             'issued_at'                 => now(),
             'status'                    => $status,
-            'customer_id'               => $customer->id,
-            'user_id'                   => $customer->user_id,
+            'billable_user_id'          => $billableUser->id,
+            'user_id'                   => $userId,
             'company_fiscal_config_id'  => $companyConfig->id,
             'user_tax_profile_id'       => $userTaxProfile?->id,
             'is_immutable'              => false,
@@ -92,7 +102,7 @@ class InvoiceService
 
         // Generate encrypted snapshots
         $invoice->issuer_snapshot   = $this->generateIssuerSnapshot($companyConfig);
-        $invoice->customer_snapshot = $this->generateCustomerSnapshot($customer, $userTaxProfile);
+        $invoice->customer_snapshot = $this->generateBillableUserSnapshot($billableUser, $userTaxProfile);
         $invoice->fiscal_snapshot   = $this->generateFiscalSnapshot($invoice, $companyConfig, $userTaxProfile);
 
         $invoice->save();
@@ -134,25 +144,25 @@ class InvoiceService
     }
 
     /**
-     * Generate encrypted customer snapshot from UserTaxProfile.
+     * Generate encrypted billable user snapshot from User + UserTaxProfile (ADR-003).
      */
-    protected function generateCustomerSnapshot(Customer $customer, ?UserTaxProfile $fiscalData): string
+    protected function generateBillableUserSnapshot(Model $billableUser, ?UserTaxProfile $fiscalData): string
     {
         $data = [
-            'customer_id'          => $customer->id,
-            'customer_name'        => $customer->display_name,
-            'relationship_type'    => $customer->relationship_type->value ?? null,
-            'fiscal_name'          => $fiscalData->fiscal_name            ?? $customer->display_name,
-            'tax_id'               => $fiscalData->tax_id                 ?? null,
-            'legal_entity_type'    => $fiscalData->legal_entity_type      ?? $customer->legal_entity_type_code,
-            'address'              => $fiscalData->address                ?? null,
-            'city'                 => $fiscalData->city                   ?? null,
-            'state'                => $fiscalData->state                  ?? null,
-            'zip_code'             => $fiscalData->zip_code               ?? null,
-            'country_code'         => $fiscalData->country_code           ?? null,
-            'is_company'           => $fiscalData->is_company             ?? false,
-            'is_eu_vat_registered' => $fiscalData->is_eu_vat_registered   ?? false,
-            'is_exempt_vat'        => $fiscalData->is_exempt_vat          ?? false,
+            'billable_user_id'     => $billableUser->id,
+            'user_name'            => $billableUser->display_name              ?? $billableUser->name,
+            'relationship_type'    => $billableUser->relationship_type?->value ?? 0,
+            'fiscal_name'          => $fiscalData?->fiscal_name                ?? $billableUser->display_name ?? $billableUser->name,
+            'tax_id'               => $fiscalData?->tax_id,
+            'legal_entity_type'    => $fiscalData?->legal_entity_type_code     ?? $billableUser->legal_entity_type_code ?? null,
+            'address'              => $fiscalData?->address,
+            'city'                 => $fiscalData?->city,
+            'state'                => $fiscalData?->state,
+            'zip_code'             => $fiscalData?->zip_code,
+            'country_code'         => $fiscalData?->country_code,
+            'is_company'           => $fiscalData?->is_company                 ?? false,
+            'is_eu_vat_registered' => $fiscalData?->is_eu_vat_registered       ?? false,
+            'is_exempt_vat'        => $fiscalData?->is_exempt_vat              ?? false,
             'snapshot_at'          => now()->toIso8601String(),
         ];
 
@@ -194,16 +204,17 @@ class InvoiceService
         }
 
         // This will dispatch a job in the external package (e.g., lara-verifactu)
+        // ADR-003: Uses billable_user_id instead of customer_id
         $result = $this->fiscalVerification->verify([
-            'id'             => $invoice->id,
-            'fiscal_number'  => $invoice->fiscal_number,
-            'serie'          => $invoice->serie->value,
-            'series_number'  => $invoice->series_number,
-            'fiscal_year'    => $invoice->fiscal_year,
-            'invoice_date'   => $invoice->invoice_date,
-            'customer_id'    => $invoice->customer_id,
-            'total_amount'   => $invoice->total_amount,
-            'taxable_amount' => $invoice->taxable_amount,
+            'id'               => $invoice->id,
+            'fiscal_number'    => $invoice->fiscal_number,
+            'serie'            => $invoice->serie->value,
+            'series_number'    => $invoice->series_number,
+            'fiscal_year'      => $invoice->fiscal_year,
+            'invoice_date'     => $invoice->invoice_date,
+            'billable_user_id' => $invoice->billable_user_id,
+            'total_amount'     => $invoice->total_amount,
+            'taxable_amount'   => $invoice->taxable_amount,
         ]);
 
         if ($result['success']) {
@@ -225,12 +236,12 @@ class InvoiceService
         $quantity  = $itemData['quantity']    ?? 1;
         $basePrice = $itemData['base_price']  ?? ($itemData['unit_price'] ?? 0);
 
-        // Calculate taxes using TaxCalculationService
+        // Calculate taxes using TaxCalculationService (ADR-003: billable_user_id)
         $taxCalculation = $this->taxCalculationService->calculateForInvoiceItem([
-            'article_id'  => $itemData['article_id'] ?? 0,
-            'quantity'    => $quantity,
-            'base_price'  => $basePrice,
-            'customer_id' => $invoice->customer_id,
+            'article_id'       => $itemData['article_id'] ?? 0,
+            'quantity'         => $quantity,
+            'base_price'       => $basePrice,
+            'billable_user_id' => $invoice->billable_user_id,
         ]);
 
         return InvoiceItem::create([
@@ -247,8 +258,11 @@ class InvoiceService
     /**
      * Create a proforma invoice.
      *
+     * ADR-003: Uses billable_user_id (User) instead of customer_id.
+     *
      * @param  array{
-     *     customer_id: int,
+     *     billable_user_id: string,
+     *     user_id?: string,
      *     items: array<array{article_id: int, quantity: int, base_price: float}>,
      *     due_date?: string|null,
      *     payment_terms?: int|null,
@@ -273,6 +287,8 @@ class InvoiceService
      * This method ensures the proforma is locked and a new invoice is created
      * with fiscal verification if required.
      *
+     * ADR-003: Uses billable_user_id (User) instead of customer_id.
+     *
      * @param  array{verify_fiscally?: bool}  $options
      */
     public function convertProformaToInvoice(Invoice $proforma, array $options = []): Invoice
@@ -285,10 +301,11 @@ class InvoiceService
             throw new \InvalidArgumentException('Proforma already converted to invoice');
         }
 
-        // Create new invoice from proforma data
+        // Create new invoice from proforma data (ADR-003: billable_user_id)
         $invoiceData = [
-            'customer_id' => $proforma->customer_id,
-            'items'       => $proforma->items->map(fn ($item) => [
+            'billable_user_id' => $proforma->billable_user_id,
+            'user_id'          => $proforma->user_id,
+            'items'            => $proforma->items->map(fn ($item) => [
                 'article_id'  => $item->article_id,
                 'description' => $item->description,
                 'quantity'    => $item->quantity,
@@ -296,8 +313,8 @@ class InvoiceService
             ])->toArray(),
             'type'          => 'invoice',
             'status'        => 'pending',
-            'due_date'      => $proforma->due_date,
-            'payment_terms' => $proforma->payment_terms,
+            'due_date'      => $proforma->due_date?->toDateString(),
+            'payment_terms' => $proforma->payment_terms ? (int) $proforma->payment_terms : null,
             'template_name' => $proforma->template_name,
         ];
 

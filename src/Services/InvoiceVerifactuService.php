@@ -133,9 +133,9 @@ class InvoiceVerifactuService
             $errors[] = 'Invoice must have a tax profile';
         }
 
-        // Check customer exists
-        if (! $invoice->customer) {
-            $errors[] = 'Invoice must have a customer';
+        // Check billable user exists (ADR-003: User replaces Customer)
+        if (! $invoice->billableUser) {
+            $errors[] = 'Invoice must have a billable user';
         }
 
         // Check totals are valid

@@ -36,11 +36,11 @@ return new class extends Migration
             // Status
             $table->unsignedTinyInteger('status')->default(0)->comment('InvoiceStatus enum: 0=draft, 1=sent, 2=paid, 3=overdue, 4=cancelled');
 
-            // Relations (ADR-001: CompanyFiscalConfig + CustomerFiscalData architecture)
+            // Relations (ADR-001 + ADR-003: CompanyFiscalConfig + UserTaxProfile architecture)
             MigrationHelper::userIdColumn($table);
-            $table->unsignedBigInteger('customer_id')->nullable()->comment('FK to customers');
+            $table->uuid('billable_user_id')->nullable()->comment('FK to users - User being billed (replaces customer_id per ADR-003)');
             $table->unsignedBigInteger('company_fiscal_config_id')->nullable()->comment('FK to company_fiscal_configs - Issuer snapshot');
-            $table->unsignedBigInteger('customer_fiscal_data_id')->nullable()->comment('FK to customer_fiscal_data - Customer fiscal snapshot');
+            $table->unsignedBigInteger('user_tax_profile_id')->nullable()->comment('FK to user_tax_profiles - User fiscal snapshot (ADR-003)');
             $table->foreignUuid('proforma_id')->nullable()->constrained('invoices')->nullOnDelete()->comment('UUID FK if this invoice was converted from a proforma');
             $table->foreignUuid('rectifies_invoice_id')->nullable()->constrained('invoices')->nullOnDelete()->comment('UUID FK if this is a rectificative invoice, references original');
 

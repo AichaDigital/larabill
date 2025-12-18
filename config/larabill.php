@@ -169,6 +169,23 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Admin Notifications Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Configure admin notifications for critical system events.
+    | Used for fiscal integrity alerts and other critical notifications.
+    |
+    */
+    'admin' => [
+        // Admin email(s) for critical notifications (comma-separated for multiple)
+        'email' => env('LARABILL_ADMIN_EMAIL'),
+
+        // Admin panel path (for notification action URLs)
+        'path' => env('LARABILL_ADMIN_PATH', '/admin'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Queue Configuration
     |--------------------------------------------------------------------------
     |

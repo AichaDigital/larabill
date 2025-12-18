@@ -50,10 +50,10 @@ it('can create different legal entity types by code', function () {
         ->and($company->code)->toBe('SOCIEDAD_LIMITADA');
 });
 
-it('has relationship with customers', function () {
+it('has relationship with users', function () {
     $type = LegalEntityType::factory()->create();
 
-    expect($type->customers())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\HasMany::class);
+    expect($type->users())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\HasMany::class);
 });
 
 it('can filter by country', function () {
