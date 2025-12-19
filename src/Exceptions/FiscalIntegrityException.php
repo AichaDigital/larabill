@@ -62,7 +62,7 @@ class FiscalIntegrityException extends Exception
     /**
      * Create exception for duplicate UserTaxProfile.
      */
-    public static function duplicateUserTaxProfile(string $userId, Collection $configs): self
+    public static function duplicateUserTaxProfile(string|int $userId, Collection $configs): self
     {
         $ids = $configs->pluck('id')->implode(', ');
 
@@ -72,7 +72,7 @@ class FiscalIntegrityException extends Exception
                 'ids'     => $ids,
             ]),
             severity: self::SEVERITY_ATOMIC,
-            affectedUserId: $userId,
+            affectedUserId: (string) $userId,
             duplicateConfigs: $configs
         );
     }

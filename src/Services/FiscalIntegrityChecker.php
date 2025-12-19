@@ -46,7 +46,7 @@ class FiscalIntegrityChecker
     /**
      * Check if system can invoice a specific user.
      */
-    public function canInvoiceUser(string $userId): bool
+    public function canInvoiceUser(string|int $userId): bool
     {
         // First check global integrity
         if (! $this->canInvoice()) {
@@ -77,7 +77,7 @@ class FiscalIntegrityChecker
      *
      * @throws FiscalIntegrityException
      */
-    public function assertCanInvoiceUser(string $userId): void
+    public function assertCanInvoiceUser(string|int $userId): void
     {
         // First check global
         $this->assertCanInvoice();
@@ -115,7 +115,7 @@ class FiscalIntegrityChecker
      *
      * Returns exception if multiple active profiles found, null if OK.
      */
-    public function checkUserIntegrity(string $userId): ?FiscalIntegrityException
+    public function checkUserIntegrity(string|int $userId): ?FiscalIntegrityException
     {
         $activeProfiles = UserTaxProfile::query()
             ->where('user_id', $userId)

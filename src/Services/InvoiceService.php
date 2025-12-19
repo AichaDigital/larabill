@@ -6,6 +6,7 @@ namespace AichaDigital\Larabill\Services;
 
 use AichaDigital\Larabill\Contracts\Services\FiscalVerificationContract;
 use AichaDigital\Larabill\Enums\{InvoiceSerieType, InvoiceStatus};
+use AichaDigital\Larabill\Exceptions\FiscalConfigChangedException;
 use AichaDigital\Larabill\Models\{CompanyFiscalConfig, Invoice, InvoiceItem, UserTaxProfile};
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Crypt;
@@ -20,8 +21,11 @@ class InvoiceService
 {
     public function __construct(
         protected TaxCalculationService $taxCalculationService,
-        protected ?FiscalVerificationContract $fiscalVerification = null
-    ) {}
+        protected ?FiscalVerificationContract $fiscalVerification = null,
+        protected ?FiscalChangeDetector $fiscalChangeDetector = null
+    ) {
+        $this->fiscalChangeDetector ??= app(FiscalChangeDetector::class);
+    }
 
     /**
      * Create a new invoice with encrypted snapshots.
@@ -287,11 +291,19 @@ class InvoiceService
      * This method ensures the proforma is locked and a new invoice is created
      * with fiscal verification if required.
      *
+     * ADR-001: Detects fiscal configuration changes since proforma creation.
      * ADR-003: Uses billable_user_id (User) instead of customer_id.
      *
-     * @param  array{verify_fiscally?: bool}  $options
+     * @param  array{
+     *     verify_fiscally?: bool,
+     *     force?: bool,
+     *     on_changes?: 'throw'|'warn'|'ignore'
+     * }  $options
+     * @return Invoice|array{invoice: Invoice, warnings: array<string>}
+     *
+     * @throws FiscalConfigChangedException When critical changes detected and force=false
      */
-    public function convertProformaToInvoice(Invoice $proforma, array $options = []): Invoice
+    public function convertProformaToInvoice(Invoice $proforma, array $options = []): Invoice|array
     {
         if ($proforma->serie !== InvoiceSerieType::PROFORMA) {
             throw new \InvalidArgumentException('Invoice is not a proforma');
@@ -299,6 +311,32 @@ class InvoiceService
 
         if ($proforma->converted_invoice_id) {
             throw new \InvalidArgumentException('Proforma already converted to invoice');
+        }
+
+        // ADR-001: Detect fiscal configuration changes
+        $force     = $options['force']          ?? false;
+        $onChanges = $options['on_changes']     ?? 'throw';
+        $warnings  = [];
+
+        $changes = $this->fiscalChangeDetector->detectChanges($proforma);
+
+        if ($changes['has_changes']) {
+            $summary = $this->fiscalChangeDetector->getChangeSummary($proforma);
+
+            if ($changes['has_critical_changes'] && ! $force) {
+                // Critical changes - block conversion unless forced
+                throw FiscalConfigChangedException::fromChanges($proforma, $changes);
+            }
+
+            // Non-critical changes or forced - handle according to on_changes option
+            if ($onChanges === 'throw' && ! $force) {
+                throw FiscalConfigChangedException::fromChanges($proforma, $changes);
+            }
+
+            if ($onChanges === 'warn') {
+                $warnings = $summary;
+            }
+            // 'ignore' - just proceed
         }
 
         // Create new invoice from proforma data (ADR-003: billable_user_id)
@@ -331,7 +369,33 @@ class InvoiceService
             'status'               => InvoiceStatus::CONVERTED->value,
         ]);
 
+        // Return with warnings if any
+        if (! empty($warnings)) {
+            return [
+                'invoice'  => $invoice,
+                'warnings' => $warnings,
+            ];
+        }
+
         return $invoice;
+    }
+
+    /**
+     * Check if a proforma can be safely converted without fiscal changes.
+     */
+    public function canConvertProformaSafely(Invoice $proforma): bool
+    {
+        return $this->fiscalChangeDetector->canConvertSafely($proforma);
+    }
+
+    /**
+     * Get fiscal changes summary for a proforma.
+     *
+     * @return array<string, mixed>
+     */
+    public function getProformaFiscalChanges(Invoice $proforma): array
+    {
+        return $this->fiscalChangeDetector->detectChanges($proforma);
     }
 
     /**

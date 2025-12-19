@@ -121,7 +121,7 @@ class UserTaxProfile extends Model
     /**
      * Closes active config for user by setting valid_until.
      */
-    protected static function closeActiveForUser(string $userId, Carbon $newValidFrom): void
+    protected static function closeActiveForUser(string|int $userId, Carbon $newValidFrom): void
     {
         static::where('user_id', $userId)
             ->where('is_active', true)
@@ -183,7 +183,7 @@ class UserTaxProfile extends Model
     /**
      * Scope: Configs for a user.
      */
-    public function scopeForUser(Builder $query, string $userId): Builder
+    public function scopeForUser(Builder $query, string|int $userId): Builder
     {
         return $query->where('user_id', $userId);
     }
