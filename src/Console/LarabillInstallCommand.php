@@ -51,6 +51,8 @@ class LarabillInstallCommand extends Command
         '028' => 'create_eu_sales_thresholds_table',    // FK a users
         '029' => 'create_roi_queries_table',            // FK a users
         '030' => 'create_user_roi_verifications_table', // FK a users
+        // === TRANSLATABLE FIELDS (v0.5.0) ===
+        '031' => 'make_articles_translatable',           // Convert name/description to JSON
     ];
 
     public function handle(): int

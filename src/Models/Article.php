@@ -9,14 +9,17 @@ use AichaDigital\Larabill\Enums\{BillingFrequency, ItemType};
 use Illuminate\Database\Eloquent\{Builder, Model, SoftDeletes};
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
+use Spatie\Translatable\HasTranslations;
 
 /**
  * Article Model
  *
+ * Uses spatie/laravel-translatable for name and description fields.
+ *
  * @property int $id
  * @property string $code
- * @property string $name
- * @property string|null $description
+ * @property array $name Name (translatable JSON)
+ * @property array|null $description Description (translatable JSON)
  * @property ItemType $item_type
  * @property string|null $category
  * @property int|null $cost_price
@@ -37,12 +40,23 @@ use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
 class Article extends Model
 {
     use HasFactory;
+    use HasTranslations;
     use SoftDeletes;
 
     /**
      * The table associated with the model.
      */
     protected $table = 'articles';
+
+    /**
+     * Translatable attributes (spatie/laravel-translatable).
+     *
+     * @var array<string>
+     */
+    public array $translatable = [
+        'name',
+        'description',
+    ];
 
     /**
      * The attributes that are mass assignable.
