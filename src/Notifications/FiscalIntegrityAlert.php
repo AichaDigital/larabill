@@ -14,7 +14,7 @@ use Illuminate\Notifications\Notification;
  * FiscalIntegrityAlert Notification
  *
  * Sends critical alert when fiscal configuration integrity is compromised.
- * Delivered via email and database (for Filament dashboard).
+ * Delivered via email and database channels.
  *
  * Uses queue if available, falls back to sync if not configured.
  *
@@ -129,7 +129,7 @@ class FiscalIntegrityAlert extends Notification implements ShouldQueue
     }
 
     /**
-     * Get the notification's database type (for Filament).
+     * Get the notification's database type.
      */
     public function databaseType(object $notifiable): string
     {

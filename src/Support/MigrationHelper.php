@@ -17,7 +17,7 @@ use Ramsey\Uuid\Uuid;
  * - uuid (string char 36) - UUID v7, recommended
  * - ulid (string char 26) - ULID alternative
  *
- * Note: uuid_binary was removed due to incompatibility with FilamentPHP v4.
+ * Note: uuid_binary was removed for compatibility reasons.
  * See ADR-002 for details.
  */
 class MigrationHelper

@@ -71,16 +71,12 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Enums;
 
-use Filament\Support\Contracts\HasColor;
-use Filament\Support\Contracts\HasIcon;
-use Filament\Support\Contracts\HasLabel;
-
-enum UserRelationshipType: int implements HasLabel, HasColor, HasIcon
+enum UserRelationshipType: int
 {
     case DIRECT = 0;      // Cliente directo de la Empresa
     case DELEGATED = 1;   // Cliente de un User (facturación delegada)
 
-    public function getLabel(): string
+    public function label(): string
     {
         return match ($this) {
             self::DIRECT => __('larabill::enums.user_relationship.direct'),
@@ -88,7 +84,7 @@ enum UserRelationshipType: int implements HasLabel, HasColor, HasIcon
         };
     }
 
-    public function getColor(): string
+    public function color(): string
     {
         return match ($this) {
             self::DIRECT => 'success',
@@ -96,7 +92,7 @@ enum UserRelationshipType: int implements HasLabel, HasColor, HasIcon
         };
     }
 
-    public function getIcon(): string
+    public function icon(): string
     {
         return match ($this) {
             self::DIRECT => 'heroicon-o-user',
@@ -190,13 +186,13 @@ public function isDelegated(): bool
 - **Un solo modelo** para todos los receptores
 - **Policies unificadas**: Una sola UserPolicy
 - **Gates simples**: `$user->parent_user_id === $owner->id`
-- **Filament**: Un solo Resource con filtros por `relationship_type`
+- **UI Admin**: Un solo Resource con filtros por `relationship_type`
 - **Histórico fiscal unificado** en `user_tax_profiles`
 
 ### Negativas
 
 - **Migración de datos** desde estructura anterior
-- **Self-relations en Filament** requieren cuidado (probado en POC, funciona)
+- **Self-relations en UI** requieren cuidado (probado en POC, funciona)
 
 ### Neutras
 
@@ -206,11 +202,10 @@ public function isDelegated(): bool
 ## Validación
 
 - POC probado con 10,000 usuarios
-- Self-relations funcionan correctamente con Filament 4
-- PHP Enums integrados con paradigma Filament (HasLabel, HasColor, HasIcon)
+- Self-relations funcionan correctamente
+- PHP Enums con métodos genéricos para UI (label, color, icon)
 
 ## Referencias
 
 - ADR-001: Arquitectura fiscal (CompanyFiscalConfig + temporal validity)
 - ADR-002: UUID v7 string (eliminación de uuid_binary)
-- [Filament Enums Documentation](https://filamentphp.com/docs/4.x/advanced/enums)

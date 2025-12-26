@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Enums;
 
-use Filament\Support\Contracts\{HasColor, HasIcon, HasLabel};
-
 /**
  * UserRelationshipType Enum
  *
@@ -16,7 +14,7 @@ use Filament\Support\Contracts\{HasColor, HasIcon, HasLabel};
  *
  * @see ADR-003 for architectural decisions
  */
-enum UserRelationshipType: int implements HasColor, HasIcon, HasLabel
+enum UserRelationshipType: int
 {
     case DIRECT    = 0;  // Client of the Company (parent_user_id = null)
     case DELEGATED = 1;  // Client of a User (parent_user_id = User.id)
@@ -24,7 +22,7 @@ enum UserRelationshipType: int implements HasColor, HasIcon, HasLabel
     /**
      * Get human-readable label for the relationship type.
      */
-    public function getLabel(): string
+    public function label(): string
     {
         return match ($this) {
             self::DIRECT    => __('larabill::enums.user_relationship.direct'),
@@ -33,9 +31,9 @@ enum UserRelationshipType: int implements HasColor, HasIcon, HasLabel
     }
 
     /**
-     * Get Filament color for the relationship type.
+     * Get color identifier for the relationship type.
      */
-    public function getColor(): string
+    public function color(): string
     {
         return match ($this) {
             self::DIRECT    => 'success',
@@ -44,9 +42,9 @@ enum UserRelationshipType: int implements HasColor, HasIcon, HasLabel
     }
 
     /**
-     * Get Filament icon for the relationship type.
+     * Get icon identifier for the relationship type.
      */
-    public function getIcon(): string
+    public function icon(): string
     {
         return match ($this) {
             self::DIRECT    => 'heroicon-o-user',
@@ -89,8 +87,8 @@ enum UserRelationshipType: int implements HasColor, HasIcon, HasLabel
     public static function toArray(): array
     {
         return [
-            self::DIRECT->value    => self::DIRECT->getLabel(),
-            self::DELEGATED->value => self::DELEGATED->getLabel(),
+            self::DIRECT->value    => self::DIRECT->label(),
+            self::DELEGATED->value => self::DELEGATED->label(),
         ];
     }
 }

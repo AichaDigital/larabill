@@ -11,18 +11,18 @@ describe('UserRelationshipType Enum', function () {
     });
 
     it('returns correct labels', function () {
-        expect(UserRelationshipType::DIRECT->getLabel())->toBeString()->not->toBeEmpty();
-        expect(UserRelationshipType::DELEGATED->getLabel())->toBeString()->not->toBeEmpty();
+        expect(UserRelationshipType::DIRECT->label())->toBeString()->not->toBeEmpty();
+        expect(UserRelationshipType::DELEGATED->label())->toBeString()->not->toBeEmpty();
     });
 
     it('returns correct colors', function () {
-        expect(UserRelationshipType::DIRECT->getColor())->toBe('success');
-        expect(UserRelationshipType::DELEGATED->getColor())->toBe('info');
+        expect(UserRelationshipType::DIRECT->color())->toBe('success');
+        expect(UserRelationshipType::DELEGATED->color())->toBe('info');
     });
 
     it('returns correct icons', function () {
-        expect(UserRelationshipType::DIRECT->getIcon())->toContain('heroicon');
-        expect(UserRelationshipType::DELEGATED->getIcon())->toContain('heroicon');
+        expect(UserRelationshipType::DIRECT->icon())->toContain('heroicon');
+        expect(UserRelationshipType::DELEGATED->icon())->toContain('heroicon');
     });
 
     it('returns correct descriptions', function () {

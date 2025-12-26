@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * The trait is agnostic to the user ID type - it reads from config('larabill.user_id_type')
  * and supports int, uuid, and ulid types.
  *
- * Note: uuid_binary was removed in v1.0 due to incompatibility with FilamentPHP v4.
+ * Note: uuid_binary was removed in v1.0 for compatibility reasons.
  * See ADR-002 for details.
  *
  * Supported user_id types:

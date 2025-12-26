@@ -21,50 +21,11 @@ return [
     | For production, 'uuid' is recommended. Uses Laravel 12 native
     | Str::orderedUuid() which generates UUID v7 with chronological ordering.
     |
-    | Note: uuid_binary was removed in v1.0 due to incompatibility with
-    | FilamentPHP v4 + Livewire. See ADR-002 for migration guide.
+    | Note: uuid_binary was removed in v1.0 for compatibility reasons.
+    | See ADR-002 for migration guide.
     |
     */
     'user_id_type' => env('LARABILL_USER_ID_TYPE', 'uuid'),
-
-    /*
-    |--------------------------------------------------------------------------
-    | Filament UI Integration (v1.0 - Temporary)
-    |--------------------------------------------------------------------------
-    |
-    | In v1.0, Filament UI is integrated directly in the core package for
-    | faster development. In v2.0, this will be extracted to a separate
-    | `larabill-filament` plugin package.
-    |
-    | Set 'enabled' to false to disable Filament resources registration.
-    |
-    */
-    'filament' => [
-        'enabled' => env('LARABILL_FILAMENT_ENABLED', true),
-
-        'navigation' => [
-            'group' => env('LARABILL_NAVIGATION_GROUP', 'Billing'),
-            'sort'  => (int) env('LARABILL_NAVIGATION_SORT', 10),
-        ],
-
-        'resources' => [
-            'invoice' => [
-                'enabled' => true,
-                'icon'    => 'heroicon-o-document-text',
-                'sort'    => 1,
-            ],
-            'customer' => [
-                'enabled' => true,
-                'icon'    => 'heroicon-o-users',
-                'sort'    => 2,
-            ],
-            'article' => [
-                'enabled' => true,
-                'icon'    => 'heroicon-o-cube',
-                'sort'    => 3,
-            ],
-        ],
-    ],
 
     // VAT verification API settings
     'vat_apis' => [

@@ -10,10 +10,10 @@ namespace AichaDigital\Larabill\Enums;
  * Represents the category of unit measurement.
  * Used to group unit measures logically (weight, volume, etc.)
  *
- * Usage in Filament (agnostic - no Filament dependency):
+ * Usage example:
  * ```php
- * Forms\Components\Select::make('category')
- *     ->options(UnitMeasureCategory::toArray())
+ * // Get options for select inputs
+ * $options = UnitMeasureCategory::toArray();
  * ```
  */
 enum UnitMeasureCategory: int

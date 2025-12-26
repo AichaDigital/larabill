@@ -11,7 +11,6 @@
 - VAT verification services
 - Fiscal data management (issuer and recipients)
 - PDF invoice generation
-- Filament 4 admin resources
 
 ### Critical Information
 
@@ -20,8 +19,9 @@
 | **Version** | dev-main (targeting v1.0 for Dec 15, 2025) |
 | **PHP** | ^8.3 |
 | **Laravel** | ^11.0 \| ^12.0 |
-| **Filament** | ^4.0 |
 | **License** | AGPL-3.0-or-later |
+
+> **Note**: Larabill is **Filament-agnostic**. For Filament integration, use the separate `aichadigital/larabill-filament` package.
 
 ### Ecosystem Context
 
@@ -44,12 +44,12 @@ aichadigital/
 
 **IMPORTANT**: This package uses UUID v7 **STRING** storage (char 36).
 
-> **Note**: Binary UUID (`uuid_binary`) was removed in ADR-002 due to incompatibility with Filament 4.
+> **Note**: Binary UUID (`uuid_binary`) was removed in ADR-002 for compatibility reasons.
 
 | Type | Config Value | Storage | Size | Use Case |
 |------|-------------|---------|------|----------|
 | Integer | `int` | `unsignedBigInteger` | 8 bytes | Standard Laravel |
-| UUID String | `uuid` | `char(36)` | 36 bytes | **Recommended** - Human readable, Filament compatible |
+| UUID String | `uuid` | `char(36)` | 36 bytes | **Recommended** - Human readable |
 | ULID String | `ulid` | `char(26)` | 26 bytes | Sortable, readable |
 
 **Configuration** (`config/larabill.php`):
@@ -115,10 +115,14 @@ INVOICES:
 **UserRelationshipType Enum**:
 
 ```php
-enum UserRelationshipType: int implements HasLabel, HasColor, HasIcon
+enum UserRelationshipType: int
 {
     case DIRECT = 0;      // Direct client of the Company
     case DELEGATED = 1;   // Client of a User (delegated billing)
+
+    public function label(): string { /* ... */ }
+    public function color(): string { /* ... */ }
+    public function icon(): string { /* ... */ }
 }
 ```
 
@@ -204,7 +208,6 @@ larabill/
 │   ├── DataTransferObjects/    # DTOs
 │   ├── Enums/                  # Status enums + UserRelationshipType
 │   ├── Events/                 # Domain events
-│   ├── Filament/               # Filament 4 resources
 │   ├── Listeners/              # Event listeners
 │   ├── Models/                 # Eloquent models
 │   ├── Services/               # Business logic services
@@ -321,62 +324,23 @@ expect($data->user)->toBeInstanceOf(User::class);
 
 ## Important Conventions
 
-### Filament 4 Compatibility
+### PHP Enums
+
+Enums provide generic methods for UI integration (usable with any frontend):
 
 ```php
-protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-text';
-```
-
-#### Filament 4 API Changes (vs Filament 3)
-
-```php
-// Table Actions - CHANGED
-->actions([...])        // Filament 3
-->recordActions([...])  // Filament 4
-
-// Bulk Actions - CHANGED
-->bulkActions([...])    // Filament 3
-->toolbarActions([      // Filament 4
-    BulkActionGroup::make([...])
-])
-
-// Date columns with nullable values
-->default('Text')       // Tries to parse as date
-->placeholder('Text')   // Shows text when null
-```
-
-#### Action Imports
-
-```php
-// Filament 4 - Use Filament\Actions namespace
-use Filament\Actions\ViewAction;
-use Filament\Actions\EditAction;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteBulkAction;
-```
-
-### PHP Enums with Filament
-
-All enums implement Filament interfaces for seamless integration:
-
-```php
-use Filament\Support\Contracts\HasColor;
-use Filament\Support\Contracts\HasIcon;
-use Filament\Support\Contracts\HasLabel;
-
-enum UserRelationshipType: int implements HasLabel, HasColor, HasIcon
+enum UserRelationshipType: int
 {
     case DIRECT = 0;
     case DELEGATED = 1;
 
-    public function getLabel(): string { /* ... */ }
-    public function getColor(): string { /* ... */ }
-    public function getIcon(): string { /* ... */ }
+    public function label(): string { /* Translated label */ }
+    public function color(): string { /* Color identifier: 'success', 'info', etc. */ }
+    public function icon(): string { /* Icon identifier: 'heroicon-o-user', etc. */ }
 }
 ```
 
-See: [Filament Enums Documentation](https://filamentphp.com/docs/4.x/advanced/enums)
+> **Note**: For Filament integration, use `aichadigital/larabill-filament` which provides traits to implement Filament's `HasLabel`, `HasColor`, `HasIcon` interfaces.
 
 ## Anti-Patterns
 
@@ -386,7 +350,7 @@ See: [Filament Enums Documentation](https://filamentphp.com/docs/4.x/advanced/en
 - Modify issued invoices
 - Hardcode UUID type (use config)
 - Skip MigrationHelper for user_id columns
-- Use binary UUID (incompatible with Filament 4)
+- Use binary UUID (removed for compatibility)
 - Create separate Customer entities (use User with parent_user_id)
 
 **DO**:
@@ -395,7 +359,7 @@ See: [Filament Enums Documentation](https://filamentphp.com/docs/4.x/advanced/en
 - Use `MigrationHelper::userIdColumn()` in migrations
 - Use Base100Int for all monetary/percentage values
 - Follow temporal validity pattern for fiscal data
-- Use PHP Enums with Filament interfaces
+- Use PHP Enums with generic UI methods
 - Implement self-referencing Users for delegation
 
 ## Key Documentation
