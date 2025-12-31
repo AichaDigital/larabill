@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 use AichaDigital\Larabill\Enums\BillingFrequency;
-use AichaDigital\Larabill\Models\{Article, ArticleOverride};
+use AichaDigital\Larabill\Models\Article;
+use AichaDigital\Larabill\Models\ArticleOverride;
 use AichaDigital\Larabill\Services\PricingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 

@@ -2,9 +2,14 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Enums\{BillingFrequency, ServiceStatus};
-use AichaDigital\Larabill\Models\{Article, ArticlePrice, ArticleServiceStatus, Invoice};
-use AichaDigital\Larabill\Services\{PricingService, RecurringBillingService};
+use AichaDigital\Larabill\Enums\BillingFrequency;
+use AichaDigital\Larabill\Enums\ServiceStatus;
+use AichaDigital\Larabill\Models\Article;
+use AichaDigital\Larabill\Models\ArticlePrice;
+use AichaDigital\Larabill\Models\ArticleServiceStatus;
+use AichaDigital\Larabill\Models\Invoice;
+use AichaDigital\Larabill\Services\PricingService;
+use AichaDigital\Larabill\Services\RecurringBillingService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -324,6 +329,88 @@ describe('RecurringBillingService metadata', function () {
             ->and($item->metadata['source_reference']['article_id'])->toBe($article->id)
             ->and($item->metadata['source_reference']['service_status_id'])->toBe($service->id)
             ->and($item->metadata['source_reference']['instance_identifier'])->toBe('example.com');
+    });
+});
+
+describe('RecurringBillingService idempotency', function () {
+    it('does not create duplicate invoices for same service and period', function () {
+        $customer       = $this->userModel::factory()->create();
+        $article        = Article::factory()->monthly(2900)->create();
+        $processingDate = Carbon::parse('2024-01-08');
+        $billingDate    = Carbon::parse('2024-01-15');
+
+        $service = ArticleServiceStatus::factory()->create([
+            'customer_id'       => $customer->id,
+            'article_id'        => $article->id,
+            'billing_frequency' => BillingFrequency::MONTHLY,
+            'status'            => \AichaDigital\Larabill\Enums\ServiceStatus::ACTIVE,
+            'next_billing_date' => $billingDate,
+            'effective_price'   => 2900,
+        ]);
+
+        // Process billing first time
+        $results1 = $this->service->processRecurringBilling($processingDate);
+        expect($results1['processed'])->toBe(1)
+            ->and(Invoice::count())->toBe(1);
+
+        $firstInvoice = Invoice::first();
+
+        // Reset next_billing_date to simulate crash before updateNextBillingDate()
+        // Use direct DB update to bypass any model observers
+        \DB::table('article_service_status')
+            ->where('id', $service->id)
+            ->update(['next_billing_date' => $billingDate->toDateString()]);
+        $service->refresh();
+
+        // Verify service state after reset
+        expect($service->status)->toBe(\AichaDigital\Larabill\Enums\ServiceStatus::ACTIVE)
+            ->and($service->next_billing_date->toDateString())->toBe($billingDate->toDateString());
+
+        // Verify the service can be found in the billing window
+        $windowEnd    = $processingDate->copy()->addDays(30)->toDateString();
+        $foundService = ArticleServiceStatus::query()
+            ->with(['article', 'customer', 'currentOverride'])
+            ->where('status', \AichaDigital\Larabill\Enums\ServiceStatus::ACTIVE)
+            ->whereNotNull('next_billing_date')
+            ->whereRaw('DATE(next_billing_date) <= ?', [$windowEnd])
+            ->first();
+
+        expect($foundService)->not->toBeNull('Service should be found in billing window after reset');
+
+        // Process billing again (simulating retry after crash)
+        $results2 = $this->service->processRecurringBilling($processingDate);
+
+        // Should return existing invoice instead of creating duplicate
+        expect($results2['processed'])->toBe(1)
+            ->and(Invoice::count())->toBe(1)
+            ->and(Invoice::first()->id)->toBe($firstInvoice->id);
+    });
+
+    it('creates new invoice for different billing period', function () {
+        $customer = $this->userModel::factory()->create();
+        $article  = Article::factory()->monthly(2900)->create();
+
+        $service = ArticleServiceStatus::factory()->create([
+            'customer_id'       => $customer->id,
+            'article_id'        => $article->id,
+            'billing_frequency' => BillingFrequency::MONTHLY,
+            'status'            => \AichaDigital\Larabill\Enums\ServiceStatus::ACTIVE,
+            'next_billing_date' => Carbon::parse('2024-01-15'),
+        ]);
+
+        // Process billing for January period
+        $this->service->processRecurringBilling(Carbon::parse('2024-01-08'));
+        expect(Invoice::count())->toBe(1);
+
+        // Verify next_billing_date was updated
+        $service->refresh();
+        expect($service->next_billing_date->toDateString())->toBe('2024-02-15');
+
+        // Process billing for February period
+        $this->service->processRecurringBilling(Carbon::parse('2024-02-08'));
+
+        // Should create a new invoice for the new period
+        expect(Invoice::count())->toBe(2);
     });
 });
 

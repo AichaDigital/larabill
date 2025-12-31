@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use AichaDigital\Larabill\Enums\ItemType;
-use AichaDigital\Larabill\Models\{Invoice, InvoiceItem, TaxCategory};
+use AichaDigital\Larabill\Models\Invoice;
+use AichaDigital\Larabill\Models\InvoiceItem;
+use AichaDigital\Larabill\Models\TaxCategory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);

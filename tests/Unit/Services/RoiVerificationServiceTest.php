@@ -12,7 +12,9 @@ beforeEach(function () {
     // REACTIVATED v0.4.1: $this->markTestSkipped('Legacy test - deprecated in v0.4.0');
 });
 
-use AichaDigital\Larabill\Models\{RoiQuery, UserRoiVerification, VatVerification};
+use AichaDigital\Larabill\Models\RoiQuery;
+use AichaDigital\Larabill\Models\UserRoiVerification;
+use AichaDigital\Larabill\Models\VatVerification;
 use AichaDigital\Larabill\Services\RoiVerificationService;
 use Illuminate\Support\Facades\Http;
 

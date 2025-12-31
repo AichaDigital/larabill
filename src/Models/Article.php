@@ -5,10 +5,14 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Models;
 
 use AichaDigital\Lara100\Casts\Base100Int;
-use AichaDigital\Larabill\Enums\{BillingFrequency, ItemType};
-use Illuminate\Database\Eloquent\{Builder, Model, SoftDeletes};
+use AichaDigital\Larabill\Enums\BillingFrequency;
+use AichaDigital\Larabill\Enums\ItemType;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Translatable\HasTranslations;
 
 /**

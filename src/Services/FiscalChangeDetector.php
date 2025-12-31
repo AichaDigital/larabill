@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services;
 
-use AichaDigital\Larabill\Models\{CompanyFiscalConfig, Invoice, UserTaxProfile};
+use AichaDigital\Larabill\Models\CompanyFiscalConfig;
+use AichaDigital\Larabill\Models\Invoice;
+use AichaDigital\Larabill\Models\UserTaxProfile;
 
 /**
  * Fiscal Change Detector

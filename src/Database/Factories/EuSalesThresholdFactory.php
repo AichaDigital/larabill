@@ -73,7 +73,7 @@ class EuSalesThresholdFactory extends Factory
 
         // Calculate percentages
         $totalAmount = array_sum(array_column($breakdown, 'amount'));
-        foreach ($breakdown as $country => &$data) {
+        foreach ($breakdown as &$data) {
             $data['percentage'] = $totalAmount > 0 ? round(($data['amount'] / $totalAmount) * 100, 2) : 0;
         }
 
@@ -310,7 +310,7 @@ class EuSalesThresholdFactory extends Factory
         }
 
         // Calculate percentages
-        foreach ($breakdown as $country => &$data) {
+        foreach ($breakdown as &$data) {
             $data['percentage'] = $totalAmount > 0 ? round(($data['amount'] / $totalAmount) * 100, 2) : 0;
         }
 

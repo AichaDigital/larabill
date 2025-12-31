@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services;
 
-use AichaDigital\Larabill\Models\{RoiQuery, UserRoiVerification};
+use AichaDigital\Larabill\Models\RoiQuery;
+use AichaDigital\Larabill\Models\UserRoiVerification;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -44,7 +45,7 @@ class RoiVerificationService
         // Validate VAT number format
         if (! $this->isValidVatFormat($vatNumber, $countryCode)) {
             // Create ROI verification record for invalid format
-            $roiVerification = UserRoiVerification::createOrUpdateRoiVerification([
+            UserRoiVerification::createOrUpdateRoiVerification([
                 'user_id'         => $userId,
                 'vat_code'        => $vatNumber,
                 'country_code'    => $countryCode,

@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Database\Factories;
 
-use AichaDigital\Larabill\Enums\{CommissionAppliesTo, CommissionLevel, CommissionType};
-use AichaDigital\Larabill\Models\{Article, Commission};
+use AichaDigital\Larabill\Enums\CommissionAppliesTo;
+use AichaDigital\Larabill\Enums\CommissionLevel;
+use AichaDigital\Larabill\Enums\CommissionType;
+use AichaDigital\Larabill\Models\Article;
+use AichaDigital\Larabill\Models\Commission;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**

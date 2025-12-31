@@ -2,8 +2,11 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Enums\{InvoiceSerieType, InvoiceStatus};
-use AichaDigital\Larabill\Models\{CompanyFiscalConfig, Invoice, UserTaxProfile};
+use AichaDigital\Larabill\Enums\InvoiceSerieType;
+use AichaDigital\Larabill\Enums\InvoiceStatus;
+use AichaDigital\Larabill\Models\CompanyFiscalConfig;
+use AichaDigital\Larabill\Models\Invoice;
+use AichaDigital\Larabill\Models\UserTaxProfile;
 use AichaDigital\Larabill\Services\FiscalChangeDetector;
 use AichaDigital\Larabill\Tests\Models\User;
 

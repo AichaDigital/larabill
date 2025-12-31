@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Database\Factories;
 
 use AichaDigital\Larabill\Enums\BillingFrequency;
-use AichaDigital\Larabill\Models\{Article, ArticlePrice};
+use AichaDigital\Larabill\Models\Article;
+use AichaDigital\Larabill\Models\ArticlePrice;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;
 

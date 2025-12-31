@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Services;
 
 use Illuminate\Http\Client\Response;
-use Illuminate\Support\Facades\{Http, Log};
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 /**
  * VatApiIntegrationService

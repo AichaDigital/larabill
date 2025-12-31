@@ -5,11 +5,16 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Services;
 
 use AichaDigital\Larabill\Contracts\Services\FiscalVerificationContract;
-use AichaDigital\Larabill\Enums\{InvoiceSerieType, InvoiceStatus};
+use AichaDigital\Larabill\Enums\InvoiceSerieType;
+use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Exceptions\FiscalConfigChangedException;
-use AichaDigital\Larabill\Models\{CompanyFiscalConfig, Invoice, InvoiceItem, UserTaxProfile};
+use AichaDigital\Larabill\Models\CompanyFiscalConfig;
+use AichaDigital\Larabill\Models\Invoice;
+use AichaDigital\Larabill\Models\InvoiceItem;
+use AichaDigital\Larabill\Models\UserTaxProfile;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Invoice Service
@@ -49,79 +54,81 @@ class InvoiceService
      */
     public function createInvoice(array $invoiceData, array $options = []): Invoice
     {
-        // Get billable user (ADR-003)
-        $userModel    = ModelMappingService::getModelClass('user');
-        $billableUser = $userModel::findOrFail($invoiceData['billable_user_id']);
+        return DB::transaction(function () use ($invoiceData, $options): Invoice {
+            // Get billable user (ADR-003)
+            $userModel    = ModelMappingService::getModelClass('user');
+            $billableUser = $userModel::findOrFail($invoiceData['billable_user_id']);
 
-        $companyConfig = CompanyFiscalConfig::getActive();
+            $companyConfig = CompanyFiscalConfig::getActive();
 
-        if (! $companyConfig) {
-            throw new \RuntimeException('No valid CompanyFiscalConfig found for invoice creation');
-        }
+            if (! $companyConfig) {
+                throw new \RuntimeException('No valid CompanyFiscalConfig found for invoice creation');
+            }
 
-        // Get user tax profile for billable user
-        $userTaxProfile = UserTaxProfile::getValidForUserAt(
-            $billableUser->id,
-            now()
-        );
+            // Get user tax profile for billable user
+            $userTaxProfile = UserTaxProfile::getValidForUserAt(
+                $billableUser->id,
+                now()
+            );
 
-        // Determine invoice type and serie
-        $invoiceType = $invoiceData['type'] ?? 'invoice';
-        $serie       = $invoiceType === 'proforma' ? InvoiceSerieType::PROFORMA->value : InvoiceSerieType::INVOICE->value;
-        $status      = isset($invoiceData['status']) ? $this->mapStatusToEnum($invoiceData['status']) : InvoiceStatus::DRAFT->value;
+            // Determine invoice type and serie
+            $invoiceType = $invoiceData['type'] ?? 'invoice';
+            $serie       = $invoiceType === 'proforma' ? InvoiceSerieType::PROFORMA->value : InvoiceSerieType::INVOICE->value;
+            $status      = isset($invoiceData['status']) ? $this->mapStatusToEnum($invoiceData['status']) : InvoiceStatus::DRAFT->value;
 
-        // user_id = owner of invoice (issuer), defaults to billable_user's parent or self
-        $userId = $invoiceData['user_id'] ?? $billableUser->parent_user_id ?? $billableUser->id;
+            // user_id = owner of invoice (issuer), defaults to billable_user's parent or self
+            $userId = $invoiceData['user_id'] ?? $billableUser->parent_user_id ?? $billableUser->id;
 
-        // Create invoice record
-        $invoice = Invoice::create([
-            'fiscal_number'             => $this->generateInvoiceNumber($invoiceType),
-            'prefix'                    => $invoiceType === 'proforma' ? 'PRO' : 'FAC',
-            'serie'                     => $serie,
-            'series_number'             => $this->getTempSeriesNumber((string) $serie, now()->year),
-            'fiscal_year'               => now()->year,
-            'invoice_date'              => now()->toDateString(),
-            'issued_at'                 => now(),
-            'status'                    => $status,
-            'billable_user_id'          => $billableUser->id,
-            'user_id'                   => $userId,
-            'company_fiscal_config_id'  => $companyConfig->id,
-            'user_tax_profile_id'       => $userTaxProfile?->id,
-            'is_immutable'              => false,
-            'due_date'                  => $invoiceData['due_date']      ?? null,
-            'payment_terms'             => $invoiceData['payment_terms'] ?? null,
-            'template_name'             => $invoiceData['template_name'] ?? null,
-        ]);
+            // Create invoice record with atomic series numbering
+            $invoice = Invoice::create([
+                'fiscal_number'             => $this->generateInvoiceNumber($invoiceType),
+                'prefix'                    => $invoiceType === 'proforma' ? 'PRO' : 'FAC',
+                'serie'                     => $serie,
+                'series_number'             => $this->getTempSeriesNumber((string) $serie, now()->year),
+                'fiscal_year'               => now()->year,
+                'invoice_date'              => now()->toDateString(),
+                'issued_at'                 => now(),
+                'status'                    => $status,
+                'billable_user_id'          => $billableUser->id,
+                'user_id'                   => $userId,
+                'company_fiscal_config_id'  => $companyConfig->id,
+                'user_tax_profile_id'       => $userTaxProfile?->id,
+                'is_immutable'              => false,
+                'due_date'                  => $invoiceData['due_date']      ?? null,
+                'payment_terms'             => $invoiceData['payment_terms'] ?? null,
+                'template_name'             => $invoiceData['template_name'] ?? null,
+            ]);
 
-        // Create invoice items
-        $items = $invoiceData['items'] ?? [];
-        foreach ($items as $itemData) {
-            $this->createInvoiceItem($invoice, $itemData);
-        }
+            // Create invoice items
+            $items = $invoiceData['items'] ?? [];
+            foreach ($items as $itemData) {
+                $this->createInvoiceItem($invoice, $itemData);
+            }
 
-        // Calculate totals
-        $invoice->taxable_amount   = $invoice->items->sum('taxable_amount');
-        $invoice->total_tax_amount = $invoice->items->sum('total_tax_amount');
-        $invoice->total_amount     = $invoice->items->sum('total_amount');
+            // Calculate totals
+            $invoice->taxable_amount   = $invoice->items->sum('taxable_amount');
+            $invoice->total_tax_amount = $invoice->items->sum('total_tax_amount');
+            $invoice->total_amount     = $invoice->items->sum('total_amount');
 
-        // Generate encrypted snapshots
-        $invoice->issuer_snapshot   = $this->generateIssuerSnapshot($companyConfig);
-        $invoice->customer_snapshot = $this->generateBillableUserSnapshot($billableUser, $userTaxProfile);
-        $invoice->fiscal_snapshot   = $this->generateFiscalSnapshot($invoice, $companyConfig, $userTaxProfile);
+            // Generate encrypted snapshots
+            $invoice->issuer_snapshot   = $this->generateIssuerSnapshot($companyConfig);
+            $invoice->customer_snapshot = $this->generateBillableUserSnapshot($billableUser, $userTaxProfile);
+            $invoice->fiscal_snapshot   = $this->generateFiscalSnapshot($invoice, $companyConfig, $userTaxProfile);
 
-        $invoice->save();
+            $invoice->save();
 
-        // Make immutable if requested
-        if ($options['make_immutable'] ?? false) {
-            $invoice->makeImmutable();
-        }
+            // Make immutable if requested
+            if ($options['make_immutable'] ?? false) {
+                $invoice->makeImmutable();
+            }
 
-        // Fiscal verification if requested
-        if ($options['verify_fiscally'] ?? false) {
-            $this->verifyInvoiceFiscally($invoice);
-        }
+            // Fiscal verification if requested
+            if ($options['verify_fiscally'] ?? false) {
+                $this->verifyInvoiceFiscally($invoice);
+            }
 
-        return $invoice->fresh();
+            return $invoice->fresh();
+        });
     }
 
     /**
@@ -305,79 +312,89 @@ class InvoiceService
      */
     public function convertProformaToInvoice(Invoice $proforma, array $options = []): Invoice|array
     {
-        if ($proforma->serie !== InvoiceSerieType::PROFORMA) {
-            throw new \InvalidArgumentException('Invoice is not a proforma');
-        }
+        return DB::transaction(function () use ($proforma, $options): Invoice|array {
+            // Refresh proforma within transaction
+            $proforma->refresh();
 
-        if ($proforma->converted_invoice_id) {
-            throw new \InvalidArgumentException('Proforma already converted to invoice');
-        }
-
-        // ADR-001: Detect fiscal configuration changes
-        $force     = $options['force']          ?? false;
-        $onChanges = $options['on_changes']     ?? 'throw';
-        $warnings  = [];
-
-        $changes = $this->fiscalChangeDetector->detectChanges($proforma);
-
-        if ($changes['has_changes']) {
-            $summary = $this->fiscalChangeDetector->getChangeSummary($proforma);
-
-            if ($changes['has_critical_changes'] && ! $force) {
-                // Critical changes - block conversion unless forced
-                throw FiscalConfigChangedException::fromChanges($proforma, $changes);
+            if ($proforma->serie !== InvoiceSerieType::PROFORMA) {
+                throw new \InvalidArgumentException('Invoice is not a proforma');
             }
 
-            // Non-critical changes or forced - handle according to on_changes option
-            if ($onChanges === 'throw' && ! $force) {
-                throw FiscalConfigChangedException::fromChanges($proforma, $changes);
+            // Idempotency check: return existing invoice if already converted
+            if ($proforma->converted_invoice_id) {
+                $existingInvoice = Invoice::find($proforma->converted_invoice_id);
+                if ($existingInvoice) {
+                    return $existingInvoice;
+                }
+                throw new \InvalidArgumentException('Proforma already converted to invoice');
             }
 
-            if ($onChanges === 'warn') {
-                $warnings = $summary;
+            // ADR-001: Detect fiscal configuration changes
+            $force     = $options['force']          ?? false;
+            $onChanges = $options['on_changes']     ?? 'throw';
+            $warnings  = [];
+
+            $changes = $this->fiscalChangeDetector->detectChanges($proforma);
+
+            if ($changes['has_changes']) {
+                $summary = $this->fiscalChangeDetector->getChangeSummary($proforma);
+
+                if ($changes['has_critical_changes'] && ! $force) {
+                    // Critical changes - block conversion unless forced
+                    throw FiscalConfigChangedException::fromChanges($proforma, $changes);
+                }
+
+                // Non-critical changes or forced - handle according to on_changes option
+                if ($onChanges === 'throw' && ! $force) {
+                    throw FiscalConfigChangedException::fromChanges($proforma, $changes);
+                }
+
+                if ($onChanges === 'warn') {
+                    $warnings = $summary;
+                }
+                // 'ignore' - just proceed
             }
-            // 'ignore' - just proceed
-        }
 
-        // Create new invoice from proforma data (ADR-003: billable_user_id)
-        $invoiceData = [
-            'billable_user_id' => $proforma->billable_user_id,
-            'user_id'          => $proforma->user_id,
-            'items'            => $proforma->items->map(fn ($item) => [
-                'article_id'  => $item->article_id,
-                'description' => $item->description,
-                'quantity'    => $item->quantity,
-                'base_price'  => $item->unit_price,
-            ])->toArray(),
-            'type'          => 'invoice',
-            'status'        => 'pending',
-            'due_date'      => $proforma->due_date?->toDateString(),
-            'payment_terms' => $proforma->payment_terms ? (int) $proforma->payment_terms : null,
-            'template_name' => $proforma->template_name,
-        ];
-
-        $invoice = $this->createInvoice($invoiceData, [
-            'make_immutable'  => true,
-            'verify_fiscally' => $options['verify_fiscally'] ?? false,
-        ]);
-
-        // Lock the proforma and link to invoice (single update to avoid immutable conflict)
-        $proforma->update([
-            'is_immutable'         => true,
-            'converted_invoice_id' => $invoice->id,
-            'converted_at'         => now(),
-            'status'               => InvoiceStatus::CONVERTED->value,
-        ]);
-
-        // Return with warnings if any
-        if (! empty($warnings)) {
-            return [
-                'invoice'  => $invoice,
-                'warnings' => $warnings,
+            // Create new invoice from proforma data (ADR-003: billable_user_id)
+            $invoiceData = [
+                'billable_user_id' => $proforma->billable_user_id,
+                'user_id'          => $proforma->user_id,
+                'items'            => $proforma->items->map(fn ($item) => [
+                    'article_id'  => $item->article_id,
+                    'description' => $item->description,
+                    'quantity'    => $item->quantity,
+                    'base_price'  => $item->unit_price,
+                ])->toArray(),
+                'type'          => 'invoice',
+                'status'        => 'pending',
+                'due_date'      => $proforma->due_date?->toDateString(),
+                'payment_terms' => $proforma->payment_terms ? (int) $proforma->payment_terms : null,
+                'template_name' => $proforma->template_name,
             ];
-        }
 
-        return $invoice;
+            $invoice = $this->createInvoice($invoiceData, [
+                'make_immutable'  => true,
+                'verify_fiscally' => $options['verify_fiscally'] ?? false,
+            ]);
+
+            // Lock the proforma and link to invoice (single update to avoid immutable conflict)
+            $proforma->update([
+                'is_immutable'         => true,
+                'converted_invoice_id' => $invoice->id,
+                'converted_at'         => now(),
+                'status'               => InvoiceStatus::CONVERTED->value,
+            ]);
+
+            // Return with warnings if any
+            if (! empty($warnings)) {
+                return [
+                    'invoice'  => $invoice,
+                    'warnings' => $warnings,
+                ];
+            }
+
+            return $invoice;
+        });
     }
 
     /**
@@ -409,13 +426,19 @@ class InvoiceService
 
     /**
      * Get temporary series number.
+     *
+     * Uses pessimistic locking to prevent race conditions.
      */
     protected function getTempSeriesNumber(string $serie, int $year): int
     {
         // TODO: Implement proper series tracking
-        return Invoice::where('serie', $serie)
+        // Uses lockForUpdate() within the outer transaction for atomicity
+        $maxNumber = Invoice::where('serie', $serie)
             ->where('fiscal_year', $year)
-            ->max('series_number') + 1 ?? 1;
+            ->lockForUpdate()
+            ->max('series_number');
+
+        return ($maxNumber ?? 0) + 1;
     }
 
     /**

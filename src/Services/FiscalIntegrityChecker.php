@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Services;
 
 use AichaDigital\Larabill\Exceptions\FiscalIntegrityException;
-use AichaDigital\Larabill\Models\{CompanyFiscalConfig, UserTaxProfile};
+use AichaDigital\Larabill\Models\CompanyFiscalConfig;
+use AichaDigital\Larabill\Models\UserTaxProfile;
 use AichaDigital\Larabill\Notifications\FiscalIntegrityAlert;
-use Illuminate\Support\Facades\{Log, Notification};
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 
 /**
  * FiscalIntegrityChecker Service

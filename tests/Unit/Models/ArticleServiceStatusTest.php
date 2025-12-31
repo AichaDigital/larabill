@@ -2,8 +2,12 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Enums\{BillingFrequency, CancellationType, ServiceStatus};
-use AichaDigital\Larabill\Models\{Article, ArticleOverride, ArticleServiceStatus};
+use AichaDigital\Larabill\Enums\BillingFrequency;
+use AichaDigital\Larabill\Enums\CancellationType;
+use AichaDigital\Larabill\Enums\ServiceStatus;
+use AichaDigital\Larabill\Models\Article;
+use AichaDigital\Larabill\Models\ArticleOverride;
+use AichaDigital\Larabill\Models\ArticleServiceStatus;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 

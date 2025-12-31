@@ -7,8 +7,9 @@ namespace AichaDigital\Larabill\Models;
 use AichaDigital\Larabill\Database\Factories\TaxRateFactory;
 use AichaDigital\Larabill\Enums\TaxType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\{Model, SoftDeletes};
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * TaxRate Model - Configuration Layer (Mutable)

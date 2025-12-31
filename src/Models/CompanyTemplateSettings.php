@@ -5,8 +5,11 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Models;
 
 use AichaDigital\Larabill\Concerns\HasUserRelation;
-use AichaDigital\Larabill\Enums\{SettingScope, SettingType, TemplateInvoiceType};
-use Illuminate\Database\Eloquent\{Builder, Model};
+use AichaDigital\Larabill\Enums\SettingScope;
+use AichaDigital\Larabill\Enums\SettingType;
+use AichaDigital\Larabill\Enums\TemplateInvoiceType;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 
 /**
  * Company Template Settings Model

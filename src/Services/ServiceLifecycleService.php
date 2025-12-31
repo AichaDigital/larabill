@@ -4,10 +4,16 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services;
 
-use AichaDigital\Larabill\Enums\{CancellationType, ServiceStatus};
-use AichaDigital\Larabill\Events\{ServiceActivated, ServiceCancelled, ServiceExpired, ServiceSuspended};
+use AichaDigital\Larabill\Enums\CancellationType;
+use AichaDigital\Larabill\Enums\ServiceStatus;
+use AichaDigital\Larabill\Events\ServiceActivated;
+use AichaDigital\Larabill\Events\ServiceCancelled;
+use AichaDigital\Larabill\Events\ServiceExpired;
+use AichaDigital\Larabill\Events\ServiceSuspended;
 use AichaDigital\Larabill\Models\ArticleServiceStatus;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Service Lifecycle Management
@@ -129,6 +135,8 @@ final class ServiceLifecycleService
     /**
      * Process all services that have expired
      *
+     * Uses individual transactions per service for isolation.
+     *
      * @return int Number of services expired
      */
     public function processExpiredServices(): int
@@ -139,15 +147,37 @@ final class ServiceLifecycleService
             ->where('expires_at', '<=', now())
             ->get();
 
+        $count = 0;
+
         foreach ($expiredServices as $service) {
-            $this->expire($service);
+            try {
+                DB::transaction(function () use ($service): void {
+                    // Refresh within transaction for idempotency
+                    $service->refresh();
+
+                    // Skip if already expired (idempotency)
+                    if ($service->status !== ServiceStatus::ACTIVE) {
+                        return;
+                    }
+
+                    $this->expire($service);
+                });
+                $count++;
+            } catch (\Throwable $e) {
+                Log::error('Failed to expire service', [
+                    'service_id' => $service->id,
+                    'error'      => $e->getMessage(),
+                ]);
+            }
         }
 
-        return $expiredServices->count();
+        return $count;
     }
 
     /**
      * Process all pending cancellations that should take effect
+     *
+     * Uses individual transactions per service for isolation.
      *
      * @return int Number of services cancelled
      */
@@ -159,16 +189,36 @@ final class ServiceLifecycleService
             ->where('cancellation_effective_at', '<=', now())
             ->get();
 
+        $count = 0;
+
         foreach ($pendingCancellations as $service) {
-            $service->update(['status' => ServiceStatus::CANCELLED]);
-            ServiceCancelled::dispatch(
-                $service,
-                $service->cancellation_type,
-                $service->metadata['cancellation']['reason'] ?? null
-            );
+            try {
+                DB::transaction(function () use ($service): void {
+                    // Refresh within transaction for idempotency
+                    $service->refresh();
+
+                    // Skip if already cancelled (idempotency)
+                    if ($service->status !== ServiceStatus::ACTIVE) {
+                        return;
+                    }
+
+                    $service->update(['status' => ServiceStatus::CANCELLED]);
+                    ServiceCancelled::dispatch(
+                        $service,
+                        $service->cancellation_type,
+                        $service->metadata['cancellation']['reason'] ?? null
+                    );
+                });
+                $count++;
+            } catch (\Throwable $e) {
+                Log::error('Failed to cancel service', [
+                    'service_id' => $service->id,
+                    'error'      => $e->getMessage(),
+                ]);
+            }
         }
 
-        return $pendingCancellations->count();
+        return $count;
     }
 
     /**

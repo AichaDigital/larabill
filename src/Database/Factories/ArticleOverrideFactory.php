@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Database\Factories;
 
 use AichaDigital\Larabill\Enums\BillingFrequency;
-use AichaDigital\Larabill\Models\{Article, ArticleOverride};
+use AichaDigital\Larabill\Models\Article;
+use AichaDigital\Larabill\Models\ArticleOverride;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class ArticleOverrideFactory extends Factory

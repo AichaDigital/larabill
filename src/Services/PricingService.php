@@ -6,7 +6,9 @@ namespace AichaDigital\Larabill\Services;
 
 use AichaDigital\Larabill\DataTransferObjects\PricingDetails;
 use AichaDigital\Larabill\Enums\BillingFrequency;
-use AichaDigital\Larabill\Models\{Article, ArticleOverride, ArticleServiceStatus};
+use AichaDigital\Larabill\Models\Article;
+use AichaDigital\Larabill\Models\ArticleOverride;
+use AichaDigital\Larabill\Models\ArticleServiceStatus;
 
 /**
  * PricingService
@@ -81,7 +83,7 @@ class PricingService
      */
     public function calculateDiscountPercentage(float $basePrice, float $appliedPrice): float
     {
-        if ($basePrice == 0) {
+        if ($basePrice === 0.0) {
             return 0.0;
         }
 
@@ -157,7 +159,7 @@ class PricingService
      */
     public function calculateProfitMarginPercentage(Article $article, float $price): ?float
     {
-        if (! $article->cost_price || $price == 0) {
+        if (! $article->cost_price || $price === 0.0) {
             return null;
         }
 

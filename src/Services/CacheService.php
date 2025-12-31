@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services;
 
-use Illuminate\Support\Facades\{Cache, Log};
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Cache Service
@@ -396,7 +397,7 @@ class CacheService
     public function hasRoiVerification(string $userId, string $vatNumber, string $countryCode): bool
     {
         // For testing, use the internal counter
-        if (self::$entryCounts['roi_verifications'] == 0) {
+        if (self::$entryCounts['roi_verifications'] === 0) {
             return false;
         }
 
@@ -660,7 +661,7 @@ class CacheService
     public function hasCompanyConfig(string $companyId): bool
     {
         // For testing, use the internal counter
-        if (self::$entryCounts['company_configs'] == 0) {
+        if (self::$entryCounts['company_configs'] === 0) {
             return false;
         }
 

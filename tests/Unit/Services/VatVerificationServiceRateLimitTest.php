@@ -2,7 +2,8 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Services\{VatApiIntegrationService, VatVerificationService};
+use AichaDigital\Larabill\Services\VatApiIntegrationService;
+use AichaDigital\Larabill\Services\VatVerificationService;
 use Illuminate\Support\Facades\Http;
 
 it('handles rate limiting from AbstractAPI', function () {

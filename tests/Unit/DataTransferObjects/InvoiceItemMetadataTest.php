@@ -2,7 +2,12 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\DataTransferObjects\{AuditEntry, BillingDetails, CustomData, InvoiceItemMetadata, PricingDetails, SourceReference};
+use AichaDigital\Larabill\DataTransferObjects\AuditEntry;
+use AichaDigital\Larabill\DataTransferObjects\BillingDetails;
+use AichaDigital\Larabill\DataTransferObjects\CustomData;
+use AichaDigital\Larabill\DataTransferObjects\InvoiceItemMetadata;
+use AichaDigital\Larabill\DataTransferObjects\PricingDetails;
+use AichaDigital\Larabill\DataTransferObjects\SourceReference;
 use Carbon\Carbon;
 
 it('can create an invoice item metadata DTO', function () {

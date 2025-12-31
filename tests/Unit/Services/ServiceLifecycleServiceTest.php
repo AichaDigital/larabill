@@ -2,9 +2,15 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Enums\{BillingFrequency, CancellationType, ServiceStatus};
-use AichaDigital\Larabill\Events\{ServiceActivated, ServiceCancelled, ServiceExpired, ServiceSuspended};
-use AichaDigital\Larabill\Models\{Article, ArticleServiceStatus};
+use AichaDigital\Larabill\Enums\BillingFrequency;
+use AichaDigital\Larabill\Enums\CancellationType;
+use AichaDigital\Larabill\Enums\ServiceStatus;
+use AichaDigital\Larabill\Events\ServiceActivated;
+use AichaDigital\Larabill\Events\ServiceCancelled;
+use AichaDigital\Larabill\Events\ServiceExpired;
+use AichaDigital\Larabill\Events\ServiceSuspended;
+use AichaDigital\Larabill\Models\Article;
+use AichaDigital\Larabill\Models\ArticleServiceStatus;
 use AichaDigital\Larabill\Services\ServiceLifecycleService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;

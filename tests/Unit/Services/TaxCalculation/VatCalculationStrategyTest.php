@@ -2,7 +2,8 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Models\{TaxGroup, TaxRate};
+use AichaDigital\Larabill\Models\TaxGroup;
+use AichaDigital\Larabill\Models\TaxRate;
 use AichaDigital\Larabill\Services\TaxCalculation\VatCalculationStrategy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 

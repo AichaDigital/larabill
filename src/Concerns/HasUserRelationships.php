@@ -6,7 +6,9 @@ namespace AichaDigital\Larabill\Concerns;
 
 use AichaDigital\Larabill\Enums\UserRelationshipType;
 use AichaDigital\Larabill\Models\UserTaxProfile;
-use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, HasOne};
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Trait for User models that participate in the Larabill self-referencing system.

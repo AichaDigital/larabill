@@ -2,9 +2,12 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Actions\{ProcessPendingCancellations, ProcessServiceExpiration};
-use AichaDigital\Larabill\Enums\{CancellationType, ServiceStatus};
-use AichaDigital\Larabill\Models\{Article, ArticleServiceStatus};
+use AichaDigital\Larabill\Actions\ProcessPendingCancellations;
+use AichaDigital\Larabill\Actions\ProcessServiceExpiration;
+use AichaDigital\Larabill\Enums\CancellationType;
+use AichaDigital\Larabill\Enums\ServiceStatus;
+use AichaDigital\Larabill\Models\Article;
+use AichaDigital\Larabill\Models\ArticleServiceStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);

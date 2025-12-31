@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Enums\{SettingScope, SettingType, TemplateInvoiceType};
+use AichaDigital\Larabill\Enums\SettingScope;
+use AichaDigital\Larabill\Enums\SettingType;
+use AichaDigital\Larabill\Enums\TemplateInvoiceType;
 use AichaDigital\Larabill\Models\CompanyTemplateSettings;
 
 it('can create a company template setting', function () {

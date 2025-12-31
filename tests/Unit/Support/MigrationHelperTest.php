@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 use AichaDigital\Larabill\Support\MigrationHelper;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Support\Facades\{Config, Schema};
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\Schema;
 
 it('can validate supported ID types', function () {
     expect(MigrationHelper::isSupportedIdType('int'))->toBeTrue();

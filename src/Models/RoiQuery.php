@@ -6,7 +6,8 @@ namespace AichaDigital\Larabill\Models;
 
 use AichaDigital\Larabill\Concerns\HasUserRelation;
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\{Builder, Model};
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -109,10 +110,12 @@ class RoiQuery extends Model
      */
     public static function findByUserAndDateRange(string $userId, Carbon $startDate, Carbon $endDate): Builder
     {
-        /** @var Builder<RoiQuery> */
-        return static::where('user_id', $userId)
+        /** @var Builder<RoiQuery> $query */
+        $query = static::where('user_id', $userId)
             ->whereBetween('queried_at', [$startDate, $endDate])
             ->orderBy('queried_at', 'desc');
+
+        return $query;
     }
 
     /**
@@ -122,11 +125,13 @@ class RoiQuery extends Model
      */
     public static function findByUserAndVat(string $userId, string $vatNumber, string $countryCode): Builder
     {
-        /** @var Builder<RoiQuery> */
-        return static::where('user_id', $userId)
+        /** @var Builder<RoiQuery> $query */
+        $query = static::where('user_id', $userId)
             ->where('vat_code', $vatNumber)
             ->where('country_code', $countryCode)
             ->orderBy('queried_at', 'desc');
+
+        return $query;
     }
 
     /**

@@ -6,7 +6,8 @@ namespace AichaDigital\Larabill\Services\PDF;
 
 use AichaDigital\Larabill\Enums\TemplateInvoiceType;
 use AichaDigital\Larabill\Models\Invoice;
-use Dompdf\{Dompdf, Options};
+use Dompdf\Dompdf;
+use Dompdf\Options;
 use Illuminate\Support\Facades\View;
 
 /**

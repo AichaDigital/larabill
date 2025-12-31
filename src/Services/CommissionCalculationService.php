@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services;
 
-use AichaDigital\Larabill\Enums\{CommissionLevel, CommissionType};
-use AichaDigital\Larabill\Models\{Article, Commission};
+use AichaDigital\Larabill\Enums\CommissionLevel;
+use AichaDigital\Larabill\Enums\CommissionType;
+use AichaDigital\Larabill\Models\Article;
+use AichaDigital\Larabill\Models\Commission;
 
 /**
  * Commission Calculation Service

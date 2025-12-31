@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Console;
 
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\{File, Schema};
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
 
 class LarabillInstallCommand extends Command
 {

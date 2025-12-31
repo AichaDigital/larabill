@@ -1,7 +1,8 @@
 <?php
 
 declare(strict_types=1);
-use AichaDigital\Larabill\Enums\{InvoiceSerieType, InvoiceStatus};
+use AichaDigital\Larabill\Enums\InvoiceSerieType;
+use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Services\PDF\DefaultPDFConnector;
 

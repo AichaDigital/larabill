@@ -2,7 +2,8 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Services\{VatApiIntegrationService, VatVerificationService};
+use AichaDigital\Larabill\Services\VatApiIntegrationService;
+use AichaDigital\Larabill\Services\VatVerificationService;
 use Illuminate\Support\Facades\Http;
 
 it('returns error when all apis fail', function () {

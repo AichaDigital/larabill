@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Database\Factories;
 
-use AichaDigital\Larabill\Enums\{BillingFrequency, ItemType};
-use AichaDigital\Larabill\Models\{Article, ArticlePrice, TaxGroup, UnitMeasure};
+use AichaDigital\Larabill\Enums\BillingFrequency;
+use AichaDigital\Larabill\Enums\ItemType;
+use AichaDigital\Larabill\Models\Article;
+use AichaDigital\Larabill\Models\ArticlePrice;
+use AichaDigital\Larabill\Models\TaxGroup;
+use AichaDigital\Larabill\Models\UnitMeasure;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class ArticleFactory extends Factory

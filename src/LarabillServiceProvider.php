@@ -1,22 +1,21 @@
 <?php
 
+declare(strict_types=1);
+
 namespace AichaDigital\Larabill;
 
 // Commands removed as they don't exist yet
 use AichaDigital\Larabill\Contracts\Services\TaxCalculation\TaxCalculationStrategy;
-use AichaDigital\Larabill\Events\{
-    RecurringBillingCompleted,
-    RecurringBillingFailed,
-    RecurringInvoiceGenerated
-};
-use AichaDigital\Larabill\Listeners\{
-    AlertBillingFailure,
-    LogBillingSummary,
-    SendInvoiceNotification
-};
+use AichaDigital\Larabill\Events\RecurringBillingCompleted;
+use AichaDigital\Larabill\Events\RecurringBillingFailed;
+use AichaDigital\Larabill\Events\RecurringInvoiceGenerated;
+use AichaDigital\Larabill\Listeners\AlertBillingFailure;
+use AichaDigital\Larabill\Listeners\LogBillingSummary;
+use AichaDigital\Larabill\Listeners\SendInvoiceNotification;
 use AichaDigital\Larabill\Services\TaxCalculation\VatCalculationStrategy;
 use Illuminate\Support\Facades\Event;
-use Spatie\LaravelPackageTools\{Package, PackageServiceProvider};
+use Spatie\LaravelPackageTools\Package;
+use Spatie\LaravelPackageTools\PackageServiceProvider;
 
 class LarabillServiceProvider extends PackageServiceProvider
 {

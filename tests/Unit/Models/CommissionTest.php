@@ -2,7 +2,8 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Enums\{CommissionLevel, CommissionType};
+use AichaDigital\Larabill\Enums\CommissionLevel;
+use AichaDigital\Larabill\Enums\CommissionType;
 use AichaDigital\Larabill\Models\Commission;
 
 it('can create a commission', function () {

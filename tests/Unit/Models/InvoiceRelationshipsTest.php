@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Models;
 
-use AichaDigital\Larabill\Models\{Invoice, InvoiceItem};
+use AichaDigital\Larabill\Models\Invoice;
+use AichaDigital\Larabill\Models\InvoiceItem;
 use AichaDigital\Larabill\Tests\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 

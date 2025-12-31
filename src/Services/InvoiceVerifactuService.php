@@ -6,7 +6,8 @@ namespace AichaDigital\Larabill\Services;
 
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Services\Adapters\VerifactuAdapter;
-use AichaDigital\LaraVerifactu\Models\{Invoice as VerifactuInvoice, InvoiceBreakdown};
+use AichaDigital\LaraVerifactu\Models\Invoice as VerifactuInvoice;
+use AichaDigital\LaraVerifactu\Models\InvoiceBreakdown;
 use Illuminate\Support\Facades\Log;
 
 /**

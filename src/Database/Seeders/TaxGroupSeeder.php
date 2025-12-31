@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Database\Seeders;
 
-use AichaDigital\Larabill\Models\{TaxGroup, TaxRate};
+use AichaDigital\Larabill\Models\TaxGroup;
+use AichaDigital\Larabill\Models\TaxRate;
 use Illuminate\Database\Seeder;
 
 /**

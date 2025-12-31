@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Models;
 
 use AichaDigital\Lara100\Casts\Base100Int;
-use AichaDigital\Larabill\Enums\{CommissionAppliesTo, CommissionLevel, CommissionType};
+use AichaDigital\Larabill\Enums\CommissionAppliesTo;
+use AichaDigital\Larabill\Enums\CommissionLevel;
+use AichaDigital\Larabill\Enums\CommissionType;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\{Model, SoftDeletes};
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * Commission Model

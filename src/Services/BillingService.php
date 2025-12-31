@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services;
 
-use AichaDigital\Larabill\Enums\{InvoiceSerieType, InvoiceStatus};
-use AichaDigital\Larabill\Models\{Invoice, InvoiceItem};
+use AichaDigital\Larabill\Enums\InvoiceSerieType;
+use AichaDigital\Larabill\Enums\InvoiceStatus;
+use AichaDigital\Larabill\Models\Invoice;
+use AichaDigital\Larabill\Models\InvoiceItem;
 use AichaDigital\Larabill\Models\TaxGroup;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Billing Service
@@ -33,58 +36,62 @@ class BillingService
     /**
      * Create a new invoice with optional ROI verification and immutability.
      *
+     * Uses database transaction for atomicity.
+     *
      * @param  array<string, mixed>  $invoiceData  Invoice data
      * @param  array<string, mixed>  $options  Additional options (roi_verification, make_immutable)
      * @return Invoice Created invoice model
      */
     public function createInvoice(array $invoiceData, array $options = []): Invoice
     {
-        $userId = $invoiceData['user_id'];
+        return DB::transaction(function () use ($invoiceData, $options): Invoice {
+            $userId = $invoiceData['user_id'];
 
-        // Extract options
-        $makeImmutable = $options['make_immutable'] ?? false;
+            // Extract options
+            $makeImmutable = $options['make_immutable'] ?? false;
 
-        // Create invoice record first, without totals
-        // TODO v0.3.3: Refactor to use InvoiceNumberingService + new fiscal fields
-        $invoiceType = $invoiceData['type'] ?? 'invoice';
-        $serie       = $invoiceType === 'proforma' ? InvoiceSerieType::PROFORMA->value : InvoiceSerieType::INVOICE->value;
-        $status      = isset($invoiceData['status']) ? $this->mapStatusToEnum($invoiceData['status']) : InvoiceStatus::DRAFT->value;
+            // Create invoice record first, without totals
+            // TODO v0.3.3: Refactor to use InvoiceNumberingService + new fiscal fields
+            $invoiceType = $invoiceData['type'] ?? 'invoice';
+            $serie       = $invoiceType === 'proforma' ? InvoiceSerieType::PROFORMA->value : InvoiceSerieType::INVOICE->value;
+            $status      = isset($invoiceData['status']) ? $this->mapStatusToEnum($invoiceData['status']) : InvoiceStatus::DRAFT->value;
 
-        $invoice = Invoice::create([
-            'fiscal_number'    => $this->generateInvoiceNumber($invoiceType, $options),
-            'prefix'           => $invoiceType === 'proforma' ? 'PRO' : 'FAC',
-            'serie'            => $serie,
-            'series_number'    => $this->getTempSeriesNumber($serie, now()->year),
-            'fiscal_year'      => now()->year,
-            'invoice_date'     => now()->toDateString(),
-            'issued_at'        => now(),
-            'status'           => $status,
-            'user_id'          => $userId,
-            'is_immutable'     => false,
-            'due_date'         => $invoiceData['due_date']         ?? null,
-            'payment_terms'    => $invoiceData['payment_terms']    ?? null,
-            'template_name'    => $invoiceData['template_name']    ?? null,
-            'vat_verification' => $invoiceData['vat_verification'] ?? null,
-        ]);
+            $invoice = Invoice::create([
+                'fiscal_number'    => $this->generateInvoiceNumber($invoiceType, $options),
+                'prefix'           => $invoiceType === 'proforma' ? 'PRO' : 'FAC',
+                'serie'            => $serie,
+                'series_number'    => $this->getTempSeriesNumber($serie, now()->year),
+                'fiscal_year'      => now()->year,
+                'invoice_date'     => now()->toDateString(),
+                'issued_at'        => now(),
+                'status'           => $status,
+                'user_id'          => $userId,
+                'is_immutable'     => false,
+                'due_date'         => $invoiceData['due_date']         ?? null,
+                'payment_terms'    => $invoiceData['payment_terms']    ?? null,
+                'template_name'    => $invoiceData['template_name']    ?? null,
+                'vat_verification' => $invoiceData['vat_verification'] ?? null,
+            ]);
 
-        // Create invoice items, which now handle their own tax calculation
-        $items = $invoiceData['items'] ?? [];
-        foreach ($items as $itemData) {
-            $this->createInvoiceItem($invoice, $itemData);
-        }
+            // Create invoice items, which now handle their own tax calculation
+            $items = $invoiceData['items'] ?? [];
+            foreach ($items as $itemData) {
+                $this->createInvoiceItem($invoice, $itemData);
+            }
 
-        // Now, calculate invoice totals based on its items
-        $invoice->taxable_amount   = $invoice->items->sum('taxable_amount');
-        $invoice->total_tax_amount = $invoice->items->sum('total_tax_amount');
-        $invoice->total_amount     = $invoice->items->sum('total_amount');
-        $invoice->save();
+            // Now, calculate invoice totals based on its items
+            $invoice->taxable_amount   = $invoice->items->sum('taxable_amount');
+            $invoice->total_tax_amount = $invoice->items->sum('total_tax_amount');
+            $invoice->total_amount     = $invoice->items->sum('total_amount');
+            $invoice->save();
 
-        // Make immutable if requested
-        if ($makeImmutable) {
-            $invoice->makeImmutable();
-        }
+            // Make immutable if requested
+            if ($makeImmutable) {
+                $invoice->makeImmutable();
+            }
 
-        return $invoice;
+            return $invoice;
+        });
     }
 
     /**
@@ -108,29 +115,52 @@ class BillingService
     /**
      * Convert a proforma invoice to a regular invoice.
      *
+     * Uses database transaction for atomicity and includes idempotency check.
+     *
      * @param  Invoice  $proforma  The proforma invoice to convert
      * @param  array<string, mixed>  $options  Additional options
      * @return Invoice Created invoice model
      */
     public function convertToInvoice(Invoice $proforma, array $options = []): Invoice
     {
-        // Check if proforma using new serie enum
-        if ($proforma->serie !== InvoiceSerieType::PROFORMA) {
-            throw new \InvalidArgumentException('Only proforma invoices can be converted');
-        }
+        return DB::transaction(function () use ($proforma, $options): Invoice {
+            // Refresh proforma within transaction
+            $proforma->refresh();
 
-        $invoiceData = [
-            'user_id'          => $proforma->user_id,
-            'type'             => 'invoice', // Internally mapped to InvoiceSerieType::INVOICE
-            'status'           => 'draft',   // Internally mapped to InvoiceStatus::DRAFT
-            'due_date'         => $proforma->due_date,
-            'payment_terms'    => $proforma->payment_terms,
-            'template_name'    => $proforma->template_name,
-            'vat_verification' => $proforma->vat_verification,
-            'items'            => $this->getInvoiceItemsData($proforma),
-        ];
+            // Check if proforma using new serie enum
+            if ($proforma->serie !== InvoiceSerieType::PROFORMA) {
+                throw new \InvalidArgumentException('Only proforma invoices can be converted');
+            }
 
-        return $this->createInvoice($invoiceData, $options);
+            // Idempotency check: return existing invoice if already converted
+            if ($proforma->converted_invoice_id) {
+                $existingInvoice = Invoice::find($proforma->converted_invoice_id);
+                if ($existingInvoice) {
+                    return $existingInvoice;
+                }
+            }
+
+            $invoiceData = [
+                'user_id'          => $proforma->user_id,
+                'type'             => 'invoice', // Internally mapped to InvoiceSerieType::INVOICE
+                'status'           => 'draft',   // Internally mapped to InvoiceStatus::DRAFT
+                'due_date'         => $proforma->due_date,
+                'payment_terms'    => $proforma->payment_terms,
+                'template_name'    => $proforma->template_name,
+                'vat_verification' => $proforma->vat_verification,
+                'items'            => $this->getInvoiceItemsData($proforma),
+            ];
+
+            $invoice = $this->createInvoice($invoiceData, $options);
+
+            // Link proforma to converted invoice
+            $proforma->update([
+                'converted_invoice_id' => $invoice->id,
+                'converted_at'         => now(),
+            ]);
+
+            return $invoice;
+        });
     }
 
     /**
@@ -279,6 +309,8 @@ class BillingService
 
     /**
      * Get temporary unique series number (until InvoiceNumberingService is integrated).
+     *
+     * Uses pessimistic locking to prevent race conditions.
      * TODO v0.3.3: Replace with InvoiceNumberingService::generateNumber()
      *
      * @param  int  $serie  Serie type
@@ -288,8 +320,10 @@ class BillingService
     private function getTempSeriesNumber(int $serie, int $fiscalYear): int
     {
         // Get max series_number for this serie + fiscal_year combination
+        // Uses lockForUpdate() within the outer transaction for atomicity
         $maxNumber = Invoice::where('serie', $serie)
             ->where('fiscal_year', $fiscalYear)
+            ->lockForUpdate()
             ->max('series_number');
 
         return ($maxNumber ?? 0) + 1;

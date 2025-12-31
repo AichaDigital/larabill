@@ -2,8 +2,13 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Enums\{BillingFrequency, ItemType};
-use AichaDigital\Larabill\Models\{Article, ArticleOverride, ArticlePrice, ArticleServiceStatus, TaxGroup};
+use AichaDigital\Larabill\Enums\BillingFrequency;
+use AichaDigital\Larabill\Enums\ItemType;
+use AichaDigital\Larabill\Models\Article;
+use AichaDigital\Larabill\Models\ArticleOverride;
+use AichaDigital\Larabill\Models\ArticlePrice;
+use AichaDigital\Larabill\Models\ArticleServiceStatus;
+use AichaDigital\Larabill\Models\TaxGroup;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);

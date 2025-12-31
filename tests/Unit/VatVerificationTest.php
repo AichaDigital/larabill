@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 use AichaDigital\Larabill\Models\VatVerification;
-use AichaDigital\Larabill\Services\{VatApiIntegrationService, VatVerificationService};
+use AichaDigital\Larabill\Services\VatApiIntegrationService;
+use AichaDigital\Larabill\Services\VatVerificationService;
 
 it('can verify a valid Spanish VAT number', function () {
     // Mock successful API response

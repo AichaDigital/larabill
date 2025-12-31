@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 use AichaDigital\Larabill\Enums\BillingFrequency;
-use AichaDigital\Larabill\Models\{Article, ArticlePrice};
+use AichaDigital\Larabill\Models\Article;
+use AichaDigital\Larabill\Models\ArticlePrice;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 

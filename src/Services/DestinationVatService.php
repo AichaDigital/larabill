@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services;
 
-use AichaDigital\Larabill\Models\{CompanyFiscalConfig, CountryVatRate, EuSalesThreshold, VatCategory};
+use AichaDigital\Larabill\Models\CompanyFiscalConfig;
+use AichaDigital\Larabill\Models\CountryVatRate;
+use AichaDigital\Larabill\Models\EuSalesThreshold;
+use AichaDigital\Larabill\Models\VatCategory;
 use Illuminate\Support\Facades\Log;
 
 /**

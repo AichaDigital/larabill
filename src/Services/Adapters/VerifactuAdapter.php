@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services\Adapters;
 
-use AichaDigital\Larabill\Models\{Invoice, InvoiceItem};
+use AichaDigital\Larabill\Models\Invoice;
+use AichaDigital\Larabill\Models\InvoiceItem;
 
 /**
  * VerifactuAdapter

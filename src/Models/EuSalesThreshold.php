@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Models;
 
 use AichaDigital\Larabill\Concerns\HasUserRelation;
-use Illuminate\Database\Eloquent\{Builder, Model};
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
 /**
@@ -233,7 +234,7 @@ class EuSalesThreshold extends Model
         $breakdown = $this->breakdown_by_country ?? [];
         $total     = 0;
 
-        foreach ($breakdown as $country => $amount) {
+        foreach ($breakdown as $amount) {
             $total += (float) $amount;
         }
 

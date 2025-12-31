@@ -7,7 +7,8 @@ namespace AichaDigital\Larabill\Services\PDF;
 use AichaDigital\Larabill\Contracts\PDFConnectorInterface;
 use AichaDigital\Larabill\Models\Invoice;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
-use Illuminate\Support\Facades\{Cache, Log};
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Main PDF service that manages PDF generation with QR codes

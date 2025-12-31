@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use Illuminate\Database\Eloquent\{Builder, Model};
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
 /**
@@ -524,7 +525,7 @@ class VatCategory extends Model
      */
     public function isExempt(): bool
     {
-        return $this->category_type === self::TYPE_EXEMPT || $this->vat_rate == 0;
+        return $this->category_type === self::TYPE_EXEMPT || $this->vat_rate === 0.0;
     }
 
     /**

@@ -4,16 +4,21 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services;
 
-use AichaDigital\Larabill\DataTransferObjects\{BillingDetails, InvoiceItemMetadata, SourceReference};
-use AichaDigital\Larabill\Enums\{BillingFrequency, InvoiceStatus};
-use AichaDigital\Larabill\Events\{
-    RecurringBillingCompleted,
-    RecurringBillingFailed,
-    RecurringInvoiceGenerated
-};
-use AichaDigital\Larabill\Models\{Article, ArticleServiceStatus, Invoice, InvoiceItem};
+use AichaDigital\Larabill\DataTransferObjects\BillingDetails;
+use AichaDigital\Larabill\DataTransferObjects\InvoiceItemMetadata;
+use AichaDigital\Larabill\DataTransferObjects\SourceReference;
+use AichaDigital\Larabill\Enums\BillingFrequency;
+use AichaDigital\Larabill\Enums\InvoiceStatus;
+use AichaDigital\Larabill\Events\RecurringBillingCompleted;
+use AichaDigital\Larabill\Events\RecurringBillingFailed;
+use AichaDigital\Larabill\Events\RecurringInvoiceGenerated;
+use AichaDigital\Larabill\Models\Article;
+use AichaDigital\Larabill\Models\ArticleServiceStatus;
+use AichaDigital\Larabill\Models\Invoice;
+use AichaDigital\Larabill\Models\InvoiceItem;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -104,10 +109,9 @@ final class RecurringBillingService
      */
     protected function getServicesInBillingWindow(Carbon $date): Collection
     {
-        $globalDays = config('larabill.recurring_billing.days_in_advance', 7);
-
         // Use a larger window to catch services with article-specific days_in_advance
         // We'll filter them properly in shouldGenerateInvoice()
+        // Note: config days_in_advance (default 7) is checked per-article in shouldGenerateInvoice()
         $bufferDays = 30; // Conservative buffer to catch article-specific overrides
         $windowEnd  = $date->copy()->addDays($bufferDays)->toDateString();
 
@@ -154,75 +158,96 @@ final class RecurringBillingService
 
     /**
      * Create invoice for a recurring service
+     *
+     * Uses database transaction for atomicity.
+     * Includes idempotency check to prevent duplicate invoices.
      */
     protected function createInvoiceForService(ArticleServiceStatus $service, Carbon $date): Invoice
     {
-        $article  = $service->article;
-        $customer = $service->customer;
+        return DB::transaction(function () use ($service, $date): Invoice {
+            // Idempotency check: look for existing invoice item for this service + period
+            $periodStart = $service->next_billing_date;
 
-        // Calculate billing period
-        $periodStart = $service->next_billing_date;
-        $periodEnd   = $this->calculatePeriodEnd($service);
+            $existingItem = InvoiceItem::query()
+                ->whereRaw(
+                    "json_extract(metadata, '$.source_reference.service_status_id') = ?",
+                    [$service->id]
+                )
+                ->whereDate('service_date_from', $periodStart->toDateString())
+                ->first();
 
-        // Get effective pricing (with customer overrides) using service's billing frequency
-        $pricingDetails = $this->pricingService->createPricingDetailsForService($service);
+            if ($existingItem && $existingItem->invoice instanceof Invoice) {
+                // Return existing invoice (idempotent)
+                return $existingItem->invoice;
+            }
 
-        // Calculate next billing date (for metadata)
-        $nextBillingDate = $this->calculateNextBillingDate($service);
+            $article  = $service->article;
+            $customer = $service->customer;
 
-        // Create invoice
-        $invoiceNumber = $this->generateInvoiceNumber();
+            // Calculate billing period
+            $periodStart = $service->next_billing_date;
+            $periodEnd   = $this->calculatePeriodEnd($service);
 
-        $invoice = Invoice::create([
-            'user_id'        => $customer->id,
-            'fiscal_number'  => $invoiceNumber['fiscal_number'],
-            'prefix'         => $invoiceNumber['prefix'],
-            'serie'          => $invoiceNumber['serie'],
-            'series_number'  => $invoiceNumber['series_number'],
-            'fiscal_year'    => $invoiceNumber['fiscal_year'],
-            'invoice_date'   => $date,
-            'due_date'       => $date->copy()->addDays(config('larabill.recurring_billing.payment_terms_days', 15)),
-            'status'         => InvoiceStatus::SENT,
-            'taxable_amount' => $pricingDetails->appliedPrice,
-            'tax_amount'     => 0, // TODO: Calculate tax
-            'total_amount'   => $pricingDetails->appliedPrice,
-            'metadata'       => [
-                'recurring_billing' => true,
-                'service_id'        => $service->id,
-                'article_id'        => $article->id,
-            ],
-        ]);
+            // Get effective pricing (with customer overrides) using service's billing frequency
+            $pricingDetails = $this->pricingService->createPricingDetailsForService($service);
 
-        // Create invoice item with comprehensive metadata
-        $metadata = new InvoiceItemMetadata(
-            sourceReference: new SourceReference(
-                type: 'article_service',
-                articleId: $article->id,
-                serviceStatusId: $service->id,
-                instanceIdentifier: $service->instance_identifier
-            ),
-            pricingDetails: $pricingDetails,
-            billingDetails: new BillingDetails(
-                billingCycle: $service->billing_frequency->label(),
-                periodStart: $periodStart,
-                periodEnd: $periodEnd,
-                nextBillingDate: $nextBillingDate,
-                billingInterval: 1
-            )
-        );
+            // Calculate next billing date (for metadata)
+            $nextBillingDate = $this->calculateNextBillingDate($service);
 
-        InvoiceItem::create([
-            'invoice_id'        => $invoice->id,
-            'item_type'         => $article->item_type,
-            'description'       => $article->name,
-            'quantity'          => 1,
-            'unit_price'        => $pricingDetails->appliedPrice,
-            'service_date_from' => $periodStart,
-            'service_date_to'   => $periodEnd,
-            'metadata'          => $metadata->toArray(),
-        ]);
+            // Create invoice
+            $invoiceNumber = $this->generateInvoiceNumber();
 
-        return $invoice;
+            $invoice = Invoice::create([
+                'user_id'        => $customer->id,
+                'fiscal_number'  => $invoiceNumber['fiscal_number'],
+                'prefix'         => $invoiceNumber['prefix'],
+                'serie'          => $invoiceNumber['serie'],
+                'series_number'  => $invoiceNumber['series_number'],
+                'fiscal_year'    => $invoiceNumber['fiscal_year'],
+                'invoice_date'   => $date,
+                'due_date'       => $date->copy()->addDays(config('larabill.recurring_billing.payment_terms_days', 15)),
+                'status'         => InvoiceStatus::SENT,
+                'taxable_amount' => $pricingDetails->appliedPrice,
+                'tax_amount'     => 0, // TODO: Calculate tax
+                'total_amount'   => $pricingDetails->appliedPrice,
+                'metadata'       => [
+                    'recurring_billing' => true,
+                    'service_id'        => $service->id,
+                    'article_id'        => $article->id,
+                ],
+            ]);
+
+            // Create invoice item with comprehensive metadata
+            $metadata = new InvoiceItemMetadata(
+                sourceReference: new SourceReference(
+                    type: 'article_service',
+                    articleId: $article->id,
+                    serviceStatusId: $service->id,
+                    instanceIdentifier: $service->instance_identifier
+                ),
+                pricingDetails: $pricingDetails,
+                billingDetails: new BillingDetails(
+                    billingCycle: $service->billing_frequency->label(),
+                    periodStart: $periodStart,
+                    periodEnd: $periodEnd,
+                    nextBillingDate: $nextBillingDate,
+                    billingInterval: 1
+                )
+            );
+
+            InvoiceItem::create([
+                'invoice_id'        => $invoice->id,
+                'item_type'         => $article->item_type,
+                'description'       => $article->name,
+                'quantity'          => 1,
+                'unit_price'        => $pricingDetails->appliedPrice,
+                'service_date_from' => $periodStart,
+                'service_date_to'   => $periodEnd,
+                'metadata'          => $metadata->toArray(),
+            ]);
+
+            return $invoice;
+        });
     }
 
     /**
@@ -263,6 +288,7 @@ final class RecurringBillingService
     /**
      * Generate invoice number
      *
+     * Uses lockForUpdate() to prevent race conditions when called within a transaction.
      * TODO: Use proper InvoiceSeriesControl for correlative numbering
      *
      * @return array{fiscal_number: string, prefix: string, serie: int, series_number: int, fiscal_year: int}
@@ -271,8 +297,10 @@ final class RecurringBillingService
     {
         // For now, use simple sequential numbering
         // In production, this should use InvoiceSeriesControl
+        // Uses lockForUpdate() for pessimistic locking within transaction
         $lastInvoice = Invoice::query()
             ->where('serie', 1) // Regular invoices
+            ->lockForUpdate()
             ->orderByDesc('series_number')
             ->first();
 

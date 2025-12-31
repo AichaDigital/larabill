@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 use AichaDigital\Larabill\Actions\ProcessRecurringBilling;
 use AichaDigital\Larabill\Enums\ServiceStatus;
-use AichaDigital\Larabill\Models\{Article, ArticleServiceStatus, Invoice};
+use AichaDigital\Larabill\Models\Article;
+use AichaDigital\Larabill\Models\ArticleServiceStatus;
+use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Services\RecurringBillingService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;

@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 use AichaDigital\Larabill\Enums\TaxType;
-use AichaDigital\Larabill\Models\{TaxGroup, TaxRate};
+use AichaDigital\Larabill\Models\TaxGroup;
+use AichaDigital\Larabill\Models\TaxRate;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
