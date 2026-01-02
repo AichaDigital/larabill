@@ -120,7 +120,7 @@ class FiscalIntegrityChecker
     public function checkUserIntegrity(string|int $userId): ?FiscalIntegrityException
     {
         $activeProfiles = UserTaxProfile::query()
-            ->where('user_id', $userId)
+            ->where('owner_user_id', $userId)
             ->where('is_active', true)
             ->whereNull('valid_until')
             ->get();
@@ -143,12 +143,12 @@ class FiscalIntegrityChecker
 
         // Find users with multiple active profiles using raw query for efficiency
         $duplicates = UserTaxProfile::query()
-            ->select('user_id')
+            ->select('owner_user_id')
             ->where('is_active', true)
             ->whereNull('valid_until')
-            ->groupBy('user_id')
+            ->groupBy('owner_user_id')
             ->havingRaw('COUNT(*) > 1')
-            ->pluck('user_id');
+            ->pluck('owner_user_id');
 
         foreach ($duplicates as $userId) {
             $exception = $this->checkUserIntegrity($userId);

@@ -10,13 +10,13 @@ uses(RefreshDatabase::class);
 
 describe('UserTaxProfile Model', function () {
     beforeEach(function () {
-        // Create a user for the tests
-        $this->userId = \Illuminate\Support\Str::uuid()->toString();
+        // Create a user for the tests (ADR-004: owner_user_id)
+        $this->ownerId = \Illuminate\Support\Str::uuid()->toString();
     });
 
     it('can create a user tax profile', function () {
         $profile = UserTaxProfile::create([
-            'user_id'                => $this->userId,
+            'owner_user_id'          => $this->ownerId,
             'fiscal_name'            => 'John Doe',
             'tax_id'                 => 'ES12345678A',
             'legal_entity_type_code' => 'PERSON',
@@ -38,7 +38,7 @@ describe('UserTaxProfile Model', function () {
 
     it('casts booleans correctly', function () {
         $profile = UserTaxProfile::create([
-            'user_id'               => $this->userId,
+            'owner_user_id'         => $this->ownerId,
             'fiscal_name'           => 'Test User',
             'country_code'          => 'ES',
             'is_company'            => 1,
@@ -59,7 +59,7 @@ describe('UserTaxProfile Model', function () {
         $validUntil = now()->addYear()->startOfDay();
 
         $profile = UserTaxProfile::create([
-            'user_id'               => $this->userId,
+            'owner_user_id'         => $this->ownerId,
             'fiscal_name'           => 'Test User',
             'country_code'          => 'ES',
             'is_company'            => false,
@@ -74,9 +74,9 @@ describe('UserTaxProfile Model', function () {
         expect($profile->valid_until)->toBeInstanceOf(Carbon::class);
     });
 
-    it('can get active profile for user', function () {
+    it('can get active profile for owner', function () {
         UserTaxProfile::create([
-            'user_id'               => $this->userId,
+            'owner_user_id'         => $this->ownerId,
             'fiscal_name'           => 'Active Profile',
             'country_code'          => 'ES',
             'is_company'            => false,
@@ -86,7 +86,7 @@ describe('UserTaxProfile Model', function () {
             'is_active'             => true,
         ]);
 
-        $active = UserTaxProfile::getActiveForUser($this->userId);
+        $active = UserTaxProfile::getActiveForOwner($this->ownerId);
 
         expect($active)->not->toBeNull();
         expect($active->fiscal_name)->toBe('Active Profile');
@@ -95,7 +95,7 @@ describe('UserTaxProfile Model', function () {
     it('can get profile valid at specific date', function () {
         $oldDate = now()->subYear();
         $profile = UserTaxProfile::create([
-            'user_id'               => $this->userId,
+            'owner_user_id'         => $this->ownerId,
             'fiscal_name'           => 'Historical Profile',
             'country_code'          => 'ES',
             'is_company'            => false,
@@ -106,14 +106,14 @@ describe('UserTaxProfile Model', function () {
             'is_active'             => false,
         ]);
 
-        $foundProfile = UserTaxProfile::getValidForUserAt($this->userId, $oldDate->addMonth());
+        $foundProfile = UserTaxProfile::getValidForOwnerAt($this->ownerId, $oldDate->addMonth());
 
         expect($foundProfile)->not->toBeNull();
         expect($foundProfile->id)->toBe($profile->id);
     });
 
-    it('can create profile for user', function () {
-        $profile = UserTaxProfile::createForUser($this->userId, [
+    it('can create profile for owner', function () {
+        $profile = UserTaxProfile::createForOwner($this->ownerId, [
             'fiscal_name'           => 'New Profile',
             'country_code'          => 'DE',
             'is_company'            => true,
@@ -127,10 +127,10 @@ describe('UserTaxProfile Model', function () {
         expect($profile->fiscal_name)->toBe('New Profile');
     });
 
-    it('can scope for user', function () {
+    it('can scope for owner', function () {
         UserTaxProfile::create([
-            'user_id'               => $this->userId,
-            'fiscal_name'           => 'User Profile',
+            'owner_user_id'         => $this->ownerId,
+            'fiscal_name'           => 'Owner Profile',
             'country_code'          => 'ES',
             'is_company'            => false,
             'is_eu_vat_registered'  => false,
@@ -139,14 +139,14 @@ describe('UserTaxProfile Model', function () {
             'is_active'             => true,
         ]);
 
-        $profiles = UserTaxProfile::forUser($this->userId)->get();
+        $profiles = UserTaxProfile::forOwner($this->ownerId)->get();
 
         expect($profiles)->toHaveCount(1);
     });
 
     it('can scope active profiles', function () {
         UserTaxProfile::create([
-            'user_id'               => $this->userId,
+            'owner_user_id'         => $this->ownerId,
             'fiscal_name'           => 'Active',
             'country_code'          => 'ES',
             'is_company'            => false,
@@ -156,9 +156,9 @@ describe('UserTaxProfile Model', function () {
             'is_active'             => true,
         ]);
 
-        $userId2 = \Illuminate\Support\Str::uuid()->toString();
+        $ownerId2 = \Illuminate\Support\Str::uuid()->toString();
         UserTaxProfile::create([
-            'user_id'               => $userId2,
+            'owner_user_id'         => $ownerId2,
             'fiscal_name'           => 'Inactive',
             'country_code'          => 'ES',
             'is_company'            => false,
@@ -177,7 +177,7 @@ describe('UserTaxProfile Model', function () {
 
     it('can scope companies', function () {
         UserTaxProfile::create([
-            'user_id'               => $this->userId,
+            'owner_user_id'         => $this->ownerId,
             'fiscal_name'           => 'Company',
             'country_code'          => 'ES',
             'is_company'            => true,
@@ -194,7 +194,7 @@ describe('UserTaxProfile Model', function () {
 
     it('can scope individuals', function () {
         UserTaxProfile::create([
-            'user_id'               => $this->userId,
+            'owner_user_id'         => $this->ownerId,
             'fiscal_name'           => 'Individual',
             'country_code'          => 'ES',
             'is_company'            => false,
@@ -211,7 +211,7 @@ describe('UserTaxProfile Model', function () {
 
     it('can scope EU VAT registered', function () {
         UserTaxProfile::create([
-            'user_id'               => $this->userId,
+            'owner_user_id'         => $this->ownerId,
             'fiscal_name'           => 'EU Registered',
             'country_code'          => 'DE',
             'is_company'            => true,
@@ -228,7 +228,7 @@ describe('UserTaxProfile Model', function () {
 
     it('can scope VAT exempt', function () {
         UserTaxProfile::create([
-            'user_id'               => $this->userId,
+            'owner_user_id'         => $this->ownerId,
             'fiscal_name'           => 'Exempt',
             'country_code'          => 'ES',
             'is_company'            => false,
@@ -245,7 +245,7 @@ describe('UserTaxProfile Model', function () {
 
     it('can check if currently active', function () {
         $profile = UserTaxProfile::create([
-            'user_id'               => $this->userId,
+            'owner_user_id'         => $this->ownerId,
             'fiscal_name'           => 'Active Profile',
             'country_code'          => 'ES',
             'is_company'            => false,
@@ -260,7 +260,7 @@ describe('UserTaxProfile Model', function () {
 
     it('can check if was valid at date', function () {
         $profile = UserTaxProfile::create([
-            'user_id'               => $this->userId,
+            'owner_user_id'         => $this->ownerId,
             'fiscal_name'           => 'Historical',
             'country_code'          => 'ES',
             'is_company'            => false,
@@ -277,7 +277,7 @@ describe('UserTaxProfile Model', function () {
 
     it('returns validity range attribute', function () {
         $profile = UserTaxProfile::create([
-            'user_id'               => $this->userId,
+            'owner_user_id'         => $this->ownerId,
             'fiscal_name'           => 'Test',
             'country_code'          => 'ES',
             'is_company'            => false,
@@ -293,7 +293,7 @@ describe('UserTaxProfile Model', function () {
 
     it('returns full fiscal identity attribute', function () {
         $profile = UserTaxProfile::create([
-            'user_id'               => $this->userId,
+            'owner_user_id'         => $this->ownerId,
             'fiscal_name'           => 'John Doe',
             'tax_id'                => 'ES12345678A',
             'country_code'          => 'ES',
@@ -309,7 +309,7 @@ describe('UserTaxProfile Model', function () {
 
     it('returns full address attribute', function () {
         $profile = UserTaxProfile::create([
-            'user_id'               => $this->userId,
+            'owner_user_id'         => $this->ownerId,
             'fiscal_name'           => 'Test User',
             'address'               => '123 Main Street',
             'zip_code'              => '28001',
@@ -329,7 +329,7 @@ describe('UserTaxProfile Model', function () {
 
     it('requires VAT when not exempt and not EU registered', function () {
         $profile = UserTaxProfile::create([
-            'user_id'               => $this->userId,
+            'owner_user_id'         => $this->ownerId,
             'fiscal_name'           => 'Normal User',
             'country_code'          => 'ES',
             'is_company'            => false,
@@ -344,7 +344,7 @@ describe('UserTaxProfile Model', function () {
 
     it('does not require VAT when exempt', function () {
         $profile = UserTaxProfile::create([
-            'user_id'               => $this->userId,
+            'owner_user_id'         => $this->ownerId,
             'fiscal_name'           => 'Exempt User',
             'country_code'          => 'ES',
             'is_company'            => false,
@@ -359,7 +359,7 @@ describe('UserTaxProfile Model', function () {
 
     it('does not require VAT when EU registered (reverse charge)', function () {
         $profile = UserTaxProfile::create([
-            'user_id'               => $this->userId,
+            'owner_user_id'         => $this->ownerId,
             'fiscal_name'           => 'EU Company',
             'country_code'          => 'DE',
             'is_company'            => true,
@@ -374,7 +374,7 @@ describe('UserTaxProfile Model', function () {
 
     it('uses soft deletes', function () {
         $profile = UserTaxProfile::create([
-            'user_id'               => $this->userId,
+            'owner_user_id'         => $this->ownerId,
             'fiscal_name'           => 'Test User',
             'country_code'          => 'ES',
             'is_company'            => false,

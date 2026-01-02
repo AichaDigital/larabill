@@ -4,25 +4,30 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use AichaDigital\Larabill\Concerns\HasUserRelation;
 use AichaDigital\Larabill\Database\Factories\UserTaxProfileFactory;
+use AichaDigital\Larabill\Services\ModelMappingService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
  * UserTaxProfile Model
  *
- * Unified fiscal history for all Users (DIRECT and DELEGATED).
- * Replaces CustomerFiscalData with simpler architecture.
+ * Represents a fiscal identity that can be shared by multiple user accounts.
+ * A real person (identified by tax_id) may have multiple user accounts
+ * (different emails for staff, customer, delegate roles) all sharing
+ * the same tax profile.
  *
  * Implements temporal validity to maintain immutable fiscal data over time.
- * A User can have multiple tax profiles, but only one active (valid_until = null).
+ * When fiscal data changes, a new profile is created and all linked users
+ * are updated to point to the new profile.
  *
  * @property int $id
- * @property string $user_id FK to users.id
+ * @property string|int $owner_user_id User who can edit this profile (ADR-004: renamed from user_id)
  * @property string $fiscal_name Fiscal name (may differ from user.name)
  * @property string|null $tax_id NIF/CIF/VAT number
  * @property string|null $legal_entity_type_code FK to legal_entity_types.code
@@ -42,12 +47,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property Carbon $updated_at
  * @property Carbon|null $deleted_at
  *
- * @see ADR-003 for architectural decisions
+ * @see ADR-003 for initial architecture
+ * @see ADR-004 for authorization changes (user_id -> owner_user_id, shared profiles)
  */
 class UserTaxProfile extends Model
 {
     use HasFactory;
-    use HasUserRelation;
     use SoftDeletes;
 
     /**
@@ -59,7 +64,7 @@ class UserTaxProfile extends Model
      * The attributes that are mass assignable.
      */
     protected $fillable = [
-        'user_id',
+        'owner_user_id',
         'fiscal_name',
         'tax_id',
         'legal_entity_type_code',
@@ -79,8 +84,6 @@ class UserTaxProfile extends Model
 
     /**
      * Casts for attributes.
-     *
-     * Note: user_id cast is handled by HasUserRelation trait.
      */
     protected function casts(): array
     {
@@ -112,20 +115,107 @@ class UserTaxProfile extends Model
     {
         parent::boot();
 
-        // When creating new config, close previous active config automatically
+        // When creating new config, close previous active config for the same owner
         static::creating(function ($model) {
+            if ($model->is_active && ! $model->valid_until && $model->owner_user_id) {
+                static::closeActiveForOwner($model->owner_user_id, $model->valid_from);
+            }
+        });
+
+        // After creating new profile, update all linked users to point to the new profile
+        static::created(function ($model) {
             if ($model->is_active && ! $model->valid_until) {
-                static::closeActiveForUser($model->user_id, $model->valid_from);
+                $model->updateLinkedUsersToNewProfile();
             }
         });
     }
 
+    // ========================================
+    // RELATIONSHIPS
+    // ========================================
+
     /**
-     * Closes active config for user by setting valid_until.
+     * Get the owner user (who can edit this profile).
+     *
+     * @return BelongsTo<\Illuminate\Database\Eloquent\Model, $this>
      */
-    protected static function closeActiveForUser(string|int $userId, Carbon $newValidFrom): void
+    public function owner(): BelongsTo
     {
-        static::where('user_id', $userId)
+        $userModel = ModelMappingService::getModelClass('user');
+
+        // @phpstan-ignore-next-line
+        return $this->belongsTo($userModel, 'owner_user_id');
+    }
+
+    /**
+     * Get all users linked to this tax profile.
+     *
+     * Multiple user accounts can share the same fiscal identity.
+     *
+     * @return HasMany<\Illuminate\Database\Eloquent\Model, $this>
+     */
+    public function linkedUsers(): HasMany
+    {
+        $userModel = ModelMappingService::getModelClass('user');
+
+        // @phpstan-ignore-next-line
+        return $this->hasMany($userModel, 'current_tax_profile_id');
+    }
+
+    /**
+     * Get the legal entity type.
+     */
+    public function legalEntityType(): BelongsTo
+    {
+        return $this->belongsTo(LegalEntityType::class, 'legal_entity_type_code', 'code');
+    }
+
+    // ========================================
+    // BACKWARDS COMPATIBILITY (ADR-003 -> ADR-004)
+    // ========================================
+
+    /**
+     * Get the owner user (backwards compatible alias).
+     *
+     * @deprecated Use owner() instead. Will be removed in v2.0.
+     *
+     * @return BelongsTo<\Illuminate\Database\Eloquent\Model, $this>
+     */
+    public function user(): BelongsTo
+    {
+        return $this->owner();
+    }
+
+    /**
+     * Get user_id attribute (backwards compatible).
+     *
+     * @deprecated Use owner_user_id instead. Will be removed in v2.0.
+     */
+    public function getUserIdAttribute(): string|int|null
+    {
+        return $this->owner_user_id;
+    }
+
+    /**
+     * Set user_id attribute (backwards compatible).
+     *
+     * @deprecated Use owner_user_id instead. Will be removed in v2.0.
+     */
+    public function setUserIdAttribute(string|int $value): void
+    {
+        $this->attributes['owner_user_id'] = $value;
+    }
+
+    // ========================================
+    // STATIC QUERY METHODS
+    // ========================================
+
+    /**
+     * Closes active config for owner by setting valid_until.
+     */
+    protected static function closeActiveForOwner(string|int $ownerId, Carbon $newValidFrom): void
+    {
+        static::where('owner_user_id', $ownerId)
             ->where('is_active', true)
             ->whereNull('valid_until')
             ->update([
@@ -134,33 +224,33 @@ class UserTaxProfile extends Model
             ]);
     }
 
-    // user() relationship is provided by HasUserRelation trait
-
     /**
-     * Get the legal entity type.
+     * Get active config for an owner.
      */
-    public function legalEntityType(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public static function getActiveForOwner(string|int $ownerId): ?self
     {
-        return $this->belongsTo(LegalEntityType::class, 'legal_entity_type_code', 'code');
-    }
-
-    /**
-     * Get active config for a user.
-     */
-    public static function getActiveForUser(string|int $userId): ?self
-    {
-        return static::where('user_id', $userId)
+        return static::where('owner_user_id', $ownerId)
             ->where('is_active', true)
             ->whereNull('valid_until')
             ->first();
     }
 
     /**
-     * Get config valid for a user at a specific date.
+     * Get active config for a user (by their current_tax_profile_id).
+     *
+     * @deprecated Use User->currentTaxProfile relationship instead.
      */
-    public static function getValidForUserAt(string|int $userId, Carbon $date): ?self
+    public static function getActiveForUser(string|int $userId): ?self
     {
-        return static::where('user_id', $userId)
+        return static::getActiveForOwner($userId);
+    }
+
+    /**
+     * Get config valid for an owner at a specific date.
+     */
+    public static function getValidForOwnerAt(string|int $ownerId, Carbon $date): ?self
+    {
+        return static::where('owner_user_id', $ownerId)
             ->where('valid_from', '<=', $date)
             ->where(function (Builder $query) use ($date) {
                 $query->whereNull('valid_until')
@@ -171,23 +261,57 @@ class UserTaxProfile extends Model
     }
 
     /**
-     * Create new config for user, closing previous one.
+     * Get config valid for a user at a specific date.
+     *
+     * @deprecated Use getValidForOwnerAt() instead.
      */
-    public static function createForUser(string|int $userId, array $attributes): self
+    public static function getValidForUserAt(string|int $userId, Carbon $date): ?self
     {
-        $attributes['user_id']     = $userId;
-        $attributes['is_active']   = true;
-        $attributes['valid_until'] = null;
+        return static::getValidForOwnerAt($userId, $date);
+    }
+
+    /**
+     * Create new config for owner, closing previous one.
+     */
+    public static function createForOwner(string|int $ownerId, array $attributes): self
+    {
+        $attributes['owner_user_id'] = $ownerId;
+        $attributes['is_active']     = true;
+        $attributes['valid_until']   = null;
 
         return static::create($attributes);
     }
 
     /**
+     * Create new config for user.
+     *
+     * @deprecated Use createForOwner() instead.
+     */
+    public static function createForUser(string|int $userId, array $attributes): self
+    {
+        return static::createForOwner($userId, $attributes);
+    }
+
+    // ========================================
+    // SCOPES
+    // ========================================
+
+    /**
+     * Scope: Configs for an owner.
+     */
+    public function scopeForOwner(Builder $query, string|int $ownerId): Builder
+    {
+        return $query->where('owner_user_id', $ownerId);
+    }
+
+    /**
      * Scope: Configs for a user.
+     *
+     * @deprecated Use scopeForOwner() instead.
      */
     public function scopeForUser(Builder $query, string|int $userId): Builder
     {
-        return $query->where('user_id', $userId);
+        return $this->scopeForOwner($query, $userId);
     }
 
     /**
@@ -243,6 +367,34 @@ class UserTaxProfile extends Model
         return $query->where('is_exempt_vat', true);
     }
 
+    // ========================================
+    // INSTANCE METHODS
+    // ========================================
+
+    /**
+     * Update all users linked to the old profile to point to this new profile.
+     *
+     * Called automatically after creating a new active profile.
+     */
+    protected function updateLinkedUsersToNewProfile(): void
+    {
+        // Find the previous profile for the same owner
+        $previousProfile = static::where('owner_user_id', $this->owner_user_id)
+            ->where('id', '!=', $this->id)
+            ->whereNotNull('valid_until')
+            ->orderBy('valid_until', 'desc')
+            ->first();
+
+        if (! $previousProfile) {
+            return;
+        }
+
+        // Update all users pointing to the old profile
+        $userModel = ModelMappingService::getModelClass('user');
+        $userModel::where('current_tax_profile_id', $previousProfile->id)
+            ->update(['current_tax_profile_id' => $this->id]);
+    }
+
     /**
      * Check if config is currently active.
      */
@@ -270,7 +422,7 @@ class UserTaxProfile extends Model
         $from = $this->valid_from->format('d/m/Y');
         $to   = $this->valid_until ? $this->valid_until->format('d/m/Y') : 'Current';
 
-        return "{$from} → {$to}";
+        return "{$from} -> {$to}";
     }
 
     /**

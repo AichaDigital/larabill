@@ -12,17 +12,22 @@ return new class extends Migration
     /**
      * Run the migrations.
      *
-     * Unified fiscal history table for all users (DIRECT and DELEGATED).
+     * Unified fiscal history table for all users.
      * A user can have multiple tax profiles over time,
      * but only one active (valid_until = null) at any moment.
      *
-     * @see ADR-003 for architectural decisions
+     * ADR-004 Change: Renamed user_id to owner_user_id.
+     * - owner_user_id: The user who owns/can edit this tax profile
+     * - Multiple users can share the same profile via users.current_tax_profile_id
+     *
+     * @see ADR-003 for user unification architecture
+     * @see ADR-004 for authorization architecture (owner_user_id change)
      */
     public function up(): void
     {
         Schema::create('user_tax_profiles', function (Blueprint $table) {
             $table->id();
-            MigrationHelper::userIdColumn($table, 'user_id');
+            MigrationHelper::userIdColumn($table, 'owner_user_id');
 
             // Fiscal identity
             $table->string('fiscal_name')->comment('Fiscal name (may differ from user.name)');
@@ -53,9 +58,9 @@ return new class extends Migration
             $table->softDeletes();
 
             // Indexes for efficient queries
-            $table->index(['user_id', 'valid_from', 'valid_until', 'is_active'], 'idx_utp_user_validity_active');
+            $table->index(['owner_user_id', 'valid_from', 'valid_until', 'is_active'], 'idx_utp_owner_validity_active');
             $table->index('tax_id', 'idx_utp_tax_id');
-            $table->index(['user_id', 'is_active'], 'idx_utp_user_active');
+            $table->index(['owner_user_id', 'is_active'], 'idx_utp_owner_active');
 
             // Foreign key to legal_entity_types (if table exists)
             // Note: This is a soft reference via code, not a strict FK

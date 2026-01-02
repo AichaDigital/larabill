@@ -11,18 +11,19 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
- * Trait for User models that participate in the Larabill self-referencing system.
+ * Trait for User models that participate in the Larabill billing system.
  *
- * This trait provides the self-referencing relationships for User models
- * as defined in ADR-003 (User/Customer Unification).
+ * This trait provides:
  *
- * Provides:
- * - parent(): The parent user (for DELEGATED clients)
- * - children(): Users that are clients of this user
- * - taxProfiles(): All tax profiles for this user
- * - activeTaxProfile(): The currently active tax profile
+ * - Self-referencing relationships for delegation hierarchy (ADR-003)
+ * - Tax profile relationships (ADR-004: shared profiles via owner_user_id)
+ *
+ * NOTE: Authorization logic (UserType, AccessLevel, Departments) has been
+ * moved to the application layer per ADR-005. This trait only handles
+ * billing-related relationships.
  *
  * Usage in your User model:
+ *
  *   use AichaDigital\Larabill\Concerns\HasUserRelationships;
  *
  *   class User extends Authenticatable
@@ -38,12 +39,78 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  *       }
  *   }
  *
- * @see ADR-003 for architectural decisions
+ * @property int|null $current_tax_profile_id
+ * @property string|int|null $parent_user_id
+ * @property UserRelationshipType|int $relationship_type
+ *
+ * @see ADR-003 for delegation architecture
+ * @see ADR-004 for tax profile changes (owner_user_id)
+ * @see ADR-005 for authorization moved to application
  *
  * @phpstan-require-extends \Illuminate\Database\Eloquent\Model
  */
 trait HasUserRelationships
 {
+    // ========================================
+    // TAX PROFILE RELATIONSHIPS (ADR-004)
+    // ========================================
+
+    /**
+     * Get the current active tax profile.
+     *
+     * This is the fiscal identity currently used for this user account.
+     * Multiple user accounts can share the same tax profile.
+     *
+     * @return BelongsTo<UserTaxProfile, $this>
+     */
+    public function currentTaxProfile(): BelongsTo
+    {
+        return $this->belongsTo(UserTaxProfile::class, 'current_tax_profile_id');
+    }
+
+    /**
+     * Get all tax profiles owned by this user.
+     *
+     * These are profiles where this user is the owner (can edit).
+     *
+     * @return HasMany<UserTaxProfile, $this>
+     */
+    public function ownedTaxProfiles(): HasMany
+    {
+        return $this->hasMany(UserTaxProfile::class, 'owner_user_id');
+    }
+
+    /**
+     * Get all tax profiles for this user (backwards compatible).
+     *
+     * @deprecated Use ownedTaxProfiles() for profiles owned by user,
+     *             or currentTaxProfile() for the active profile.
+     *
+     * @return HasMany<UserTaxProfile, $this>
+     */
+    public function taxProfiles(): HasMany
+    {
+        return $this->ownedTaxProfiles();
+    }
+
+    /**
+     * Get the currently active tax profile (backwards compatible).
+     *
+     * @deprecated Use currentTaxProfile() relationship instead.
+     *
+     * @return HasOne<UserTaxProfile, $this>
+     */
+    public function activeTaxProfile(): HasOne
+    {
+        return $this->hasOne(UserTaxProfile::class, 'owner_user_id')
+            ->where('is_active', true)
+            ->whereNull('valid_until');
+    }
+
+    // ========================================
+    // DELEGATION RELATIONSHIPS (ADR-003)
+    // ========================================
+
     /**
      * Get the parent user (for DELEGATED clients).
      *
@@ -68,31 +135,9 @@ trait HasUserRelationships
         return $this->hasMany(static::class, 'parent_user_id');
     }
 
-    /**
-     * Get all tax profiles for this user.
-     *
-     * Includes both active and historical profiles.
-     *
-     * @return HasMany<UserTaxProfile, $this>
-     */
-    public function taxProfiles(): HasMany
-    {
-        return $this->hasMany(UserTaxProfile::class, 'user_id');
-    }
-
-    /**
-     * Get the currently active tax profile.
-     *
-     * Active means is_active = true AND valid_until = null.
-     *
-     * @return HasOne<UserTaxProfile, $this>
-     */
-    public function activeTaxProfile(): HasOne
-    {
-        return $this->hasOne(UserTaxProfile::class, 'user_id')
-            ->where('is_active', true)
-            ->whereNull('valid_until');
-    }
+    // ========================================
+    // DELEGATION HELPERS (ADR-003)
+    // ========================================
 
     /**
      * Check if this user is a DIRECT client (of the Company).
@@ -123,7 +168,7 @@ trait HasUserRelationships
     }
 
     /**
-     * Get the relationship type.
+     * Get the relationship type enum.
      *
      * This is a helper for when the cast is not applied.
      */
@@ -133,8 +178,12 @@ trait HasUserRelationships
             return $this->relationship_type;
         }
 
-        return UserRelationshipType::from((int) $this->relationship_type);
+        return UserRelationshipType::from((int) ($this->relationship_type ?? 0));
     }
+
+    // ========================================
+    // SCOPES
+    // ========================================
 
     /**
      * Scope: Only DIRECT clients.
@@ -171,13 +220,26 @@ trait HasUserRelationships
     }
 
     /**
-     * Scope: With active tax profile loaded.
+     * Scope: With current tax profile loaded.
+     *
+     * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
+     * @return \Illuminate\Database\Eloquent\Builder<static>
+     */
+    public function scopeWithCurrentTaxProfile($query)
+    {
+        return $query->with(['currentTaxProfile']);
+    }
+
+    /**
+     * Scope: With active tax profile loaded (backwards compatible).
+     *
+     * @deprecated Use scopeWithCurrentTaxProfile() instead.
      *
      * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
      * @return \Illuminate\Database\Eloquent\Builder<static>
      */
     public function scopeWithActiveTaxProfile($query)
     {
-        return $query->with(['activeTaxProfile']);
+        return $this->scopeWithCurrentTaxProfile($query);
     }
 }

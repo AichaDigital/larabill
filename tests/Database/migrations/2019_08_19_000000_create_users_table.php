@@ -19,6 +19,10 @@ return new class extends Migration
                 $table->timestamp('email_verified_at')->nullable();
                 $table->string('password');
                 $table->rememberToken();
+
+                // ADR-004: current_tax_profile_id for shared tax profiles
+                $table->foreignId('current_tax_profile_id')->nullable();
+
                 $table->timestamps();
             });
         }

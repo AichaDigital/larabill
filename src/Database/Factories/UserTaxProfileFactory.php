@@ -9,7 +9,15 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
 /**
+ * Factory for UserTaxProfile model.
+ *
+ * Note: ADR-004 renamed user_id to owner_user_id.
+ * - owner_user_id: The user who owns/can edit this tax profile
+ * - Multiple user accounts can share the same tax profile via current_tax_profile_id
+ *
  * @extends Factory<UserTaxProfile>
+ *
+ * @see ADR-004 for authorization changes
  */
 class UserTaxProfileFactory extends Factory
 {
@@ -25,7 +33,7 @@ class UserTaxProfileFactory extends Factory
         $isCompany = fake()->boolean(30); // 30% companies, 70% individuals
 
         return [
-            'user_id'                => (string) Str::orderedUuid(), // UUID v7
+            'owner_user_id'          => (string) Str::orderedUuid(), // UUID v7 - ADR-004: renamed from user_id
             'fiscal_name'            => $isCompany ? fake()->company() : fake()->name(),
             'tax_id'                 => $isCompany ? 'ES'.fake()->numerify('B########') : fake()->numerify('########X'),
             'legal_entity_type_code' => null,
@@ -173,12 +181,24 @@ class UserTaxProfileFactory extends Factory
     }
 
     /**
-     * Config for a specific user.
+     * Config for a specific owner user.
+     *
+     * @deprecated Use forOwner() instead. Will be removed in v2.0.
      */
     public function forUser(string|int $userId): self
     {
+        return $this->forOwner($userId);
+    }
+
+    /**
+     * Config for a specific owner user (ADR-004).
+     *
+     * The owner is the user who can edit this tax profile.
+     */
+    public function forOwner(string|int $ownerId): self
+    {
         return $this->state(fn (array $attributes) => [
-            'user_id' => (string) $userId,
+            'owner_user_id' => (string) $ownerId,
         ]);
     }
 
