@@ -124,7 +124,7 @@ class FiscalChangeDetector
     {
         $oldProfileId   = $proforma->user_tax_profile_id;
         $currentProfile = $proforma->billable_user_id
-            ? UserTaxProfile::getValidForUserAt($proforma->billable_user_id, now())
+            ? UserTaxProfile::getValidForOwnerAt($proforma->billable_user_id, now())
             : null;
         $newProfileId = $currentProfile?->id;
 

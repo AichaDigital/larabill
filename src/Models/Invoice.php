@@ -589,7 +589,7 @@ class Invoice extends Model
         // 2. User tax profile (receptor - billable user, ADR-003)
         $userTaxProfile = null;
         if ($this->billable_user_id) {
-            $userTaxProfile = UserTaxProfile::getValidForUserAt($this->billable_user_id, $invoiceDate);
+            $userTaxProfile = UserTaxProfile::getValidForOwnerAt($this->billable_user_id, $invoiceDate);
             if ($userTaxProfile) {
                 $this->user_tax_profile_id = $userTaxProfile->id;
             }

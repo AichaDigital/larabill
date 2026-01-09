@@ -66,7 +66,7 @@ class InvoiceService
             }
 
             // Get user tax profile for billable user
-            $userTaxProfile = UserTaxProfile::getValidForUserAt(
+            $userTaxProfile = UserTaxProfile::getValidForOwnerAt(
                 $billableUser->id,
                 now()
             );
