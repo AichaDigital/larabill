@@ -6,8 +6,21 @@ use AichaDigital\Larabill\Console\LarabillInstallCommand;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 
+// Clean up published migration files after each test.
+// When --force tests run publishMigrationsInOrder(), migration files are copied
+// to database_path('migrations'). Laravel's default migrator includes this path,
+// so subsequent tests with RefreshDatabase would load migrations from BOTH
+// the package path (ServiceProvider) AND database_path, causing "table already exists".
+afterEach(function () {
+    $targetPath = database_path('migrations');
+    if (File::isDirectory($targetPath)) {
+        foreach (File::glob("{$targetPath}/*.php") as $file) {
+            File::delete($file);
+        }
+    }
+});
+
 it('uses configured user_id_type from env/config instead of schema detection', function () {
-    // Config is set to 'uuid' by default in TestCase
     config()->set('larabill.user_id_type', 'uuid');
 
     $this->artisan(LarabillInstallCommand::class, ['--no-migrate' => true])
@@ -30,21 +43,17 @@ it('respects --user-id-type option over config', function () {
 it('falls back to schema detection when config is auto', function () {
     config()->set('larabill.user_id_type', 'auto');
 
-    // In SQLite test environment, the users table exists with integer IDs
-    // Schema detection should pick up the type
     $this->artisan(LarabillInstallCommand::class, ['--no-migrate' => true])
         ->assertSuccessful();
 });
 
 it('does not publish migrations in non-production environment', function () {
-    // Ensure we are in testing (non-production)
     expect(app()->environment('production'))->toBeFalse();
 
     $this->artisan(LarabillInstallCommand::class, ['--no-migrate' => true])
         ->expectsOutputToContain('Migrations auto-loaded from package')
         ->assertSuccessful();
 
-    // Verify no larabill migrations were published to database/migrations
     $publishedMigrations = File::glob(database_path('migrations/*_create_legal_entity_types_table.php'));
     expect($publishedMigrations)->toBeEmpty();
 });
@@ -76,7 +85,6 @@ it('displays the command description', function () {
 it('does not duplicate migrations when they already exist in target', function () {
     $targetPath = database_path('migrations');
 
-    // Create a fake existing migration
     $existingFile = $targetPath.'/2025_01_01_000000_create_legal_entity_types_table.php';
     File::ensureDirectoryExists($targetPath);
     File::put($existingFile, '<?php // existing migration');
@@ -86,17 +94,7 @@ it('does not duplicate migrations when they already exist in target', function (
         '--force'      => true,
     ])->assertSuccessful();
 
-    // Verify the old file was replaced, not duplicated
     $allLegalEntityMigrations = File::glob("{$targetPath}/*_create_legal_entity_types_table.php");
-
-    // Should have exactly 1 (the new one replaced the old one)
     expect(count($allLegalEntityMigrations))->toBe(1);
-
-    // Clean up
-    foreach ($allLegalEntityMigrations as $file) {
-        File::delete($file);
-    }
-    if (File::exists($existingFile)) {
-        File::delete($existingFile);
-    }
+    // afterEach handles cleanup
 });
