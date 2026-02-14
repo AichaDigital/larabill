@@ -11,8 +11,8 @@ use Illuminate\Support\Facades\Schema;
 class LarabillInstallCommand extends Command
 {
     protected $signature = 'larabill:install
-                            {--user-id-type= : User ID type (uuid_binary, uuid_string, int, ulid)}
-                            {--force : Force overwrite of existing migrations}
+                            {--user-id-type= : User ID type (uuid, int, ulid)}
+                            {--force : Force overwrite of existing migrations and publish in non-production}
                             {--no-migrate : Skip running migrations}';
 
     protected $description = 'Install Larabill package with proper configuration';
@@ -78,12 +78,19 @@ class LarabillInstallCommand extends Command
             '--force'    => $this->option('force'),
         ]);
 
-        // 4. Publicar migraciones EN ORDEN
-        $this->info('📄 Publishing migrations in correct order...');
-        $published = $this->publishMigrationsInOrder();
+        // 4. Publicar migraciones EN ORDEN (solo en production o con --force)
+        if ($this->shouldPublishMigrations()) {
+            $this->info('📄 Publishing migrations in correct order...');
+            $published = $this->publishMigrationsInOrder();
 
-        if ($published === 0) {
-            $this->comment('⚠ No new migrations to publish (use --force to overwrite)');
+            if ($published === 0) {
+                $this->comment('⚠ No new migrations to publish (use --force to overwrite)');
+            }
+        } else {
+            $this->info('✓ Migrations auto-loaded from package (non-production environment)');
+            $this->comment('  Migrations are loaded directly via ServiceProvider — no publishing needed.');
+            $this->comment('  Use --force to publish copies anyway, or deploy to production where publishing is required.');
+            $published = 0;
         }
 
         // 5. Ejecutar migraciones si no se especificó --no-migrate
@@ -142,17 +149,25 @@ class LarabillInstallCommand extends Command
 
     protected function detectOrAskUserIdType(): string
     {
-        // Si se pasó por opción, usar ese
+        // 1. Si se pasó por opción CLI, usar ese
         if ($type = $this->option('user-id-type')) {
             return $type;
         }
 
-        // Intentar detectar automáticamente
+        // 2. Consultar config/env (LARABILL_USER_ID_TYPE) — tiene prioridad sobre schema
+        $configured = config('larabill.user_id_type', 'uuid');
+        if ($configured !== 'auto' && \AichaDigital\Larabill\Support\MigrationHelper::isSupportedIdType($configured)) {
+            $this->comment("Using configured user ID type from env/config: {$configured}");
+
+            return $configured;
+        }
+
+        // 3. Auto-detect desde schema solo si config es 'auto' o no reconocido
         if (Schema::hasTable('users')) {
             $detected = $this->detectUserIdTypeFromTable();
 
             if ($detected) {
-                $this->comment("Detected user ID type: {$detected}");
+                $this->comment("Detected user ID type from schema: {$detected}");
 
                 if ($this->confirm("Use detected type '{$detected}'?", true)) {
                     return $detected;
@@ -160,10 +175,10 @@ class LarabillInstallCommand extends Command
             }
         }
 
-        // Preguntar al usuario
+        // 4. Preguntar al usuario como último recurso
         return $this->choice(
             'What type of user ID does your application use?',
-            ['uuid_binary', 'uuid_string', 'int', 'ulid'],
+            ['uuid', 'int', 'ulid'],
             0
         );
     }
@@ -276,6 +291,23 @@ class LarabillInstallCommand extends Command
         return true;
     }
 
+    protected function shouldPublishMigrations(): bool
+    {
+        // Always publish if --force is explicitly passed
+        if ($this->option('force')) {
+            return true;
+        }
+
+        // In production, migrations MUST be published (ServiceProvider skips loadMigrationsFrom)
+        if (app()->environment('production')) {
+            return true;
+        }
+
+        // In non-production, ServiceProvider auto-loads via loadMigrationsFrom()
+        // Publishing would create duplicates causing "table already exists" errors
+        return false;
+    }
+
     protected function publishMigrationsInOrder(): int
     {
         $packagePath = dirname(__DIR__, 2).'/database/migrations';
@@ -310,16 +342,24 @@ class LarabillInstallCommand extends Command
                 continue;
             }
 
+            // Check if a migration with this name already exists in target (any timestamp)
+            $existingFiles = File::glob("{$targetPath}/*_{$migrationName}.php");
+            if (! empty($existingFiles) && ! $this->option('force')) {
+                continue;
+            }
+
             // Generar timestamp incremental para mantener orden
             $migrationTimestamp = $timestamp->copy()->addSeconds((int) $order);
             $targetFile         = $targetPath.'/'.$migrationTimestamp->format('Y_m_d_His').'_'.$migrationName.'.php';
 
-            // No sobrescribir si existe y no se pasó --force
-            if (File::exists($targetFile) && ! $this->option('force')) {
-                continue;
+            // If forcing, remove existing files with the same migration name first
+            if ($this->option('force') && ! empty($existingFiles)) {
+                foreach ($existingFiles as $existing) {
+                    File::delete($existing);
+                }
             }
 
-            // Copiar archivo
+            // Copiar archivo (strip .stub extension if present)
             File::copy($stubFile, $targetFile);
             $published++;
         }
