@@ -43,7 +43,11 @@ it('respects --user-id-type option over config', function () {
 it('falls back to schema detection when config is auto', function () {
     config()->set('larabill.user_id_type', 'auto');
 
-    $this->artisan(LarabillInstallCommand::class, ['--no-migrate' => true])
+    // --no-interaction suppresses the confirm() prompt, using default (true)
+    $this->artisan(LarabillInstallCommand::class, [
+        '--no-migrate'     => true,
+        '--no-interaction' => true,
+    ])
         ->assertSuccessful();
 });
 
