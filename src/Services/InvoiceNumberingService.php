@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Services;
 
 use AichaDigital\Larabill\Support\RegionalContext;
+use AichaDigital\Larabill\ValueObjects\InvoiceNumber;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
@@ -31,9 +32,9 @@ class InvoiceNumberingService
      * @param  string  $prefix  User customizable prefix (FAC, PRO, RECT, etc.)
      * @param  int  $serie  InvoiceSerieType enum value (0=proforma, 1=invoice, 2=rectificative)
      * @param  int|null  $userId  Optional user ID for multi-tenant
-     * @return string Complete fiscal number (e.g., FAC-2025-000047)
+     * @return InvoiceNumber Invoice number value object (string-castable for backward compat)
      */
-    public function generateNumber(string $prefix, int $serie, ?int $userId = null): string
+    public function generateNumber(string $prefix, int $serie, ?int $userId = null): InvoiceNumber
     {
         return DB::transaction(function () use ($prefix, $serie, $userId) {
             $fiscalYearData = $this->getCurrentFiscalYearData();
@@ -82,12 +83,19 @@ class InvoiceNumberingService
                 ]);
 
             // Format number
-            return $this->formatNumber(
+            $formatted = $this->formatNumber(
                 $control->number_format,
                 $prefix,
                 $fiscalYear,
                 $nextNumber,
                 $userId
+            );
+
+            return new InvoiceNumber(
+                formatted: $formatted,
+                prefix: $prefix,
+                fiscalYear: $fiscalYear,
+                seriesNumber: $nextNumber,
             );
         });
     }

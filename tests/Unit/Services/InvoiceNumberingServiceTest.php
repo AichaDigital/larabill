@@ -143,6 +143,26 @@ describe('InvoiceNumberingService', function () {
         expect($fiscalYearData['end'])->toBeInstanceOf(\Carbon\Carbon::class);
     });
 
+    it('returns InvoiceNumber value object', function () {
+        $result = $this->service->generateNumber('FAC', InvoiceSerieType::INVOICE->value);
+
+        expect($result)->toBeInstanceOf(\AichaDigital\Larabill\ValueObjects\InvoiceNumber::class);
+        expect($result->prefix)->toBe('FAC');
+        expect($result->fiscalYear)->toBe(now()->year);
+        expect($result->seriesNumber)->toBe(1);
+        expect($result->formatted)->toMatch('/^FAC-\d{4}-\d{6}$/');
+    });
+
+    it('returns InvoiceNumber that works as string (backward compat)', function () {
+        $result = $this->service->generateNumber('FAC', InvoiceSerieType::INVOICE->value);
+
+        // String comparison should work via __toString
+        expect((string) $result)->toMatch('/^FAC-\d{4}-\d{6}$/');
+
+        // String concatenation
+        expect('Number: ' . $result)->toStartWith('Number: FAC-');
+    });
+
     it('calculates fiscal year correctly for non-standard start', function () {
         // Mock config for fiscal year starting July 1
         config(['larabill.fiscal_year.start_month' => 7]);
