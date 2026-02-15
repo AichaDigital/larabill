@@ -2,7 +2,7 @@
 
 - **Date:** 2026-02-15
 - **Affects:** BillingService (3 methods)
-- **Removal target:** v0.5.0
+- **Removal target:** v0.7.0
 - **Replacement:** InvoiceNumberingService::generateNumber()
 
 ---
@@ -41,4 +41,4 @@ $invoiceNumber = $service->generateNumber(
 ## Timeline
 
 - **2026-02-15:** Methods marked `@deprecated`
-- **v0.5.0:** Methods removed
+- **v0.7.0:** Methods removed

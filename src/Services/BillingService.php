@@ -166,7 +166,7 @@ class BillingService
     /**
      * Generate a sequential invoice number with optional annual reset and configurable format.
      *
-     * @deprecated 2026-02-15 Removal target: v0.5.0. Use InvoiceNumberingService::generateNumber() instead.
+     * @deprecated 2026-02-15 Removal target: v0.7.0. Use InvoiceNumberingService::generateNumber() instead.
      * @see \AichaDigital\Larabill\Services\InvoiceNumberingService::generateNumber()
      *
      * @param  string  $type  Invoice type (invoice, proforma)
@@ -199,7 +199,7 @@ class BillingService
     /**
      * Get sequence number with optional annual reset.
      *
-     * @deprecated 2026-02-15 Removal target: v0.5.0. Use InvoiceNumberingService::generateNumber() instead.
+     * @deprecated 2026-02-15 Removal target: v0.7.0. Use InvoiceNumberingService::generateNumber() instead.
      * @see \AichaDigital\Larabill\Services\InvoiceNumberingService::generateNumber()
      */
     private function getSequenceNumber(string $type, bool $annualReset, string $currentYear): int
@@ -316,7 +316,7 @@ class BillingService
     /**
      * Get temporary unique series number (until InvoiceNumberingService is integrated).
      *
-     * @deprecated 2026-02-15 Removal target: v0.5.0. Use InvoiceNumberingService::generateNumber() instead.
+     * @deprecated 2026-02-15 Removal target: v0.7.0. Use InvoiceNumberingService::generateNumber() instead.
      * @see \AichaDigital\Larabill\Services\InvoiceNumberingService::generateNumber()
      *
      * @param  int  $serie  Serie type
