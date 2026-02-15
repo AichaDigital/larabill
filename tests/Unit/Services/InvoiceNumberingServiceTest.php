@@ -16,9 +16,9 @@ describe('InvoiceNumberingService', function () {
         $number1 = $this->service->generateNumber('FAC', InvoiceSerieType::INVOICE->value);
         $number2 = $this->service->generateNumber('FAC', InvoiceSerieType::INVOICE->value);
 
-        expect($number1)->toContain('FAC-');
-        expect($number2)->toContain('FAC-');
-        expect($number1)->not->toBe($number2);
+        expect((string) $number1)->toContain('FAC-');
+        expect((string) $number2)->toContain('FAC-');
+        expect((string) $number1)->not->toBe((string) $number2);
     });
 
     it('creates series control on first use', function () {
@@ -27,7 +27,7 @@ describe('InvoiceNumberingService', function () {
         $number = $this->service->generateNumber('FAC', InvoiceSerieType::INVOICE->value);
 
         expect(InvoiceSeriesControl::count())->toBe(1);
-        expect($number)->toContain('FAC-');
+        expect((string) $number)->toContain('FAC-');
     });
 
     it('increments last_number atomically', function () {
@@ -46,9 +46,9 @@ describe('InvoiceNumberingService', function () {
         $proforma1 = $this->service->generateNumber('PRO', InvoiceSerieType::PROFORMA->value);
         $invoice2  = $this->service->generateNumber('FAC', InvoiceSerieType::INVOICE->value);
 
-        expect($invoice1)->toContain('FAC-');
-        expect($proforma1)->toContain('PRO-');
-        expect($invoice2)->toContain('FAC-');
+        expect((string) $invoice1)->toContain('FAC-');
+        expect((string) $proforma1)->toContain('PRO-');
+        expect((string) $invoice2)->toContain('FAC-');
         expect(InvoiceSeriesControl::count())->toBe(2); // FAC and PRO
     });
 
@@ -59,14 +59,14 @@ describe('InvoiceNumberingService', function () {
         $number1 = $this->service->generateNumber('FAC', InvoiceSerieType::INVOICE->value);
 
         // Simulate next fiscal year (this is simplified, real implementation would check dates)
-        expect($number1)->toContain((string) $fiscalYear);
+        expect((string) $number1)->toContain((string) $fiscalYear);
     });
 
     it('formats number with default template', function () {
         $number = $this->service->generateNumber('FAC', InvoiceSerieType::INVOICE->value);
 
         // Default format: {{PREFIX}}-{{YEAR}}-{{NUMBER}}
-        expect($number)->toMatch('/^FAC-\d{4}-\d{6}$/');
+        expect((string) $number)->toMatch('/^FAC-\d{4}-\d{6}$/');
     });
 
     it('uses custom number format if provided', function () {
@@ -86,15 +86,15 @@ describe('InvoiceNumberingService', function () {
 
         $number = $this->service->generateNumber('CUSTOM', InvoiceSerieType::INVOICE->value);
 
-        expect($number)->toMatch('/^CUSTOM-\d{6}$/');
-        expect($number)->not->toContain((string) now()->year);
+        expect((string) $number)->toMatch('/^CUSTOM-\d{6}$/');
+        expect((string) $number)->not->toContain((string) now()->year);
     });
 
     it('pads numbers with leading zeros', function () {
         $number = $this->service->generateNumber('FAC', InvoiceSerieType::INVOICE->value);
 
         // Should be 000001
-        expect($number)->toContain('000001');
+        expect((string) $number)->toContain('000001');
     });
 
     it('respects custom start_number', function () {
@@ -113,7 +113,7 @@ describe('InvoiceNumberingService', function () {
 
         $number = $this->service->generateNumber('START100', InvoiceSerieType::INVOICE->value);
 
-        expect($number)->toContain('000100');
+        expect((string) $number)->toContain('000100');
     });
 
     it('handles concurrent requests with database locks', function () {
@@ -122,7 +122,7 @@ describe('InvoiceNumberingService', function () {
 
         // Use DB transactions to test atomicity
         for ($i = 0; $i < 5; $i++) {
-            $numbers[] = $this->service->generateNumber('FAC', InvoiceSerieType::INVOICE->value);
+            $numbers[] = (string) $this->service->generateNumber('FAC', InvoiceSerieType::INVOICE->value);
         }
 
         // All numbers should be unique
