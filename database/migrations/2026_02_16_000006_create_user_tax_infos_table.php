@@ -16,7 +16,7 @@ return new class extends Migration
     {
         Schema::create('user_tax_infos', function (Blueprint $table) {
             $table->id();
-            
+
             // Agnostic user_id - auto-detects User model ID type
             MigrationHelper::userIdColumn($table);
             $table->boolean('is_current')->default(false);
