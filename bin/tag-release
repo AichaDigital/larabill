@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+#
+# tag-release — Create a git tag after validating CHANGELOG.md
+#
+# Usage: bin/tag-release <version>
+# Example: bin/tag-release 0.7.0
+#
+# The script will:
+#   1. Validate that CHANGELOG.md contains an entry for the version
+#   2. Create an annotated git tag v<version>
+#   3. Ask whether to push the tag to origin
+#
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+CHANGELOG="${SCRIPT_DIR}/CHANGELOG.md"
+
+# --- Argument validation ---
+
+if [[ $# -lt 1 ]]; then
+    echo "Usage: bin/tag-release <version>"
+    echo "Example: bin/tag-release 0.7.0"
+    exit 1
+fi
+
+VERSION="${1#v}"  # Strip leading 'v' if present
+TAG="v${VERSION}"
+
+# --- Pre-flight checks ---
+
+if [[ ! -f "${CHANGELOG}" ]]; then
+    echo "ERROR: CHANGELOG.md not found at ${CHANGELOG}"
+    exit 1
+fi
+
+if git rev-parse "${TAG}" >/dev/null 2>&1; then
+    echo "ERROR: Tag ${TAG} already exists."
+    echo "Use 'git tag -d ${TAG}' to delete it first if needed."
+    exit 1
+fi
+
+if [[ -n "$(git status --porcelain)" ]]; then
+    echo "ERROR: Working directory is not clean. Commit or stash changes first."
+    exit 1
+fi
+
+# --- CHANGELOG validation ---
+
+if ! grep -q "^## \[${VERSION}\]" "${CHANGELOG}"; then
+    echo "ERROR: CHANGELOG.md does not contain an entry for version ${VERSION}."
+    echo ""
+    echo "Expected to find a line matching:"
+    echo "  ## [${VERSION}] - YYYY-MM-DD"
+    echo ""
+    echo "Add the entry to CHANGELOG.md and commit before tagging."
+    exit 1
+fi
+
+echo "CHANGELOG.md contains entry for ${VERSION}."
+
+# --- Create tag ---
+
+echo "Creating annotated tag ${TAG}..."
+
+# Extract first line of the CHANGELOG section for the tag message
+CHANGELOG_HEADER=$(grep "^## \[${VERSION}\]" "${CHANGELOG}")
+git tag -a "${TAG}" -m "${TAG}: ${CHANGELOG_HEADER#\#\# }"
+
+echo "Tag ${TAG} created successfully."
+
+# --- Push ---
+
+read -rp "Push ${TAG} to origin? [Y/n] " PUSH_ANSWER
+PUSH_ANSWER="${PUSH_ANSWER:-Y}"
+
+if [[ "${PUSH_ANSWER}" =~ ^[Yy]$ ]]; then
+    git push origin "${TAG}"
+    echo "Tag ${TAG} pushed to origin."
+else
+    echo "Tag created locally. Push manually with: git push origin ${TAG}"
+fi

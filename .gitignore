@@ -58,8 +58,9 @@ infection.log.summary
 # Internal documentation (development only)
 ./PUBLISH.sh
 
-# Local helper scripts (do not track)
-/bin/
+# Local helper scripts (do not track, except tag-release)
+/bin/*
+!/bin/tag-release
 
 # Session/temporary documentation (do not track)
 SESSION_*.md
