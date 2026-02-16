@@ -35,35 +35,8 @@ class TestCase extends Orchestra
         // Load test-only migrations first (users table for FK dependencies)
         $this->loadMigrationsFrom(__DIR__.'/Database/migrations');
 
-        // Load package migrations
+        // Load package migrations (includes all .php timestamped files)
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
-
-        // Load stub migrations (v0.4.1 ROI/VAT tables)
-        $this->loadStubMigrations();
-    }
-
-    /**
-     * Load stub migrations for testing (v0.4.1 ROI/VAT tables)
-     */
-    protected function loadStubMigrations(): void
-    {
-        $stubPath = __DIR__.'/../database/migrations';
-        $stubs    = [
-            'create_country_vat_rates_table.php.stub',
-            'create_vat_categories_table.php.stub',
-            'create_eu_sales_thresholds_table.php.stub',
-            'create_roi_queries_table.php.stub',
-            'create_user_roi_verifications_table.php.stub',
-        ];
-
-        foreach ($stubs as $stub) {
-            $stubFile = $stubPath.'/'.$stub;
-            if (file_exists($stubFile)) {
-                // Include and run the migration
-                $migration = include $stubFile;
-                $migration->up();
-            }
-        }
     }
 
     protected function getPackageProviders($app)

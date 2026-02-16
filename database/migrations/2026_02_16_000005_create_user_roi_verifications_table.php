@@ -1,0 +1,52 @@
+<?php
+
+use AichaDigital\Larabill\Support\MigrationHelper;
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('user_roi_verifications', function (Blueprint $table) {
+            $table->id();
+
+            // User ID - agnostic type based on larabill config or users table detection
+            MigrationHelper::userIdColumn($table, 'user_id');
+
+            $table->string('vat_code', 50); // VAT/NIF number
+            $table->string('country_code', 2); // ISO 3166-1 alpha-2
+            $table->boolean('is_roi')->default(false); // Reverse Charge Operator status
+            $table->boolean('cache_hit')->default(false); // Was this result from cache?
+            $table->string('company_name', 255)->nullable();
+            $table->text('company_address')->nullable();
+            $table->timestamp('last_check')->nullable(); // Last verification timestamp
+            $table->timestamp('expired_at')->nullable(); // Cache expiration
+            $table->string('api_source', 100)->nullable(); // VIES, local_provider, etc.
+            $table->json('response_data')->nullable(); // Full API response
+            $table->timestamps();
+
+            // Unique constraint: one verification per user+vat_code
+            $table->unique(['user_id', 'vat_code']);
+
+            // Indexes for common queries
+            $table->index('country_code');
+            $table->index('is_roi');
+            $table->index('last_check');
+            $table->index('expired_at'); // For cache invalidation
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('user_roi_verifications');
+    }
+};
+
