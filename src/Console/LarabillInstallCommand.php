@@ -21,39 +21,42 @@ class LarabillInstallCommand extends Command
      * Orden correcto de migraciones para evitar errores de FK
      */
     protected array $migrationOrder = [
-        '001' => 'create_users_table',
-        '002' => 'create_test_users_table',
-        '003' => 'create_legal_entity_types_table',
-        '004' => 'create_issuer_config_table',
-        '005' => 'create_issuer_tax_profiles_table',
-        '006' => 'create_customers_table',
-        '007' => 'create_customer_tax_profiles_table',
-        '008' => 'create_user_tax_infos_table',     // ANTES de invoices
-        '009' => 'create_user_tax_profiles_table',  // ANTES de invoices (FK)
-        '010' => 'create_unit_measures_table',      // ANTES de invoice_items
-        '011' => 'create_tax_categories_table',     // ANTES de invoice_items
-        '012' => 'create_articles_table',           // ANTES de commissions
-        '013' => 'create_article_overrides_table',
-        '014' => 'create_article_service_status_table',
-        '015' => 'create_tax_rates_table',
-        '016' => 'create_tax_groups_table',
-        '017' => 'create_tax_group_tax_rate_table',
-        '018' => 'create_invoices_table',
-        '019' => 'create_invoice_items_table',
-        '020' => 'create_commissions_table',     // DESPUÉS de articles
-        '021' => 'create_vat_verifications_table',
-        '022' => 'create_company_fiscal_configs_table',
-        '023' => 'create_invoice_templates_table',
-        '024' => 'create_company_template_settings_table',
-        '025' => 'add_v040_fields_to_invoices_table', // DESPUÉS de create_invoices
-        // === NUEVAS MIGRACIONES ROI/VAT (v0.4.1) ===
-        '026' => 'create_country_vat_rates_table',      // Independiente
-        '027' => 'create_vat_categories_table',         // Independiente (self-referencing OK)
-        '028' => 'create_eu_sales_thresholds_table',    // FK a users
-        '029' => 'create_roi_queries_table',            // FK a users
-        '030' => 'create_user_roi_verifications_table', // FK a users
-        // === TRANSLATABLE FIELDS (v0.5.0) ===
-        '031' => 'make_articles_translatable',           // Convert name/description to JSON
+        // === BASE TABLES (no FK to other package tables) ===
+        '001' => 'create_legal_entity_types_table',
+        '002' => 'create_tax_rates_table',
+        '003' => 'create_tax_groups_table',
+        '004' => 'create_tax_group_tax_rate_table',
+        '005' => 'create_tax_categories_table',
+        '006' => 'create_unit_measures_table',
+        '007' => 'create_country_vat_rates_table',
+        '008' => 'create_vat_categories_table',
+        // === TABLES WITH FK TO USERS ===
+        '009' => 'create_user_tax_infos_table',
+        '010' => 'create_user_tax_profiles_table',
+        '011' => 'create_company_fiscal_configs_table',
+        // === MAIN TABLES ===
+        '012' => 'create_invoice_series_control_table',
+        '013' => 'create_invoices_table',
+        '014' => 'create_invoice_items_table',
+        '015' => 'create_articles_table',
+        '016' => 'create_article_prices_table',
+        '017' => 'create_article_overrides_table',
+        '018' => 'create_article_service_status_table',
+        '019' => 'create_commissions_table',
+        '020' => 'create_vat_verifications_table',
+        '021' => 'create_invoice_templates_table',
+        '022' => 'create_company_template_settings_table',
+        // === ROI/VAT ===
+        '023' => 'create_eu_sales_thresholds_table',
+        '024' => 'create_roi_queries_table',
+        '025' => 'create_user_roi_verifications_table',
+        // === ALTERATIONS (after creating tables) ===
+        '026' => 'add_fiscal_relations_to_invoices',
+        '027' => 'drop_fiscal_settings_table',
+        '028' => 'add_v040_fields_to_invoices_table',
+        '029' => 'add_converted_fields_to_invoices_table',
+        '030' => 'add_invoices_foreign_keys',
+        '031' => 'make_articles_translatable',
     ];
 
     public function handle(): int
