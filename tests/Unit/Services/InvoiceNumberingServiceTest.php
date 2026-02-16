@@ -160,7 +160,7 @@ describe('InvoiceNumberingService', function () {
         expect((string) $result)->toMatch('/^FAC-\d{4}-\d{6}$/');
 
         // String concatenation
-        expect('Number: ' . $result)->toStartWith('Number: FAC-');
+        expect('Number: '.$result)->toStartWith('Number: FAC-');
     });
 
     it('calculates fiscal year correctly for non-standard start', function () {

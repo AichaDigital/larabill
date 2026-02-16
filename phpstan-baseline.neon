@@ -60,6 +60,19 @@ parameters:
 			count: 1
 			path: src/Services/BillingService.php
 
+		# Self-calls to deprecated methods (internal use until v0.7.0 refactor to InvoiceNumberingService)
+		-
+			message: '#^Call to deprecated method generateInvoiceNumber\(\) of class AichaDigital\\Larabill\\Services\\BillingService#'
+			identifier: method.deprecated
+			count: 1
+			path: src/Services/BillingService.php
+
+		-
+			message: '#^Call to deprecated method getTempSeriesNumber\(\) of class AichaDigital\\Larabill\\Services\\BillingService#'
+			identifier: method.deprecated
+			count: 1
+			path: src/Services/BillingService.php
+
 		-
 			message: '#^Expression on left side of \?\? is not nullable\.$#'
 			identifier: nullCoalesce.expr

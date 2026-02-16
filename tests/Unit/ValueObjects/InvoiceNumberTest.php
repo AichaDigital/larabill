@@ -38,7 +38,7 @@ describe('InvoiceNumber', function () {
             seriesNumber: 3,
         );
 
-        expect('Invoice: ' . $number)->toBe('Invoice: FAC-2025-000003');
+        expect('Invoice: '.$number)->toBe('Invoice: FAC-2025-000003');
     });
 
     it('is readonly', function () {
