@@ -2,6 +2,87 @@
 
 All notable changes to `larabill` will be documented in this file.
 
+## [0.6.1] - 2026-02-16
+
+### Fixed
+
+- **Config**: `config/larabill.php` referenced test User model (`Tests\Models\User`) instead of `App\Models\User` in published config
+- **Config**: Added top-level `user_model` config key — all code reads `config('larabill.user_model')` but the key was never defined in config (worked only via fallback)
+- **InvoiceSeriesControl**: Wrong fallback for `user_model` config pointed to test class
+- **Migrations**: Applied Pint formatting and added 3 missing `.php.stub` files for alteration migrations
+- **Install command**: Removed 6 ghost entries from `$migrationOrder` that referenced non-existent stubs
+
+### Changed
+
+- **Migrations**: Converted 6 stub-only migrations to timestamped `.php` files for auto-loading in development
+
+### Added
+
+- **Tests**: MigrationHelper unit tests covering uuid, int, and ulid ID types
+- **Docs**: Updated CONTRIBUTING.md and SCHEMA_REQUIREMENTS.md with migration pattern rules
+
+## [0.6.0] - 2026-02-15
+
+### Added
+
+- **InvoiceNumber Value Object**: New VO for type-safe invoice number handling
+- **InvoiceNumberingService**: Returns `InvoiceNumber` VO instead of raw strings
+- **LegalEntityTypesSeeder**: Added `is_company` field support
+
+### Changed
+
+- **ADR-004**: Renamed `user_id` to `owner_user_id` in `user_tax_profiles` table
+- **Install command**: Respect config priority and prevent migration duplicates (#12)
+- **Migrations**: Use `MigrationHelper` for `billable_user_id` column
+
+### Deprecated
+
+- **BillingService**: Legacy numbering methods deprecated, removal target v0.7.0
+
+### Removed
+
+- **Filament dependency**: Package is now fully framework-agnostic (no Filament coupling)
+
+### Documentation
+
+- Added CONTRIBUTING.md with migration pattern standards
+- Updated SCHEMA_REQUIREMENTS.md to version 2.1
+
+## [0.5.0] - 2026-02-01
+
+### Breaking Changes
+
+- **ADR-001**: CompanyFiscalConfig replaces FiscalSettings — complete fiscal model refactor
+- **ADR-002**: Migrated from binary UUID to string UUID v7 (native Laravel `Str::orderedUuid()`)
+- **ADR-003**: Customer/User unification — `CustomerFiscalData` merged into `UserTaxProfile`
+- **All enums**: Migrated from string-backed to int-backed, removed MySQL `enum()` usage
+
+### Added
+
+- **ADR-001**: `CompanyFiscalConfig` and `CustomerFiscalData` fiscal models with temporal validity
+- **ADR-003**: `FiscalIntegrityChecker` service for fiscal change detection during proforma conversion
+- **Article pricing**: Frequency-based pricing system (monthly, quarterly, annual, one-time)
+- **Translatable articles**: Name and description fields support `spatie/laravel-translatable`
+- **HasUserRelation trait**: UUID binary + Filament compatibility for user relationships
+- **VatVerification**: Added `verified_at` field and soft deletes
+- **Base100Int**: Migrated all monetary values to base-100 integer storage via `lara100` package
+- **Verifactu integration**: Adapter services and VAT validation methods
+- **Invoice methods**: `calculateTotals()` and tax validation
+- **Install UX**: Improved `larabill:install` experience for production environments
+
+### Fixed
+
+- Migration ordering for foreign keys (invoices FK extracted to separate migration)
+- Duplicate columns in incremental migrations
+- Agnostic `user_id` types via `MigrationHelper::userIdColumn()` in all migrations
+- CI compatibility for migration auto-loading
+
+### Testing
+
+- 953 tests passing (2754 assertions)
+- Test coverage increased from 50.3% to 53.9%
+- Comprehensive ADR-001 fiscal model tests
+
 ## [0.4.0-alpha] - 2025-01-17 (WIP)
 
 ### 🚀 **MAJOR REFACTOR**: Agnostic Billable Entity System
