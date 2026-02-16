@@ -153,6 +153,49 @@ Company/issuer fiscal configurations.
 
 ---
 
+## Migration File Inventory
+
+As of v0.6.x, the package contains these migration files:
+
+### Package Tables (.php timestamped — auto-load in development)
+
+| File | Table | FK Dependencies |
+|------|-------|----------------|
+| `create_tax_rates_table` | `tax_rates` | None |
+| `create_tax_groups_table` | `tax_groups` | None |
+| `create_tax_group_tax_rate_table` | `tax_group_tax_rate` | tax_rates, tax_groups |
+| `create_tax_categories_table` | `tax_categories` | None |
+| `create_unit_measures_table` | `unit_measures` | None |
+| `create_legal_entity_types_table` | `legal_entity_types` | None |
+| `create_invoice_series_control_table` | `invoice_series_control` | None |
+| `create_country_vat_rates_table` | `country_vat_rates` | None |
+| `create_vat_categories_table` | `vat_categories` | Self-referencing |
+| `create_user_tax_infos_table` | `user_tax_infos` | users |
+| `create_user_tax_profiles_table` | `user_tax_profiles` | users, legal_entity_types |
+| `create_company_fiscal_configs_table` | `company_fiscal_configs` | users |
+| `create_invoices_table` | `invoices` | users |
+| `create_invoice_items_table` | `invoice_items` | invoices |
+| `create_articles_table` | `articles` | None |
+| `create_article_prices_table` | `article_prices` | articles |
+| `create_article_overrides_table` | `article_overrides` | articles, users |
+| `create_article_service_status_table` | `article_service_status` | articles, users |
+| `create_commissions_table` | `commissions` | invoices, users |
+| `create_vat_verifications_table` | `vat_verifications` | None |
+| `create_invoice_templates_table` | `invoice_templates` | None |
+| `create_company_template_settings_table` | `company_template_settings` | invoice_templates |
+| `create_eu_sales_thresholds_table` | `eu_sales_thresholds` | users |
+| `create_roi_queries_table` | `roi_queries` | users |
+| `create_user_roi_verifications_table` | `user_roi_verifications` | users |
+
+### Consumer-Only Stubs (.php.stub — published via larabill:install)
+
+| Stub | Purpose |
+|------|---------|
+| `add_user_relationships_to_users_table` | Adds parent_user_id, relationship_type to consumer's users table |
+| `rename_user_id_to_owner_user_id_in_user_tax_profiles` | ADR-004 migration for existing installations |
+
+---
+
 ## Migration Order
 
 When setting up a new installation, migrations must run in this order:
@@ -250,6 +293,6 @@ invoices.billable_user_id --> users.id (customer being billed)
 
 ## Last Updated
 
-- Document version: 2.1
+- Document version: 2.2
 - Larabill version: dev-main
-- Date: 2026-01-22
+- Date: 2026-02-16
