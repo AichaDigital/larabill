@@ -84,7 +84,7 @@ class InvoiceSeriesControl extends Model
      */
     public function user(): BelongsTo
     {
-        $userModel = config('larabill.user_model', \AichaDigital\Larabill\Tests\Models\User::class);
+        $userModel = config('larabill.user_model', 'App\\Models\\User');
 
         return $this->belongsTo($userModel);
     }
