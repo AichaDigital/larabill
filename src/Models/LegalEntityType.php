@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
+use AichaDigital\Larabill\Services\ModelMappingService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Spatie\Translatable\HasTranslations;
 
 /**
@@ -25,8 +27,8 @@ use Spatie\Translatable\HasTranslations;
  * @property bool $is_active
  * @property int $sort_order
  * @property array|null $metadata
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 class LegalEntityType extends Model
 {
@@ -132,7 +134,7 @@ class LegalEntityType extends Model
      */
     public function users(): HasMany
     {
-        $userModel = \AichaDigital\Larabill\Services\ModelMappingService::getModelClass('user');
+        $userModel = ModelMappingService::getModelClass('user');
 
         // @phpstan-ignore-next-line return.type
         return $this->hasMany($userModel, 'legal_entity_type_code', 'code');

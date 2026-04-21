@@ -5,6 +5,7 @@ declare(strict_types=1);
 use AichaDigital\Larabill\Enums\TaxType;
 use AichaDigital\Larabill\Models\TaxGroup;
 use AichaDigital\Larabill\Models\TaxRate;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -114,8 +115,8 @@ it('can attach multiple tax rates at once', function () {
 it('has timestamps', function () {
     $taxGroup = TaxGroup::factory()->create();
 
-    expect($taxGroup->created_at)->toBeInstanceOf(\Carbon\Carbon::class)
-        ->and($taxGroup->updated_at)->toBeInstanceOf(\Carbon\Carbon::class);
+    expect($taxGroup->created_at)->toBeInstanceOf(Carbon::class)
+        ->and($taxGroup->updated_at)->toBeInstanceOf(Carbon::class);
 });
 
 it('can sync tax rates', function () {

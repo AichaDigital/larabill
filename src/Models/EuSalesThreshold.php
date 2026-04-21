@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Models;
 
 use AichaDigital\Larabill\Concerns\HasUserRelation;
+use AichaDigital\Larabill\Services\ModelMappingService;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
@@ -163,10 +165,10 @@ class EuSalesThreshold extends Model
             }
 
             // Apply field mapping when creating
-            $fieldMapping = \AichaDigital\Larabill\Services\ModelMappingService::getFieldMapping('eu_sales_threshold');
+            $fieldMapping = ModelMappingService::getFieldMapping('eu_sales_threshold');
             if (! empty($fieldMapping)) {
                 $attributes       = $model->getAttributes();
-                $mappedAttributes = \AichaDigital\Larabill\Services\ModelMappingService::reverseMapFields($attributes, 'eu_sales_threshold');
+                $mappedAttributes = ModelMappingService::reverseMapFields($attributes, 'eu_sales_threshold');
                 $model->setRawAttributes($mappedAttributes);
             }
         });
@@ -178,10 +180,10 @@ class EuSalesThreshold extends Model
 
         static::retrieved(function ($model) {
             // Apply field mapping when retrieving
-            $fieldMapping = \AichaDigital\Larabill\Services\ModelMappingService::getFieldMapping('eu_sales_threshold');
+            $fieldMapping = ModelMappingService::getFieldMapping('eu_sales_threshold');
             if (! empty($fieldMapping)) {
                 $attributes       = $model->getAttributes();
-                $mappedAttributes = \AichaDigital\Larabill\Services\ModelMappingService::mapFields($attributes, 'eu_sales_threshold');
+                $mappedAttributes = ModelMappingService::mapFields($attributes, 'eu_sales_threshold');
                 $model->setRawAttributes($mappedAttributes);
             }
         });
@@ -579,9 +581,9 @@ class EuSalesThreshold extends Model
     /**
      * Get companies exceeding threshold.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, EuSalesThreshold>
+     * @return Collection<int, EuSalesThreshold>
      */
-    public static function getCompaniesExceedingThreshold(?int $fiscalYear = null): \Illuminate\Database\Eloquent\Collection
+    public static function getCompaniesExceedingThreshold(?int $fiscalYear = null): Collection
     {
         if (! $fiscalYear) {
             $fiscalYear = now()->year;
@@ -595,9 +597,9 @@ class EuSalesThreshold extends Model
     /**
      * Get companies needing notification.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, EuSalesThreshold>
+     * @return Collection<int, EuSalesThreshold>
      */
-    public static function getCompaniesNeedingNotification(?int $fiscalYear = null): \Illuminate\Database\Eloquent\Collection
+    public static function getCompaniesNeedingNotification(?int $fiscalYear = null): Collection
     {
         if (! $fiscalYear) {
             $fiscalYear = now()->year;

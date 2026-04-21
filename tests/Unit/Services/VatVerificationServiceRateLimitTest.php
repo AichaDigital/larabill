@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use AichaDigital\Larabill\Models\VatVerification;
 use AichaDigital\Larabill\Services\VatApiIntegrationService;
 use AichaDigital\Larabill\Services\VatVerificationService;
 use Illuminate\Support\Facades\Http;
@@ -79,7 +80,7 @@ it('handles rate limiting with cache fallback', function () {
     config(['larabill.vat_apis.apilayer.key' => 'test_key']);
 
     // Create a cached verification first with rate limiting info
-    $cachedVerification = \AichaDigital\Larabill\Models\VatVerification::create([
+    $cachedVerification = VatVerification::create([
         'vat_code'        => 'ESB12345678',
         'country_code'    => 'ES',
         'is_valid'        => true,
@@ -124,7 +125,7 @@ it('handles rate limiting with expired cache', function () {
     config(['larabill.vat_apis.apilayer.key' => 'test_key']);
 
     // Create an expired cached verification
-    $expiredVerification = \AichaDigital\Larabill\Models\VatVerification::create([
+    $expiredVerification = VatVerification::create([
         'vat_code'        => 'ESB12345678',
         'country_code'    => 'ES',
         'is_valid'        => true,

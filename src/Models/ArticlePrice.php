@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Models;
 
 use AichaDigital\Lara100\Casts\Base100Int;
+use AichaDigital\Larabill\Database\Factories\ArticlePriceFactory;
 use AichaDigital\Larabill\Enums\BillingFrequency;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -29,7 +30,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property bool $is_active
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \AichaDigital\Larabill\Models\Article $article
+ * @property-read Article $article
  */
 class ArticlePrice extends Model
 {
@@ -226,6 +227,6 @@ class ArticlePrice extends Model
      */
     protected static function newFactory()
     {
-        return \AichaDigital\Larabill\Database\Factories\ArticlePriceFactory::new();
+        return ArticlePriceFactory::new();
     }
 }

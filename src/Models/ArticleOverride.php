@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Models;
 
 use AichaDigital\Lara100\Casts\Base100Int;
+use AichaDigital\Larabill\Database\Factories\ArticleOverrideFactory;
+use AichaDigital\Larabill\Enums\BillingFrequency;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -24,7 +26,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property bool $is_active
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \AichaDigital\Larabill\Models\Article $article
+ * @property-read Article $article
  */
 class ArticleOverride extends Model
 {
@@ -177,7 +179,7 @@ class ArticleOverride extends Model
      * Get the discount amount compared to base price.
      * Note: Requires a billing frequency to determine the base price.
      */
-    public function getDiscountAmount(\AichaDigital\Larabill\Enums\BillingFrequency $frequency): float
+    public function getDiscountAmount(BillingFrequency $frequency): float
     {
         $basePrice = $this->article->getPriceFor($frequency) ?? 0.0;
 
@@ -188,7 +190,7 @@ class ArticleOverride extends Model
      * Get the discount percentage compared to base price.
      * Note: Requires a billing frequency to determine the base price.
      */
-    public function getDiscountPercentage(\AichaDigital\Larabill\Enums\BillingFrequency $frequency): int
+    public function getDiscountPercentage(BillingFrequency $frequency): int
     {
         $basePrice = $this->article->getPriceFor($frequency);
 
@@ -204,6 +206,6 @@ class ArticleOverride extends Model
      */
     protected static function newFactory()
     {
-        return \AichaDigital\Larabill\Database\Factories\ArticleOverrideFactory::new();
+        return ArticleOverrideFactory::new();
     }
 }

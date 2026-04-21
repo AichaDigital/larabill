@@ -5,6 +5,7 @@ declare(strict_types=1);
 use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticleOverride;
+use AichaDigital\Larabill\Models\ArticleServiceStatus;
 use AichaDigital\Larabill\Services\PricingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -234,7 +235,7 @@ it('creates pricing details for service', function () {
     $customer = $this->userModel::factory()->create();
     $article  = Article::factory()->monthly(2900)->create();
 
-    $service = \AichaDigital\Larabill\Models\ArticleServiceStatus::factory()->create([
+    $service = ArticleServiceStatus::factory()->create([
         'customer_id'       => $customer->id,
         'article_id'        => $article->id,
         'billing_frequency' => BillingFrequency::MONTHLY,

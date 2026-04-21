@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Console;
 
+use AichaDigital\Larabill\Support\MigrationHelper;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
@@ -159,7 +160,7 @@ class LarabillInstallCommand extends Command
 
         // 2. Consultar config/env (LARABILL_USER_ID_TYPE) — tiene prioridad sobre schema
         $configured = config('larabill.user_id_type', 'uuid');
-        if ($configured !== 'auto' && \AichaDigital\Larabill\Support\MigrationHelper::isSupportedIdType($configured)) {
+        if ($configured !== 'auto' && MigrationHelper::isSupportedIdType($configured)) {
             $this->comment("Using configured user ID type from env/config: {$configured}");
 
             return $configured;

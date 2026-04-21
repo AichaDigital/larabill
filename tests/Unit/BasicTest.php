@@ -1,6 +1,7 @@
 <?php
 
 declare(strict_types=1);
+use AichaDigital\Larabill\Services\PDF\PDFService;
 
 it('can access Laravel app', function () {
     $app = app();
@@ -13,6 +14,6 @@ it('can access service provider', function () {
     expect($app)->not->toBeNull();
 
     // Test that we can resolve a simple service from our package
-    $pdfService = app(\AichaDigital\Larabill\Services\PDF\PDFService::class);
+    $pdfService = app(PDFService::class);
     expect($pdfService)->not->toBeNull();
 });

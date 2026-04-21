@@ -5,6 +5,7 @@ declare(strict_types=1);
 use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Enums\ServiceStatus;
 use AichaDigital\Larabill\Models\Article;
+use AichaDigital\Larabill\Models\ArticleOverride;
 use AichaDigital\Larabill\Models\ArticlePrice;
 use AichaDigital\Larabill\Models\ArticleServiceStatus;
 use AichaDigital\Larabill\Models\Invoice;
@@ -279,7 +280,7 @@ describe('RecurringBillingService pricing', function () {
         $customer = $this->userModel::factory()->create();
         $article  = Article::factory()->monthly(2900)->create();
 
-        \AichaDigital\Larabill\Models\ArticleOverride::factory()->create([
+        ArticleOverride::factory()->create([
             'article_id'   => $article->id,
             'customer_id'  => $customer->id,
             'custom_price' => 2400,
@@ -343,7 +344,7 @@ describe('RecurringBillingService idempotency', function () {
             'customer_id'       => $customer->id,
             'article_id'        => $article->id,
             'billing_frequency' => BillingFrequency::MONTHLY,
-            'status'            => \AichaDigital\Larabill\Enums\ServiceStatus::ACTIVE,
+            'status'            => ServiceStatus::ACTIVE,
             'next_billing_date' => $billingDate,
             'effective_price'   => 2900,
         ]);
@@ -357,20 +358,20 @@ describe('RecurringBillingService idempotency', function () {
 
         // Reset next_billing_date to simulate crash before updateNextBillingDate()
         // Use direct DB update to bypass any model observers
-        \DB::table('article_service_status')
+        DB::table('article_service_status')
             ->where('id', $service->id)
             ->update(['next_billing_date' => $billingDate->toDateString()]);
         $service->refresh();
 
         // Verify service state after reset
-        expect($service->status)->toBe(\AichaDigital\Larabill\Enums\ServiceStatus::ACTIVE)
+        expect($service->status)->toBe(ServiceStatus::ACTIVE)
             ->and($service->next_billing_date->toDateString())->toBe($billingDate->toDateString());
 
         // Verify the service can be found in the billing window
         $windowEnd    = $processingDate->copy()->addDays(30)->toDateString();
         $foundService = ArticleServiceStatus::query()
             ->with(['article', 'customer', 'currentOverride'])
-            ->where('status', \AichaDigital\Larabill\Enums\ServiceStatus::ACTIVE)
+            ->where('status', ServiceStatus::ACTIVE)
             ->whereNotNull('next_billing_date')
             ->whereRaw('DATE(next_billing_date) <= ?', [$windowEnd])
             ->first();
@@ -394,7 +395,7 @@ describe('RecurringBillingService idempotency', function () {
             'customer_id'       => $customer->id,
             'article_id'        => $article->id,
             'billing_frequency' => BillingFrequency::MONTHLY,
-            'status'            => \AichaDigital\Larabill\Enums\ServiceStatus::ACTIVE,
+            'status'            => ServiceStatus::ACTIVE,
             'next_billing_date' => Carbon::parse('2024-01-15'),
         ]);
 

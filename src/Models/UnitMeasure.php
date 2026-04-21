@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
+use AichaDigital\Larabill\Database\Factories\UnitMeasureFactory;
 use AichaDigital\Larabill\Enums\UnitMeasureCategory;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -22,8 +24,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property UnitMeasureCategory $category
  * @property bool $is_active
  * @property int $sort_order
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 class UnitMeasure extends Model
 {
@@ -31,7 +33,7 @@ class UnitMeasure extends Model
 
     protected static function newFactory()
     {
-        return \AichaDigital\Larabill\Database\Factories\UnitMeasureFactory::new();
+        return UnitMeasureFactory::new();
     }
 
     protected $table = 'unit_measures';

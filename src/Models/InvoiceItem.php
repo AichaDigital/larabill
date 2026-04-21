@@ -7,6 +7,8 @@ namespace AichaDigital\Larabill\Models;
 use AichaDigital\Lara100\Casts\Base100Int;
 use AichaDigital\Larabill\Database\Factories\InvoiceItemFactory;
 use AichaDigital\Larabill\Enums\ItemType;
+use AichaDigital\Larabill\Services\ModelMappingService;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -42,11 +44,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property array $taxes_applied JSON snapshot of applied taxes (immutable)
  * @property float $total_amount Base-100 integer (€12.34 => 1234)
  * @property int $tax_rate Computed from taxes_applied (first tax rate or 0)
- * @property \Carbon\Carbon|null $service_date_from Service start date
- * @property \Carbon\Carbon|null $service_date_to Service end date
+ * @property Carbon|null $service_date_from Service start date
+ * @property Carbon|null $service_date_to Service end date
  * @property array|null $metadata
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 class InvoiceItem extends Model
 {
@@ -115,7 +117,7 @@ class InvoiceItem extends Model
     /**
      * Get the invoice that owns the item.
      *
-     * @return BelongsTo<\AichaDigital\Larabill\Models\Invoice, $this>
+     * @return BelongsTo<Invoice, $this>
      */
     /**
     /**
@@ -123,7 +125,7 @@ class InvoiceItem extends Model
      */
     public function invoice(): BelongsTo
     {
-        $invoiceModel = \AichaDigital\Larabill\Services\ModelMappingService::getModelClass('invoice');
+        $invoiceModel = ModelMappingService::getModelClass('invoice');
 
         // @phpstan-ignore-next-line return.type,argument.templateType
         return $this->belongsTo($invoiceModel, 'invoice_id', 'id');

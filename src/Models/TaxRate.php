@@ -6,6 +6,7 @@ namespace AichaDigital\Larabill\Models;
 
 use AichaDigital\Larabill\Database\Factories\TaxRateFactory;
 use AichaDigital\Larabill\Enums\TaxType;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -29,9 +30,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string|null $region Region/jurisdiction code (e.g., "ES", "IC", "US-MA", "US-MA-BOSTON")
  * @property TaxType $type Tax type enum (vat, sales_tax, gst, other)
  * @property array|null $special_conditions Additional metadata for special cases (IGIC, IPSI, exemptions)
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
- * @property \Carbon\Carbon|null $deleted_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
+ * @property Carbon|null $deleted_at
  */
 class TaxRate extends Model
 {

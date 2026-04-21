@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
+use AichaDigital\Larabill\Services\ModelMappingService;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 
 /**
  * CountryVatRate Model
@@ -88,10 +90,10 @@ class CountryVatRate extends Model
 
             // Apply field mapping when creating (disabled in testing to avoid schema mismatches)
             if (! app()->environment('testing')) {
-                $fieldMapping = \AichaDigital\Larabill\Services\ModelMappingService::getFieldMapping('country_vat_rate');
+                $fieldMapping = ModelMappingService::getFieldMapping('country_vat_rate');
                 if (! empty($fieldMapping)) {
                     $attributes       = $model->getAttributes();
-                    $mappedAttributes = \AichaDigital\Larabill\Services\ModelMappingService::reverseMapFields($attributes, 'country_vat_rate');
+                    $mappedAttributes = ModelMappingService::reverseMapFields($attributes, 'country_vat_rate');
 
                     // Filter out keys that are not mass-assignable columns to avoid DB errors
                     $allowed = array_merge($model->getFillable(), [
@@ -117,10 +119,10 @@ class CountryVatRate extends Model
 
         static::retrieved(function ($model) {
             // Apply field mapping when retrieving
-            $fieldMapping = \AichaDigital\Larabill\Services\ModelMappingService::getFieldMapping('country_vat_rate');
+            $fieldMapping = ModelMappingService::getFieldMapping('country_vat_rate');
             if (! empty($fieldMapping)) {
                 $attributes       = $model->getAttributes();
-                $mappedAttributes = \AichaDigital\Larabill\Services\ModelMappingService::mapFields($attributes, 'country_vat_rate');
+                $mappedAttributes = ModelMappingService::mapFields($attributes, 'country_vat_rate');
                 $model->setRawAttributes($mappedAttributes);
             }
         });
@@ -826,9 +828,9 @@ class CountryVatRate extends Model
      * Extrae y convierte las tasas estándar de base 100 a porcentajes.
      *
      * @param  \Illuminate\Database\Eloquent\Collection<int, static>  $collection
-     * @return \Illuminate\Support\Collection<int, float>
+     * @return Collection<int, float>
      */
-    protected static function extractStandardRatesAsPercentages(\Illuminate\Database\Eloquent\Collection $collection): \Illuminate\Support\Collection
+    protected static function extractStandardRatesAsPercentages(\Illuminate\Database\Eloquent\Collection $collection): Collection
     {
         return $collection->pluck('standard_rate')
             ->filter(fn ($rate) => $rate !== null)
@@ -839,9 +841,9 @@ class CountryVatRate extends Model
     /**
      * Calcula el promedio de forma segura, manejando colecciones vacías.
      *
-     * @param  \Illuminate\Support\Collection<int, float>  $rates
+     * @param  Collection<int, float>  $rates
      */
-    protected static function calculateSafeAverage(\Illuminate\Support\Collection $rates): float
+    protected static function calculateSafeAverage(Collection $rates): float
     {
         if ($rates->isEmpty()) {
             return 0.0;
@@ -862,9 +864,9 @@ class CountryVatRate extends Model
     /**
      * Calcula el máximo de forma segura, manejando colecciones vacías.
      *
-     * @param  \Illuminate\Support\Collection<int, float>  $rates
+     * @param  Collection<int, float>  $rates
      */
-    protected static function calculateSafeMax(\Illuminate\Support\Collection $rates): float
+    protected static function calculateSafeMax(Collection $rates): float
     {
         if ($rates->isEmpty()) {
             return 0.0;
@@ -878,9 +880,9 @@ class CountryVatRate extends Model
     /**
      * Calcula el mínimo de forma segura, manejando colecciones vacías.
      *
-     * @param  \Illuminate\Support\Collection<int, float>  $rates
+     * @param  Collection<int, float>  $rates
      */
-    protected static function calculateSafeMin(\Illuminate\Support\Collection $rates): float
+    protected static function calculateSafeMin(Collection $rates): float
     {
         if ($rates->isEmpty()) {
             return 0.0;

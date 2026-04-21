@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use AichaDigital\Larabill\Actions\ProcessPendingCancellations;
 use AichaDigital\Larabill\Actions\ProcessServiceExpiration;
+use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Enums\CancellationType;
 use AichaDigital\Larabill\Enums\ServiceStatus;
 use AichaDigital\Larabill\Models\Article;
@@ -49,7 +50,7 @@ it('can process pending cancellations via action', function () {
     ArticleServiceStatus::factory()->count(3)->create([
         'customer_id'               => $customer->id,
         'article_id'                => $article->id,
-        'billing_frequency'         => \AichaDigital\Larabill\Enums\BillingFrequency::MONTHLY,
+        'billing_frequency'         => BillingFrequency::MONTHLY,
         'status'                    => ServiceStatus::ACTIVE,
         'cancellation_type'         => CancellationType::END_OF_PERIOD,
         'cancellation_effective_at' => now()->subDay(),

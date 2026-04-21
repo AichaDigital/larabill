@@ -8,14 +8,14 @@ use AichaDigital\Larabill\Models\LegalEntityType;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\AichaDigital\Larabill\Models\LegalEntityType>
+ * @extends Factory<LegalEntityType>
  */
 class LegalEntityTypeFactory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
      *
-     * @var class-string<\AichaDigital\Larabill\Models\LegalEntityType>
+     * @var class-string<LegalEntityType>
      */
     protected $model = LegalEntityType::class;
 

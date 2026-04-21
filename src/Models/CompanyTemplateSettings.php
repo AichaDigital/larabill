@@ -9,6 +9,7 @@ use AichaDigital\Larabill\Enums\SettingScope;
 use AichaDigital\Larabill\Enums\SettingType;
 use AichaDigital\Larabill\Enums\TemplateInvoiceType;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -174,9 +175,9 @@ class CompanyTemplateSettings extends Model
     /**
      * Get all settings for a company.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, CompanyTemplateSettings>
+     * @return Collection<int, CompanyTemplateSettings>
      */
-    public static function getCompanySettings(string|int $companyId): \Illuminate\Database\Eloquent\Collection
+    public static function getCompanySettings(string|int $companyId): Collection
     {
         return static::forCompany($companyId)
             ->active()

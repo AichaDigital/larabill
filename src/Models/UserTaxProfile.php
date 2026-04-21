@@ -137,7 +137,7 @@ class UserTaxProfile extends Model
     /**
      * Get the owner user (who can edit this profile).
      *
-     * @return BelongsTo<\Illuminate\Database\Eloquent\Model, $this>
+     * @return BelongsTo<Model, $this>
      */
     public function owner(): BelongsTo
     {
@@ -152,7 +152,7 @@ class UserTaxProfile extends Model
      *
      * Multiple user accounts can share the same fiscal identity.
      *
-     * @return HasMany<\Illuminate\Database\Eloquent\Model, $this>
+     * @return HasMany<Model, $this>
      */
     public function linkedUsers(): HasMany
     {
@@ -179,7 +179,7 @@ class UserTaxProfile extends Model
      *
      * @deprecated Use owner() instead. Will be removed in v2.0.
      *
-     * @return BelongsTo<\Illuminate\Database\Eloquent\Model, $this>
+     * @return BelongsTo<Model, $this>
      */
     public function user(): BelongsTo
     {

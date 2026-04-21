@@ -16,6 +16,7 @@ use AichaDigital\Larabill\Models\RoiQuery;
 use AichaDigital\Larabill\Models\UserRoiVerification;
 use AichaDigital\Larabill\Models\VatVerification;
 use AichaDigital\Larabill\Services\RoiVerificationService;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
 
 use function Pest\Laravel\mock;
@@ -393,7 +394,7 @@ it('can check API rate limit status', function () {
 
     expect($status)->toBeArray();
     expect($status['remaining'])->toBe(950);
-    expect($status['reset_time'])->toBeInstanceOf(\Carbon\Carbon::class);
+    expect($status['reset_time'])->toBeInstanceOf(Carbon::class);
 });
 
 it('can handle batch ROI verification', function () {

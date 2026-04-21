@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use AichaDigital\Larabill\Models\LegalEntityType;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 it('can create a legal entity type', function () {
     $type = LegalEntityType::factory()->create([
@@ -53,7 +54,7 @@ it('can create different legal entity types by code', function () {
 it('has relationship with users', function () {
     $type = LegalEntityType::factory()->create();
 
-    expect($type->users())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\HasMany::class);
+    expect($type->users())->toBeInstanceOf(HasMany::class);
 });
 
 it('can filter by country', function () {

@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
+use AichaDigital\Larabill\Services\ModelMappingService;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -164,10 +168,10 @@ class VatCategory extends Model
             }
 
             // Apply field mapping when creating
-            $fieldMapping = \AichaDigital\Larabill\Services\ModelMappingService::getFieldMapping('vat_category');
+            $fieldMapping = ModelMappingService::getFieldMapping('vat_category');
             if (! empty($fieldMapping)) {
                 $attributes       = $model->getAttributes();
-                $mappedAttributes = \AichaDigital\Larabill\Services\ModelMappingService::reverseMapFields($attributes, 'vat_category');
+                $mappedAttributes = ModelMappingService::reverseMapFields($attributes, 'vat_category');
                 $model->setRawAttributes($mappedAttributes);
             }
         });
@@ -179,10 +183,10 @@ class VatCategory extends Model
 
         static::retrieved(function ($model) {
             // Apply field mapping when retrieving
-            $fieldMapping = \AichaDigital\Larabill\Services\ModelMappingService::getFieldMapping('vat_category');
+            $fieldMapping = ModelMappingService::getFieldMapping('vat_category');
             if (! empty($fieldMapping)) {
                 $attributes       = $model->getAttributes();
-                $mappedAttributes = \AichaDigital\Larabill\Services\ModelMappingService::mapFields($attributes, 'vat_category');
+                $mappedAttributes = ModelMappingService::mapFields($attributes, 'vat_category');
                 $model->setRawAttributes($mappedAttributes);
             }
         });
@@ -191,9 +195,9 @@ class VatCategory extends Model
     /**
      * Get VAT categories by country.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, VatCategory>
+     * @return Collection<int, VatCategory>
      */
-    public static function getByCountry(string $countryCode): \Illuminate\Database\Eloquent\Collection
+    public static function getByCountry(string $countryCode): Collection
     {
         return static::where('country_code', $countryCode)
             ->where('is_active', true)
@@ -204,9 +208,9 @@ class VatCategory extends Model
     /**
      * Get VAT categories by category type.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, VatCategory>
+     * @return Collection<int, VatCategory>
      */
-    public static function getByCategoryType(string $categoryType): \Illuminate\Database\Eloquent\Collection
+    public static function getByCategoryType(string $categoryType): Collection
     {
         return static::where('category_type', $categoryType)
             ->where('is_active', true)
@@ -217,9 +221,9 @@ class VatCategory extends Model
     /**
      * Get VAT categories by country and type.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, VatCategory>
+     * @return Collection<int, VatCategory>
      */
-    public static function getByCountryAndType(string $countryCode, string $categoryType): \Illuminate\Database\Eloquent\Collection
+    public static function getByCountryAndType(string $countryCode, string $categoryType): Collection
     {
         return static::where('country_code', $countryCode)
             ->where('category_type', $categoryType)
@@ -427,9 +431,9 @@ class VatCategory extends Model
     /**
      * Get parent category.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo<VatCategory, $this>
+     * @return BelongsTo<VatCategory, $this>
      */
-    public function parentCategory(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function parentCategory(): BelongsTo
     {
         return $this->belongsTo(self::class, 'parent_category_id');
     }
@@ -437,9 +441,9 @@ class VatCategory extends Model
     /**
      * Get child categories.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany<VatCategory, $this>
+     * @return HasMany<VatCategory, $this>
      */
-    public function childCategories(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function childCategories(): HasMany
     {
         return $this->hasMany(self::class, 'parent_category_id');
     }

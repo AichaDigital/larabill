@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill;
 
 // Commands removed as they don't exist yet
+use AichaDigital\Larabill\Console\DetectUserIdTypeCommand;
+use AichaDigital\Larabill\Console\LarabillInstallCommand;
 use AichaDigital\Larabill\Contracts\Services\TaxCalculation\TaxCalculationStrategy;
 use AichaDigital\Larabill\Events\RecurringBillingCompleted;
 use AichaDigital\Larabill\Events\RecurringBillingFailed;
@@ -59,7 +61,7 @@ class LarabillServiceProvider extends PackageServiceProvider
         // Register install command manually (package not built with Spatie skeleton)
         if ($this->app->runningInConsole()) {
             $this->commands([
-                \AichaDigital\Larabill\Console\LarabillInstallCommand::class,
+                LarabillInstallCommand::class,
             ]);
         }
     }
@@ -88,7 +90,7 @@ class LarabillServiceProvider extends PackageServiceProvider
             ->hasConfigFile()
             ->hasViews()
             ->hasTranslations()
-            ->hasCommand(\AichaDigital\Larabill\Console\DetectUserIdTypeCommand::class);
+            ->hasCommand(DetectUserIdTypeCommand::class);
 
         // Note: Migrations load automatically via loadMigrationsFrom() in boot()
         // In production, use `php artisan larabill:install` for controlled publishing

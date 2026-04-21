@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services\PDF;
 
+use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\TemplateInvoiceType;
+use AichaDigital\Larabill\Models\CompanyTemplateSettings;
 use AichaDigital\Larabill\Models\Invoice;
+use AichaDigital\Larabill\Models\InvoiceTemplate;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Support\Facades\View;
@@ -184,7 +187,7 @@ class DomPDFService
             // Only try to get from database if the model exists and we're not in testing
             if (class_exists('\AichaDigital\Larabill\Models\InvoiceTemplate') && app()->bound('db')) {
                 try {
-                    $template = \AichaDigital\Larabill\Models\InvoiceTemplate::getByName(
+                    $template = InvoiceTemplate::getByName(
                         $invoice->template_name,
                         $invoice->getInvoiceType()
                     );
@@ -199,7 +202,7 @@ class DomPDFService
         }
 
         // Determine template based on invoice type and fiscal data
-        if ($invoice->serie === \AichaDigital\Larabill\Enums\InvoiceSerieType::PROFORMA) {
+        if ($invoice->serie === InvoiceSerieType::PROFORMA) {
             return 'larabill::pdf.invoice.proforma';
         }
 
@@ -225,13 +228,13 @@ class DomPDFService
     protected function shouldIncludeQR(Invoice $invoice): bool
     {
         // Proforma invoices never include QR
-        if ($invoice->serie === \AichaDigital\Larabill\Enums\InvoiceSerieType::PROFORMA) {
+        if ($invoice->serie === InvoiceSerieType::PROFORMA) {
             return false;
         }
 
         // Only fiscal invoices (INVOICE and RECTIFICATIVE) include QR
-        return $invoice->serie === \AichaDigital\Larabill\Enums\InvoiceSerieType::INVOICE
-            || $invoice->serie === \AichaDigital\Larabill\Enums\InvoiceSerieType::RECTIFICATIVE;
+        return $invoice->serie === InvoiceSerieType::INVOICE
+            || $invoice->serie === InvoiceSerieType::RECTIFICATIVE;
     }
 
     /**
@@ -442,7 +445,7 @@ class DomPDFService
             try {
                 $companyId = $this->getCompanyId($invoice);
 
-                return \AichaDigital\Larabill\Models\CompanyTemplateSettings::getDefaultNotes(
+                return CompanyTemplateSettings::getDefaultNotes(
                     $companyId,
                     $this->convertToTemplateInvoiceType($invoice->getInvoiceType()),
                     (string) $invoice->user_id
@@ -473,7 +476,7 @@ class DomPDFService
             try {
                 $companyId = $this->getCompanyId($invoice);
 
-                return \AichaDigital\Larabill\Models\CompanyTemplateSettings::getPaymentTerms(
+                return CompanyTemplateSettings::getPaymentTerms(
                     $companyId,
                     $this->convertToTemplateInvoiceType($invoice->getInvoiceType()),
                     (string) $invoice->user_id
@@ -500,14 +503,14 @@ class DomPDFService
                 $template = null;
 
                 if ($invoice->template_name) {
-                    $template = \AichaDigital\Larabill\Models\InvoiceTemplate::getByName(
+                    $template = InvoiceTemplate::getByName(
                         $invoice->template_name,
                         $invoice->getInvoiceType()
                     );
                 }
 
                 if (! $template) {
-                    $template = \AichaDigital\Larabill\Models\InvoiceTemplate::getDefaultForType(
+                    $template = InvoiceTemplate::getDefaultForType(
                         $invoice->getInvoiceType()
                     );
                 }
@@ -543,10 +546,10 @@ class DomPDFService
     protected function convertToTemplateInvoiceType(string $invoiceType): TemplateInvoiceType
     {
         return match (strtolower($invoiceType)) {
-            'proforma'      => TemplateInvoiceType::PROFORMA,
+            'proforma'                         => TemplateInvoiceType::PROFORMA,
             'reverse_charge', 'reverse-charge' => TemplateInvoiceType::REVERSE_CHARGE,
-            'exempt'        => TemplateInvoiceType::EXEMPT,
-            default         => TemplateInvoiceType::FISCAL, // invoice, simplified, rectificative -> fiscal
+            'exempt'                           => TemplateInvoiceType::EXEMPT,
+            default                            => TemplateInvoiceType::FISCAL, // invoice, simplified, rectificative -> fiscal
         };
     }
 
@@ -581,7 +584,7 @@ class DomPDFService
     {
         try {
             if (class_exists('\Illuminate\Support\Facades\View') && app()->bound('view')) {
-                return \Illuminate\Support\Facades\View::make($template, $data)->render();
+                return View::make($template, $data)->render();
             }
         } catch (\Exception $e) {
             // Fall back to mock HTML for testing

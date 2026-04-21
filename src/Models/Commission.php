@@ -8,6 +8,7 @@ use AichaDigital\Lara100\Casts\Base100Int;
 use AichaDigital\Larabill\Enums\CommissionAppliesTo;
 use AichaDigital\Larabill\Enums\CommissionLevel;
 use AichaDigital\Larabill\Enums\CommissionType;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -150,7 +151,7 @@ class Commission extends Model
 
         // Check validity period
         if ($date) {
-            $carbonDate = \Carbon\Carbon::parse($date);
+            $carbonDate = Carbon::parse($date);
             $afterStart = $carbonDate->greaterThanOrEqualTo($this->valid_from);
             $beforeEnd  = $this->valid_until === null || $carbonDate->lessThanOrEqualTo($this->valid_until);
 
@@ -265,7 +266,7 @@ class Commission extends Model
      */
     public function scopeValidForDate($query, \DateTimeInterface $date)
     {
-        $carbonDate = \Carbon\Carbon::parse($date);
+        $carbonDate = Carbon::parse($date);
 
         return $query->where('valid_from', '<=', $carbonDate)
             ->where(function ($q) use ($carbonDate) {

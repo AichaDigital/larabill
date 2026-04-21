@@ -12,14 +12,14 @@ use AichaDigital\Larabill\Models\Commission;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\AichaDigital\Larabill\Models\Commission>
+ * @extends Factory<Commission>
  */
 class CommissionFactory extends Factory
 {
     /**
      * The name of the factory's corresponding model.
      *
-     * @var class-string<\AichaDigital\Larabill\Models\Commission>
+     * @var class-string<Commission>
      */
     protected $model = Commission::class;
 

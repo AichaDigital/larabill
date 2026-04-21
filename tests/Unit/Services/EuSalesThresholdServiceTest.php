@@ -5,6 +5,7 @@ declare(strict_types=1);
 use AichaDigital\Larabill\Models\EuSalesThreshold;
 use AichaDigital\Larabill\Services\EuSalesThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
@@ -17,7 +18,7 @@ describe('EuSalesThresholdService', function () {
 
     it('returns threshold status', function () {
         $service    = new EuSalesThresholdService;
-        $userId     = \Illuminate\Support\Str::uuid()->toString();
+        $userId     = Str::uuid()->toString();
         $fiscalYear = now()->year;
 
         $status = $service->getThresholdStatus($userId, $fiscalYear);
@@ -36,7 +37,7 @@ describe('EuSalesThresholdService', function () {
 
     it('creates threshold record when getting status', function () {
         $service    = new EuSalesThresholdService;
-        $userId     = \Illuminate\Support\Str::uuid()->toString();
+        $userId     = Str::uuid()->toString();
         $fiscalYear = now()->year;
 
         EuSalesThreshold::getOrCreateForUser($userId, $fiscalYear);
@@ -49,7 +50,7 @@ describe('EuSalesThresholdService', function () {
 
     it('returns zero amount for non-existent threshold', function () {
         $service = new EuSalesThresholdService;
-        $userId  = \Illuminate\Support\Str::uuid()->toString();
+        $userId  = Str::uuid()->toString();
 
         $status = $service->getThresholdStatus($userId, 2020);
 
@@ -58,7 +59,7 @@ describe('EuSalesThresholdService', function () {
 
     it('resets for new fiscal year', function () {
         $service = new EuSalesThresholdService;
-        $userId  = \Illuminate\Support\Str::uuid()->toString();
+        $userId  = Str::uuid()->toString();
         $oldYear = now()->year - 1;
         $newYear = now()->year;
 
@@ -76,7 +77,7 @@ describe('EuSalesThresholdService', function () {
 
     it('determines notification needed when threshold exceeded', function () {
         $service    = new EuSalesThresholdService;
-        $userId     = \Illuminate\Support\Str::uuid()->toString();
+        $userId     = Str::uuid()->toString();
         $fiscalYear = now()->year;
 
         // Create threshold and simulate exceeding
@@ -93,7 +94,7 @@ describe('EuSalesThresholdService', function () {
 
     it('does not notify when notification already sent', function () {
         $service    = new EuSalesThresholdService;
-        $userId     = \Illuminate\Support\Str::uuid()->toString();
+        $userId     = Str::uuid()->toString();
         $fiscalYear = now()->year;
 
         $threshold = EuSalesThreshold::getOrCreateForUser($userId, $fiscalYear);
@@ -109,7 +110,7 @@ describe('EuSalesThresholdService', function () {
 
     it('does not notify when threshold not exceeded', function () {
         $service    = new EuSalesThresholdService;
-        $userId     = \Illuminate\Support\Str::uuid()->toString();
+        $userId     = Str::uuid()->toString();
         $fiscalYear = now()->year;
 
         $threshold = EuSalesThreshold::getOrCreateForUser($userId, $fiscalYear);
@@ -125,7 +126,7 @@ describe('EuSalesThresholdService', function () {
 
     it('sends threshold notification and marks as sent', function () {
         $service    = new EuSalesThresholdService;
-        $userId     = \Illuminate\Support\Str::uuid()->toString();
+        $userId     = Str::uuid()->toString();
         $fiscalYear = now()->year;
 
         $threshold = EuSalesThreshold::getOrCreateForUser($userId, $fiscalYear);

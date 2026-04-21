@@ -6,6 +6,7 @@ namespace AichaDigital\Larabill\Services;
 
 use AichaDigital\Larabill\Models\RoiQuery;
 use AichaDigital\Larabill\Models\UserRoiVerification;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -365,9 +366,9 @@ class RoiVerificationService
     /**
      * Get all ROI verifications for a user.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, \AichaDigital\Larabill\Models\UserRoiVerification>
+     * @return Collection<int, UserRoiVerification>
      */
-    public function getUserRoiVerifications(string $userId): \Illuminate\Database\Eloquent\Collection
+    public function getUserRoiVerifications(string $userId): Collection
     {
         return UserRoiVerification::byUser($userId)
             ->orderBy('last_check', 'desc')
@@ -377,9 +378,9 @@ class RoiVerificationService
     /**
      * Get ROI verification history for a user.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, \AichaDigital\Larabill\Models\UserRoiVerification>
+     * @return Collection<int, UserRoiVerification>
      */
-    public function getRoiVerificationHistory(string $userId, int $limit = 50): \Illuminate\Database\Eloquent\Collection
+    public function getRoiVerificationHistory(string $userId, int $limit = 50): Collection
     {
         return UserRoiVerification::where('user_id', $userId)
             ->orderBy('last_check', 'desc')

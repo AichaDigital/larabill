@@ -5,13 +5,14 @@ declare(strict_types=1);
 use AichaDigital\Larabill\Models\UserTaxProfile;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
 describe('UserTaxProfile Model', function () {
     beforeEach(function () {
         // Create a user for the tests (ADR-004: owner_user_id)
-        $this->ownerId = \Illuminate\Support\Str::uuid()->toString();
+        $this->ownerId = Str::uuid()->toString();
     });
 
     it('can create a user tax profile', function () {
@@ -156,7 +157,7 @@ describe('UserTaxProfile Model', function () {
             'is_active'             => true,
         ]);
 
-        $ownerId2 = \Illuminate\Support\Str::uuid()->toString();
+        $ownerId2 = Str::uuid()->toString();
         UserTaxProfile::create([
             'owner_user_id'         => $ownerId2,
             'fiscal_name'           => 'Inactive',

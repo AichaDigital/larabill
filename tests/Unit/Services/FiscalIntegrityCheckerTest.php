@@ -7,6 +7,7 @@ use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\UserTaxProfile;
 use AichaDigital\Larabill\Services\FiscalIntegrityChecker;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Notification;
 
 uses(RefreshDatabase::class);
@@ -20,7 +21,7 @@ beforeEach(function () {
  * Helper to create multiple active company configs bypassing model events.
  * This simulates direct DB manipulation or data corruption scenarios.
  */
-function createActiveCompanyConfigsWithoutEvents(int $count): \Illuminate\Support\Collection
+function createActiveCompanyConfigsWithoutEvents(int $count): Collection
 {
     return CompanyFiscalConfig::withoutEvents(function () use ($count) {
         return collect(range(1, $count))->map(function () {
@@ -32,7 +33,7 @@ function createActiveCompanyConfigsWithoutEvents(int $count): \Illuminate\Suppor
 /**
  * Helper to create multiple active user profiles bypassing model events.
  */
-function createActiveUserProfilesWithoutEvents(string $userId, int $count): \Illuminate\Support\Collection
+function createActiveUserProfilesWithoutEvents(string $userId, int $count): Collection
 {
     return UserTaxProfile::withoutEvents(function () use ($userId, $count) {
         return collect(range(1, $count))->map(function () use ($userId) {

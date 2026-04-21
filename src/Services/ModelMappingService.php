@@ -4,6 +4,15 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services;
 
+use AichaDigital\Larabill\Models\CompanyFiscalConfig;
+use AichaDigital\Larabill\Models\Invoice;
+use AichaDigital\Larabill\Models\InvoiceItem;
+use AichaDigital\Larabill\Models\TaxRate;
+use AichaDigital\Larabill\Models\UserTaxProfile;
+use AichaDigital\Larabill\Models\VatVerification;
+use AichaDigital\Larabill\Tests\Models\User;
+use Illuminate\Database\Eloquent\Model;
+
 /**
  * ModelMappingService
  *
@@ -18,13 +27,13 @@ class ModelMappingService
     {
         // ADR-003: Customer removed, unified into User with billable_user_id
         $defaultModels = [
-            'user'                   => \AichaDigital\Larabill\Tests\Models\User::class,
-            'invoice'                => \AichaDigital\Larabill\Models\Invoice::class,
-            'invoice_item'           => \AichaDigital\Larabill\Models\InvoiceItem::class,
-            'tax_rate'               => \AichaDigital\Larabill\Models\TaxRate::class,
-            'vat_verification'       => \AichaDigital\Larabill\Models\VatVerification::class,
-            'company_fiscal_config'  => \AichaDigital\Larabill\Models\CompanyFiscalConfig::class,
-            'user_tax_profile'       => \AichaDigital\Larabill\Models\UserTaxProfile::class,
+            'user'                   => User::class,
+            'invoice'                => Invoice::class,
+            'invoice_item'           => InvoiceItem::class,
+            'tax_rate'               => TaxRate::class,
+            'vat_verification'       => VatVerification::class,
+            'company_fiscal_config'  => CompanyFiscalConfig::class,
+            'user_tax_profile'       => UserTaxProfile::class,
         ];
 
         $configuredModel = config("larabill.models.{$modelType}");
@@ -111,7 +120,7 @@ class ModelMappingService
         }
 
         // Check if the class extends Model
-        if (! is_subclass_of($modelClass, \Illuminate\Database\Eloquent\Model::class)) {
+        if (! is_subclass_of($modelClass, Model::class)) {
             return false;
         }
 

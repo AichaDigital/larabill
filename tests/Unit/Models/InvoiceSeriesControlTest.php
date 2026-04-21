@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Models\InvoiceSeriesControl;
+use AichaDigital\Larabill\Tests\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->user = \AichaDigital\Larabill\Tests\Models\User::factory()->create();
+    $this->user = User::factory()->create();
 });
 
 it('can create an invoice series control', function () {
@@ -149,7 +151,7 @@ it('can store last_used_at timestamp', function () {
         'last_used_at' => $timestamp,
     ]);
 
-    expect($control->last_used_at)->toBeInstanceOf(\Carbon\Carbon::class)
+    expect($control->last_used_at)->toBeInstanceOf(Carbon::class)
         ->and($control->last_used_at->format('Y-m-d H:i'))->toBe($timestamp->format('Y-m-d H:i'));
 });
 
@@ -191,7 +193,7 @@ it('can cast fiscal_year_start as date', function () {
         'fiscal_year_start' => $date,
     ]);
 
-    expect($control->fiscal_year_start)->toBeInstanceOf(\Carbon\Carbon::class)
+    expect($control->fiscal_year_start)->toBeInstanceOf(Carbon::class)
         ->and($control->fiscal_year_start->format('Y-m-d'))->toBe($date->format('Y-m-d'));
 });
 
@@ -201,7 +203,7 @@ it('can cast fiscal_year_end as date', function () {
         'fiscal_year_end' => $date,
     ]);
 
-    expect($control->fiscal_year_end)->toBeInstanceOf(\Carbon\Carbon::class)
+    expect($control->fiscal_year_end)->toBeInstanceOf(Carbon::class)
         ->and($control->fiscal_year_end->format('Y-m-d'))->toBe($date->format('Y-m-d'));
 });
 

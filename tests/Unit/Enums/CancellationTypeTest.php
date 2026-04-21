@@ -58,7 +58,7 @@ it('returns correct colors for each type', function () {
 it('can be used in match expressions for business logic', function () {
     $shouldGenerateCreditNote = fn (CancellationType $type) => match ($type) {
         CancellationType::IMMEDIATE, CancellationType::END_OF_PERIOD => false,
-        CancellationType::NOTICE_PERIOD => true,
+        CancellationType::NOTICE_PERIOD                              => true,
     };
 
     expect($shouldGenerateCreditNote(CancellationType::IMMEDIATE))->toBeFalse()

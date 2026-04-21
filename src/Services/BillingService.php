@@ -9,6 +9,7 @@ use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\InvoiceItem;
 use AichaDigital\Larabill\Models\TaxGroup;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -167,7 +168,7 @@ class BillingService
      * Generate a sequential invoice number with optional annual reset and configurable format.
      *
      * @deprecated 2026-02-15 Removal target: v0.7.0. Use InvoiceNumberingService::generateNumber() instead.
-     * @see \AichaDigital\Larabill\Services\InvoiceNumberingService::generateNumber()
+     * @see InvoiceNumberingService::generateNumber()
      *
      * @param  string  $type  Invoice type (invoice, proforma)
      * @param  array<string, mixed>  $options  Generation options
@@ -200,7 +201,7 @@ class BillingService
      * Get sequence number with optional annual reset.
      *
      * @deprecated 2026-02-15 Removal target: v0.7.0. Use InvoiceNumberingService::generateNumber() instead.
-     * @see \AichaDigital\Larabill\Services\InvoiceNumberingService::generateNumber()
+     * @see InvoiceNumberingService::generateNumber()
      */
     private function getSequenceNumber(string $type, bool $annualReset, string $currentYear): int
     {
@@ -274,7 +275,7 @@ class BillingService
      */
     private function getInvoiceItemsData(Invoice $invoice): array
     {
-        /** @var \Illuminate\Database\Eloquent\Collection<int, InvoiceItem> $items */
+        /** @var Collection<int, InvoiceItem> $items */
         $items = $invoice->items;
 
         return $items->map(function (InvoiceItem $item): array {
@@ -317,7 +318,7 @@ class BillingService
      * Get temporary unique series number (until InvoiceNumberingService is integrated).
      *
      * @deprecated 2026-02-15 Removal target: v0.7.0. Use InvoiceNumberingService::generateNumber() instead.
-     * @see \AichaDigital\Larabill\Services\InvoiceNumberingService::generateNumber()
+     * @see InvoiceNumberingService::generateNumber()
      *
      * @param  int  $serie  Serie type
      * @param  int  $fiscalYear  Fiscal year

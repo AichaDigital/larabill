@@ -81,9 +81,9 @@ it('returns all final statuses', function () {
 
 it('can be used in match expressions', function () {
     $getAction = fn (ServiceStatus $status) => match ($status) {
-        ServiceStatus::ACTIVE    => 'bill',
-        ServiceStatus::PENDING   => 'activate',
-        ServiceStatus::SUSPENDED => 'resume',
+        ServiceStatus::ACTIVE                            => 'bill',
+        ServiceStatus::PENDING                           => 'activate',
+        ServiceStatus::SUSPENDED                         => 'resume',
         ServiceStatus::CANCELLED, ServiceStatus::EXPIRED => 'archive',
     };
 

@@ -8,6 +8,7 @@ use AichaDigital\Larabill\Enums\CommissionLevel;
 use AichaDigital\Larabill\Enums\CommissionType;
 use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\Commission;
+use Illuminate\Support\Collection;
 
 /**
  * Commission Calculation Service
@@ -170,9 +171,9 @@ class CommissionCalculationService
      * Get all active commissions grouped by level.
      *
      * @return array{
-     *     global: \Illuminate\Support\Collection,
-     *     product_group: \Illuminate\Support\Collection,
-     *     product: \Illuminate\Support\Collection
+     *     global: Collection,
+     *     product_group: Collection,
+     *     product: Collection
      * }
      */
     public function getActiveCommissions(): array
