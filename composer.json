@@ -41,9 +41,9 @@
     ],
     "require": {
         "php": "^8.3",
-        "aichadigital/lara-verifactu": "dev-main",
-        "aichadigital/lara100": "^1.1",
-        "aichadigital/lararoi": "dev-main",
+        "aichadigital/lara-verifactu": "^0.3@alpha",
+        "aichadigital/lara100": "^1.2",
+        "aichadigital/lararoi": "^0.5",
         "dompdf/dompdf": "^3.1",
         "illuminate/contracts": "^12.0||^13.0",
         "illuminate/database": "^12.0||^13.0",
