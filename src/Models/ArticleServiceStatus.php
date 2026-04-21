@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Models;
 
 use AichaDigital\Lara100\Casts\Base100Int;
+use AichaDigital\Larabill\Database\Factories\ArticleServiceStatusFactory;
 use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Enums\CancellationType;
 use AichaDigital\Larabill\Enums\ServiceStatus;
@@ -39,8 +40,8 @@ use Illuminate\Support\Facades\Auth;
  * @property array|null $metadata
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
- * @property-read \AichaDigital\Larabill\Models\Article $article
- * @property-read \AichaDigital\Larabill\Models\ArticleOverride|null $currentOverride
+ * @property-read Article $article
+ * @property-read ArticleOverride|null $currentOverride
  */
 class ArticleServiceStatus extends Model
 {
@@ -333,6 +334,6 @@ class ArticleServiceStatus extends Model
      */
     protected static function newFactory()
     {
-        return \AichaDigital\Larabill\Database\Factories\ArticleServiceStatusFactory::new();
+        return ArticleServiceStatusFactory::new();
     }
 }

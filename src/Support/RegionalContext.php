@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Support;
 
+use Carbon\Carbon;
+
 /**
  * RegionalContext Helper
  *
@@ -129,12 +131,12 @@ class RegionalContext
     /**
      * Check if given date is within fiscal year
      */
-    public static function isWithinFiscalYear(\Carbon\Carbon $date, int $fiscalYear): bool
+    public static function isWithinFiscalYear(Carbon $date, int $fiscalYear): bool
     {
         $startMonth = self::getFiscalYearStartMonth();
         $startDay   = self::getFiscalYearStartDay();
 
-        $fiscalStart = \Carbon\Carbon::create($fiscalYear, $startMonth, $startDay)->startOfDay();
+        $fiscalStart = Carbon::create($fiscalYear, $startMonth, $startDay)->startOfDay();
         $fiscalEnd   = $fiscalStart->copy()->addYear()->subDay()->endOfDay();
 
         return $date->between($fiscalStart, $fiscalEnd);
@@ -143,7 +145,7 @@ class RegionalContext
     /**
      * Get fiscal year for a given date
      */
-    public static function getFiscalYear(\Carbon\Carbon $date): int
+    public static function getFiscalYear(Carbon $date): int
     {
         $startMonth = self::getFiscalYearStartMonth();
         $startDay   = self::getFiscalYearStartDay();
@@ -154,7 +156,7 @@ class RegionalContext
         }
 
         // Otherwise, check if date is before or after fiscal year start
-        $fiscalStart = \Carbon\Carbon::create($date->year, $startMonth, $startDay)->startOfDay();
+        $fiscalStart = Carbon::create($date->year, $startMonth, $startDay)->startOfDay();
 
         return $date->greaterThanOrEqualTo($fiscalStart) ? $date->year : $date->year - 1;
     }
@@ -162,9 +164,9 @@ class RegionalContext
     /**
      * Get fiscal year start date for a given fiscal year
      */
-    public static function getFiscalYearStart(int $fiscalYear): \Carbon\Carbon
+    public static function getFiscalYearStart(int $fiscalYear): Carbon
     {
-        return \Carbon\Carbon::create(
+        return Carbon::create(
             $fiscalYear,
             self::getFiscalYearStartMonth(),
             self::getFiscalYearStartDay()
@@ -174,7 +176,7 @@ class RegionalContext
     /**
      * Get fiscal year end date for a given fiscal year
      */
-    public static function getFiscalYearEnd(int $fiscalYear): \Carbon\Carbon
+    public static function getFiscalYearEnd(int $fiscalYear): Carbon
     {
         return self::getFiscalYearStart($fiscalYear)
             ->copy()

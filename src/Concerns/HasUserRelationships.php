@@ -6,6 +6,8 @@ namespace AichaDigital\Larabill\Concerns;
 
 use AichaDigital\Larabill\Enums\UserRelationshipType;
 use AichaDigital\Larabill\Models\UserTaxProfile;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
@@ -47,7 +49,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @see ADR-004 for tax profile changes (owner_user_id)
  * @see ADR-005 for authorization moved to application
  *
- * @phpstan-require-extends \Illuminate\Database\Eloquent\Model
+ * @phpstan-require-extends Model
  */
 trait HasUserRelationships
 {
@@ -188,8 +190,8 @@ trait HasUserRelationships
     /**
      * Scope: Only DIRECT clients.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeDirect($query)
     {
@@ -199,8 +201,8 @@ trait HasUserRelationships
     /**
      * Scope: Only DELEGATED clients.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeDelegated($query)
     {
@@ -210,9 +212,9 @@ trait HasUserRelationships
     /**
      * Scope: Children of a specific user.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
+     * @param  Builder<static>  $query
      * @param  int|string  $parentId
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @return Builder<static>
      */
     public function scopeChildrenOf($query, $parentId)
     {
@@ -222,8 +224,8 @@ trait HasUserRelationships
     /**
      * Scope: With current tax profile loaded.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeWithCurrentTaxProfile($query)
     {
@@ -235,8 +237,8 @@ trait HasUserRelationships
      *
      * @deprecated Use scopeWithCurrentTaxProfile() instead.
      *
-     * @param  \Illuminate\Database\Eloquent\Builder<static>  $query
-     * @return \Illuminate\Database\Eloquent\Builder<static>
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeWithActiveTaxProfile($query)
     {

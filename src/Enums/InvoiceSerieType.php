@@ -73,7 +73,7 @@ enum InvoiceSerieType: int
     public function requiresFullCustomerData(): bool
     {
         return match ($this) {
-            self::PROFORMA, self::SIMPLIFIED => false,
+            self::PROFORMA, self::SIMPLIFIED   => false,
             self::INVOICE, self::RECTIFICATIVE => true,
         };
     }

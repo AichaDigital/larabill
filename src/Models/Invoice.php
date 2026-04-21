@@ -7,14 +7,18 @@ namespace AichaDigital\Larabill\Models;
 use AichaDigital\Lara100\Casts\Base100Int;
 use AichaDigital\Larabill\Concerns\HasUserRelation;
 use AichaDigital\Larabill\Concerns\HasUuid;
+use AichaDigital\Larabill\Database\Factories\InvoiceFactory;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Services\FiscalIntegrityChecker;
+use AichaDigital\Larabill\Services\ModelMappingService;
+use AichaDigital\Larabill\Services\PDF\PDFService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Crypt;
 
@@ -59,7 +63,7 @@ use Illuminate\Support\Facades\Crypt;
  * @property string|null $fiscal_verification_id Verifactu/TicketBAI ID (v0.4.0)
  * @property string|null $fiscal_verification_qr QR code (v0.4.0)
  * @property string|null $fiscal_verification_hash Hash (v0.4.0)
- * @property \Illuminate\Support\Carbon|null $fiscal_verified_at (v0.4.0)
+ * @property Carbon|null $fiscal_verified_at (v0.4.0)
  * @property array<string, mixed>|null $fiscal_verification_metadata (v0.4.0)
  * @property array<string, mixed>|null $customer_data
  * @property array<string, mixed>|null $fiscal_data
@@ -88,9 +92,9 @@ class Invoice extends Model
     /**
      * Create a new factory instance for the model.
      */
-    protected static function newFactory(): \AichaDigital\Larabill\Database\Factories\InvoiceFactory
+    protected static function newFactory(): InvoiceFactory
     {
-        return \AichaDigital\Larabill\Database\Factories\InvoiceFactory::new();
+        return InvoiceFactory::new();
     }
 
     /**
@@ -245,7 +249,7 @@ class Invoice extends Model
      */
     public function items(): HasMany
     {
-        $invoiceItemModel = \AichaDigital\Larabill\Services\ModelMappingService::getModelClass('invoice_item');
+        $invoiceItemModel = ModelMappingService::getModelClass('invoice_item');
 
         // @phpstan-ignore-next-line return.type,argument.templateType
         return $this->hasMany($invoiceItemModel);
@@ -257,11 +261,11 @@ class Invoice extends Model
     /**
      * Get the user that owns the invoice.
      *
-     * @return BelongsTo<\Illuminate\Foundation\Auth\User, $this>
+     * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo
     {
-        $userModel = \AichaDigital\Larabill\Services\ModelMappingService::getModelClass('user');
+        $userModel = ModelMappingService::getModelClass('user');
 
         // @phpstan-ignore-next-line return.type,argument.templateType
         return $this->belongsTo($userModel);
@@ -270,11 +274,11 @@ class Invoice extends Model
     /**
      * Get the billable user (user being billed) for this invoice (ADR-003).
      *
-     * @return BelongsTo<\Illuminate\Foundation\Auth\User, $this>
+     * @return BelongsTo<User, $this>
      */
     public function billableUser(): BelongsTo
     {
-        $userModel = \AichaDigital\Larabill\Services\ModelMappingService::getModelClass('user');
+        $userModel = ModelMappingService::getModelClass('user');
 
         // @phpstan-ignore-next-line return.type,argument.templateType
         return $this->belongsTo($userModel, 'billable_user_id');
@@ -433,7 +437,7 @@ class Invoice extends Model
      */
     public function generatePDF(): array
     {
-        $pdfService = app(\AichaDigital\Larabill\Services\PDF\PDFService::class);
+        $pdfService = app(PDFService::class);
 
         return $pdfService->generatePDF($this);
     }
@@ -641,11 +645,11 @@ class Invoice extends Model
     /**
      * Generate encrypted billable user snapshot (ADR-001 + ADR-003).
      *
-     * @param  \Illuminate\Database\Eloquent\Model  $billableUser  The user being billed
+     * @param  Model  $billableUser  The user being billed
      * @param  UserTaxProfile|null  $taxProfile  User's tax profile at invoice date
      * @return string Encrypted JSON snapshot
      */
-    protected function generateBillableUserSnapshot(\Illuminate\Database\Eloquent\Model $billableUser, ?UserTaxProfile $taxProfile): string
+    protected function generateBillableUserSnapshot(Model $billableUser, ?UserTaxProfile $taxProfile): string
     {
         $data = [
             'billable_user_id'     => $billableUser->id,

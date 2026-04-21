@@ -1,6 +1,7 @@
 <?php
 
 use AichaDigital\Larabill\Tests\TestCase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
 /*
 |--------------------------------------------------------------------------
@@ -13,7 +14,7 @@ use AichaDigital\Larabill\Tests\TestCase;
 */
 
 uses(TestCase::class)
-    ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
+    ->use(RefreshDatabase::class)
     ->in('Feature', 'Integration', 'Unit');
 
 // Alias an expectation name used in some tests (typo): toBeGreaterThanOrEqualTo

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Models;
 
 use AichaDigital\Lara100\Casts\Base100Int;
+use AichaDigital\Larabill\Database\Factories\ArticleFactory;
 use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Enums\ItemType;
 use Illuminate\Database\Eloquent\Builder;
@@ -13,6 +14,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Collection;
 use Spatie\Translatable\HasTranslations;
 
 /**
@@ -32,14 +35,14 @@ use Spatie\Translatable\HasTranslations;
  * @property int|null $unit_measure_id
  * @property bool $is_active
  * @property array|null $metadata
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property \Illuminate\Support\Carbon|null $deleted_at
- * @property-read \AichaDigital\Larabill\Models\TaxGroup|null $taxGroup
- * @property-read \AichaDigital\Larabill\Models\UnitMeasure|null $unitMeasure
- * @property-read \Illuminate\Database\Eloquent\Collection|\AichaDigital\Larabill\Models\ArticlePrice[] $prices
- * @property-read \Illuminate\Database\Eloquent\Collection|\AichaDigital\Larabill\Models\ArticleOverride[] $overrides
- * @property-read \Illuminate\Database\Eloquent\Collection|\AichaDigital\Larabill\Models\ArticleServiceStatus[] $serviceStatuses
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ * @property-read TaxGroup|null $taxGroup
+ * @property-read UnitMeasure|null $unitMeasure
+ * @property-read \Illuminate\Database\Eloquent\Collection|ArticlePrice[] $prices
+ * @property-read \Illuminate\Database\Eloquent\Collection|ArticleOverride[] $overrides
+ * @property-read \Illuminate\Database\Eloquent\Collection|ArticleServiceStatus[] $serviceStatuses
  */
 class Article extends Model
 {
@@ -272,9 +275,9 @@ class Article extends Model
     /**
      * Get all available billing frequencies for this article.
      *
-     * @return \Illuminate\Support\Collection<int, BillingFrequency>
+     * @return Collection<int, BillingFrequency>
      */
-    public function getAvailableFrequencies(): \Illuminate\Support\Collection
+    public function getAvailableFrequencies(): Collection
     {
         return $this->activePrices()
             ->pluck('billing_frequency')
@@ -357,6 +360,6 @@ class Article extends Model
      */
     protected static function newFactory()
     {
-        return \AichaDigital\Larabill\Database\Factories\ArticleFactory::new();
+        return ArticleFactory::new();
     }
 }

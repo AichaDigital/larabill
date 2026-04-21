@@ -8,7 +8,7 @@ use AichaDigital\Larabill\Models\TaxGroup;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\AichaDigital\Larabill\Models\TaxGroup>
+ * @extends Factory<TaxGroup>
  */
 class TaxGroupFactory extends Factory
 {

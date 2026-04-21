@@ -5,6 +5,8 @@ declare(strict_types=1);
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Models\InvoiceSeriesControl;
 use AichaDigital\Larabill\Services\InvoiceNumberingService;
+use AichaDigital\Larabill\ValueObjects\InvoiceNumber;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 
 beforeEach(function () {
@@ -139,14 +141,14 @@ describe('InvoiceNumberingService', function () {
 
         expect($fiscalYearData)->toHaveKeys(['year', 'start', 'end']);
         expect($fiscalYearData['year'])->toBeInt();
-        expect($fiscalYearData['start'])->toBeInstanceOf(\Carbon\Carbon::class);
-        expect($fiscalYearData['end'])->toBeInstanceOf(\Carbon\Carbon::class);
+        expect($fiscalYearData['start'])->toBeInstanceOf(Carbon::class);
+        expect($fiscalYearData['end'])->toBeInstanceOf(Carbon::class);
     });
 
     it('returns InvoiceNumber value object', function () {
         $result = $this->service->generateNumber('FAC', InvoiceSerieType::INVOICE->value);
 
-        expect($result)->toBeInstanceOf(\AichaDigital\Larabill\ValueObjects\InvoiceNumber::class);
+        expect($result)->toBeInstanceOf(InvoiceNumber::class);
         expect($result->prefix)->toBe('FAC');
         expect($result->fiscalYear)->toBe(now()->year);
         expect($result->seriesNumber)->toBe(1);
@@ -168,8 +170,8 @@ describe('InvoiceNumberingService', function () {
         config(['larabill.fiscal_year.start_month' => 7]);
         config(['larabill.fiscal_year.start_day' => 1]);
 
-        $dateInFirstHalf  = \Carbon\Carbon::create(2025, 3, 15); // Before July 1, 2025
-        $dateInSecondHalf = \Carbon\Carbon::create(2025, 9, 15); // After July 1, 2025
+        $dateInFirstHalf  = Carbon::create(2025, 3, 15); // Before July 1, 2025
+        $dateInSecondHalf = Carbon::create(2025, 9, 15); // After July 1, 2025
 
         // March 2025 should be fiscal year 2024
         expect($this->service->getCurrentFiscalYear($dateInFirstHalf))->toBe(2024);

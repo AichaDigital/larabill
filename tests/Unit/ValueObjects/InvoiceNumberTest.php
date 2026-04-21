@@ -52,7 +52,7 @@ describe('InvoiceNumber', function () {
         $threw = false;
         try {
             $number->formatted = 'CHANGED';
-        } catch (\Error $e) {
+        } catch (Error $e) {
             $threw = true;
         }
 

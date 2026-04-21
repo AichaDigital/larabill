@@ -6,6 +6,9 @@ use AichaDigital\Larabill\Enums\ItemType;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\InvoiceItem;
 use AichaDigital\Larabill\Models\TaxCategory;
+use AichaDigital\Larabill\Tests\Models\User;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -114,7 +117,7 @@ it('can scope ordered by sort_order and name', function () {
 });
 
 it('can have invoice items relationship', function () {
-    $user    = \AichaDigital\Larabill\Tests\Models\User::factory()->create();
+    $user    = User::factory()->create();
     $invoice = Invoice::factory()->create(['user_id' => $user->id]);
 
     InvoiceItem::factory()->create([
@@ -122,7 +125,7 @@ it('can have invoice items relationship', function () {
         'item_type'  => ItemType::GOOD,
     ]);
 
-    expect($this->category->invoiceItems())->toBeInstanceOf(\Illuminate\Database\Eloquent\Relations\HasMany::class);
+    expect($this->category->invoiceItems())->toBeInstanceOf(HasMany::class);
 });
 
 it('can store metadata as JSON', function () {
@@ -197,7 +200,7 @@ it('enforces unique code constraint', function () {
         TaxCategory::factory()->create([
             'code' => 'unique_code',
         ]);
-    })->toThrow(\Illuminate\Database\QueryException::class);
+    })->toThrow(QueryException::class);
 });
 
 it('can get all tax types', function () {

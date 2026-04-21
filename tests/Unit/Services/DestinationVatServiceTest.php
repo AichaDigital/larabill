@@ -49,8 +49,8 @@ describe('DestinationVatService', function () {
     it('returns fiscal year from date', function () {
         $service = new DestinationVatService;
 
-        expect($service->getFiscalYear(new \DateTime('2024-06-15')))->toBe(2024);
-        expect($service->getFiscalYear(new \DateTime('2025-01-01')))->toBe(2025);
+        expect($service->getFiscalYear(new DateTime('2024-06-15')))->toBe(2024);
+        expect($service->getFiscalYear(new DateTime('2025-01-01')))->toBe(2025);
     });
 
     it('returns current fiscal year when no date provided', function () {

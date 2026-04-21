@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Tests\Models;
 
+use AichaDigital\Larabill\Tests\Database\Factories\TestUserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -53,6 +54,6 @@ class TestUser extends Model
      */
     protected static function newFactory()
     {
-        return \AichaDigital\Larabill\Tests\Database\Factories\TestUserFactory::new();
+        return TestUserFactory::new();
     }
 }

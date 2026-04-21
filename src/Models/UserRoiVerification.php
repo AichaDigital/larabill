@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Models;
 
 use AichaDigital\Larabill\Concerns\HasUserRelation;
+use AichaDigital\Larabill\Services\ModelMappingService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Foundation\Auth\User;
+use Illuminate\Support\Carbon;
 
 /**
  * UserRoiVerification Model
@@ -23,12 +26,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property bool $cache_hit
  * @property string|null $company_name
  * @property string|null $company_address
- * @property \Illuminate\Support\Carbon|null $last_check
- * @property \Illuminate\Support\Carbon|null $expired_at
+ * @property Carbon|null $last_check
+ * @property Carbon|null $expired_at
  * @property string|null $api_source
  * @property array<string,mixed>|null $response_data
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 class UserRoiVerification extends Model
 {
@@ -71,20 +74,20 @@ class UserRoiVerification extends Model
 
         static::creating(function ($model) {
             // Apply field mapping when creating
-            $fieldMapping = \AichaDigital\Larabill\Services\ModelMappingService::getFieldMapping('user_roi_verification');
+            $fieldMapping = ModelMappingService::getFieldMapping('user_roi_verification');
             if (! empty($fieldMapping)) {
                 $attributes       = $model->getAttributes();
-                $mappedAttributes = \AichaDigital\Larabill\Services\ModelMappingService::reverseMapFields($attributes, 'user_roi_verification');
+                $mappedAttributes = ModelMappingService::reverseMapFields($attributes, 'user_roi_verification');
                 $model->setRawAttributes($mappedAttributes);
             }
         });
 
         static::retrieved(function ($model) {
             // Apply field mapping when retrieving
-            $fieldMapping = \AichaDigital\Larabill\Services\ModelMappingService::getFieldMapping('user_roi_verification');
+            $fieldMapping = ModelMappingService::getFieldMapping('user_roi_verification');
             if (! empty($fieldMapping)) {
                 $attributes       = $model->getAttributes();
-                $mappedAttributes = \AichaDigital\Larabill\Services\ModelMappingService::mapFields($attributes, 'user_roi_verification');
+                $mappedAttributes = ModelMappingService::mapFields($attributes, 'user_roi_verification');
                 $model->setRawAttributes($mappedAttributes);
             }
         });
@@ -195,11 +198,11 @@ class UserRoiVerification extends Model
     /**
      * Get the user that owns the ROI verification.
      *
-     * @return BelongsTo<\Illuminate\Foundation\Auth\User, $this>
+     * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo
     {
-        $userModel = \AichaDigital\Larabill\Services\ModelMappingService::getModelClass('user');
+        $userModel = ModelMappingService::getModelClass('user');
 
         // @phpstan-ignore-next-line return.type,argument.templateType
         return $this->belongsTo($userModel);

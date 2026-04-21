@@ -7,6 +7,7 @@ namespace AichaDigital\Larabill\Models;
 use AichaDigital\Larabill\Concerns\HasUserRelation;
 use AichaDigital\Larabill\Database\Factories\InvoiceSeriesControlFactory;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -21,8 +22,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $prefix User customizable prefix
  * @property InvoiceSerieType $serie
  * @property int $fiscal_year
- * @property \Carbon\Carbon $fiscal_year_start
- * @property \Carbon\Carbon $fiscal_year_end
+ * @property Carbon $fiscal_year_start
+ * @property Carbon $fiscal_year_end
  * @property int $last_number Last issued number
  * @property int $start_number Starting number (default 1)
  * @property bool $reset_annually Reset on fiscal year change
@@ -30,10 +31,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property bool $is_active
  * @property string|null $description
  * @property array|null $validation_rules
- * @property \Carbon\Carbon|null $last_used_at
+ * @property Carbon|null $last_used_at
  * @property int|null $user_id
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 class InvoiceSeriesControl extends Model
 {

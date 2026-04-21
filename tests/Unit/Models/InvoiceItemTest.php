@@ -5,12 +5,14 @@ declare(strict_types=1);
 use AichaDigital\Larabill\Enums\ItemType;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\InvoiceItem;
+use AichaDigital\Larabill\Tests\Models\User;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->user    = \AichaDigital\Larabill\Tests\Models\User::factory()->create();
+    $this->user    = User::factory()->create();
     $this->invoice = Invoice::factory()->create(['user_id' => $this->user->id]);
     // Note: unit_measure_id is nullable and not required in v0.4.0
 });
@@ -211,8 +213,8 @@ it('can store service dates', function () {
         'service_date_to'   => $to,
     ]);
 
-    expect($item->service_date_from)->toBeInstanceOf(\Carbon\Carbon::class)
-        ->and($item->service_date_to)->toBeInstanceOf(\Carbon\Carbon::class)
+    expect($item->service_date_from)->toBeInstanceOf(Carbon::class)
+        ->and($item->service_date_to)->toBeInstanceOf(Carbon::class)
         ->and($item->service_date_from->format('Y-m-d'))->toBe($from->format('Y-m-d'))
         ->and($item->service_date_to->format('Y-m-d'))->toBe($to->format('Y-m-d'));
 });

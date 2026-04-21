@@ -8,6 +8,7 @@ use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\CountryVatRate;
 use AichaDigital\Larabill\Models\EuSalesThreshold;
 use AichaDigital\Larabill\Models\VatCategory;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -135,9 +136,9 @@ class DestinationVatService
     /**
      * Get VAT categories for a country.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, VatCategory>
+     * @return Collection<int, VatCategory>
      */
-    public function getVatCategories(string $countryCode): \Illuminate\Database\Eloquent\Collection
+    public function getVatCategories(string $countryCode): Collection
     {
         $cacheKey = "vat_categories:{$countryCode}";
 
@@ -149,9 +150,9 @@ class DestinationVatService
     /**
      * Get all EU countries with VAT rates.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, CountryVatRate>
+     * @return Collection<int, CountryVatRate>
      */
-    public function getEuCountriesWithVatRates(): \Illuminate\Database\Eloquent\Collection
+    public function getEuCountriesWithVatRates(): Collection
     {
         $cacheKey = 'eu_countries_vat_rates';
 

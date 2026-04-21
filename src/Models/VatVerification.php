@@ -6,7 +6,9 @@ namespace AichaDigital\Larabill\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 
 /**
  * VatVerification Model
@@ -22,12 +24,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string|null $company_address
  * @property string|null $api_source
  * @property array<string, mixed>|null $response_data
- * @property \Illuminate\Support\Carbon|null $checked_at
- * @property \Illuminate\Support\Carbon|null $verified_at
- * @property \Illuminate\Support\Carbon|null $expires_at
- * @property \Illuminate\Support\Carbon|null $created_at
- * @property \Illuminate\Support\Carbon|null $updated_at
- * @property \Illuminate\Support\Carbon|null $deleted_at
+ * @property Carbon|null $checked_at
+ * @property Carbon|null $verified_at
+ * @property Carbon|null $expires_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
  */
 class VatVerification extends Model
 {
@@ -81,9 +83,9 @@ class VatVerification extends Model
     /**
      * Get user tax profiles that use this VAT code.
      *
-     * @return \Illuminate\Database\Eloquent\Relations\HasMany<UserTaxProfile, $this>
+     * @return HasMany<UserTaxProfile, $this>
      */
-    public function userTaxProfiles(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function userTaxProfiles(): HasMany
     {
         return $this->hasMany(UserTaxProfile::class, 'tax_id', 'vat_code');
     }

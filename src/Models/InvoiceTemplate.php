@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -94,9 +95,9 @@ class InvoiceTemplate extends Model
     /**
      * Get all active templates for a type.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, InvoiceTemplate>
+     * @return Collection<int, InvoiceTemplate>
      */
-    public static function getActiveForType(string $type): \Illuminate\Database\Eloquent\Collection
+    public static function getActiveForType(string $type): Collection
     {
         return static::where('type', $type)
             ->where('is_active', true)

@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Models;
 
 use AichaDigital\Larabill\Concerns\HasUserRelation;
+use AichaDigital\Larabill\Services\ModelMappingService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Foundation\Auth\User;
 
 /**
  * RoiQuery Model
@@ -23,11 +26,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $query_type
  * @property string|null $api_source
  * @property array<string, mixed>|null $response_data
- * @property \Carbon\Carbon $queried_at
+ * @property Carbon $queried_at
  * @property bool $cache_used
- * @property \Carbon\Carbon $legal_retention_until
- * @property \Carbon\Carbon|null $created_at
- * @property \Carbon\Carbon|null $updated_at
+ * @property Carbon $legal_retention_until
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
  */
 class RoiQuery extends Model
 {
@@ -84,20 +87,20 @@ class RoiQuery extends Model
             }
 
             // Apply field mapping when creating
-            $fieldMapping = \AichaDigital\Larabill\Services\ModelMappingService::getFieldMapping('roi_query');
+            $fieldMapping = ModelMappingService::getFieldMapping('roi_query');
             if (! empty($fieldMapping)) {
                 $attributes       = $model->getAttributes();
-                $mappedAttributes = \AichaDigital\Larabill\Services\ModelMappingService::reverseMapFields($attributes, 'roi_query');
+                $mappedAttributes = ModelMappingService::reverseMapFields($attributes, 'roi_query');
                 $model->setRawAttributes($mappedAttributes);
             }
         });
 
         static::retrieved(function ($model) {
             // Apply field mapping when retrieving
-            $fieldMapping = \AichaDigital\Larabill\Services\ModelMappingService::getFieldMapping('roi_query');
+            $fieldMapping = ModelMappingService::getFieldMapping('roi_query');
             if (! empty($fieldMapping)) {
                 $attributes       = $model->getAttributes();
-                $mappedAttributes = \AichaDigital\Larabill\Services\ModelMappingService::mapFields($attributes, 'roi_query');
+                $mappedAttributes = ModelMappingService::mapFields($attributes, 'roi_query');
                 $model->setRawAttributes($mappedAttributes);
             }
         });
@@ -225,11 +228,11 @@ class RoiQuery extends Model
     /**
      * Get the user that owns the ROI query.
      *
-     * @return BelongsTo<\Illuminate\Foundation\Auth\User, $this>
+     * @return BelongsTo<User, $this>
      */
     public function user(): BelongsTo
     {
-        $userModel = \AichaDigital\Larabill\Services\ModelMappingService::getModelClass('user');
+        $userModel = ModelMappingService::getModelClass('user');
 
         // @phpstan-ignore-next-line return.type,argument.templateType
         return $this->belongsTo($userModel);
@@ -295,9 +298,9 @@ class RoiQuery extends Model
     /**
      * Get queries that are outside legal retention period.
      *
-     * @return \Illuminate\Database\Eloquent\Collection<int, RoiQuery>
+     * @return Collection<int, RoiQuery>
      */
-    public static function getExpiredLegalRetention(): \Illuminate\Database\Eloquent\Collection
+    public static function getExpiredLegalRetention(): Collection
     {
         return static::where('legal_retention_until', '<=', now())->get();
     }

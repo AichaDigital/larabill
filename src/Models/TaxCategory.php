@@ -6,6 +6,7 @@ namespace AichaDigital\Larabill\Models;
 
 use AichaDigital\Lara100\Casts\Base100Int;
 use AichaDigital\Larabill\Database\Factories\TaxCategoryFactory;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -27,8 +28,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property bool $is_active
  * @property int $sort_order
  * @property array|null $metadata
- * @property \Carbon\Carbon $created_at
- * @property \Carbon\Carbon $updated_at
+ * @property Carbon $created_at
+ * @property Carbon $updated_at
  */
 class TaxCategory extends Model
 {

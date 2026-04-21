@@ -5,6 +5,7 @@ declare(strict_types=1);
 use AichaDigital\Larabill\Enums\TaxType;
 use AichaDigital\Larabill\Models\TaxGroup;
 use AichaDigital\Larabill\Models\TaxRate;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -173,8 +174,8 @@ it('can query tax rates by region', function () {
 it('has timestamps', function () {
     $taxRate = TaxRate::factory()->create();
 
-    expect($taxRate->created_at)->toBeInstanceOf(\Carbon\Carbon::class)
-        ->and($taxRate->updated_at)->toBeInstanceOf(\Carbon\Carbon::class);
+    expect($taxRate->created_at)->toBeInstanceOf(Carbon::class)
+        ->and($taxRate->updated_at)->toBeInstanceOf(Carbon::class);
 });
 
 it('can detach from tax groups', function () {

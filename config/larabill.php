@@ -1,6 +1,14 @@
 <?php
 
 declare(strict_types=1);
+use AichaDigital\Larabill\Models\CompanyFiscalConfig;
+use AichaDigital\Larabill\Models\Customer;
+use AichaDigital\Larabill\Models\CustomerFiscalData;
+use AichaDigital\Larabill\Models\Invoice;
+use AichaDigital\Larabill\Models\InvoiceItem;
+use AichaDigital\Larabill\Models\TaxRate;
+use AichaDigital\Larabill\Models\VatVerification;
+use App\Models\User;
 
 return [
     /*
@@ -28,7 +36,7 @@ return [
     'user_id_type' => env('LARABILL_USER_ID_TYPE', 'uuid'),
 
     // User model class (used by relationships and factories)
-    'user_model' => env('LARABILL_USER_MODEL', \App\Models\User::class),
+    'user_model' => env('LARABILL_USER_MODEL', User::class),
 
     // VAT verification API settings
     'vat_apis' => [
@@ -93,14 +101,14 @@ return [
 
     // Model mappings for extensibility
     'models' => [
-        'user'                  => \App\Models\User::class, // Your application's User model
-        'invoice'               => \AichaDigital\Larabill\Models\Invoice::class,
-        'invoice_item'          => \AichaDigital\Larabill\Models\InvoiceItem::class,
-        'tax_rate'              => \AichaDigital\Larabill\Models\TaxRate::class,
-        'vat_verification'      => \AichaDigital\Larabill\Models\VatVerification::class,
-        'company_fiscal_config' => \AichaDigital\Larabill\Models\CompanyFiscalConfig::class,
-        'customer_fiscal_data'  => \AichaDigital\Larabill\Models\CustomerFiscalData::class,
-        'customer'              => \AichaDigital\Larabill\Models\Customer::class,
+        'user'                  => User::class, // Your application's User model
+        'invoice'               => Invoice::class,
+        'invoice_item'          => InvoiceItem::class,
+        'tax_rate'              => TaxRate::class,
+        'vat_verification'      => VatVerification::class,
+        'company_fiscal_config' => CompanyFiscalConfig::class,
+        'customer_fiscal_data'  => CustomerFiscalData::class,
+        'customer'              => Customer::class,
     ],
 
     // Field mappings for custom field names
