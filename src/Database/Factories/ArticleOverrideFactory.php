@@ -112,7 +112,7 @@ class ArticleOverrideFactory extends Factory
     /**
      * Set for a specific customer.
      */
-    public function forCustomer(int $customerId): static
+    public function forCustomer(int|string $customerId): static
     {
         return $this->state(fn (array $attributes) => [
             'customer_id' => $customerId,

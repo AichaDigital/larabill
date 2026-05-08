@@ -7,6 +7,8 @@ use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticleOverride;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
@@ -25,6 +27,32 @@ it('can create an article override', function () {
         ->and($override->article_id)->toBe($article->id)
         ->and($override->custom_price)->toBe(2400)
         ->and($override->exists)->toBeTrue();
+});
+
+it('creates customer id with the configured agnostic type', function () {
+    expect(Schema::getColumnType('article_overrides', 'customer_id'))->not->toBe('integer');
+});
+
+it('can create and scope overrides for UUID customer IDs', function () {
+    $customerId      = (string) Str::uuid();
+    $otherCustomerId = (string) Str::uuid();
+    $article         = Article::factory()->create();
+
+    $override = ArticleOverride::factory()
+        ->forCustomer($customerId)
+        ->forArticle($article)
+        ->create();
+
+    ArticleOverride::factory()
+        ->forCustomer($otherCustomerId)
+        ->forArticle($article)
+        ->create();
+
+    $overrides = ArticleOverride::forCustomer($customerId)->get();
+
+    expect($override->customer_id)->toBe($customerId)
+        ->and($overrides)->toHaveCount(1)
+        ->and($overrides->first()->id)->toBe($override->id);
 });
 
 it('casts custom_price to integer (Base100Int)', function () {

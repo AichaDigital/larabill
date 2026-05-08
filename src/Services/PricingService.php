@@ -22,7 +22,7 @@ class PricingService
      * Get the effective price for a customer at a specific frequency.
      * Returns the ArticlePrice for the frequency if no customer or no active override exists.
      */
-    public function getEffectivePrice(Article $article, BillingFrequency $frequency, ?int $customerId): ?float
+    public function getEffectivePrice(Article $article, BillingFrequency $frequency, int|string|null $customerId): ?float
     {
         $basePrice = $article->getPriceFor($frequency);
 
@@ -54,7 +54,7 @@ class PricingService
     /**
      * Get active override for customer.
      */
-    public function getActiveOverride(Article $article, int $customerId): ?ArticleOverride
+    public function getActiveOverride(Article $article, int|string $customerId): ?ArticleOverride
     {
         return $article->overrides()
             ->active()
@@ -65,7 +65,7 @@ class PricingService
     /**
      * Check if customer has active override.
      */
-    public function hasActiveOverride(Article $article, int $customerId): bool
+    public function hasActiveOverride(Article $article, int|string $customerId): bool
     {
         return $this->getActiveOverride($article, $customerId) !== null;
     }
@@ -98,7 +98,7 @@ class PricingService
     public function createPricingDetails(
         Article $article,
         BillingFrequency $frequency,
-        ?int $customerId
+        int|string|null $customerId
     ): PricingDetails {
         $basePrice    = $article->getPriceFor($frequency) ?? 0.0;
         $override     = $customerId ? $this->getActiveOverride($article, $customerId) : null;

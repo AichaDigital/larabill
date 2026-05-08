@@ -10,6 +10,8 @@ use AichaDigital\Larabill\Models\ArticleOverride;
 use AichaDigital\Larabill\Models\ArticleServiceStatus;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
@@ -29,6 +31,32 @@ it('can create a service status', function () {
         ->and($service->article_id)->toBe($article->id)
         ->and($service->instance_identifier)->toBe('example.com')
         ->and($service->exists)->toBeTrue();
+});
+
+it('creates customer id with the configured agnostic type', function () {
+    expect(Schema::getColumnType('article_service_status', 'customer_id'))->not->toBe('integer');
+});
+
+it('can create and scope service statuses for UUID customer IDs', function () {
+    $customerId      = (string) Str::uuid();
+    $otherCustomerId = (string) Str::uuid();
+    $article         = Article::factory()->service()->monthly(2900)->create();
+
+    $service = ArticleServiceStatus::factory()
+        ->forCustomer($customerId)
+        ->forArticle($article, BillingFrequency::MONTHLY)
+        ->create();
+
+    ArticleServiceStatus::factory()
+        ->forCustomer($otherCustomerId)
+        ->forArticle($article, BillingFrequency::MONTHLY)
+        ->create();
+
+    $services = ArticleServiceStatus::forCustomer($customerId)->get();
+
+    expect($service->customer_id)->toBe($customerId)
+        ->and($services)->toHaveCount(1)
+        ->and($services->first()->id)->toBe($service->id);
 });
 
 it('casts status to enum', function () {

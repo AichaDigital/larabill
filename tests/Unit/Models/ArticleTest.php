@@ -10,6 +10,7 @@ use AichaDigital\Larabill\Models\ArticlePrice;
 use AichaDigital\Larabill\Models\ArticleServiceStatus;
 use AichaDigital\Larabill\Models\TaxGroup;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
@@ -367,6 +368,24 @@ describe('Article price overrides', function () {
         ]);
 
         expect($article->getEffectivePriceFor($customer->id, BillingFrequency::MONTHLY))->toEqual(2400.0);
+    });
+
+    it('returns override price for UUID customer IDs', function () {
+        $customerId = (string) Str::uuid();
+
+        $article = Article::factory()
+            ->monthly(2900)
+            ->create();
+
+        ArticleOverride::factory()->create([
+            'article_id'   => $article->id,
+            'customer_id'  => $customerId,
+            'custom_price' => 2400,
+            'is_active'    => true,
+        ]);
+
+        expect($article->getEffectivePriceFor($customerId, BillingFrequency::MONTHLY))->toEqual(2400.0)
+            ->and($article->hasActiveOverrideFor($customerId))->toBeTrue();
     });
 
     it('gets active override for customer', function () {

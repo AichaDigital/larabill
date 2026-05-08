@@ -105,7 +105,7 @@ class ArticleOverride extends Model
     /**
      * Scope to filter by customer.
      */
-    public function scopeForCustomer(Builder $query, int $customerId): void
+    public function scopeForCustomer(Builder $query, int|string $customerId): void
     {
         $query->where('customer_id', $customerId);
     }
