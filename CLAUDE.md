@@ -22,6 +22,8 @@ Larabill es el **núcleo de facturación** del ecosistema Larafactu (AichaDigita
 3. **`SCHEMA_REQUIREMENTS.md`** — qué exige al `users` de la app consumidora
 4. **`CONTRIBUTING.md`** — patrón de migraciones (.php + .stub + `$migrationOrder`)
 5. **`docs/ADR-*.md`** — decisiones arquitectónicas (001 fiscal, 002 UUID, 003 user unification, 004 owner_user_id, 005 article pricing)
+6. **`docs/2026-05-09-fresh-install-agnostic-mysql.md`** — contrato vigente: fresh install agnóstico (`int`/`uuid`/`ulid`) sobre MySQL real, demostrado por `tests/Integration/Mysql/`. Reemplaza al bloqueador previo de upgrade.
+7. **`docs/2026-05-09-blocker-upgrade-test-customer-id-bigint-to-uuid.md`** — SUPERSEDED, conservado como rastro histórico de una premisa rota (no había producción, dev-main no promete upgrade).
 
 ## Reglas inviolables (resumen — detalle en CRITICAL_RULES.md)
 
@@ -62,9 +64,12 @@ Hay un bug conocido "table already exists" con SQLite in-memory en PHP 8.4 local
 - Asumir `Auth::user()->id` como int → rompe instalaciones uuid/ulid
 - Reintroducir `Customer`/`CustomerFiscalData` → deprecados desde ADR-003 (usar `User` con `parent_user_id` + `UserTaxProfile`)
 - Reintroducir UUID binario → eliminado en ADR-002 por incompatibilidad con Filament 4
+- Mantener migraciones `repair_*` que cambian tipo de columna sin tests que demuestren su contrato → comunican una promesa de upgrade que dev-main NO asume. Si aparece una en una PR, justificarla por escrito o eliminarla.
+- Asumir que `composer test` (suite SQLite) demuestra contratos de schema agnóstico → SQLite no preserva índices compuestos a través de `Schema::change()`. El contrato real se demuestra en `tests/Integration/Mysql/` contra MySQL 8.
 
 ## Estado actual (2026-05-09)
 
-- Tag vigente: **v0.7.3** — PRs #16-#20 mergeadas (Renovate onboarding, retirada de Dependabot, codecov-action v6, doc `user_id` agnostic repair).
+- Tag vigente (post-merge): **v0.7.4** — fresh-install agnostic contract sobre MySQL real cubierto por tests. Tag previo: v0.7.3.
 - Bot de dependencias: migrado a **Renovate self-hosted** (`renovate.tabratino.com`). Ver paraguas para el protocolo de transición.
-- Bloqueador registrado: falta test de upgrade `customer_id bigint → uuid` (ver commit `c793e19`).
+- **Contrato vigente del paquete (post-reframe 2026-05-09):** fresh install agnóstico sobre MySQL real para `int`/`uuid`/`ulid`. Cubierto por `tests/Integration/Mysql/MysqlIntegrationTestCase.php` + `tests/Integration/Mysql/FreshInstallUserIdTypeTest.php` (un único `it()` con `->with(['int','uuid','ulid'])`). Job CI nuevo: `mysql-integration` (PHP 8.3 + L12 + MySQL 8 service). Eliminada `database/migrations/2026_05_08_000001_repair_article_customer_id_columns.php` y su `.stub` — comunicaba una promesa de upgrade que dev-main NO asume. Para correr la suite MySQL local: ver `docs/2026-05-09-fresh-install-agnostic-mysql.md` (env vars `LARABILL_TEST_MYSQL_*` + Docker).
+- **Suite SQLite** (`composer test`): 959 passed (2765 assertions), intacta tras el reframe. Los 3 tests MySQL se reportan como `skipped` cuando faltan env vars — no rompen el flujo local.
