@@ -83,6 +83,46 @@ Larafactu uses a web-based installer that:
 Using `.stub` files with `hasMigration()` breaks this flow because it requires `php artisan vendor:publish` before migrations can run.
 
 
+## MySQL Integration Tests (opt-in)
+
+The default suite runs against SQLite in-memory. The agnostic install
+contract for `int` / `uuid` / `ulid` is also verified against a real
+MySQL 8 server in `tests/Integration/Mysql/`. These tests are
+**skipped** unless the following environment variables are set:
+
+```bash
+LARABILL_TEST_MYSQL_HOST=127.0.0.1
+LARABILL_TEST_MYSQL_PORT=33106
+LARABILL_TEST_MYSQL_DATABASE=larabill_test
+LARABILL_TEST_MYSQL_USERNAME=root
+LARABILL_TEST_MYSQL_PASSWORD=root
+```
+
+Quick local run with Docker:
+
+```bash
+docker run -d --rm --name larabill-mysql-test \
+  -e MYSQL_ROOT_PASSWORD=root \
+  -e MYSQL_DATABASE=larabill_test \
+  -p 33106:3306 \
+  mysql:8
+
+until docker exec larabill-mysql-test mysqladmin ping -h 127.0.0.1 -uroot -proot --silent; do sleep 2; done
+
+LARABILL_TEST_MYSQL_HOST=127.0.0.1 \
+LARABILL_TEST_MYSQL_PORT=33106 \
+LARABILL_TEST_MYSQL_DATABASE=larabill_test \
+LARABILL_TEST_MYSQL_USERNAME=root \
+LARABILL_TEST_MYSQL_PASSWORD=root \
+vendor/bin/pest tests/Integration/Mysql/
+
+docker stop larabill-mysql-test
+```
+
+CI runs them automatically in the `mysql-integration` job
+(PHP 8.3 + Laravel 12 + MySQL 8). See
+`docs/2026-05-09-fresh-install-agnostic-mysql.md` for the full contract.
+
 ## Full Documentation
 
 See: `larafactu/docs/internal/PACKAGE_DEVELOPMENT_STANDARDS.md`
