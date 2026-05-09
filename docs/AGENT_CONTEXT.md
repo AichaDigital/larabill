@@ -371,6 +371,7 @@ enum UserRelationshipType: int
 | `docs/ADR-002-*.md` | UUID v7 string decision |
 | `docs/ADR-003-*.md` | User/Customer unification |
 | `docs/ADR-004-*.md` | Article pricing by frequency |
+| `docs/OPERATIONAL_NOTES.md` | Operational decisions, flaky-test conditions, and repair verification |
 | `CHANGELOG.md` | Version history and breaking changes |
 | `README.md` | Installation and usage guide |
 
