@@ -1,392 +1,318 @@
-# Larabill - Package Context for AI Agents
+# Larabill Agent Context
 
-> **Read this file first** to understand the package's purpose, architecture, and conventions.
+Read this file first when working on Larabill. It is the operational context for
+AI coding agents and should stay factual, compact, and tied to this repository.
 
-## Package Identity
+Last inspected: 2026-05-09.
 
-**Larabill** is the **core billing package** for the Larafactu ecosystem. It provides:
+## Repository Identity
 
-- Invoice management with immutability
-- Tax calculation (Spain, EU, worldwide)
-- VAT verification services
-- Fiscal data management (issuer and recipients)
-- PDF invoice generation
+Larabill is the core billing package for the AichaDigital/Larafactu ecosystem.
+It is a Composer package for Laravel applications, not a standalone Laravel app.
 
-### Critical Information
+Primary responsibilities:
 
-| Item | Value |
-|------|-------|
-| **Version** | dev-main (targeting v1.0 for Dec 15, 2025) |
-| **PHP** | ^8.3 |
-| **Laravel** | ^11.0 \| ^12.0 |
-| **License** | AGPL-3.0-or-later |
+- Invoice management with fiscal immutability.
+- Tax calculation for Spain, EU, and worldwide scenarios.
+- VAT/ROI verification through ecosystem packages.
+- Fiscal data management for issuer and recipients.
+- PDF invoice generation.
+- Recurring billing and service lifecycle support.
 
-> **Note**: Larabill is **Filament-agnostic**. For Filament integration, use the separate `aichadigital/larabill-filament` package.
+Package coordinates:
 
-### Ecosystem Context
+- Composer package: `aichadigital/larabill`
+- Namespace: `AichaDigital\Larabill`
+- License: `AGPL-3.0-or-later`
+- Primary branch: `main`
+- Staging consumer: Larafactu
 
-Larabill is part of the **AichaDigital billing ecosystem**:
+Ecosystem packages:
 
-```
-aichadigital/
-├── larabill/        # Core billing (THIS PACKAGE)
-├── lara100/         # Base-100 monetary calculations (v1.0 stable)
-├── lararoi/         # EU VAT/ROI verification
-├── lara-verifactu/  # Spain AEAT VeriFACTU integration
-└── laratickets/     # Support tickets
-```
+- `aichadigital/lara100`: base-100 monetary casts.
+- `aichadigital/lararoi`: EU VAT/ROI verification.
+- `aichadigital/lara-verifactu`: AEAT VeriFACTU integration.
+- `aichadigital/larabill-filament`: Filament integration, separate from this core package.
 
-**Primary staging environment**: [Larafactu](https://github.com/AichaDigital/larafactu)
+## Source Of Truth
+
+When sources conflict, prefer this order:
+
+1. Current user instructions and repository `AGENTS.md` rules.
+2. `composer.json` for actual dependency constraints and scripts.
+3. `.claude/CRITICAL_RULES.md` for hard migration rules.
+4. `SCHEMA_REQUIREMENTS.md` for host application schema contracts.
+5. `CONTRIBUTING.md` for package migration workflow.
+6. Current source code and tests.
+7. README and older docs.
+
+Before changing migrations or user-related schema, read:
+
+- `.claude/CRITICAL_RULES.md`
+- `SCHEMA_REQUIREMENTS.md`
+- `CONTRIBUTING.md`
+- `src/Support/MigrationHelper.php`
+- `src/Console/LarabillInstallCommand.php`
+
+## Current Stack
+
+The current `composer.json` requires:
+
+- PHP: `^8.3`
+- Laravel components: `^12.0||^13.0`
+- Testbench: `^10.6||^11.0`
+- Pest: `^4.0`
+- Larastan/PHPStan for static analysis.
+- Laravel Pint for formatting.
+
+Local inspection on 2026-05-09 found:
+
+- PHP CLI: `8.4.20`
+- Pest: `4.6.3`
+- PHPStan: `2.1.51`
+- Pint: `1.29.1`
+- Testbench: `11.1.0`
+- `composer validate --no-check-publish` passes.
+
+There is a documented local PHP 8.4 + SQLite in-memory issue that may cause
+`table already exists` failures. Prefer PHP 8.3 locally for full test runs when
+that issue appears, or validate through CI.
+
+## Hard Rules
+
+Code, code comments, and docblocks are written in English.
+
+Keep changes surgical:
+
+- Touch only files required by the task.
+- Do not clean adjacent code, formatting, or stale docs unless requested.
+- Remove only imports, variables, functions, handlers, or config entries made
+  unused by your own changes.
+- Treat unrelated dirty files as user-owned.
+
+Money is never stored as float or decimal:
+
+- `12.34 EUR` is stored as `1234`.
+- `21.5%` is stored as `2150`.
+- Use base-100 integers and `Base100Int` where applicable.
+
+Invoices are immutable once issued:
+
+- Only draft invoices may be edited.
+- Issued fiscal snapshots must not be rewritten.
+
+User IDs are agnostic:
+
+- Supported config values: `int`, `uuid`, `ulid`.
+- Default and recommended type: `uuid`.
+- Binary UUID support was removed.
+- Never assume a numeric `users.id`.
+- Never use direct `$table->foreignId()` for user FKs.
+- Use `MigrationHelper::userIdColumn($table, 'column_name')`.
+
+## Migration Contract
+
+This is the most important package-specific workflow.
+
+Package-owned tables need both files:
+
+- A timestamped `.php` migration for auto-loading in development and tests.
+- A `.php.stub` migration for production publishing through `larabill:install`.
+
+Consumer-only stubs modify the host application's `users` table and do not have
+a timestamped `.php` counterpart:
+
+- `add_user_relationships_to_users_table.php.stub`
+- `rename_user_id_to_owner_user_id_in_user_tax_profiles.php.stub`
+
+When modifying any package table migration:
+
+1. Update the timestamped `.php` migration.
+2. Update the matching `.php.stub`.
+3. Keep `LarabillInstallCommand::$migrationOrder` aligned with real stubs.
+4. Use `MigrationHelper` for every FK-like column that points to `users`.
+5. Add focused tests for install and upgrade behavior when schema contracts move.
+
+Do not use Spatie `hasMigration()` for this package. Production publishing is
+controlled by `LarabillInstallCommand`.
 
 ## Architecture
 
-### UUID Strategy - UUID v7 String
+Issuer:
 
-**IMPORTANT**: This package uses UUID v7 **STRING** storage (char 36).
+- `CompanyFiscalConfig`
+- Temporal issuer fiscal settings.
+- Represents the company/software holder.
 
-> **Note**: Binary UUID (`uuid_binary`) was removed in ADR-002 for compatibility reasons.
+Recipients:
 
-| Type | Config Value | Storage | Size | Use Case |
-|------|-------------|---------|------|----------|
-| Integer | `int` | `unsignedBigInteger` | 8 bytes | Standard Laravel |
-| UUID String | `uuid` | `char(36)` | 36 bytes | **Recommended** - Human readable |
-| ULID String | `ulid` | `char(26)` | 26 bytes | Sortable, readable |
+- Host app `users` table.
+- `parent_user_id` models direct vs delegated billing relationships.
+- `UserTaxProfile` stores recipient fiscal history.
 
-**Configuration** (`config/larabill.php`):
+Invoices:
 
-```php
-'user_id_type' => env('LARABILL_USER_ID_TYPE', 'uuid'),
-```
+- `Invoice` has UUID primary key.
+- `user_id` is the owner/requester, not the issuer.
+- `company_fiscal_config_id` is the issuer snapshot.
+- `user_tax_profile_id` is the recipient snapshot.
+- Invoice items are fiscal snapshots and must remain stable.
 
-**The `HasUuid` trait** automatically configures the model based on `user_id_type` config.
+Articles and services:
 
-### Monetary Values - Base 100
+- `Article` is the catalog item.
+- `ArticlePrice` stores prices by billing frequency and validity window.
+- `ArticleOverride` stores customer-specific overrides.
+- `ArticleServiceStatus` stores contracted service instances and billing state.
 
-**NEVER use float/decimal for money**. Always integers in base 100:
+Deprecated architecture:
 
-- 12.34 EUR → `1234`
-- 21.5% IVA → `2150`
-- 0.99 EUR → `99`
+- Do not reintroduce separate `Customer` entities.
+- Do not reintroduce `CustomerFiscalData`.
+- Use `User` relationships plus `UserTaxProfile`.
 
-Package: `aichadigital/lara100` (v1.0 stable)
+## Directory Map
 
-### Fiscal Architecture (ADR-001 + ADR-003)
+Important paths:
 
-```
-ISSUER (single):
-  CompanyFiscalConfig    → Issuer fiscal settings (temporal validity)
+- `config/larabill.php`: package configuration.
+- `database/migrations/`: timestamped migrations and publishable stubs.
+- `database/seeders/`: legacy lower-case seeders.
+- `src/Database/Seeders/`: package namespace seeders.
+- `resources/lang/`: English and Spanish translations.
+- `resources/views/pdf/`: invoice PDF templates.
+- `src/Actions/`: recurring billing and service lifecycle actions.
+- `src/Concerns/`: Eloquent traits.
+- `src/Console/`: Artisan commands.
+- `src/Contracts/`: package interfaces.
+- `src/DataTransferObjects/`: DTOs.
+- `src/Enums/`: domain enums.
+- `src/Events/`: domain events.
+- `src/Listeners/`: event listeners.
+- `src/Models/`: Eloquent models.
+- `src/Services/`: business services.
+- `src/Support/`: helpers such as `MigrationHelper`.
+- `tests/`: Pest tests.
+- `workbench/`: package workbench artifacts.
 
-RECIPIENTS (unified under Users):
-  Users                  → All billable entities (direct + delegated)
-    ├── parent_user_id   → Self-reference for delegation
-    └── relationship_type → UserRelationshipType enum
+Main provider:
 
-  UserTaxProfile         → Recipient fiscal data (historical per User)
+- `src/LarabillServiceProvider.php`
 
-INVOICES:
-  Invoice                → Immutable once issued
-    ├── user_id          → Owner/requester (NOT issuer)
-    ├── company_fiscal_config_id → Issuer snapshot
-    └── user_tax_profile_id → Recipient fiscal snapshot
-```
+Main install command:
 
-**Key principles**:
+- `src/Console/LarabillInstallCommand.php`
 
-- **Issuer**: `CompanyFiscalConfig` with temporal validity (`valid_from`, `valid_until`)
-- **Recipients**: Unified under `Users` with self-referencing (`parent_user_id`)
-- **Fiscal history**: `UserTaxProfile` tracks changes over time per User
-- **Invoices**: Capture fiscal snapshots at creation, absolutely immutable once issued
+## Testing And Quality Commands
 
-### User Relationship Model (ADR-003)
+Run commands from the package root.
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  users                                                          │
-│  ══════                                                         │
-│  - id (UUID v7 string)                                          │
-│  - parent_user_id (nullable) → FK self-reference                │
-│  - relationship_type (UserRelationshipType enum)                │
-│                                                                 │
-│  parent_user_id = NULL   → DIRECT (client of the Company)       │
-│  parent_user_id = X      → DELEGATED (client of User X)         │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**UserRelationshipType Enum**:
-
-```php
-enum UserRelationshipType: int
-{
-    case DIRECT = 0;      // Direct client of the Company
-    case DELEGATED = 1;   // Client of a User (delegated billing)
-
-    public function label(): string { /* ... */ }
-    public function color(): string { /* ... */ }
-    public function icon(): string { /* ... */ }
-}
-```
-
-### Article Pricing by Frequency (ADR-004)
-
-**IMPORTANT**: Pricing is separated from Article into `ArticlePrice` model.
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│  Article (Catálogo)                                             │
-│  ═══════════════════                                            │
-│  - id, code, name, item_type                                    │
-│  - cost_price (Base100Int)                                      │
-│                                                                 │
-│  └─→ ArticlePrice[] (1:N)                                       │
-│      ├── billing_frequency: BillingFrequency enum               │
-│      ├── price: Base100Int                                      │
-│      ├── billing_days_in_advance: ?int                          │
-│      └── valid_from / valid_to: temporal validity               │
-└─────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────┐
-│  ArticleServiceStatus (Contracted Instance)                     │
-│  ══════════════════════════════════════════                     │
-│  - customer_id, article_id                                      │
-│  - billing_frequency: BillingFrequency (contract immutability)  │
-│  - effective_price: Base100Int (cached at contract)             │
-│  - next_billing_date, instance_identifier                       │
-└─────────────────────────────────────────────────────────────────┘
-```
-
-**BillingFrequency Enum**:
-
-```php
-enum BillingFrequency: int
-{
-    case ONE_TIME = 0;      // Single purchase
-    case WEEKLY = 1;        // Every week
-    case BIWEEKLY = 2;      // Every 2 weeks
-    case MONTHLY = 3;       // Every month
-    case BIMONTHLY = 4;     // Every 2 months
-    case QUARTERLY = 5;     // Every 3 months
-    case SEMIANNUALLY = 6;  // Every 6 months
-    case YEARLY = 7;        // Every year
-}
-```
-
-**Key Methods on Article**:
-
-```php
-$article->getPriceFor(BillingFrequency::MONTHLY);      // Get price for frequency
-$article->getAvailableFrequencies();                    // Get all available frequencies
-$article->isRecurring();                                // Has non-ONE_TIME prices?
-$article->getBillingDaysInAdvanceFor($frequency);       // Days in advance for billing
-$article->getEffectivePriceFor($customerId, $freq);     // Price with override applied
-```
-
-## Package Structure
-
-```
-larabill/
-├── config/larabill.php         # Package configuration
-├── database/
-│   ├── migrations/             # Database migrations + stubs
-│   └── seeders/                # Tax categories, rates, etc.
-├── docs/
-│   ├── AGENT_CONTEXT.md        # This file
-│   ├── ARCHITECTURE.md         # Core architecture (articles, invoicing)
-│   ├── ADR-001-*.md            # Fiscal architecture decision
-│   ├── ADR-002-*.md            # UUID v7 string decision
-│   ├── ADR-003-*.md            # User/Customer unification decision
-│   └── ADR-004-*.md            # Article pricing by frequency
-├── resources/
-│   ├── lang/                   # Translations (es, en)
-│   └── views/pdf/              # Invoice PDF templates
-├── src/
-│   ├── Concerns/
-│   │   ├── HasUuid.php         # UUID trait
-│   │   └── HasUserRelation.php # User relationship trait
-│   ├── Console/                # Artisan commands
-│   ├── Contracts/              # Interfaces
-│   ├── Database/Factories/     # Model factories
-│   ├── DataTransferObjects/    # DTOs
-│   ├── Enums/                  # Status enums + UserRelationshipType
-│   ├── Events/                 # Domain events
-│   ├── Listeners/              # Event listeners
-│   ├── Models/                 # Eloquent models
-│   ├── Services/               # Business logic services
-│   └── Support/
-│       └── MigrationHelper.php # Agnostic migration support
-└── tests/                      # Pest tests
-```
-
-## Key Components
-
-### HasUuid Trait
-
-UUID trait that adapts to configuration:
-
-```php
-use AichaDigital\Larabill\Concerns\HasUuid;
-
-class Invoice extends Model
-{
-    use HasUuid;
-    // Automatically configures based on larabill.user_id_type
-}
-```
-
-### MigrationHelper
-
-Creates columns with correct type based on configuration:
-
-```php
-use AichaDigital\Larabill\Support\MigrationHelper;
-
-Schema::create('invoices', function (Blueprint $table) {
-    $table->uuid('id')->primary();
-    MigrationHelper::userIdColumn($table); // Adapts to user ID type
-});
-```
-
-### Key Models
-
-| Model | Purpose |
-|-------|---------|
-| **Invoice** | UUID primary key, immutable once issued |
-| **CompanyFiscalConfig** | Issuer fiscal settings with temporal validity |
-| **UserTaxProfile** | Recipient fiscal data (historical per User) |
-| **InvoiceItem** | Line items with tax breakdown |
-| **Article** | Catalog item (product or service) |
-| **ArticlePrice** | Frequency-based pricing for Article (ADR-004) |
-| **ArticleServiceStatus** | Contracted service instance with billing schedule |
-| **ArticleOverride** | Customer-specific price override |
-
-### Deprecated Models (ADR-003)
-
-| Model | Status | Replacement |
-|-------|--------|-------------|
-| `Customer` | **DEPRECATED** | Use `User` with `parent_user_id` |
-| `CustomerFiscalData` | **DEPRECATED** | Use `UserTaxProfile` |
-
-## Configuration
-
-### Environment Variables
-
-```env
-# ID Type
-LARABILL_USER_ID_TYPE=uuid  # Options: int, uuid, ulid
-
-# Invoice Numbering
-LARABILL_INVOICE_PREFIX=FAC
-LARABILL_PROFORMA_PREFIX=PRO
-
-# VAT APIs
-LARABILL_ABSTRACTAPI_KEY=your_key
-LARABILL_APILAYER_KEY=your_key
-```
-
-## Testing
+Common checks:
 
 ```bash
-# Run all tests
+composer validate --no-check-publish
 composer test
-
-# Run specific tests
-composer test -- --filter=Invoice
-
-# Static analysis
-vendor/bin/phpstan analyse
+composer test-parallel
+composer phpstan
+composer pint
+composer precommit
 ```
 
-### Testing Patterns - User Model Agnosticism
+Focused checks:
 
-**CRITICAL**: This package is agnostic to the host application's User model.
+```bash
+vendor/bin/pest tests/Unit/Models/InvoiceTest.php
+vendor/bin/pest --filter='invoice'
+vendor/bin/phpstan analyse --memory-limit=1G
+vendor/bin/pint --test
+```
 
-The `user_model` is configurable via `config('larabill.user_model')`. In tests:
+CI matrix:
 
-- `TestCase.php` sets `larabill.user_model` to `TestUser::class`
-- The `HasUserRelation` trait reads this config dynamically
-- Models use `tests/Models/User.php` for creating test users (with factory)
-- But relationships return whatever class is configured in `larabill.user_model`
+- PHP `8.3`, `8.4`
+- Laravel `12.*`, `13.*`
+- Ubuntu runner
 
-**Pattern for testing user relationships**:
+For model relationship tests, stay agnostic:
 
 ```php
-// CORRECT - Agnostic pattern (uses configured model dynamically)
-it('belongs to user', function () {
-    $user = User::factory()->create();
-    $data = Model::factory()->forUser($user->id)->create();
-
-    $userModel = config('larabill.user_model');
-    expect($data->user)->toBeInstanceOf($userModel);
-});
-
-// WRONG - Hardcoded class breaks agnosticism
-expect($data->user)->toBeInstanceOf(User::class);
+$userModel = config('larabill.user_model');
+expect($model->user)->toBeInstanceOf($userModel);
 ```
 
-## Important Conventions
+Do not hardcode the test `User::class` when asserting package relationships.
 
-### PHP Enums
+## Active Contract (replaces previous upgrade-blocker, 2026-05-09)
 
-Enums provide generic methods for UI integration (usable with any frontend):
+Larabill is in `dev-main` pre-v1.0 (target stable: 2026-12-31). There are no
+production installations and no datasets to preserve. The package therefore
+does NOT promise schema upgrade across `dev-main` versions — internal
+consumers use `migrate:fresh` or recreate tables.
 
-```php
-enum UserRelationshipType: int
-{
-    case DIRECT = 0;
-    case DELEGATED = 1;
+What the package DOES promise and what is now demonstrated by tests:
 
-    public function label(): string { /* Translated label */ }
-    public function color(): string { /* Color identifier: 'success', 'info', etc. */ }
-    public function icon(): string { /* Icon identifier: 'heroicon-o-user', etc. */ }
-}
-```
+- **Fresh install agnostic on MySQL** for each `larabill.user_id_type` ∈
+  `{int, uuid, ulid}`. The full migration set runs cleanly via
+  `artisan migrate`, agnostic columns reflect the configured id type
+  (`bigint` / `char(36)` / `char(26)`), composite UNIQUE indexes exist with
+  `customer_id` at position 0, and uniqueness is actively enforced.
 
-> **Note**: For Filament integration, use `aichadigital/larabill-filament` which provides traits to implement Filament's `HasLabel`, `HasColor`, `HasIcon` interfaces.
+Authoritative reference: `docs/2026-05-09-fresh-install-agnostic-mysql.md`.
+Implementation: `tests/Integration/Mysql/MysqlIntegrationTestCase.php` +
+`tests/Integration/Mysql/FreshInstallUserIdTypeTest.php`. CI:
+`mysql-integration` job in `.github/workflows/tests.yml`.
 
-## Anti-Patterns
+The earlier blocker on upgrade coverage
+(`docs/2026-05-09-blocker-upgrade-test-customer-id-bigint-to-uuid.md`) is
+SUPERSEDED. The repair migration
+`database/migrations/2026_05_08_000001_repair_article_customer_id_columns.php`
+and its stub were removed as part of the same reframe — they communicated an
+upgrade promise the package does not assume in `dev-main`.
 
-**DON'T**:
+## Documentation Drift To Treat Carefully
 
-- Use float/decimal for monetary values (use base100)
-- Modify issued invoices
-- Hardcode UUID type (use config)
-- Skip MigrationHelper for user_id columns
-- Use binary UUID (removed for compatibility)
-- Create separate Customer entities (use User with parent_user_id)
+Do not fix these opportunistically. Mention them when relevant or fix them only
+when the task asks for documentation/config cleanup.
 
-**DO**:
+- `README.md` and some docs still advertise Laravel `^11.0|^12.0`, while the
+  current `composer.json` requires Laravel components `^12.0||^13.0`.
+- Some `.claude` docs mention Filament 4 resources, while this package currently
+  appears to be core/Filament-agnostic and uses a separate Filament package.
+- `config/larabill.php` still references deprecated `Customer` and
+  `CustomerFiscalData` model mappings; those classes are not part of the current
+  `src/Models` tree inspected on 2026-05-09.
 
-- Use `HasUuid` trait for UUID models
-- Use `MigrationHelper::userIdColumn()` in migrations
-- Use Base100Int for all monetary/percentage values
-- Follow temporal validity pattern for fiscal data
-- Use PHP Enums with generic UI methods
-- Implement self-referencing Users for delegation
+## Work Habits For Agents
 
-## Key Documentation
+At the start of a task:
 
-| File | Purpose |
-|------|---------|
-| `docs/ARCHITECTURE.md` | Core architecture (articles, invoicing) |
-| `docs/ADR-001-*.md` | Fiscal architecture decision |
-| `docs/ADR-002-*.md` | UUID v7 string decision |
-| `docs/ADR-003-*.md` | User/Customer unification |
-| `docs/ADR-004-*.md` | Article pricing by frequency |
-| `docs/OPERATIONAL_NOTES.md` | Operational decisions, flaky-test conditions, and repair verification |
-| `CHANGELOG.md` | Version history and breaking changes |
-| `README.md` | Installation and usage guide |
+1. Run `git status --short --branch`.
+2. Read the specific source and tests related to the request.
+3. State assumptions when the task has multiple plausible meanings.
+4. Prefer the smallest implementation that satisfies a concrete verification.
 
-## Target Use Case
+Before editing:
 
-**Primary**: Spanish hosting companies operating as EU intra-community operators
+- Identify the exact files to change.
+- Avoid touching generated, unrelated, or user-modified files.
+- For migrations, update `.php`, `.stub`, command order, and tests together.
 
-**Features prioritized for**:
+Before claiming completion:
 
-- Monthly/annual service billing
-- Spanish tax system (IVA, IGIC, IPSI)
-- EU reverse charge (B2B)
-- VeriFACTU compliance (Spain)
-- WHMCS migration path
+- Run the narrowest meaningful test first.
+- Run broader checks when risk or blast radius justifies it.
+- Report any checks skipped and why.
 
----
+## Release And Dependency Notes
 
-**Remember**: This package uses UUID v7 **string** (not binary). Always use the configuration, never hardcode ID types.
+This package is managed as an independent repository inside an AichaDigital
+package directory. Do not treat the parent directory as a monorepo.
+
+Dependency bot status as of 2026-05-09:
+
+- AichaDigital is moving from Dependabot to self-hosted Renovate.
+- `renovate.json` exists in this package.
+- Do not restore Dependabot setup unless specifically requested.
+
+Tagging and release workflow live outside this context. Inspect `bin/tag-release`,
+`CHANGELOG.md`, and current git history before release work.

@@ -1,10 +1,24 @@
+> **⚠️ SUPERSEDED (2026-05-09)** — premisa rota detectada en la misma sesión: larabill está en `dev-main` pre-v1.0 sin instalaciones en producción ni datos a preservar. El paquete NO promete contrato de upgrade en esta fase; lo que sí promete es **fresh install agnóstico** sobre `int`/`uuid`/`ulid`. Ese contrato pasa a ser la prioridad y se documenta y cubre con tests reales en:
+>
+> 👉 **`docs/2026-05-09-fresh-install-agnostic-mysql.md`**
+>
+> Acciones tomadas como parte del reframe:
+> - Eliminada `database/migrations/2026_05_08_000001_repair_article_customer_id_columns.php` y su `.stub`.
+> - Retirada la entrada `'032'` de `$migrationOrder` en `LarabillInstallCommand`.
+> - Añadidos `tests/Integration/Mysql/MysqlIntegrationTestCase.php` y `tests/Integration/Mysql/FreshInstallUserIdTypeTest.php` cubriendo los 3 tipos.
+> - Añadido job CI `mysql-integration` (PHP 8.3 + L12 + MySQL 8).
+>
+> Este documento se conserva como rastro de la decisión equivocada corregida — leído como histórico, no como guía operativa.
+
+---
+
 # Blocker estructural — Falta cobertura de upgrade `customer_id bigint → uuid` con índices compuestos
 
 **Fecha:** 2026-05-09
 **Autor:** Abdelkarim Mateos
 **Versión afectada:** `dev-main` ref `89720420` (bump del 2026-05-09)
 **Migración bajo análisis:** `database/migrations/2026_05_08_000001_repair_article_customer_id_columns.php`
-**Estado:** abierto, pendiente sesión dedicada en este repo
+**Estado:** ~~abierto~~ **SUPERSEDED 2026-05-09** — sustituido por contrato fresh-install (ver banner arriba)
 **Severidad:** estructural (no rompe esta release, pero el contrato del paquete no está demostrado)
 
 ## Contexto
