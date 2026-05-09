@@ -2,6 +2,27 @@
 
 All notable changes to `larabill` will be documented in this file.
 
+## [0.7.4] - 2026-05-09
+
+### Added
+
+- **Tests**: New `tests/Integration/Mysql/` suite covering the agnostic fresh-install contract on real MySQL 8 — one Pest test with dataset `[int, uuid, ulid]` verifies that the full migration set runs cleanly via `artisan migrate`, that agnostic `customer_id` and `user_id` columns reflect the configured type (`bigint` / `char(36)` / `char(26)`), that composite UNIQUE indexes are preserved with `customer_id` at position 0, and that uniqueness is actively enforced after install
+- **Tests**: `MysqlIntegrationTestCase` opt-in harness — extends `Orchestra\Testbench\TestCase` directly, requires `LARABILL_TEST_MYSQL_*` env vars, marks tests as `skipped` with an actionable message when not configured, and uses `SET FOREIGN_KEY_CHECKS=0` for FK-safe drops
+- **CI**: New `mysql-integration` job (PHP 8.3 + Laravel 12 + MySQL 8 service container) running only the new MySQL suite — the existing 4-job SQLite matrix is untouched
+- **Docs**: `docs/2026-05-09-fresh-install-agnostic-mysql.md` formalising the contract `dev-main` actually promises — fresh install agnostic on MySQL for `int`/`uuid`/`ulid`. Schema upgrades across `dev-main` versions are explicitly NOT promised at this stage (use `migrate:fresh`)
+- **Docs**: `CONTRIBUTING.md` section explaining how to run the MySQL suite locally with Docker
+
+### Removed
+
+- **Migrations**: Deleted `database/migrations/2026_05_08_000001_repair_article_customer_id_columns.php` and its stub `repair_article_customer_id_columns.php.stub`. Retired the `'032'` entry in `LarabillInstallCommand::$migrationOrder`. The migration was best-effort with no test coverage and communicated an upgrade promise that pre-v1.0 `dev-main` does not assume
+
+### Changed
+
+- **Pest config**: `tests/Pest.php` binds `MysqlIntegrationTestCase` to `Integration/Mysql/` and restricts the global `TestCase + RefreshDatabase` binding to explicit paths (Pest cannot rebind a folder once a subpath is bound)
+- **Docs**: `docs/2026-05-09-blocker-upgrade-test-customer-id-bigint-to-uuid.md` marked SUPERSEDED with banner pointing to the new fresh-install doc; preserved as a record of the corrected reframe
+- **Docs**: `docs/AGENT_CONTEXT.md` "Known Active Blocker" section replaced by "Active Contract" describing what the package now demonstrates
+- **Docs**: `CLAUDE.md` repo entry-point: required reading reordered, anti-patterns updated (no `repair_*` migrations without tests; SQLite suite does NOT prove agnostic schema), "Estado actual" reflects the reframe
+
 ## [0.6.1] - 2026-02-16
 
 ### Fixed
