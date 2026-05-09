@@ -306,7 +306,7 @@ class Article extends Model
      * Get the effective price for a customer at a specific frequency.
      * Checks for active overrides first, falls back to standard price.
      */
-    public function getEffectivePriceFor(?int $customerId, BillingFrequency $frequency): ?float
+    public function getEffectivePriceFor(int|string|null $customerId, BillingFrequency $frequency): ?float
     {
         if ($customerId) {
             $override = $this->getActiveOverrideFor($customerId);
@@ -321,7 +321,7 @@ class Article extends Model
     /**
      * Get active price override for a customer.
      */
-    public function getActiveOverrideFor(int $customerId): ?ArticleOverride
+    public function getActiveOverrideFor(int|string $customerId): ?ArticleOverride
     {
         return $this->overrides()
             ->where('customer_id', $customerId)
@@ -340,7 +340,7 @@ class Article extends Model
     /**
      * Check if customer has an active override.
      */
-    public function hasActiveOverrideFor(int $customerId): bool
+    public function hasActiveOverrideFor(int|string $customerId): bool
     {
         return $this->getActiveOverrideFor($customerId) !== null;
     }
