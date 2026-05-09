@@ -29,7 +29,7 @@ class ArticleServiceStatusFactory extends Factory
         return [
             'customer_id'               => $userModel::factory(),
             'article_id'                => Article::factory()->service(),
-            'instance_identifier'       => $this->faker->domainName(),
+            'instance_identifier'       => $this->faker->unique()->domainName(),
             'instance_name'             => 'Service for '.$this->faker->domainWord(),
             'started_at'                => now(),
             'next_billing_date'         => now()->addMonth(),
