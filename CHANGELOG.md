@@ -2,6 +2,79 @@
 
 All notable changes to `larabill` will be documented in this file.
 
+## [0.8.0] - 2026-05-10
+
+### Breaking changes — UUID-first
+
+This release retires the public pretension of supporting `int`/`uuid`/`ulid`
+for the consumer's `users.id` and adopts **UUID v7 char(36) as the sole
+contract** (ADR-006). `dev-main` did not promise upgrade across versions, so
+no migration path is provided — consumers must already be on UUID or convert
+before installing v0.8.0.
+
+### Removed
+
+- **Config**: `larabill.user_id_type` (and the `LARABILL_USER_ID_TYPE` env var
+  it read) is gone from `config/larabill.php`. Setting it in `.env` now has
+  no effect.
+- **Helper**: `MigrationHelper::getUserIdType()`, `detectUserIdType()`,
+  `getIdTypeDescription()`, `isSupportedIdType()`. The helper is reduced to
+  `userIdColumn()` + `agnosticIdColumn()`, both emitting UUID v7 char(36)
+  unconditionally.
+- **Command**: `larabill:detect-user-id` (`DetectUserIdTypeCommand`) deleted.
+- **CLI flag**: `larabill:install --user-id-type=` removed.
+- **Tests**: `MigrationHelperEnhancedTest`, `DetectUserIdTypeCommandTest`, and
+  the `->with(['int','uuid','ulid'])` matrix of `FreshInstallUserIdTypeTest`
+  (renamed to `FreshInstallTest.php` with a single UUID case).
+
+### Changed
+
+- **Install command**: `larabill:install` runs a UUID-only preflight check on
+  `users.id`. Aborts with an actionable message pointing to
+  `docs/setup-uuid.md` and `docs/ADR-006-uuid-first-no-agnostic.md` if the
+  column is not UUID-compatible.
+- **Tests fixtures (Camino B)**: every hardcoded `'user_id' => 1`,
+  `'user-123'`, `'company-123'`, etc. has been replaced by the deterministic
+  UUID v7 constants `TestCase::USER_UUID_1/2/3`. Test migrations for `users`
+  and `test_users` now use `$table->uuid('id')->primary()`. `TestUser` and
+  `Tests\Models\User` use `HasUuids`. A new
+  `tests/Database/Factories/UserFactory.php` binds the UUID-keyed test User
+  model to factory creation.
+- **DTO**: `AuditEntry::$userId` is now `?string` (was `?int`).
+- **Docs**: README, SCHEMA_REQUIREMENTS, CONTRIBUTING, `.claude/CRITICAL_RULES`,
+  `docs/AGENT_CONTEXT`, and CLAUDE.md rewritten as UUID-first; the prior
+  `int|uuid|ulid` agnostic narrative is removed. `setup-uuid.md` is the new
+  canonical onboarding guide for consumer apps.
+- **Test infrastructure**: `tests/TestCase` now forces `cache.default = array`
+  to keep `Cache::flush()` stable when tests run in arbitrary order against
+  SQLite in-memory.
+
+### Added
+
+- **ADR**: `docs/ADR-006-uuid-first-no-agnostic.md` — canonical rationale for
+  retiring agnosticism. Referenced by `~/development/packages/aichadigital/STANDARDS.md`
+  STD-001.
+- **SPEC**: `docs/2026-05-10-spec-uuid-first-implementation.md` — the
+  implementation plan executed in this release.
+- **Setup guide**: `docs/setup-uuid.md` — consumer-facing 4-step guide from
+  `laravel new` to `larabill:install`.
+- **SUPERSEDED banner** on `docs/2026-05-09-fresh-install-agnostic-mysql.md`,
+  preserved as a record of the intermediate `int|uuid|ulid` MySQL contract
+  that bridged v0.7.4 and v0.8.0.
+
+### Migration guide
+
+Larabill `dev-main` does not promise schema upgrades. To move an installation
+to v0.8.0:
+
+1. Ensure your `users.id` is UUID v7 char(36) and your User model uses
+   `HasUuids`. Follow `docs/setup-uuid.md`.
+2. Drop the database and reinstall: `php artisan migrate:fresh && php artisan larabill:install`.
+
+If your app is already on UUID (the only configuration ever exercised in
+production), the upgrade is a no-op other than removing
+`LARABILL_USER_ID_TYPE` from `.env` (its value is now ignored).
+
 ## [0.7.4] - 2026-05-09
 
 ### Added
