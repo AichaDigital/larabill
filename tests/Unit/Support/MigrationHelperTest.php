@@ -50,13 +50,13 @@ describe('MigrationHelper (UUID-first per ADR-006)', function () {
             MigrationHelper::agnosticIdColumn($table, 'partner_id', nullable: true, index: true);
         });
 
-        $columns        = Schema::getColumns('test_migration_helper');
+        $columns         = Schema::getColumns('test_migration_helper');
         $partnerIdColumn = collect($columns)->firstWhere('name', 'partner_id');
 
         expect($partnerIdColumn)->not->toBeNull();
         expect($partnerIdColumn['nullable'])->toBeTrue();
 
-        $indexes          = Schema::getIndexes('test_migration_helper');
+        $indexes           = Schema::getIndexes('test_migration_helper');
         $hasPartnerIdIndex = collect($indexes)->contains(
             fn ($index) => in_array('partner_id', $index['columns'])
         );
