@@ -11,31 +11,8 @@ use AichaDigital\Larabill\Models\VatVerification;
 use App\Models\User;
 
 return [
-    /*
-    |--------------------------------------------------------------------------
-    | User ID Type (Agnostic Configuration)
-    |--------------------------------------------------------------------------
-    |
-    | Specify the type of primary key used in your users table AND invoices.
-    | This setting affects how UUIDs are stored and queried.
-    |
-    | Options:
-    |
-    | - 'int': Auto-increment integer (standard Laravel default)
-    | - 'uuid': String UUID v7 (36 characters) - recommended, ordered
-    | - 'ulid': ULID string (26 characters) - sortable, human readable
-    | - 'auto': Auto-detect from users table
-    |
-    | For production, 'uuid' is recommended. Uses Laravel 12 native
-    | Str::orderedUuid() which generates UUID v7 with chronological ordering.
-    |
-    | Note: uuid_binary was removed in v1.0 for compatibility reasons.
-    | See ADR-002 for migration guide.
-    |
-    */
-    'user_id_type' => env('LARABILL_USER_ID_TYPE', 'uuid'),
-
-    // User model class (used by relationships and factories)
+    // User model class (used by relationships and factories).
+    // The model's `id` column MUST be UUID v7 char(36). See docs/setup-uuid.md.
     'user_model' => env('LARABILL_USER_MODEL', User::class),
 
     // VAT verification API settings

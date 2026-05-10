@@ -4,15 +4,14 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Console;
 
-use AichaDigital\Larabill\Support\MigrationHelper;
 use Illuminate\Console\Command;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 
 class LarabillInstallCommand extends Command
 {
     protected $signature = 'larabill:install
-                            {--user-id-type= : User ID type (uuid, int, ulid)}
                             {--force : Force overwrite of existing migrations and publish in non-production}
                             {--no-migrate : Skip running migrations}';
 
@@ -65,12 +64,13 @@ class LarabillInstallCommand extends Command
         $this->info('🚀 Installing Larabill...');
         $this->newLine();
 
-        // 1. Detectar o solicitar tipo de user_id
-        $userIdType = $this->detectOrAskUserIdType();
-        $this->info("✓ User ID type: {$userIdType}");
-
-        // 2. Validar pre-requisitos
+        // 1. Validar pre-requisitos básicos (existencia de tabla users)
         if (! $this->validatePrerequisites()) {
+            return self::FAILURE;
+        }
+
+        // 2. Preflight UUID-first: users.id debe ser UUID compatible
+        if (! $this->verifyUsersTableUuid()) {
             return self::FAILURE;
         }
 
@@ -151,135 +151,104 @@ class LarabillInstallCommand extends Command
         return self::SUCCESS;
     }
 
-    protected function detectOrAskUserIdType(): string
-    {
-        // 1. Si se pasó por opción CLI, usar ese
-        if ($type = $this->option('user-id-type')) {
-            return $type;
-        }
-
-        // 2. Consultar config/env (LARABILL_USER_ID_TYPE) — tiene prioridad sobre schema
-        $configured = config('larabill.user_id_type', 'uuid');
-        if ($configured !== 'auto' && MigrationHelper::isSupportedIdType($configured)) {
-            $this->comment("Using configured user ID type from env/config: {$configured}");
-
-            return $configured;
-        }
-
-        // 3. Auto-detect desde schema solo si config es 'auto' o no reconocido
-        if (Schema::hasTable('users')) {
-            $detected = $this->detectUserIdTypeFromTable();
-
-            if ($detected) {
-                $this->comment("Detected user ID type from schema: {$detected}");
-
-                if ($this->confirm("Use detected type '{$detected}'?", true)) {
-                    return $detected;
-                }
-            }
-        }
-
-        // 4. Preguntar al usuario como último recurso
-        return $this->choice(
-            'What type of user ID does your application use?',
-            ['uuid', 'int', 'ulid'],
-            0
-        );
-    }
-
-    protected function detectUserIdTypeFromTable(): ?string
+    /**
+     * Preflight check: users.id must be UUID v7 char(36) compatible.
+     *
+     * Larabill is UUID-first (ADR-006). bigint and ULID are out of scope.
+     * Aborts with an actionable message pointing to docs/setup-uuid.md if
+     * the column type is not UUID-compatible.
+     */
+    protected function verifyUsersTableUuid(): bool
     {
         try {
-            $connection = Schema::getConnection();
-            $type       = Schema::getColumnType('users', 'id');
+            $type = Schema::getColumnType('users', 'id');
+        } catch (\Throwable $e) {
+            $this->error('❌ Could not inspect users.id column: '.$e->getMessage());
 
-            // Get column details using native database queries
-            $columnDetails = $this->getColumnDetails($connection, 'users', 'id');
-            $length        = $columnDetails['length'] ?? null;
+            return false;
+        }
 
-            // UUID binary (16 bytes)
-            if ($type === 'binary' && $length === 16) {
-                return 'uuid_binary';
+        // Laravel reports varchar/char as 'string'; native uuid columns as 'guid' or 'uuid'.
+        if (in_array($type, ['guid', 'uuid'], true)) {
+            $this->info('✓ users.id verified UUID compatible');
+
+            return true;
+        }
+
+        if (in_array($type, ['string', 'varchar', 'char'], true)) {
+            $driver = DB::connection()->getDriverName();
+
+            // SQLite has no fixed-length columns; trust the schema definition.
+            if ($driver === 'sqlite') {
+                $this->info('✓ users.id verified UUID compatible (sqlite, string column)');
+
+                return true;
             }
 
-            // UUID string (36 chars) o ULID (26 chars)
-            if (in_array($type, ['string', 'guid'])) {
-                if ($length === 36) {
-                    return 'uuid_string';
+            $length = $this->detectStringColumnLength();
+
+            if ($length === 36) {
+                $this->info('✓ users.id verified UUID compatible (char(36))');
+
+                return true;
+            }
+
+            $this->failPreflight(
+                "users.id is string of length {$length} — Larabill requires UUID v7 char(36)."
+            );
+
+            return false;
+        }
+
+        $this->failPreflight("users.id type is '{$type}' — Larabill requires UUID v7 char(36).");
+
+        return false;
+    }
+
+    protected function detectStringColumnLength(): ?int
+    {
+        $driver = DB::connection()->getDriverName();
+
+        try {
+            if ($driver === 'mysql') {
+                $row = DB::selectOne("SHOW COLUMNS FROM users WHERE Field = 'id'");
+                if ($row && preg_match('/\((\d+)\)/', $row->Type, $m)) {
+                    return (int) $m[1];
                 }
-                if ($length === 26) {
-                    return 'ulid';
+            }
+
+            if ($driver === 'pgsql') {
+                $row = DB::selectOne(
+                    "SELECT character_maximum_length AS len
+                     FROM information_schema.columns
+                     WHERE table_name = 'users' AND column_name = 'id'"
+                );
+                if ($row && $row->len !== null) {
+                    return (int) $row->len;
                 }
             }
 
-            // Integer
-            if (str_contains($type, 'int')) {
-                return 'int';
+            if ($driver === 'sqlite') {
+                // SQLite has no strict types; sample data length as best-effort.
+                $row = DB::selectOne('SELECT id FROM users LIMIT 1');
+                if ($row && is_string($row->id)) {
+                    return strlen($row->id);
+                }
             }
-
-            return null;
-        } catch (\Exception $e) {
-            return null;
+        } catch (\Throwable $e) {
+            // Fall through.
         }
+
+        return null;
     }
 
-    protected function getColumnDetails($connection, string $table, string $column): array
+    protected function failPreflight(string $reason): void
     {
-        $driver = $connection->getDriverName();
-
-        return match ($driver) {
-            'mysql'  => $this->getMysqlColumnDetails($connection, $table, $column),
-            'pgsql'  => $this->getPostgresColumnDetails($connection, $table, $column),
-            'sqlite' => $this->getSqliteColumnDetails($connection, $table, $column),
-            default  => [],
-        };
-    }
-
-    protected function getMysqlColumnDetails($connection, string $table, string $column): array
-    {
-        $result = $connection->selectOne(
-            "SHOW COLUMNS FROM {$table} WHERE Field = ?",
-            [$column]
-        );
-
-        if (! $result) {
-            return [];
-        }
-
-        // Parse type like "varchar(36)" or "int(11)"
-        if (preg_match('/\((\d+)\)/', $result->Type, $matches)) {
-            return ['length' => (int) $matches[1]];
-        }
-
-        return [];
-    }
-
-    protected function getPostgresColumnDetails($connection, string $table, string $column): array
-    {
-        $result = $connection->selectOne(
-            'SELECT character_maximum_length
-             FROM information_schema.columns
-             WHERE table_name = ? AND column_name = ?',
-            [$table, $column]
-        );
-
-        return $result ? ['length' => $result->character_maximum_length] : [];
-    }
-
-    protected function getSqliteColumnDetails($connection, string $table, string $column): array
-    {
-        $result = $connection->selectOne("PRAGMA table_info({$table})");
-
-        if (! $result) {
-            return [];
-        }
-
-        // Parse SQLite type definition
-        if (preg_match('/\((\d+)\)/', $result->type ?? '', $matches)) {
-            return ['length' => (int) $matches[1]];
-        }
-
-        return [];
+        $this->error('❌ Larabill preflight failed: '.$reason);
+        $this->newLine();
+        $this->comment('Larabill is UUID-first (ADR-006). bigint and ULID are out of scope.');
+        $this->line('See: docs/setup-uuid.md for the consumer setup guide.');
+        $this->line('See: docs/ADR-006-uuid-first-no-agnostic.md for the rationale.');
     }
 
     protected function validatePrerequisites(): bool
