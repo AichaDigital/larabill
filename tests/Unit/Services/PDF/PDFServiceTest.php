@@ -6,6 +6,7 @@ use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Services\PDF\DefaultPDFConnector;
 use AichaDigital\Larabill\Services\PDF\PDFService;
+use AichaDigital\Larabill\Tests\TestCase;
 
 beforeEach(function () {
     $this->pdfService = new PDFService;
@@ -74,7 +75,7 @@ it('can generate PDF for invoice', function () {
         'fiscal_number'     => 'TEST-001',
         'serie'             => InvoiceSerieType::INVOICE->value,
         'status'            => InvoiceStatus::DRAFT->value,
-        'user_id'           => 1,
+        'user_id'           => TestCase::USER_UUID_1,
         'taxable_amount'    => 100.0,
         'total_tax_amount'  => 21.0,
         'total_amount'      => 121.0,
@@ -95,7 +96,7 @@ it('can handle PDF generation errors gracefully', function () {
         'fiscal_number'        => 'TEST-ERROR',
         'serie'                => InvoiceSerieType::INVOICE->value,
         'status'               => InvoiceStatus::DRAFT->value,
-        'user_id'              => 1,
+        'user_id'              => TestCase::USER_UUID_1,
         'taxable_amount'       => 10000,
         'total_tax_amount'     => 2100,
         'total_amount'         => 12100,
@@ -114,7 +115,7 @@ it('can cache PDF results', function () {
         'fiscal_number'          => 'TEST-002',
         'serie'                  => InvoiceSerieType::INVOICE->value,
         'status'                 => InvoiceStatus::DRAFT->value,
-        'user_id'                => 1,
+        'user_id'                => TestCase::USER_UUID_1,
         'taxable_amount'         => 100.0,
         'total_tax_amount'       => 21.0,
         'total_amount'           => 121.0,
@@ -134,7 +135,7 @@ it('can clear PDF cache', function () {
         'fiscal_number'        => 'TEST-003',
         'serie'                => InvoiceSerieType::INVOICE->value,
         'status'               => InvoiceStatus::DRAFT->value,
-        'user_id'              => 1,
+        'user_id'              => TestCase::USER_UUID_1,
         'taxable_amount'       => 10000,
         'total_tax_amount'     => 2100,
         'total_amount'         => 12100,

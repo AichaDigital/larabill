@@ -9,6 +9,20 @@ use Orchestra\Testbench\TestCase as Orchestra;
 
 class TestCase extends Orchestra
 {
+    /**
+     * Deterministic UUID v7 fixtures for the three primary test users.
+     *
+     * Format: timestamp prefix `0194a000-0000` + version=7 nibble + variant=8
+     * + sequential tail. Pass `Uuid::isValid()` and stay readable in failing
+     * test diffs. Used as drop-in replacements for the legacy `'user_id' => 1/2/3`
+     * fixtures across the suite (see ADR-006, SPEC §3.2).
+     */
+    public const USER_UUID_1 = '0194a000-0000-7000-8000-000000000001';
+
+    public const USER_UUID_2 = '0194a000-0000-7000-8000-000000000002';
+
+    public const USER_UUID_3 = '0194a000-0000-7000-8000-000000000003';
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -58,38 +72,41 @@ class TestCase extends Orchestra
         // Set APP_KEY for encryption (required by InvoiceService snapshots)
         config()->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
 
+        // Force in-memory array cache so Cache::flush() never tries to truncate a
+        // missing `cache` table when tests run in arbitrary order.
+        config()->set('cache.default', 'array');
+
         // Load package configuration
         $app['config']->set('larabill', require __DIR__.'/../config/larabill.php');
 
         // Override user model for tests
         $app['config']->set('larabill.user_model', TestUser::class);
-
-        // Use string UUID for tests (migrations use $table->uuid() which creates char(36))
-        // Production apps can configure uuid_binary with proper binary(16) migrations
-        $app['config']->set('larabill.user_id_type', 'uuid');
     }
 
     /**
-     * Create test users for testing purposes
+     * Create the three deterministic test users used as fixtures across the suite.
+     *
+     * IDs come from the USER_UUID_* class constants so that tests can refer to
+     * the same fixture by constant name (e.g. `'user_id' => self::USER_UUID_1`).
      */
     protected function createTestUsers(): void
     {
         TestUser::create([
-            'id'       => 1,
+            'id'       => self::USER_UUID_1,
             'name'     => 'Test User 1',
             'email'    => 'user1@test.com',
             'password' => bcrypt('password'),
         ]);
 
         TestUser::create([
-            'id'       => 2,
+            'id'       => self::USER_UUID_2,
             'name'     => 'Test User 2',
             'email'    => 'user2@test.com',
             'password' => bcrypt('password'),
         ]);
 
         TestUser::create([
-            'id'       => 3,
+            'id'       => self::USER_UUID_3,
             'name'     => 'Test User 3',
             'email'    => 'user3@test.com',
             'password' => bcrypt('password'),

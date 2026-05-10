@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use AichaDigital\Larabill\Services\CacheService;
+use AichaDigital\Larabill\Tests\TestCase;
 use Illuminate\Support\Facades\Cache;
 
 beforeEach(function () {
@@ -15,15 +16,15 @@ it('can store and retrieve ROI verification cache', function () {
     $cacheService = new CacheService;
 
     $data = [
-        'user_id'      => 'user-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'vat_code'     => 'ESB12345678',
         'is_roi'       => true,
         'company_name' => 'Test Company',
     ];
 
-    $cacheService->storeRoiVerification('user-123', 'ESB12345678', 'ES', $data);
+    $cacheService->storeRoiVerification(TestCase::USER_UUID_1, 'ESB12345678', 'ES', $data);
 
-    $retrieved = $cacheService->getRoiVerification('user-123', 'ESB12345678', 'ES');
+    $retrieved = $cacheService->getRoiVerification(TestCase::USER_UUID_1, 'ESB12345678', 'ES');
 
     expect($retrieved)->toBe($data);
 });
@@ -33,11 +34,11 @@ it('can check if ROI verification exists in cache', function () {
 
     $data = ['is_roi' => true];
 
-    expect($cacheService->hasRoiVerification('user-123', 'ESB12345678', 'ES'))->toBeFalse();
+    expect($cacheService->hasRoiVerification(TestCase::USER_UUID_1, 'ESB12345678', 'ES'))->toBeFalse();
 
-    $cacheService->storeRoiVerification('user-123', 'ESB12345678', 'ES', $data);
+    $cacheService->storeRoiVerification(TestCase::USER_UUID_1, 'ESB12345678', 'ES', $data);
 
-    expect($cacheService->hasRoiVerification('user-123', 'ESB12345678', 'ES'))->toBeTrue();
+    expect($cacheService->hasRoiVerification(TestCase::USER_UUID_1, 'ESB12345678', 'ES'))->toBeTrue();
 });
 
 it('can remove ROI verification from cache', function () {
@@ -45,11 +46,11 @@ it('can remove ROI verification from cache', function () {
 
     $data = ['is_roi' => true];
 
-    $cacheService->storeRoiVerification('user-123', 'ESB12345678', 'ES', $data);
-    expect($cacheService->hasRoiVerification('user-123', 'ESB12345678', 'ES'))->toBeTrue();
+    $cacheService->storeRoiVerification(TestCase::USER_UUID_1, 'ESB12345678', 'ES', $data);
+    expect($cacheService->hasRoiVerification(TestCase::USER_UUID_1, 'ESB12345678', 'ES'))->toBeTrue();
 
-    $cacheService->removeRoiVerification('user-123', 'ESB12345678', 'ES');
-    expect($cacheService->hasRoiVerification('user-123', 'ESB12345678', 'ES'))->toBeFalse();
+    $cacheService->removeRoiVerification(TestCase::USER_UUID_1, 'ESB12345678', 'ES');
+    expect($cacheService->hasRoiVerification(TestCase::USER_UUID_1, 'ESB12345678', 'ES'))->toBeFalse();
 });
 
 it('can store and retrieve VAT rates cache', function () {
@@ -132,12 +133,12 @@ it('can flush all cache', function () {
     $cacheService = new CacheService;
 
     // Store various cache entries
-    $cacheService->storeRoiVerification('user-123', 'ESB12345678', 'ES', ['is_roi' => true]);
+    $cacheService->storeRoiVerification(TestCase::USER_UUID_1, 'ESB12345678', 'ES', ['is_roi' => true]);
     $cacheService->storeVatRates(['ES' => ['standard' => 21.00]]);
     $cacheService->storeCompanyConfig('company-123', ['apply_destination_iva' => true]);
 
     // Verify they exist
-    expect($cacheService->hasRoiVerification('user-123', 'ESB12345678', 'ES'))->toBeTrue();
+    expect($cacheService->hasRoiVerification(TestCase::USER_UUID_1, 'ESB12345678', 'ES'))->toBeTrue();
     expect($cacheService->hasVatRates())->toBeTrue();
     expect($cacheService->hasCompanyConfig('company-123'))->toBeTrue();
 
@@ -145,7 +146,7 @@ it('can flush all cache', function () {
     $cacheService->flushAll();
 
     // Verify they're gone
-    expect($cacheService->hasRoiVerification('user-123', 'ESB12345678', 'ES'))->toBeFalse();
+    expect($cacheService->hasRoiVerification(TestCase::USER_UUID_1, 'ESB12345678', 'ES'))->toBeFalse();
     expect($cacheService->hasVatRates())->toBeFalse();
     expect($cacheService->hasCompanyConfig('company-123'))->toBeFalse();
 });
@@ -154,14 +155,14 @@ it('can flush specific cache type', function () {
     $cacheService = new CacheService;
 
     // Store various cache entries
-    $cacheService->storeRoiVerification('user-123', 'ESB12345678', 'ES', ['is_roi' => true]);
+    $cacheService->storeRoiVerification(TestCase::USER_UUID_1, 'ESB12345678', 'ES', ['is_roi' => true]);
     $cacheService->storeVatRates(['ES' => ['standard' => 21.00]]);
     $cacheService->storeCompanyConfig('company-123', ['apply_destination_iva' => true]);
 
     // Flush only ROI verification cache
     $cacheService->flushRoiVerificationCache();
 
-    expect($cacheService->hasRoiVerification('user-123', 'ESB12345678', 'ES'))->toBeFalse();
+    expect($cacheService->hasRoiVerification(TestCase::USER_UUID_1, 'ESB12345678', 'ES'))->toBeFalse();
     expect($cacheService->hasVatRates())->toBeTrue();
     expect($cacheService->hasCompanyConfig('company-123'))->toBeTrue();
 });
@@ -178,24 +179,24 @@ it('can use custom TTL for different cache types', function () {
     config(['larabill.cache.ttl.company_config' => 1800]); // 30 minutes
 
     $data = ['is_roi' => true];
-    $cacheService->storeRoiVerification('user-123', 'ESB12345678', 'ES', $data);
+    $cacheService->storeRoiVerification(TestCase::USER_UUID_1, 'ESB12345678', 'ES', $data);
 
     // Verify the cache entry exists with correct TTL
-    $key    = $cacheService->getRoiVerificationKey('user-123', 'ESB12345678', 'ES');
-    $hasKey = $cacheService->hasRoiVerification('user-123', 'ESB12345678', 'ES');
+    $key    = $cacheService->getRoiVerificationKey(TestCase::USER_UUID_1, 'ESB12345678', 'ES');
+    $hasKey = $cacheService->hasRoiVerification(TestCase::USER_UUID_1, 'ESB12345678', 'ES');
     expect($hasKey)->toBeTrue();
 });
 
 it('can handle cache key generation correctly', function () {
     $cacheService = new CacheService;
 
-    $roiKey    = $cacheService->getRoiVerificationKey('user-123', 'ESB12345678', 'ES');
+    $roiKey    = $cacheService->getRoiVerificationKey(TestCase::USER_UUID_1, 'ESB12345678', 'ES');
     $vatKey    = $cacheService->getVatRatesKey();
     $configKey = $cacheService->getCompanyConfigKey('company-123');
 
     expect($roiKey)->toContain('larabill_test');
     expect($roiKey)->toContain('roi_verification');
-    expect($roiKey)->toContain('user-123');
+    expect($roiKey)->toContain(TestCase::USER_UUID_1);
     expect($roiKey)->toContain('ESB12345678');
 
     expect($vatKey)->toContain('larabill_test');
@@ -212,18 +213,18 @@ it('can work with different cache drivers', function () {
     $cacheService = new CacheService;
 
     $data = ['is_roi' => true];
-    $cacheService->storeRoiVerification('user-123', 'ESB12345678', 'ES', $data);
+    $cacheService->storeRoiVerification(TestCase::USER_UUID_1, 'ESB12345678', 'ES', $data);
 
-    expect($cacheService->getRoiVerification('user-123', 'ESB12345678', 'ES'))->toBe($data);
+    expect($cacheService->getRoiVerification(TestCase::USER_UUID_1, 'ESB12345678', 'ES'))->toBe($data);
 
     // Test with array driver
     config(['larabill.cache.driver' => 'array']);
     $cacheService = new CacheService;
 
     $data2 = ['is_roi' => false];
-    $cacheService->storeRoiVerification('user-456', 'FRB87654321', 'FR', $data2);
+    $cacheService->storeRoiVerification(TestCase::USER_UUID_2, 'FRB87654321', 'FR', $data2);
 
-    expect($cacheService->getRoiVerification('user-456', 'FRB87654321', 'FR'))->toBe($data2);
+    expect($cacheService->getRoiVerification(TestCase::USER_UUID_2, 'FRB87654321', 'FR'))->toBe($data2);
 });
 
 it('can handle cache misses gracefully', function () {
@@ -238,7 +239,7 @@ it('can store and retrieve complex data structures', function () {
     $cacheService = new CacheService;
 
     $complexData = [
-        'user_id'         => 'user-123',
+        'user_id'         => TestCase::USER_UUID_1,
         'vat_code'        => 'ESB12345678',
         'is_roi'          => true,
         'company_name'    => 'Test Company S.L.',
@@ -261,9 +262,9 @@ it('can store and retrieve complex data structures', function () {
         ],
     ];
 
-    $cacheService->storeRoiVerification('user-123', 'ESB12345678', 'ES', $complexData);
+    $cacheService->storeRoiVerification(TestCase::USER_UUID_1, 'ESB12345678', 'ES', $complexData);
 
-    $retrieved = $cacheService->getRoiVerification('user-123', 'ESB12345678', 'ES');
+    $retrieved = $cacheService->getRoiVerification(TestCase::USER_UUID_1, 'ESB12345678', 'ES');
 
     expect($retrieved)->toBe($complexData);
     expect($retrieved['company_address']['city'])->toBe('Madrid');
@@ -276,17 +277,17 @@ it('can handle cache prefix changes', function () {
     $cacheService1 = new CacheService;
 
     $data = ['is_roi' => true];
-    $cacheService1->storeRoiVerification('user-123', 'ESB12345678', 'ES', $data);
+    $cacheService1->storeRoiVerification(TestCase::USER_UUID_1, 'ESB12345678', 'ES', $data);
 
     // Change prefix
     config(['larabill.cache.prefix' => 'larabill_v2']);
     $cacheService2 = new CacheService;
 
     // Should not find the data with new prefix
-    expect($cacheService2->hasRoiVerification('user-123', 'ESB12345678', 'ES'))->toBeFalse();
+    expect($cacheService2->hasRoiVerification(TestCase::USER_UUID_1, 'ESB12345678', 'ES'))->toBeFalse();
 
     // But should still find with old prefix
-    expect($cacheService1->hasRoiVerification('user-123', 'ESB12345678', 'ES'))->toBeTrue();
+    expect($cacheService1->hasRoiVerification(TestCase::USER_UUID_1, 'ESB12345678', 'ES'))->toBeTrue();
 });
 
 it('can get cache statistics', function () {
@@ -297,8 +298,8 @@ it('can get cache statistics', function () {
     $cacheService->flushAll();
 
     // Store some cache entries
-    $cacheService->storeRoiVerification('user-123', 'ESB12345678', 'ES', ['is_roi' => true]);
-    $cacheService->storeRoiVerification('user-456', 'FRB87654321', 'FR', ['is_roi' => false]);
+    $cacheService->storeRoiVerification(TestCase::USER_UUID_1, 'ESB12345678', 'ES', ['is_roi' => true]);
+    $cacheService->storeRoiVerification(TestCase::USER_UUID_2, 'FRB87654321', 'FR', ['is_roi' => false]);
     $cacheService->storeVatRates(['ES' => ['standard' => 21.00]]);
     $cacheService->storeCompanyConfig('company-123', ['apply_destination_iva' => true]);
 
@@ -320,11 +321,11 @@ it('can handle cache driver failures gracefully', function () {
     $cacheService = new CacheService;
 
     // Should not throw exceptions
-    expect(fn () => $cacheService->storeRoiVerification('user-123', 'ESB12345678', 'ES', ['is_roi' => true]))
+    expect(fn () => $cacheService->storeRoiVerification(TestCase::USER_UUID_1, 'ESB12345678', 'ES', ['is_roi' => true]))
         ->not->toThrow(Exception::class);
 
-    expect($cacheService->getRoiVerification('user-123', 'ESB12345678', 'ES'))->toBeNull();
-    expect($cacheService->hasRoiVerification('user-123', 'ESB12345678', 'ES'))->toBeFalse();
+    expect($cacheService->getRoiVerification(TestCase::USER_UUID_1, 'ESB12345678', 'ES'))->toBeNull();
+    expect($cacheService->hasRoiVerification(TestCase::USER_UUID_1, 'ESB12345678', 'ES'))->toBeFalse();
 });
 
 it('can validate cache configuration', function () {

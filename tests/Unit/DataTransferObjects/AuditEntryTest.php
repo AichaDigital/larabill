@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use AichaDigital\Larabill\DataTransferObjects\AuditEntry;
+use AichaDigital\Larabill\Tests\TestCase;
 use Carbon\Carbon;
 
 it('can create an audit entry DTO', function () {
@@ -11,7 +12,7 @@ it('can create an audit entry DTO', function () {
     $dto = new AuditEntry(
         timestamp: $timestamp,
         action: 'price_updated',
-        userId: 42,
+        userId: TestCase::USER_UUID_1,
         userName: 'John Doe',
         changes: ['price' => ['from' => 29.00, 'to' => 24.00]],
         reason: 'Customer discount',
@@ -20,7 +21,7 @@ it('can create an audit entry DTO', function () {
 
     expect($dto->timestamp->toDateTimeString())->toBe('2024-01-15 10:30:00')
         ->and($dto->action)->toBe('price_updated')
-        ->and($dto->userId)->toBe(42)
+        ->and($dto->userId)->toBe(TestCase::USER_UUID_1)
         ->and($dto->userName)->toBe('John Doe')
         ->and($dto->changes)->toBe(['price' => ['from' => 29.00, 'to' => 24.00]])
         ->and($dto->reason)->toBe('Customer discount')
@@ -31,7 +32,7 @@ it('can create audit entry from array', function () {
     $data = [
         'timestamp' => '2024-01-15 10:30:00',
         'action'    => 'price_updated',
-        'user_id'   => 42,
+        'user_id'   => TestCase::USER_UUID_1,
         'user_name' => 'John Doe',
         'changes'   => ['price' => ['from' => 29.00, 'to' => 24.00]],
         'reason'    => 'Customer discount',
@@ -42,7 +43,7 @@ it('can create audit entry from array', function () {
 
     expect($dto->timestamp)->toBeInstanceOf(Carbon::class)
         ->and($dto->action)->toBe('price_updated')
-        ->and($dto->userId)->toBe(42)
+        ->and($dto->userId)->toBe(TestCase::USER_UUID_1)
         ->and($dto->userName)->toBe('John Doe')
         ->and($dto->changes)->toBe(['price' => ['from' => 29.00, 'to' => 24.00]])
         ->and($dto->reason)->toBe('Customer discount');
@@ -54,7 +55,7 @@ it('can convert audit entry to array', function () {
     $dto = new AuditEntry(
         timestamp: $timestamp,
         action: 'price_updated',
-        userId: 42,
+        userId: TestCase::USER_UUID_1,
         userName: 'John Doe',
         changes: ['price' => ['from' => 29.00, 'to' => 24.00]],
         reason: 'Customer discount'
@@ -63,7 +64,7 @@ it('can convert audit entry to array', function () {
     $array = $dto->toArray();
 
     expect($array['action'])->toBe('price_updated')
-        ->and($array['user_id'])->toBe(42)
+        ->and($array['user_id'])->toBe(TestCase::USER_UUID_1)
         ->and($array['user_name'])->toBe('John Doe')
         ->and($array['changes'])->toBe(['price' => ['from' => 29.00, 'to' => 24.00]])
         ->and($array['reason'])->toBe('Customer discount')

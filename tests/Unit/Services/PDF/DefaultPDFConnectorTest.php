@@ -5,6 +5,7 @@ use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Services\PDF\DefaultPDFConnector;
+use AichaDigital\Larabill\Tests\TestCase;
 
 beforeEach(function () {
     $this->connector = new DefaultPDFConnector;
@@ -64,7 +65,7 @@ it('can validate valid invoice', function () {
         'fiscal_number'          => 'TEST-001',
         'serie'                  => InvoiceSerieType::INVOICE->value,
         'status'                 => InvoiceStatus::DRAFT->value,
-        'user_id'                => 1,
+        'user_id'                => TestCase::USER_UUID_1,
         'taxable_amount'         => 100.0,
         'total_tax_amount'       => 21.0,
         'total_amount'           => 121.0,
@@ -87,7 +88,7 @@ it('can generate QR for valid invoice', function () {
         'fiscal_number'          => 'TEST-001',
         'serie'                  => InvoiceSerieType::INVOICE->value,
         'status'                 => InvoiceStatus::DRAFT->value,
-        'user_id'                => 1,
+        'user_id'                => TestCase::USER_UUID_1,
         'taxable_amount'         => 100.0,
         'total_tax_amount'       => 21.0,
         'total_amount'           => 121.0,
@@ -120,7 +121,7 @@ it('includes invoice data in QR', function () {
         'fiscal_number'          => 'TEST-001',
         'serie'                  => InvoiceSerieType::INVOICE->value,
         'status'                 => InvoiceStatus::DRAFT->value,
-        'user_id'                => 1,
+        'user_id'                => TestCase::USER_UUID_1,
         'taxable_amount'         => 100.0,
         'total_tax_amount'       => 21.0,
         'total_amount'           => 121.0,
@@ -157,7 +158,7 @@ it('generates QR URL with custom base URL', function () {
         'fiscal_number'          => 'TEST-001',
         'serie'                  => InvoiceSerieType::INVOICE->value,
         'status'                 => InvoiceStatus::DRAFT->value,
-        'user_id'                => 1,
+        'user_id'                => TestCase::USER_UUID_1,
         'taxable_amount'         => 100.0,
         'total_tax_amount'       => 21.0,
         'total_amount'           => 121.0,
@@ -182,7 +183,7 @@ it('returns false when validating invoice if connector is not available', functi
         'fiscal_number'        => 'TEST-001',
         'serie'                => InvoiceSerieType::INVOICE->value,
         'status'               => InvoiceStatus::DRAFT->value,
-        'user_id'              => 1,
+        'user_id'              => TestCase::USER_UUID_1,
         'taxable_amount'       => 10000,
         'total_tax_amount'     => 2100,
         'total_amount'         => 12100,
