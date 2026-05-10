@@ -4,14 +4,30 @@ declare(strict_types=1);
 
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Models\InvoiceSeriesControl;
-use AichaDigital\Larabill\Tests\Models\User;
+use AichaDigital\Larabill\Tests\Models\TestUser;
+use AichaDigital\Larabill\Tests\TestCase;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->user = User::factory()->create();
+    // Use the configured larabill.user_model (TestUser) so relationship lookups
+    // resolve against the same table the package's `user()` belongsTo uses.
+    // RefreshDatabase rolls back data per-test, so re-create the fixture if
+    // the global TestCase setUp helper was skipped (silent try/catch).
+    $this->user = TestUser::find(TestCase::USER_UUID_1);
+
+    if ($this->user === null) {
+        // RefreshDatabase rolled back the global setUp's seed users;
+        // recreate the canonical fixture for this test.
+        $this->user = TestUser::create([
+            'id'       => TestCase::USER_UUID_1,
+            'name'     => 'Test User 1',
+            'email'    => 'user1@test.com',
+            'password' => bcrypt('password'),
+        ]);
+    }
 });
 
 it('can create an invoice series control', function () {

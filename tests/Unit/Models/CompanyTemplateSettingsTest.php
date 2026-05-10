@@ -6,10 +6,11 @@ use AichaDigital\Larabill\Enums\SettingScope;
 use AichaDigital\Larabill\Enums\SettingType;
 use AichaDigital\Larabill\Enums\TemplateInvoiceType;
 use AichaDigital\Larabill\Models\CompanyTemplateSettings;
+use AichaDigital\Larabill\Tests\TestCase;
 
 it('can create a company template setting', function () {
     $setting = CompanyTemplateSettings::create([
-        'user_id'      => 'company-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'setting_type' => SettingType::TEMPLATE,
         'invoice_type' => TemplateInvoiceType::FISCAL,
         'scope'        => SettingScope::GLOBAL_SCOPE,
@@ -18,14 +19,14 @@ it('can create a company template setting', function () {
     ]);
 
     expect($setting)->toBeInstanceOf(CompanyTemplateSettings::class);
-    expect($setting->user_id)->toBe('company-123');
+    expect($setting->user_id)->toBe(TestCase::USER_UUID_1);
     expect($setting->setting_type)->toBe(SettingType::TEMPLATE);
     expect($setting->is_active)->toBeTrue();
 });
 
 it('can scope settings for a company', function () {
     CompanyTemplateSettings::create([
-        'user_id'      => 'company-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'setting_type' => SettingType::TEMPLATE,
         'invoice_type' => TemplateInvoiceType::FISCAL,
         'scope'        => SettingScope::GLOBAL_SCOPE,
@@ -34,7 +35,7 @@ it('can scope settings for a company', function () {
     ]);
 
     CompanyTemplateSettings::create([
-        'user_id'      => 'company-456',
+        'user_id'      => TestCase::USER_UUID_2,
         'setting_type' => SettingType::TEMPLATE,
         'invoice_type' => TemplateInvoiceType::FISCAL,
         'scope'        => SettingScope::GLOBAL_SCOPE,
@@ -42,15 +43,15 @@ it('can scope settings for a company', function () {
         'is_active'    => true,
     ]);
 
-    $settings = CompanyTemplateSettings::forCompany('company-123')->get();
+    $settings = CompanyTemplateSettings::forCompany(TestCase::USER_UUID_1)->get();
 
     expect($settings)->toHaveCount(1);
-    expect($settings->first()->user_id)->toBe('company-123');
+    expect($settings->first()->user_id)->toBe(TestCase::USER_UUID_1);
 });
 
 it('can scope settings by setting type', function () {
     CompanyTemplateSettings::create([
-        'user_id'      => 'company-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'setting_type' => SettingType::TEMPLATE,
         'invoice_type' => TemplateInvoiceType::FISCAL,
         'scope'        => SettingScope::GLOBAL_SCOPE,
@@ -59,7 +60,7 @@ it('can scope settings by setting type', function () {
     ]);
 
     CompanyTemplateSettings::create([
-        'user_id'      => 'company-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'setting_type' => SettingType::NOTES,
         'invoice_type' => TemplateInvoiceType::FISCAL,
         'scope'        => SettingScope::GLOBAL_SCOPE,
@@ -75,7 +76,7 @@ it('can scope settings by setting type', function () {
 
 it('can scope settings by invoice type', function () {
     CompanyTemplateSettings::create([
-        'user_id'      => 'company-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'setting_type' => SettingType::TEMPLATE,
         'invoice_type' => TemplateInvoiceType::FISCAL,
         'scope'        => SettingScope::GLOBAL_SCOPE,
@@ -84,7 +85,7 @@ it('can scope settings by invoice type', function () {
     ]);
 
     CompanyTemplateSettings::create([
-        'user_id'      => 'company-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'setting_type' => SettingType::TEMPLATE,
         'invoice_type' => TemplateInvoiceType::PROFORMA,
         'scope'        => SettingScope::GLOBAL_SCOPE,
@@ -100,7 +101,7 @@ it('can scope settings by invoice type', function () {
 
 it('can scope settings by scope', function () {
     CompanyTemplateSettings::create([
-        'user_id'      => 'company-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'setting_type' => SettingType::TEMPLATE,
         'invoice_type' => TemplateInvoiceType::FISCAL,
         'scope'        => SettingScope::GLOBAL_SCOPE,
@@ -109,7 +110,7 @@ it('can scope settings by scope', function () {
     ]);
 
     CompanyTemplateSettings::create([
-        'user_id'      => 'company-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'setting_type' => SettingType::TEMPLATE,
         'invoice_type' => TemplateInvoiceType::FISCAL,
         'scope'        => SettingScope::CLIENT,
@@ -126,7 +127,7 @@ it('can scope settings by scope', function () {
 
 it('can scope active settings only', function () {
     CompanyTemplateSettings::create([
-        'user_id'      => 'company-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'setting_type' => SettingType::TEMPLATE,
         'invoice_type' => TemplateInvoiceType::FISCAL,
         'scope'        => SettingScope::GLOBAL_SCOPE,
@@ -135,7 +136,7 @@ it('can scope active settings only', function () {
     ]);
 
     CompanyTemplateSettings::create([
-        'user_id'      => 'company-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'setting_type' => SettingType::TEMPLATE,
         'invoice_type' => TemplateInvoiceType::FISCAL,
         'scope'        => SettingScope::GLOBAL_SCOPE,
@@ -152,7 +153,7 @@ it('can scope active settings only', function () {
 it('can get setting with client-specific priority', function () {
     // Create global setting
     CompanyTemplateSettings::create([
-        'user_id'      => 'company-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'setting_type' => SettingType::NOTES,
         'invoice_type' => TemplateInvoiceType::FISCAL,
         'scope'        => SettingScope::GLOBAL_SCOPE,
@@ -162,7 +163,7 @@ it('can get setting with client-specific priority', function () {
 
     // Create client-specific setting
     CompanyTemplateSettings::create([
-        'user_id'      => 'company-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'setting_type' => SettingType::NOTES,
         'invoice_type' => TemplateInvoiceType::FISCAL,
         'scope'        => SettingScope::CLIENT,
@@ -173,7 +174,7 @@ it('can get setting with client-specific priority', function () {
 
     // When requesting with client_id, should return client-specific
     $clientSetting = CompanyTemplateSettings::getSetting(
-        'company-123',
+        TestCase::USER_UUID_1,
         SettingType::NOTES,
         TemplateInvoiceType::FISCAL,
         'client-vip'
@@ -183,7 +184,7 @@ it('can get setting with client-specific priority', function () {
 
     // When requesting without client_id, should return global
     $globalSetting = CompanyTemplateSettings::getSetting(
-        'company-123',
+        TestCase::USER_UUID_1,
         SettingType::NOTES,
         TemplateInvoiceType::FISCAL
     );
@@ -203,7 +204,7 @@ it('returns null when getting non-existent setting', function () {
 
 it('can set setting with global scope', function () {
     $setting = CompanyTemplateSettings::setSetting(
-        'company-123',
+        TestCase::USER_UUID_1,
         SettingType::NOTES,
         TemplateInvoiceType::FISCAL,
         'Default invoice notes'
@@ -217,7 +218,7 @@ it('can set setting with global scope', function () {
 
 it('can set setting with client scope', function () {
     $setting = CompanyTemplateSettings::setSetting(
-        'company-123',
+        TestCase::USER_UUID_1,
         SettingType::PAYMENT_TERMS,
         TemplateInvoiceType::FISCAL,
         'Net 30 days',
@@ -234,7 +235,7 @@ it('can set setting with client scope', function () {
 it('can update existing setting', function () {
     // Create initial setting
     CompanyTemplateSettings::setSetting(
-        'company-123',
+        TestCase::USER_UUID_1,
         SettingType::NOTES,
         TemplateInvoiceType::FISCAL,
         'Original notes'
@@ -242,7 +243,7 @@ it('can update existing setting', function () {
 
     // Update same setting
     $updated = CompanyTemplateSettings::setSetting(
-        'company-123',
+        TestCase::USER_UUID_1,
         SettingType::NOTES,
         TemplateInvoiceType::FISCAL,
         'Updated notes'
@@ -254,7 +255,7 @@ it('can update existing setting', function () {
 
 it('can get all settings for a company ordered correctly', function () {
     CompanyTemplateSettings::create([
-        'user_id'      => 'company-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'setting_type' => SettingType::NOTES,
         'invoice_type' => TemplateInvoiceType::FISCAL,
         'scope'        => SettingScope::GLOBAL_SCOPE,
@@ -263,7 +264,7 @@ it('can get all settings for a company ordered correctly', function () {
     ]);
 
     CompanyTemplateSettings::create([
-        'user_id'      => 'company-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'setting_type' => SettingType::TEMPLATE,
         'invoice_type' => TemplateInvoiceType::PROFORMA,
         'scope'        => SettingScope::CLIENT,
@@ -272,7 +273,7 @@ it('can get all settings for a company ordered correctly', function () {
         'is_active'    => true,
     ]);
 
-    $allSettings = CompanyTemplateSettings::getCompanySettings('company-123');
+    $allSettings = CompanyTemplateSettings::getCompanySettings(TestCase::USER_UUID_1);
 
     expect($allSettings)->toHaveCount(2);
     // Ordered by setting_type (TEMPLATE=0 < NOTES=1) so TEMPLATE comes first
@@ -281,7 +282,7 @@ it('can get all settings for a company ordered correctly', function () {
 
 it('can get template settings for a company', function () {
     CompanyTemplateSettings::create([
-        'user_id'      => 'company-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'setting_type' => SettingType::TEMPLATE,
         'invoice_type' => TemplateInvoiceType::FISCAL,
         'scope'        => SettingScope::GLOBAL_SCOPE,
@@ -290,7 +291,7 @@ it('can get template settings for a company', function () {
     ]);
 
     CompanyTemplateSettings::create([
-        'user_id'      => 'company-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'setting_type' => SettingType::TEMPLATE,
         'invoice_type' => TemplateInvoiceType::FISCAL,
         'scope'        => SettingScope::CLIENT,
@@ -299,7 +300,7 @@ it('can get template settings for a company', function () {
         'is_active'    => true,
     ]);
 
-    $templateSettings = CompanyTemplateSettings::getTemplateSettings('company-123', TemplateInvoiceType::FISCAL);
+    $templateSettings = CompanyTemplateSettings::getTemplateSettings(TestCase::USER_UUID_1, TemplateInvoiceType::FISCAL);
 
     expect($templateSettings)->toBeArray();
     expect($templateSettings)->toHaveKey('GLOBAL_SCOPE');
@@ -309,7 +310,7 @@ it('can get template settings for a company', function () {
 
 it('can get default notes for a company', function () {
     CompanyTemplateSettings::create([
-        'user_id'      => 'company-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'setting_type' => SettingType::NOTES,
         'invoice_type' => TemplateInvoiceType::FISCAL,
         'scope'        => SettingScope::GLOBAL_SCOPE,
@@ -317,14 +318,14 @@ it('can get default notes for a company', function () {
         'is_active'    => true,
     ]);
 
-    $notes = CompanyTemplateSettings::getDefaultNotes('company-123', TemplateInvoiceType::FISCAL);
+    $notes = CompanyTemplateSettings::getDefaultNotes(TestCase::USER_UUID_1, TemplateInvoiceType::FISCAL);
 
     expect($notes)->toBe('Standard invoice notes');
 });
 
 it('can get payment terms for a company', function () {
     CompanyTemplateSettings::create([
-        'user_id'      => 'company-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'setting_type' => SettingType::PAYMENT_TERMS,
         'invoice_type' => TemplateInvoiceType::FISCAL,
         'scope'        => SettingScope::GLOBAL_SCOPE,
@@ -332,14 +333,14 @@ it('can get payment terms for a company', function () {
         'is_active'    => true,
     ]);
 
-    $terms = CompanyTemplateSettings::getPaymentTerms('company-123', TemplateInvoiceType::FISCAL);
+    $terms = CompanyTemplateSettings::getPaymentTerms(TestCase::USER_UUID_1, TemplateInvoiceType::FISCAL);
 
     expect($terms)->toBe('Payment due in 30 days');
 });
 
 it('can get client-specific notes', function () {
     CompanyTemplateSettings::create([
-        'user_id'      => 'company-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'setting_type' => SettingType::NOTES,
         'invoice_type' => TemplateInvoiceType::FISCAL,
         'scope'        => SettingScope::CLIENT,
@@ -348,7 +349,7 @@ it('can get client-specific notes', function () {
         'is_active'    => true,
     ]);
 
-    $notes = CompanyTemplateSettings::getDefaultNotes('company-123', TemplateInvoiceType::FISCAL, 'client-premium');
+    $notes = CompanyTemplateSettings::getDefaultNotes(TestCase::USER_UUID_1, TemplateInvoiceType::FISCAL, 'client-premium');
 
     expect($notes)->toBe('Premium client notes');
 });
@@ -375,7 +376,7 @@ it('can get available scopes', function () {
 
 it('ignores inactive settings when getting value', function () {
     CompanyTemplateSettings::create([
-        'user_id'      => 'company-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'setting_type' => SettingType::NOTES,
         'invoice_type' => TemplateInvoiceType::FISCAL,
         'scope'        => SettingScope::GLOBAL_SCOPE,
@@ -383,7 +384,7 @@ it('ignores inactive settings when getting value', function () {
         'is_active'    => false,
     ]);
 
-    $notes = CompanyTemplateSettings::getDefaultNotes('company-123', TemplateInvoiceType::FISCAL);
+    $notes = CompanyTemplateSettings::getDefaultNotes(TestCase::USER_UUID_1, TemplateInvoiceType::FISCAL);
 
     expect($notes)->toBeNull();
 });
@@ -391,7 +392,7 @@ it('ignores inactive settings when getting value', function () {
 it('returns client-specific setting when both global and client exist', function () {
     // Create global setting first
     CompanyTemplateSettings::create([
-        'user_id'      => 'company-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'setting_type' => SettingType::PAYMENT_TERMS,
         'invoice_type' => TemplateInvoiceType::FISCAL,
         'scope'        => SettingScope::GLOBAL_SCOPE,
@@ -401,7 +402,7 @@ it('returns client-specific setting when both global and client exist', function
 
     // Create client-specific setting
     CompanyTemplateSettings::create([
-        'user_id'      => 'company-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'setting_type' => SettingType::PAYMENT_TERMS,
         'invoice_type' => TemplateInvoiceType::FISCAL,
         'scope'        => SettingScope::CLIENT,
@@ -411,17 +412,17 @@ it('returns client-specific setting when both global and client exist', function
     ]);
 
     // Should return client-specific
-    $vipTerms = CompanyTemplateSettings::getPaymentTerms('company-123', TemplateInvoiceType::FISCAL, 'client-vip');
+    $vipTerms = CompanyTemplateSettings::getPaymentTerms(TestCase::USER_UUID_1, TemplateInvoiceType::FISCAL, 'client-vip');
     expect($vipTerms)->toBe('Net 15 days');
 
     // Should return global for other clients
-    $standardTerms = CompanyTemplateSettings::getPaymentTerms('company-123', TemplateInvoiceType::FISCAL);
+    $standardTerms = CompanyTemplateSettings::getPaymentTerms(TestCase::USER_UUID_1, TemplateInvoiceType::FISCAL);
     expect($standardTerms)->toBe('Net 30 days');
 });
 
 it('returns global setting when client-specific is inactive', function () {
     CompanyTemplateSettings::create([
-        'user_id'      => 'company-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'setting_type' => SettingType::NOTES,
         'invoice_type' => TemplateInvoiceType::FISCAL,
         'scope'        => SettingScope::GLOBAL_SCOPE,
@@ -430,7 +431,7 @@ it('returns global setting when client-specific is inactive', function () {
     ]);
 
     CompanyTemplateSettings::create([
-        'user_id'      => 'company-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'setting_type' => SettingType::NOTES,
         'invoice_type' => TemplateInvoiceType::FISCAL,
         'scope'        => SettingScope::CLIENT,
@@ -439,14 +440,14 @@ it('returns global setting when client-specific is inactive', function () {
         'is_active'    => false, // Inactive
     ]);
 
-    $notes = CompanyTemplateSettings::getDefaultNotes('company-123', TemplateInvoiceType::FISCAL, 'client-1');
+    $notes = CompanyTemplateSettings::getDefaultNotes(TestCase::USER_UUID_1, TemplateInvoiceType::FISCAL, 'client-1');
 
     expect($notes)->toBe('Global notes'); // Falls back to global
 });
 
 it('filters out inactive settings when getting all company settings', function () {
     CompanyTemplateSettings::create([
-        'user_id'      => 'company-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'setting_type' => SettingType::TEMPLATE,
         'invoice_type' => TemplateInvoiceType::FISCAL,
         'scope'        => SettingScope::GLOBAL_SCOPE,
@@ -455,7 +456,7 @@ it('filters out inactive settings when getting all company settings', function (
     ]);
 
     CompanyTemplateSettings::create([
-        'user_id'      => 'company-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'setting_type' => SettingType::NOTES,
         'invoice_type' => TemplateInvoiceType::FISCAL,
         'scope'        => SettingScope::GLOBAL_SCOPE,
@@ -463,7 +464,7 @@ it('filters out inactive settings when getting all company settings', function (
         'is_active'    => false,
     ]);
 
-    $settings = CompanyTemplateSettings::getCompanySettings('company-123');
+    $settings = CompanyTemplateSettings::getCompanySettings(TestCase::USER_UUID_1);
 
     expect($settings)->toHaveCount(1); // Only active one
     expect($settings->first()->is_active)->toBeTrue();

@@ -10,23 +10,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * Trait for models that have a user_id foreign key.
  *
- * This trait provides a user() relationship to the configured User model.
- * The trait is agnostic to the user ID type - it reads from config('larabill.user_id_type')
- * and supports int, uuid, and ulid types.
+ * Provides a user() relationship to the configured User model
+ * (config('larabill.user_model'), defaults to App\Models\User).
  *
- * Note: uuid_binary was removed in v1.0 for compatibility reasons.
- * See ADR-002 for details.
- *
- * Supported user_id types:
- * - 'int' or 'integer': Standard auto-increment (no cast needed)
- * - 'uuid': String UUID v7 (no cast needed) - RECOMMENDED
- * - 'ulid': String ULID (no cast needed)
+ * Larabill is UUID-first (ADR-006): user_id columns are UUID v7 char(36).
  *
  * Usage:
  *   use HasUserRelation;
- *
- *   // The trait will automatically:
- *   // - Provide user() relationship to the configured User model
  */
 trait HasUserRelation
 {

@@ -13,17 +13,15 @@ use Orchestra\Testbench\TestCase as Orchestra;
 /**
  * Base test case for MySQL integration (fresh install agnostic contract).
  *
- * Why this extends Orchestra\Testbench\TestCase directly (not tests/TestCase.php):
- *   - tests/TestCase.php hard-codes SQLite in-memory and seeds TestUsers with
- *     numeric ids; both would fight against the per-dataset id-type setup here.
- *   - This case takes full control: configure MySQL, create users with the
- *     requested id type, then run the package's full migration set via artisan.
+ * Larabill is UUID-first per ADR-006. This case takes full control: configure
+ * MySQL, create users.id as UUID v7 char(36), then run the package's full
+ * migration set via artisan.
  *
  * Skip semantics: if any of LARABILL_TEST_MYSQL_* env vars is missing the
  * test is markTestSkipped() with a clear message — the suite stays green
  * in environments without MySQL.
  *
- * @see docs/2026-05-09-fresh-install-agnostic-mysql.md
+ * @see docs/ADR-006-uuid-first-no-agnostic.md
  */
 abstract class MysqlIntegrationTestCase extends Orchestra
 {
@@ -84,9 +82,6 @@ abstract class MysqlIntegrationTestCase extends Orchestra
         ]);
 
         $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
-
-        // Default; tests override per dataset before bootstrap.
-        $app['config']->set('larabill.user_id_type', 'uuid');
     }
 
     protected function getPackageProviders($app)
@@ -95,30 +90,20 @@ abstract class MysqlIntegrationTestCase extends Orchestra
     }
 
     /**
-     * Full bootstrap for one dataset value: set the configured user_id_type,
-     * create the consumer-side `users` table with the matching id type,
-     * then run the package's full migration set via `artisan migrate`.
+     * Create the consumer-side `users` table with UUID v7 char(36) id, then
+     * run the package's full migration set via `artisan migrate`.
      */
-    protected function bootstrapForUserIdType(string $idType): void
+    protected function bootstrap(): void
     {
-        config()->set('larabill.user_id_type', $idType);
+        $this->createUsersTable();
 
-        $this->createUsersTable($idType);
-
-        // Run the entire package migration set against MySQL.
-        // The provider has already registered them via loadMigrationsFrom().
         $this->artisan('migrate', ['--database' => 'testing'])->assertExitCode(0);
     }
 
-    private function createUsersTable(string $idType): void
+    private function createUsersTable(): void
     {
-        Schema::create('users', function (Blueprint $t) use ($idType): void {
-            match ($idType) {
-                'uuid'  => $t->uuid('id')->primary(),
-                'ulid'  => $t->ulid('id')->primary(),
-                default => $t->id(),
-            };
-
+        Schema::create('users', function (Blueprint $t): void {
+            $t->uuid('id')->primary();
             $t->string('name');
             $t->string('email')->unique();
             $t->string('password')->nullable();

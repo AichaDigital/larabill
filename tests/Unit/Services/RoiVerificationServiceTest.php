@@ -16,6 +16,7 @@ use AichaDigital\Larabill\Models\RoiQuery;
 use AichaDigital\Larabill\Models\UserRoiVerification;
 use AichaDigital\Larabill\Models\VatVerification;
 use AichaDigital\Larabill\Services\RoiVerificationService;
+use AichaDigital\Larabill\Tests\TestCase;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Http;
 
@@ -36,7 +37,7 @@ it('can verify ROI status with cache hit', function () {
 
     // Create existing verification in cache
     UserRoiVerification::create([
-        'user_id'      => 'user-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'vat_code'     => 'ESB12345678',
         'country_code' => 'ES',
         'is_roi'       => true,
@@ -47,7 +48,7 @@ it('can verify ROI status with cache hit', function () {
         'cache_hit'    => false,
     ]);
 
-    $result = $service->verifyRoiStatus('user-123', 'ESB12345678', 'ES');
+    $result = $service->verifyRoiStatus(TestCase::USER_UUID_1, 'ESB12345678', 'ES');
 
     expect($result)->toBeArray();
     expect($result['is_roi'])->toBeTrue();
@@ -69,7 +70,7 @@ it('can verify ROI status with API call', function () {
         ], 200),
     ]);
 
-    $result = $service->verifyRoiStatus('user-123', 'ESB12345678', 'ES');
+    $result = $service->verifyRoiStatus(TestCase::USER_UUID_1, 'ESB12345678', 'ES');
 
     expect($result)->toBeArray();
     expect($result['is_roi'])->toBeTrue();
@@ -78,14 +79,14 @@ it('can verify ROI status with API call', function () {
     expect($result['api_source'])->toBe('abstractapi');
 
     // Verify database records were created
-    $verification = UserRoiVerification::where('user_id', 'user-123')
+    $verification = UserRoiVerification::where('user_id', TestCase::USER_UUID_1)
         ->where('vat_code', 'ESB12345678')
         ->first();
 
     expect($verification)->not->toBeNull();
     expect($verification->is_roi)->toBeTrue();
 
-    $query = RoiQuery::where('user_id', 'user-123')
+    $query = RoiQuery::where('user_id', TestCase::USER_UUID_1)
         ->where('vat_code', 'ESB12345678')
         ->first();
 
@@ -106,7 +107,7 @@ it('can verify ROI status with API fallback', function () {
         ], 200),
     ]);
 
-    $result = $service->verifyRoiStatus('user-123', 'ESB12345678', 'ES');
+    $result = $service->verifyRoiStatus(TestCase::USER_UUID_1, 'ESB12345678', 'ES');
 
     expect($result)->toBeArray();
     expect($result['is_roi'])->toBeTrue();
@@ -124,7 +125,7 @@ it('can handle invalid VAT number', function () {
         ], 200),
     ]);
 
-    $result = $service->verifyRoiStatus('user-123', 'INVALID', 'ES');
+    $result = $service->verifyRoiStatus(TestCase::USER_UUID_1, 'INVALID', 'ES');
 
     expect($result)->toBeArray();
     expect($result['is_roi'])->toBeFalse();
@@ -132,7 +133,7 @@ it('can handle invalid VAT number', function () {
     expect($result['cache_hit'])->toBeFalse();
 
     // Verify database records were created
-    $verification = UserRoiVerification::where('user_id', 'user-123')
+    $verification = UserRoiVerification::where('user_id', TestCase::USER_UUID_1)
         ->where('vat_code', 'INVALID')
         ->first();
 
@@ -157,7 +158,7 @@ it('can handle API failures gracefully', function () {
         'http://apilayer.net/api/validate*'         => Http::response([], 500),
     ]);
 
-    $result = $service->verifyRoiStatus('user-123', 'ESB12345678', 'ES');
+    $result = $service->verifyRoiStatus(TestCase::USER_UUID_1, 'ESB12345678', 'ES');
 
     expect($result)->toBeArray();
     expect($result['is_roi'])->toBeFalse();
@@ -165,7 +166,7 @@ it('can handle API failures gracefully', function () {
     expect($result['cache_hit'])->toBeFalse();
 
     // Verify query was still logged for legal purposes
-    $query = RoiQuery::where('user_id', 'user-123')
+    $query = RoiQuery::where('user_id', TestCase::USER_UUID_1)
         ->where('vat_code', 'ESB12345678')
         ->first();
 
@@ -181,7 +182,7 @@ it('can force API check even with valid cache', function () {
 
     // Create existing verification in cache
     UserRoiVerification::create([
-        'user_id'      => 'user-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'vat_code'     => 'ESB12345678',
         'country_code' => 'ES',
         'is_roi'       => true,
@@ -206,7 +207,7 @@ it('can force API check even with valid cache', function () {
         ], 200),
     ]);
 
-    $result = $service->verifyRoiStatus('user-123', 'ESB12345678', 'ES');
+    $result = $service->verifyRoiStatus(TestCase::USER_UUID_1, 'ESB12345678', 'ES');
 
     expect($result)->toBeArray();
     expect($result['is_roi'])->toBeTrue();
@@ -215,7 +216,7 @@ it('can force API check even with valid cache', function () {
     expect($result['api_source'])->toBe('abstractapi');
 
     // Verify cache was updated
-    $verification = UserRoiVerification::where('user_id', 'user-123')
+    $verification = UserRoiVerification::where('user_id', TestCase::USER_UUID_1)
         ->where('vat_code', 'ESB12345678')
         ->first();
 
@@ -227,7 +228,7 @@ it('can handle expired cache', function () {
 
     // Create expired verification
     UserRoiVerification::create([
-        'user_id'      => 'user-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'vat_code'     => 'ESB12345678',
         'country_code' => 'ES',
         'is_roi'       => true,
@@ -245,7 +246,7 @@ it('can handle expired cache', function () {
         ], 200),
     ]);
 
-    $result = $service->verifyRoiStatus('user-123', 'ESB12345678', 'ES');
+    $result = $service->verifyRoiStatus(TestCase::USER_UUID_1, 'ESB12345678', 'ES');
 
     expect($result)->toBeArray();
     expect($result['is_roi'])->toBeTrue();
@@ -258,7 +259,7 @@ it('can get ROI verification history', function () {
 
     // Create some verification history
     UserRoiVerification::create([
-        'user_id'      => 'user-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'vat_code'     => 'ESB12345678',
         'country_code' => 'ES',
         'is_roi'       => true,
@@ -267,7 +268,7 @@ it('can get ROI verification history', function () {
     ]);
 
     UserRoiVerification::create([
-        'user_id'      => 'user-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'vat_code'     => 'FRB87654321',
         'country_code' => 'FR',
         'is_roi'       => false,
@@ -275,7 +276,7 @@ it('can get ROI verification history', function () {
         'expired_at'   => now()->addDays(12),
     ]);
 
-    $history = $service->getRoiVerificationHistory('user-123');
+    $history = $service->getRoiVerificationHistory(TestCase::USER_UUID_1);
 
     expect($history)->toHaveCount(2);
     expect($history->first()->vat_code)->toBe('ESB12345678');
@@ -287,7 +288,7 @@ it('can get ROI query statistics', function () {
 
     // Create some query history
     RoiQuery::create([
-        'user_id'      => 'user-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'vat_code'     => 'ESB12345678',
         'country_code' => 'ES',
         'query_type'   => RoiQuery::QUERY_TYPE_API,
@@ -297,7 +298,7 @@ it('can get ROI query statistics', function () {
     ]);
 
     RoiQuery::create([
-        'user_id'      => 'user-123',
+        'user_id'      => TestCase::USER_UUID_1,
         'vat_code'     => 'FRB87654321',
         'country_code' => 'FR',
         'query_type'   => RoiQuery::QUERY_TYPE_CACHE,
@@ -306,7 +307,7 @@ it('can get ROI query statistics', function () {
         'cache_used'   => true,
     ]);
 
-    $stats = $service->getRoiQueryStatistics('user-123');
+    $stats = $service->getRoiQueryStatistics(TestCase::USER_UUID_1);
 
     expect($stats)->toBeArray();
     expect($stats['total'])->toBe(2);
@@ -320,7 +321,7 @@ it('can cleanup expired legal retention queries', function () {
 
     // Create expired query
     RoiQuery::create([
-        'user_id'               => 'user-123',
+        'user_id'               => TestCase::USER_UUID_1,
         'vat_code'              => 'ESB12345678',
         'country_code'          => 'ES',
         'query_type'            => RoiQuery::QUERY_TYPE_API,
@@ -330,7 +331,7 @@ it('can cleanup expired legal retention queries', function () {
 
     // Create valid query
     RoiQuery::create([
-        'user_id'               => 'user-456',
+        'user_id'               => TestCase::USER_UUID_2,
         'vat_code'              => 'FRB87654321',
         'country_code'          => 'FR',
         'query_type'            => RoiQuery::QUERY_TYPE_API,
@@ -342,7 +343,7 @@ it('can cleanup expired legal retention queries', function () {
 
     expect($deletedCount)->toBe(1);
     expect(RoiQuery::count())->toBe(1);
-    expect(RoiQuery::first()->user_id)->toBe('user-456');
+    expect(RoiQuery::first()->user_id)->toBe(TestCase::USER_UUID_2);
 });
 
 it('can validate VAT number format', function () {
@@ -401,8 +402,8 @@ it('can handle batch ROI verification', function () {
     $service = new RoiVerificationService;
 
     $vatNumbers = [
-        ['user_id' => 'user-123', 'vat_code' => 'ESB12345678', 'country_code' => 'ES'],
-        ['user_id' => 'user-456', 'vat_code' => 'FRB87654321', 'country_code' => 'FR'],
+        ['user_id' => TestCase::USER_UUID_1, 'vat_code' => 'ESB12345678', 'country_code' => 'ES'],
+        ['user_id' => TestCase::USER_UUID_2, 'vat_code' => 'FRB87654321', 'country_code' => 'FR'],
     ];
 
     // Mock API responses
@@ -417,9 +418,9 @@ it('can handle batch ROI verification', function () {
     $results = $service->batchVerifyRoiStatus($vatNumbers);
 
     expect($results)->toHaveCount(2);
-    expect($results[0]['user_id'])->toBe('user-123');
+    expect($results[0]['user_id'])->toBe(TestCase::USER_UUID_1);
     expect($results[0]['is_roi'])->toBeTrue();
-    expect($results[1]['user_id'])->toBe('user-456');
+    expect($results[1]['user_id'])->toBe(TestCase::USER_UUID_2);
 });
 
 it('can get service configuration', function () {
@@ -456,7 +457,7 @@ it('can handle service errors gracefully', function () {
     $service->shouldReceive('verifyRoiStatus')
         ->andThrow(new Exception('Service error'));
 
-    expect(fn () => $service->verifyRoiStatus('user-123', 'ESB12345678', 'ES'))
+    expect(fn () => $service->verifyRoiStatus(TestCase::USER_UUID_1, 'ESB12345678', 'ES'))
         ->toThrow(Exception::class, 'Service error');
 });
 
@@ -476,7 +477,7 @@ it('can log service operations', function () {
         ], 200),
     ]);
 
-    $result = $service->verifyRoiStatus('user-123', 'ESB12345678', 'ES');
+    $result = $service->verifyRoiStatus(TestCase::USER_UUID_1, 'ESB12345678', 'ES');
 
     expect($result)->toBeArray();
     expect($result['is_roi'])->toBeTrue();

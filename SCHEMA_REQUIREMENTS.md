@@ -26,7 +26,7 @@ The host application's `users` table MUST have these columns for larabill to wor
 
 | Column | Type | Nullable | Description | Since |
 |--------|------|----------|-------------|-------|
-| `id` | uuid/bigint | NO | Primary key. Type configurable via `LARABILL_USER_ID_TYPE` | 1.0 |
+| `id` | uuid (char 36) | NO | Primary key. UUID v7 — required (ADR-006) | 1.0 |
 
 ### ADR-003: User Relationships (Optional but Recommended)
 
@@ -213,8 +213,9 @@ When setting up a new installation, migrations must run in this order:
 ### Environment Variables
 
 ```env
-# User ID type: 'uuid' (default) or 'bigint'
-LARABILL_USER_ID_TYPE=uuid
+# Optional: override the User model class (defaults to App\Models\User).
+# The model MUST use UUID v7 char(36) primary keys — see docs/setup-uuid.md.
+LARABILL_USER_MODEL="App\\Models\\User"
 ```
 
 ### Model Mapping

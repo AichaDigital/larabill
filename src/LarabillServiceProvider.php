@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill;
 
-// Commands removed as they don't exist yet
-use AichaDigital\Larabill\Console\DetectUserIdTypeCommand;
 use AichaDigital\Larabill\Console\LarabillInstallCommand;
 use AichaDigital\Larabill\Contracts\Services\TaxCalculation\TaxCalculationStrategy;
 use AichaDigital\Larabill\Events\RecurringBillingCompleted;
@@ -89,8 +87,7 @@ class LarabillServiceProvider extends PackageServiceProvider
             ->name('larabill')
             ->hasConfigFile()
             ->hasViews()
-            ->hasTranslations()
-            ->hasCommand(DetectUserIdTypeCommand::class);
+            ->hasTranslations();
 
         // Note: Migrations load automatically via loadMigrationsFrom() in boot()
         // In production, use `php artisan larabill:install` for controlled publishing

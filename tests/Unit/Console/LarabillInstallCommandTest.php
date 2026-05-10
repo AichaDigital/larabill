@@ -20,33 +20,9 @@ afterEach(function () {
     }
 });
 
-it('uses configured user_id_type from env/config instead of schema detection', function () {
-    config()->set('larabill.user_id_type', 'uuid');
-
+it('passes UUID preflight when users.id is UUID-compatible', function () {
     $this->artisan(LarabillInstallCommand::class, ['--no-migrate' => true])
-        ->expectsOutputToContain('Using configured user ID type from env/config: uuid')
-        ->expectsOutputToContain('User ID type: uuid')
-        ->assertSuccessful();
-});
-
-it('respects --user-id-type option over config', function () {
-    config()->set('larabill.user_id_type', 'uuid');
-
-    $this->artisan(LarabillInstallCommand::class, [
-        '--user-id-type' => 'int',
-        '--no-migrate'   => true,
-    ])
-        ->expectsOutputToContain('User ID type: int')
-        ->assertSuccessful();
-});
-
-it('falls back to schema detection when config is auto', function () {
-    config()->set('larabill.user_id_type', 'auto');
-
-    // Test users table uses $table->id() (integer) → detects 'int'
-    // PendingCommand requires expectsConfirmation for interactive prompts
-    $this->artisan(LarabillInstallCommand::class, ['--no-migrate' => true])
-        ->expectsConfirmation("Use detected type 'int'?", 'yes')
+        ->expectsOutputToContain('users.id verified UUID compatible')
         ->assertSuccessful();
 });
 

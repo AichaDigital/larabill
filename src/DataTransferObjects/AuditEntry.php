@@ -17,7 +17,7 @@ final readonly class AuditEntry
     public function __construct(
         public Carbon $timestamp,
         public string $action,
-        public ?int $userId = null,
+        public ?string $userId = null,
         public ?string $userName = null,
         public ?array $changes = null,
         public ?string $reason = null,

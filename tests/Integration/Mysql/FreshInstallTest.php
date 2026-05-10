@@ -4,39 +4,29 @@ declare(strict_types=1);
 
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Ramsey\Uuid\Uuid;
 
 // MysqlIntegrationTestCase is wired in tests/Pest.php for Integration/Mysql/ — no per-file uses() needed.
 
-describe('Larabill fresh install on MySQL — agnostic user_id_type contract', function () {
+describe('Larabill fresh install on MySQL — UUID-first contract (ADR-006)', function () {
 
-    it('installs full schema cleanly with the configured user_id_type', function (string $idType) {
-        $this->bootstrapForUserIdType($idType);
+    it('installs full schema cleanly with UUID v7 users.id', function () {
+        $this->bootstrap();
 
         // ─────────────────────────────────────────────────────────────────────
-        // 1. Column types reflect the configured id type across the schema.
+        // 1. All user-keyed columns are UUID v7 char(36).
         // ─────────────────────────────────────────────────────────────────────
-        $expectedType = match ($idType) {
-            'int'   => 'bigint',
-            'uuid'  => 'char',
-            'ulid'  => 'char',
-        };
+        $expectedType   = 'char';
+        $expectedLength = 36;
 
-        $expectedLength = match ($idType) {
-            'int'   => null,
-            'uuid'  => 36,
-            'ulid'  => 26,
-        };
-
-        // Tables that take customer_id via MigrationHelper::agnosticIdColumn().
+        // customer_id columns (via MigrationHelper::agnosticIdColumn()).
         expect($this->getMysqlColumnType('article_overrides', 'customer_id'))->toBe($expectedType);
         expect($this->getMysqlColumnLength('article_overrides', 'customer_id'))->toBe($expectedLength);
 
         expect($this->getMysqlColumnType('article_service_status', 'customer_id'))->toBe($expectedType);
         expect($this->getMysqlColumnLength('article_service_status', 'customer_id'))->toBe($expectedLength);
 
-        // Tables that take user_id (or owner_user_id) via MigrationHelper::userIdColumn().
+        // user_id / owner_user_id columns (via MigrationHelper::userIdColumn()).
         expect($this->getMysqlColumnType('invoices', 'user_id'))->toBe($expectedType);
         expect($this->getMysqlColumnLength('invoices', 'user_id'))->toBe($expectedLength);
 
@@ -56,7 +46,7 @@ describe('Larabill fresh install on MySQL — agnostic user_id_type contract', f
             ->toBe(['customer_id', 'article_id', 'instance_identifier']);
 
         // ─────────────────────────────────────────────────────────────────────
-        // 3. Smoke: insert + uniqueness enforcement with a value of the right type.
+        // 3. Smoke: insert + uniqueness enforcement with a UUID v7 customer_id.
         // ─────────────────────────────────────────────────────────────────────
         $articleId = DB::table('articles')->insertGetId([
             'code'       => 'HOST-PRO',
@@ -67,11 +57,7 @@ describe('Larabill fresh install on MySQL — agnostic user_id_type contract', f
             'updated_at' => now(),
         ]);
 
-        $customerId = match ($idType) {
-            'int'  => 12345,
-            'uuid' => Uuid::uuid7()->toString(),
-            'ulid' => (string) Str::ulid(),
-        };
+        $customerId = Uuid::uuid7()->toString();
 
         $row = [
             'customer_id'  => $customerId,
@@ -90,6 +76,6 @@ describe('Larabill fresh install on MySQL — agnostic user_id_type contract', f
         // Same composite key → must throw (UNIQUE actively enforced after install).
         $insertDuplicate = fn () => DB::table('article_overrides')->insert($row);
         expect($insertDuplicate)->toThrow(QueryException::class);
-    })->with(['int', 'uuid', 'ulid']);
+    });
 
 });
