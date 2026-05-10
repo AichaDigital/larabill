@@ -85,8 +85,8 @@ Using `.stub` files with `hasMigration()` breaks this flow because it requires `
 
 ## MySQL Integration Tests (opt-in)
 
-The default suite runs against SQLite in-memory. The agnostic install
-contract for `int` / `uuid` / `ulid` is also verified against a real
+The default suite runs against SQLite in-memory for fast feedback. The
+real schema contract — UUID-first per ADR-006 — is verified against a real
 MySQL 8 server in `tests/Integration/Mysql/`. These tests are
 **skipped** unless the following environment variables are set:
 
@@ -121,7 +121,8 @@ docker stop larabill-mysql-test
 
 CI runs them automatically in the `mysql-integration` job
 (PHP 8.3 + Laravel 12 + MySQL 8). See
-`docs/2026-05-09-fresh-install-agnostic-mysql.md` for the full contract.
+`docs/ADR-006-uuid-first-no-agnostic.md` for the contract rationale and
+`tests/Integration/Mysql/FreshInstallTest.php` for what is asserted.
 
 ## Full Documentation
 

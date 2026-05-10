@@ -1,10 +1,13 @@
 # Contrato fresh install agnóstico sobre MySQL
 
+> **⚠️ SUPERSEDED (2026-05-10)**: este documento describe el contrato `int|uuid|ulid` que estuvo vigente entre v0.7.4 y v0.7.x. A partir de **v0.8.0** larabill adopta UUID-first como contrato único — ver [`ADR-006`](ADR-006-uuid-first-no-agnostic.md) y [`setup-uuid.md`](setup-uuid.md). Se conserva como rastro histórico del reframe del 2026-05-09.
+
 **Fecha:** 2026-05-09
 **Autor:** Abdelkarim Mateos
-**Versión afectada:** `dev-main` (camino a v1.0 — objetivo 2026-12-31, último día previo a Verifactu obligatorio)
-**Estado:** activo — cubierto por `tests/Integration/Mysql/` y job CI `mysql-integration`
+**Versión afectada:** `dev-main` v0.7.4 (estado intermedio entre el blocker SUPERSEDED y la decisión UUID-first de v0.8.0)
+**Estado:** SUPERSEDED por ADR-006
 **Sustituye a:** `2026-05-09-blocker-upgrade-test-customer-id-bigint-to-uuid.md` (SUPERSEDED)
+**Sustituido por:** `ADR-006-uuid-first-no-agnostic.md` (2026-05-09 decisión, 2026-05-10 implementación)
 
 ## Premisa correcta
 

@@ -101,14 +101,16 @@ Invoices are immutable once issued:
 - Only draft invoices may be edited.
 - Issued fiscal snapshots must not be rewritten.
 
-User IDs are agnostic:
+User IDs are UUID-first (ADR-006, 2026-05-10):
 
-- Supported config values: `int`, `uuid`, `ulid`.
-- Default and recommended type: `uuid`.
-- Binary UUID support was removed.
+- Sole supported type: UUID v7 char(36). bigint and ULID are out of scope.
+- The `larabill.user_id_type` config and `LARABILL_USER_ID_TYPE` env were
+  removed in v0.8.0; do not reintroduce them.
 - Never assume a numeric `users.id`.
 - Never use direct `$table->foreignId()` for user FKs.
-- Use `MigrationHelper::userIdColumn($table, 'column_name')`.
+- Use `MigrationHelper::userIdColumn($table, 'column_name')` — emits UUID.
+- Consumer apps must provide `users.id` UUID v7 char(36); see
+  `docs/setup-uuid.md`. The `larabill:install` preflight aborts otherwise.
 
 ## Migration Contract
 
@@ -233,34 +235,32 @@ CI matrix:
 - Laravel `12.*`, `13.*`
 - Ubuntu runner
 
-For model relationship tests, stay agnostic:
+For model relationship tests, resolve the configured user model rather than
+hardcoding `Tests\Models\User`:
 
 ```php
 $userModel = config('larabill.user_model');
 expect($model->user)->toBeInstanceOf($userModel);
 ```
 
-Do not hardcode the test `User::class` when asserting package relationships.
+## Active Contract (UUID-first, 2026-05-10)
 
-## Active Contract (replaces previous upgrade-blocker, 2026-05-09)
+Larabill is in `dev-main` pre-v1.0. There are no production installations and
+no datasets to preserve. The package therefore does NOT promise schema upgrade
+across `dev-main` versions — internal consumers use `migrate:fresh` or recreate
+tables.
 
-Larabill is in `dev-main` pre-v1.0 (target stable: 2026-12-31). There are no
-production installations and no datasets to preserve. The package therefore
-does NOT promise schema upgrade across `dev-main` versions — internal
-consumers use `migrate:fresh` or recreate tables.
+What the package DOES promise and what is demonstrated by tests:
 
-What the package DOES promise and what is now demonstrated by tests:
+- **Fresh install on MySQL with UUID v7 `users.id`**. The full migration set
+  runs cleanly via `artisan migrate`, every user-keyed column lands as
+  `char(36)`, composite UNIQUE indexes exist with `customer_id` at position 0,
+  and uniqueness is actively enforced.
 
-- **Fresh install agnostic on MySQL** for each `larabill.user_id_type` ∈
-  `{int, uuid, ulid}`. The full migration set runs cleanly via
-  `artisan migrate`, agnostic columns reflect the configured id type
-  (`bigint` / `char(36)` / `char(26)`), composite UNIQUE indexes exist with
-  `customer_id` at position 0, and uniqueness is actively enforced.
-
-Authoritative reference: `docs/2026-05-09-fresh-install-agnostic-mysql.md`.
+Authoritative reference: `docs/ADR-006-uuid-first-no-agnostic.md`.
 Implementation: `tests/Integration/Mysql/MysqlIntegrationTestCase.php` +
-`tests/Integration/Mysql/FreshInstallUserIdTypeTest.php`. CI:
-`mysql-integration` job in `.github/workflows/tests.yml`.
+`tests/Integration/Mysql/FreshInstallTest.php`. CI: `mysql-integration` job in
+`.github/workflows/tests.yml`.
 
 The earlier blocker on upgrade coverage
 (`docs/2026-05-09-blocker-upgrade-test-customer-id-bigint-to-uuid.md`) is

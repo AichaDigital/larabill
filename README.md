@@ -3,12 +3,12 @@
 [![Tests](https://img.shields.io/github/actions/workflow/status/AichaDigital/larabill/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/AichaDigital/larabill/actions/workflows/tests.yml)
 [![codecov](https://codecov.io/gh/AichaDigital/larabill/branch/main/graph/badge.svg?style=flat-square)](https://codecov.io/gh/AichaDigital/larabill)
 [![PHP Version](https://img.shields.io/badge/php-%5E8.3-blue?style=flat-square)](https://php.net)
-[![Laravel](https://img.shields.io/badge/laravel-%5E11.0%20%7C%20%5E12.0-red?style=flat-square)](https://laravel.com)
+[![Laravel](https://img.shields.io/badge/laravel-%5E12.0%20%7C%20%5E13.0-red?style=flat-square)](https://laravel.com)
 [![License](https://img.shields.io/badge/license-AGPL--3.0--or--later-green?style=flat-square)](LICENSE.md)
 
-> ⚠️ **DEVELOPMENT VERSION** - This package is under active development (dev-main). Target: v1.0 stable by December 15, 2025.
+> ⚠️ **DEVELOPMENT VERSION** — This package is under active development (`dev-main`). Schema upgrades between versions are not promised; use `migrate:fresh`.
 
-Larabill is a professional, agnostic billing and invoicing package for Laravel applications. It provides comprehensive VAT verification, tax calculation for Spain/EU/worldwide, and flexible invoice generation with immutability protection.
+Larabill is a professional, **UUID-first** billing and invoicing package for Laravel applications. It provides comprehensive VAT verification, tax calculation for Spain/EU/worldwide, and flexible invoice generation with immutability protection. The consumer app's `users.id` MUST be UUID v7 char(36) — see [`docs/setup-uuid.md`](docs/setup-uuid.md) and [ADR-006](docs/ADR-006-uuid-first-no-agnostic.md).
 
 ## 🎯 Features
 
@@ -21,16 +21,17 @@ Larabill is a professional, agnostic billing and invoicing package for Laravel a
 - **EU Compliance**: Full support for EU B2B reverse charge and destination VAT rules
 
 ### Technical Excellence
-- **String UUID v7**: Ordered UUIDs for invoices (optimal for MySQL indexes)
+- **String UUID v7**: Ordered UUIDs for invoices and the consumer's `users.id` (ADR-002, ADR-006)
 - **Base-100 Integers**: Precise monetary calculations (no floating-point errors)
-- **User Agnostic**: Works with any User model (UUID, ULID, or integer IDs)
+- **Preflight check**: `larabill:install` aborts cleanly when `users.id` is not UUID-compatible
 - **Temporal Validity**: Fiscal configurations with `valid_from`/`valid_until` dates
 - **Invoice Immutability**: Protection against modifications after issuance
 
 ## 📦 Requirements
 
 - PHP ^8.3
-- Laravel ^11.0 | ^12.0
+- Laravel ^12.0 | ^13.0
+- `users.id` UUID v7 char(36) — see [`docs/setup-uuid.md`](docs/setup-uuid.md)
 
 ## 🚀 Installation
 
@@ -88,8 +89,8 @@ LARABILL_VAT_CACHE_DAYS=30
 LARABILL_INVOICE_PREFIX="FAC"
 LARABILL_PROFORMA_PREFIX="PRO"
 
-# User ID Type (auto-detected if not set)
-LARABILL_USER_ID_TYPE="uuid"  # Options: uuid, int, ulid
+# Optional: override the User model class. Must use UUID v7 char(36) ids.
+LARABILL_USER_MODEL="App\\Models\\User"
 ```
 
 ### Model Configuration
@@ -260,7 +261,7 @@ composer test-coverage
 vendor/bin/phpstan analyse
 ```
 
-**Current status**: 866 tests passing, 34 skipped (external dependencies)
+**Current status (v0.8.0)**: 933 tests passing on SQLite + UUID-first contract demonstrated on MySQL 8.
 
 ## 📚 Documentation
 
