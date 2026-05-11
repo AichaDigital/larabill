@@ -1,3 +1,10 @@
 {
-    "$schema": "https://docs.renovatebot.com/renovate-schema.json"
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":dependencyDashboard",
+    ":timezone(Europe/Madrid)",
+    ":semanticCommits"
+  ],
+  "schedule": ["before 10am on monday"]
 }
