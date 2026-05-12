@@ -124,6 +124,53 @@ CI runs them automatically in the `mysql-integration` job
 `docs/ADR-006-uuid-first-no-agnostic.md` for the contract rationale and
 `tests/Integration/Mysql/FreshInstallTest.php` for what is asserted.
 
+## Testing — Factory Uniqueness Pattern
+
+Several factories use `$this->faker->unique()->...()` to satisfy UNIQUE
+constraints (e.g. `CountryVatRateFactory.country_code`,
+`UnitMeasureFactory.code`, `ArticleFactory.code`). Faker's `unique()` state
+is scoped **per factory instance** — a fresh `::new()` resets it. State
+overrides like `->spanish()` (which forces `country_code = 'ES'`) bypass
+the `unique()` pool entirely.
+
+The flaky pattern that combines both:
+
+1. `Factory::new()->someState()->create()` — inserts a row with a
+   hardcoded value for the unique column (state bypass).
+2. `Factory::new()->create([...])` — a fresh instance whose `unique()`
+   pool does not know the value from step 1 may randomly pick it.
+3. UNIQUE constraint violation on commit. Frequency depends on the size
+   of the Faker pool (e.g. `countryCode()` ≈ 250 → ~1/250 per pair).
+
+The same pattern applies when a **seeder** hardcodes values that overlap
+with the Faker pool. `UnitMeasuresSeeder` inserts common English words
+(`unit`, `liter`, `hour`, `day`, `month`) that `Faker::word()` can
+return — currently latent because no test mixes the seeder with
+`UnitMeasureFactory`, but a future test that does will be flaky from
+day one.
+
+### Rules
+
+- **In any test that fixes a unique field via a state or explicit value,
+  ALSO fix it on every subsequent `Factory::new()->create(...)` in the
+  same test.** Pick values outside the Faker pool when possible, or at
+  least outside the set of fixed-state values.
+- **When adding a new fixed-state to a factory** (like `spanish()`,
+  `french()`), prefer values that cannot collide with the underlying
+  Faker generator (e.g. `'PERSONA_FISICA'` vs `word()` is safe — the
+  hardcode has underscores, `word()` returns single words).
+- **When a seeder hardcodes values for a UNIQUE column whose factory
+  uses `unique()`**, isolate the factory's pool (e.g. prefix it like
+  `'ART-????'`) so seeder + factory cannot overlap.
+
+### Reference incident
+
+2026-05-11 — `CountryVatRateTest::can validate rate data integrity with
+base 100 format` flaked ~1/250 by combining `->spanish()->create()` with
+two subsequent `CountryVatRateFactory::new()->create()` calls. Fix:
+pinned `country_code => 'IL'` and `'IT'` on the random ones. See the
+test for the canonical pattern.
+
 ## Full Documentation
 
 See: `larafactu/docs/internal/PACKAGE_DEVELOPMENT_STANDARDS.md`
@@ -131,4 +178,4 @@ See: `larafactu/docs/internal/PACKAGE_DEVELOPMENT_STANDARDS.md`
 
 ---
 
-*Last updated: 2026-02-16*
+*Last updated: 2026-05-11*

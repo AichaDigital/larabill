@@ -175,12 +175,14 @@ describe('CountryVatRate Model', function () {
 
         // Invalid standard rate (too high)
         $invalidVatRate = CountryVatRateFactory::new()->create([
+            'country_code'  => 'IL',
             'standard_rate' => 15000, // 150% - too high
         ]);
         expect($invalidVatRate->isValidRateData())->toBeFalse();
 
         // Invalid reduced rate (higher than standard)
         $invalidVatRate2 = CountryVatRateFactory::new()->create([
+            'country_code'  => 'IT',
             'standard_rate' => 2000, // 20%
             'reduced_rates' => ['books' => 2500], // 25% - higher than standard
         ]);
