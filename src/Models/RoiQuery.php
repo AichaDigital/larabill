@@ -245,6 +245,7 @@ class RoiQuery extends Model
      */
     public static function createQuery(array $data): self
     {
+        // @phpstan-ignore-next-line argument.type (dynamic attribute array; larastan checkModelProperties false positive)
         return static::create(array_merge($data, [
             'queried_at'            => now(),
             'legal_retention_until' => now()->addDays(self::getLegalRetentionDays()),
