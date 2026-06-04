@@ -224,6 +224,7 @@ class UserRoiVerification extends Model
                 'vat_code'     => $data['vat_code'],
                 'country_code' => $data['country_code'],
             ],
+            // @phpstan-ignore-next-line argument.type (dynamic attribute array; larastan checkModelProperties false positive)
             array_merge($data, [
                 'expired_at' => $expiredAt,
                 'last_check' => now(),

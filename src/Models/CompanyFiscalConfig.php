@@ -156,6 +156,7 @@ class CompanyFiscalConfig extends Model
         $attributes['is_active']   = true;
         $attributes['valid_until'] = null;
 
+        // @phpstan-ignore-next-line argument.type (dynamic attribute array; larastan checkModelProperties false positive)
         return static::create($attributes);
     }
 
