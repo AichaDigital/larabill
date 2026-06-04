@@ -183,4 +183,20 @@ describe('InvoiceNumberingService', function () {
         config(['larabill.fiscal_year.start_month' => 1]);
         config(['larabill.fiscal_year.start_day' => 1]);
     });
+
+    it('a factory-created series formats numbers without literal placeholders', function () {
+        // The factory applies its own default number_format (the case under test).
+        InvoiceSeriesControl::factory()->create([
+            'prefix'      => 'FAC',
+            'serie'       => InvoiceSerieType::INVOICE->value,
+            'fiscal_year' => now()->year,
+            'user_id'     => null,
+        ]);
+
+        $number = (string) $this->service->generateNumber('FAC', InvoiceSerieType::INVOICE->value);
+
+        expect($number)
+            ->not->toContain('{{')
+            ->toMatch('/^FAC-\d{4}-\d{6}$/');
+    });
 });

@@ -30,7 +30,7 @@ class InvoiceSeriesControlFactory extends Factory
             'last_number'       => 0,
             'start_number'      => 1,
             'reset_annually'    => true,
-            'number_format'     => '{{prefix}}-{{year}}-{{number}}',
+            'number_format'     => '{{PREFIX}}-{{YEAR}}-{{NUMBER}}',
             'is_active'         => true,
             'description'       => $this->faker->sentence(),
             'validation_rules'  => null,

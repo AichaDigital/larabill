@@ -2,6 +2,17 @@
 
 All notable changes to `larabill` will be documented in this file.
 
+## [0.8.1] - 2026-06-04
+
+### Fixed
+
+- `InvoiceSeriesControlFactory` defaulted `number_format` to lowercase
+  `{{prefix}}-{{year}}-{{number}}`, but `InvoiceNumberingService::formatNumber()`
+  only substitutes UPPERCASE placeholders — a factory-created series emitted
+  literal `{{prefix}}...` as the invoice number. Aligned the factory default to
+  `{{PREFIX}}-{{YEAR}}-{{NUMBER}}` (matching the service, the column default and
+  the documented convention). Added a regression test.
+
 ## [0.8.0] - 2026-05-10
 
 ### Breaking changes — UUID-first
