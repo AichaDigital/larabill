@@ -27,8 +27,8 @@ use Illuminate\Support\Facades\Auth;
  * @property \Illuminate\Support\Carbon|null $started_at
  * @property \Illuminate\Support\Carbon|null $next_billing_date
  * @property \Illuminate\Support\Carbon|null $expires_at
- * @property string $status
- * @property string|null $cancellation_type
+ * @property ServiceStatus $status
+ * @property CancellationType|null $cancellation_type
  * @property \Illuminate\Support\Carbon|null $cancellation_requested_at
  * @property \Illuminate\Support\Carbon|null $cancellation_effective_at
  * @property bool $refund_unused

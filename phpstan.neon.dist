@@ -5,6 +5,7 @@ parameters:
     level: 5
     paths:
         - src
+        - tests/Types
 
     # Scan directories for class discovery (factories need to be known but not analyzed)
     scanDirectories:

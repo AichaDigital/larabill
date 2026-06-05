@@ -54,6 +54,19 @@ it('can make an invoice immutable', function () {
     expect($invoice->immutable_at)->not->toBeNull();
 });
 
+it('identifies draft invoices', function () {
+    $draft = new Invoice([
+        'status' => InvoiceStatus::DRAFT->value,
+    ]);
+
+    $sent = new Invoice([
+        'status' => InvoiceStatus::SENT->value,
+    ]);
+
+    expect($draft->isDraft())->toBeTrue();
+    expect($sent->isDraft())->toBeFalse();
+});
+
 it('cannot update an immutable invoice', function () {
     $invoice = new Invoice([
         'fiscal_number'  => 'FAC-2025-000001',

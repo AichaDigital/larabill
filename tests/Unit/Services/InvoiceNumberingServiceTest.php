@@ -8,6 +8,7 @@ use AichaDigital\Larabill\Services\InvoiceNumberingService;
 use AichaDigital\Larabill\ValueObjects\InvoiceNumber;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 beforeEach(function () {
     $this->service = new InvoiceNumberingService;
@@ -153,6 +154,15 @@ describe('InvoiceNumberingService', function () {
         expect($result->fiscalYear)->toBe(now()->year);
         expect($result->seriesNumber)->toBe(1);
         expect($result->formatted)->toMatch('/^FAC-\d{4}-\d{6}$/');
+    });
+
+    it('accepts UUID string user ids', function () {
+        $userId = (string) Str::uuid();
+
+        $result = $this->service->generateNumber('UUID', InvoiceSerieType::INVOICE->value, $userId);
+
+        expect($result)->toBeInstanceOf(InvoiceNumber::class);
+        expect(InvoiceSeriesControl::where('user_id', $userId)->exists())->toBeTrue();
     });
 
     it('returns InvoiceNumber that works as string (backward compat)', function () {

@@ -2,6 +2,27 @@
 
 All notable changes to `larabill` will be documented in this file.
 
+## [0.8.2] - 2026-06-05
+
+### Fixed
+
+- Corrected `ArticleServiceStatus` enum property docs for `status` and
+  `cancellation_type` so Larastan sees the casted enum types.
+- Allowed `InvoiceNumberingService::generateNumber()` to accept UUID string
+  user IDs.
+- Added generic `Builder<static>` PHPDocs to `UserTaxProfile` scopes so chained
+  scope calls keep the concrete model type.
+- Added nullable `invoice_items.article_id` migration support for the existing
+  `InvoiceItem::$article_id` contract.
+- Removed an unreachable duplicate return from `Invoice::items()` and restored
+  the malformed `InvoiceItem::invoice()` PHPDoc.
+
+### Added
+
+- Added `Invoice::isDraft()`.
+- Added `Article::invoiceItems()`.
+- Added `UserTaxProfile::invoices()`.
+
 ## [0.8.1] - 2026-06-04
 
 ### Fixed

@@ -57,6 +57,7 @@ class LarabillInstallCommand extends Command
         '029' => 'add_converted_fields_to_invoices_table',
         '030' => 'add_invoices_foreign_keys',
         '031' => 'make_articles_translatable',
+        '032' => 'add_article_id_to_invoice_items_table',
     ];
 
     public function handle(): int

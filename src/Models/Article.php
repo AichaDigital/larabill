@@ -43,6 +43,7 @@ use Spatie\Translatable\HasTranslations;
  * @property-read \Illuminate\Database\Eloquent\Collection|ArticlePrice[] $prices
  * @property-read \Illuminate\Database\Eloquent\Collection|ArticleOverride[] $overrides
  * @property-read \Illuminate\Database\Eloquent\Collection|ArticleServiceStatus[] $serviceStatuses
+ * @property-read \Illuminate\Database\Eloquent\Collection|InvoiceItem[] $invoiceItems
  */
 class Article extends Model
 {
@@ -147,6 +148,16 @@ class Article extends Model
     public function serviceStatuses(): HasMany
     {
         return $this->hasMany(ArticleServiceStatus::class);
+    }
+
+    /**
+     * Get invoice items created from this article.
+     *
+     * @return HasMany<InvoiceItem, $this>
+     */
+    public function invoiceItems(): HasMany
+    {
+        return $this->hasMany(InvoiceItem::class);
     }
 
     /**

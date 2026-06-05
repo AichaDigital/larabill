@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\UserTaxProfile;
+use AichaDigital\Larabill\Tests\TestCase;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -242,6 +244,17 @@ describe('UserTaxProfile Model', function () {
         $exempt = UserTaxProfile::vatExempt()->get();
 
         expect($exempt)->toHaveCount(1);
+    });
+
+    it('has invoices relationship', function () {
+        $profile = UserTaxProfile::factory()->create();
+
+        Invoice::factory()->create([
+            'user_id'             => TestCase::USER_UUID_1,
+            'user_tax_profile_id' => $profile->id,
+        ]);
+
+        expect($profile->invoices()->exists())->toBeTrue();
     });
 
     it('can check if currently active', function () {

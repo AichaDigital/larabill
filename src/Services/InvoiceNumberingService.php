@@ -31,10 +31,10 @@ class InvoiceNumberingService
      *
      * @param  string  $prefix  User customizable prefix (FAC, PRO, RECT, etc.)
      * @param  int  $serie  InvoiceSerieType enum value (0=proforma, 1=invoice, 2=rectificative)
-     * @param  int|null  $userId  Optional user ID for multi-tenant
+     * @param  int|string|null  $userId  Optional user ID for multi-tenant
      * @return InvoiceNumber Invoice number value object (string-castable for backward compat)
      */
-    public function generateNumber(string $prefix, int $serie, ?int $userId = null): InvoiceNumber
+    public function generateNumber(string $prefix, int $serie, int|string|null $userId = null): InvoiceNumber
     {
         return DB::transaction(function () use ($prefix, $serie, $userId) {
             $fiscalYearData = $this->getCurrentFiscalYearData();
@@ -47,7 +47,7 @@ class InvoiceNumberingService
                 ->where('fiscal_year', $fiscalYear)
                 ->where(function ($query) use ($userId) {
                     $query->whereNull('user_id');
-                    if ($userId) {
+                    if ($userId !== null) {
                         $query->orWhere('user_id', $userId);
                     }
                 })
@@ -114,7 +114,7 @@ class InvoiceNumberingService
      * @param  string  $prefix  Prefix
      * @param  int  $fiscalYear  Fiscal year
      * @param  int  $number  Correlative number
-     * @param  int|null  $userId  Optional user ID
+     * @param  int|string|null  $userId  Optional user ID
      * @return string Formatted number
      */
     protected function formatNumber(
@@ -122,14 +122,14 @@ class InvoiceNumberingService
         string $prefix,
         int $fiscalYear,
         int $number,
-        ?int $userId = null
+        int|string|null $userId = null
     ): string {
         $replacements = [
             '{{PREFIX}}'    => $prefix,
             '{{YEAR}}'      => (string) $fiscalYear,
             '{{NUMBER}}'    => str_pad((string) $number, 6, '0', STR_PAD_LEFT),
             '{{TIMESTAMP}}' => now()->format('YmdHis'),
-            '{{USER_ID}}'   => $userId ? (string) $userId : '',
+            '{{USER_ID}}'   => $userId !== null ? (string) $userId : '',
         ];
 
         return str_replace(
@@ -145,14 +145,14 @@ class InvoiceNumberingService
      * @param  string  $prefix  Prefix
      * @param  int  $serie  Serie type
      * @param  int  $fiscalYear  Fiscal year
-     * @param  int|null  $userId  Optional user ID
+     * @param  int|string|null  $userId  Optional user ID
      * @return object Series control record
      */
     protected function createSeriesControl(
         string $prefix,
         int $serie,
         int $fiscalYear,
-        ?int $userId = null
+        int|string|null $userId = null
     ): object {
         $fiscalYearData = $this->getCurrentFiscalYearData();
 
