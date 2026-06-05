@@ -71,6 +71,23 @@ docs/SESSION_*.md
 docs/HOTFIX_*.md
 docs/BUG_*.md
 docs/RESUMEN_*.md
+HANDOVER-*.md
+HANDOVER_*.md
+
+# Internal docs — NOT for the public package (kept locally only).
+# Reference docs that SHOULD stay public live in docs/ with stable names
+# (ARCHITECTURE.md, QUEUE_AND_RECURRING_BILLING.md, TAX_RATES_MIGRATION_GUIDE.md,
+#  setup-uuid.md, ADR-003/004/006). Everything below is exploratory / work-order /
+#  operational and was removed from tracking on 2026-06-05.
+docs/20??-??-??-*.md
+docs/avisos/
+docs/plans/
+docs/ANALISIS_*.md
+docs/*_ANALYSIS*.md
+docs/ARCHITECTURE_FISCAL_VERIFICATION_JOBS.md
+docs/ADR_PROPOSAL_*.md
+docs/AGENT_CONTEXT.md
+docs/OPERATIONAL_NOTES.md
 
 # Local scripts
 ./PUBLISH.sh

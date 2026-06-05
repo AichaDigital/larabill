@@ -28,7 +28,7 @@ Larabill es el **núcleo de facturación** del ecosistema Larafactu (AichaDigita
 ## Reglas inviolables (resumen — detalle en CRITICAL_RULES.md)
 
 - **Migraciones:** toda tabla del paquete tiene `.php` (timestamped, auto-load en dev) **Y** `.php.stub` (publicado por `larabill:install`). Solo 2 stubs son consumer-only (modifican el `users` del consumidor): `add_user_relationships_to_users_table.php.stub` y `rename_user_id_to_owner_user_id_in_user_tax_profiles.php.stub`.
-- **`$migrationOrder`** en `LarabillInstallCommand` debe coincidir 1:1 con los stubs reales (31 entradas hoy). Editar ambos a la vez.
+- **`$migrationOrder`** en `LarabillInstallCommand` debe coincidir 1:1 con los stubs reales (32 entradas hoy). Editar ambos a la vez. Un test de consistencia (`tests/Unit/Console/MigrationOrderConsistencyTest.php`) lo valida en CI.
 - **FK a users:** SIEMPRE `MigrationHelper::userIdColumn($table, 'col')`. Nunca `$table->foreignId()` directo. Soporta `uuid` (default) / `int` / `ulid` vía `larabill.user_id_type`.
 - **Dinero:** SIEMPRE Base-100 entero (`12,34 € → 1234`) con cast `Base100Int` de `lara100`. NUNCA float/decimal.
 - **Facturas emitidas son inmutables.** No editar nada con status ≠ `draft`.
