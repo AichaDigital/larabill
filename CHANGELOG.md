@@ -2,6 +2,39 @@
 
 All notable changes to `larabill` will be documented in this file.
 
+## [0.8.3] - 2026-06-05
+
+### Fixed
+
+- Added the missing dedicated `.php.stub` for the `add_article_id_to_invoice_items_table`
+  migration introduced in v0.8.2 (the install command had been resolving it through the
+  timestamped-`.php` fallback). Also normalized five pre-existing migrations that were
+  likewise missing their `.php.stub` (`create_tax_groups_table`,
+  `create_tax_group_tax_rate_table`, `create_commissions_table`,
+  `add_converted_fields_to_invoices_table`, `make_articles_translatable`).
+  `LarabillInstallCommand::$migrationOrder` now maps 1:1 to dedicated stubs.
+
+### Added
+
+- `tests/Unit/Console/MigrationOrderConsistencyTest.php` — CI guardrail enforcing the
+  migration contract: every `$migrationOrder` entry must have a dedicated `.php.stub`,
+  no orphan stubs, and no new structural drift between a table's `.php` and `.php.stub`.
+- `AGENTS.md` — cross-agent hard-rules anchor (read by Codex/Cursor/etc.) centered on the
+  migration contract and UUID-first invariants.
+
+### Changed
+
+- Removed internal/exploratory documentation (analyses, work orders, AI-agent context,
+  operational notes, internal plans) from the distributed package. Only stable reference
+  docs remain in `docs/`: `ARCHITECTURE.md`, `QUEUE_AND_RECURRING_BILLING.md`,
+  `TAX_RATES_MIGRATION_GUIDE.md`, `setup-uuid.md`, and ADR-003/004/006.
+
+### Known issues
+
+- Six core tables have a development `.php` migration that diverges structurally from
+  their published `.php.stub`. The new guardrail freezes this set so it can only shrink;
+  reconciliation is tracked for a dedicated ADR.
+
 ## [0.8.2] - 2026-06-05
 
 ### Fixed

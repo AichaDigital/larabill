@@ -37,11 +37,17 @@ In production, migrations are published via `php artisan larabill:install`.
 
 **`.php.stub`** — For `larabill:install` production publishing:
 
-- Every `.php` migration SHOULD have a corresponding `.stub`
-- `LarabillInstallCommand::$migrationOrder` maps to these stubs
+- Every `.php` migration **MUST** have a corresponding `.stub` (a dedicated one —
+  do **not** rely on the install command's timestamped-`.php` fallback; it silently
+  masks a missing stub, which is exactly how v0.8.2 shipped an order entry without
+  its stub).
+- `LarabillInstallCommand::$migrationOrder` maps 1:1 to these stubs.
 - Additionally, 2 stubs modify the CONSUMER's `users` table (no `.php` counterpart):
   - `add_user_relationships_to_users_table.php.stub`
   - `rename_user_id_to_owner_user_id_in_user_tax_profiles.php.stub`
+- **Guardrail:** `tests/Unit/Console/MigrationOrderConsistencyTest.php` enforces the
+  1:1 contract in CI and flags new `.php` ↔ `.php.stub` structural drift. It fails
+  the build if you add an order entry without a dedicated stub.
 
 
 ### Migration Files Rules
@@ -63,13 +69,25 @@ MigrationHelper::userIdColumn($table, 'user_id');
 - Direct `$table->foreignId('user_id')` - breaks UUID compatibility
 
 
-### Adding a New Table
+### Adding a New Table or Altering One
+
+> **STOP — the migration contract is non-negotiable and enforced by a test.**
+> A migration ships as THREE things that must change together:
+> the timestamped `.php`, its dedicated `.php.stub`, and the `$migrationOrder` entry.
+> A `.php` + order entry **without** a `.php.stub` is a broken contract even if CI
+> looks green (the install command falls back to the `.php` and masks the gap).
 
 1. Create `database/migrations/YYYY_MM_DD_HHMMSS_create_table_name.php`
-2. Create `database/migrations/create_table_name.php.stub` (same content)
+2. Create `database/migrations/create_table_name.php.stub` — **same content** as the `.php`
 3. Add entry to `LarabillInstallCommand::$migrationOrder`
 4. Use `MigrationHelper::userIdColumn()` for any FK to users
-5. Run tests: `vendor/bin/pest`
+5. Run the guardrail + suite: `vendor/bin/pest tests/Unit/Console/MigrationOrderConsistencyTest.php && vendor/bin/pest`
+
+> **Known debt:** six core tables currently have a `.php` (dev/tests) that diverges
+> structurally from their `.php.stub` (what prod installs). This is tracked for
+> reconciliation in a dedicated ADR — do not paper over it. The guardrail's
+> `LARABILL_KNOWN_SCHEMA_DIVERGENCES` skip-list freezes the list so it can only
+> shrink, never grow.
 
 
 ## Why This Pattern Matters
