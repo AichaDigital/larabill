@@ -253,9 +253,6 @@ class Invoice extends Model
 
         // @phpstan-ignore-next-line return.type,argument.templateType
         return $this->hasMany($invoiceItemModel);
-
-        // @phpstan-ignore-next-line return.type,argument.templateType
-        return $this->hasMany($invoiceItemModel);
     }
 
     /**
@@ -376,6 +373,14 @@ class Invoice extends Model
     public function isFiscallyVerified(): bool
     {
         return $this->fiscal_verification_id !== null && $this->fiscal_verified_at !== null;
+    }
+
+    /**
+     * Check if this invoice is still a draft.
+     */
+    public function isDraft(): bool
+    {
+        return $this->status === InvoiceStatus::DRAFT;
     }
 
     /**

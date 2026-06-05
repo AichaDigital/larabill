@@ -119,10 +119,6 @@ class InvoiceItem extends Model
      *
      * @return BelongsTo<Invoice, $this>
      */
-    /**
-    /**
-     * Get the invoice that owns the item.
-     */
     public function invoice(): BelongsTo
     {
         $invoiceModel = ModelMappingService::getModelClass('invoice');

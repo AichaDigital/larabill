@@ -8,6 +8,7 @@ use AichaDigital\Larabill\Database\Factories\UserTaxProfileFactory;
 use AichaDigital\Larabill\Services\ModelMappingService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -46,6 +47,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property Carbon|null $deleted_at
+ * @property-read Collection|Invoice[] $invoices
  *
  * @see ADR-003 for initial architecture
  * @see ADR-004 for authorization changes (user_id -> owner_user_id, shared profiles)
@@ -168,6 +170,16 @@ class UserTaxProfile extends Model
     public function legalEntityType(): BelongsTo
     {
         return $this->belongsTo(LegalEntityType::class, 'legal_entity_type_code', 'code');
+    }
+
+    /**
+     * Get invoices that reference this fiscal profile snapshot.
+     *
+     * @return HasMany<Invoice, $this>
+     */
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class, 'user_tax_profile_id');
     }
 
     // ========================================
@@ -299,6 +311,9 @@ class UserTaxProfile extends Model
 
     /**
      * Scope: Configs for an owner.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeForOwner(Builder $query, string|int $ownerId): Builder
     {
@@ -309,6 +324,9 @@ class UserTaxProfile extends Model
      * Scope: Configs for a user.
      *
      * @deprecated Use scopeForOwner() instead.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeForUser(Builder $query, string|int $userId): Builder
     {
@@ -317,6 +335,9 @@ class UserTaxProfile extends Model
 
     /**
      * Scope: Active configs.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeActive(Builder $query): Builder
     {
@@ -326,6 +347,9 @@ class UserTaxProfile extends Model
 
     /**
      * Scope: Configs valid at a date.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeValidAt(Builder $query, Carbon $date): Builder
     {
@@ -338,6 +362,9 @@ class UserTaxProfile extends Model
 
     /**
      * Scope: Companies only.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeCompanies(Builder $query): Builder
     {
@@ -346,6 +373,9 @@ class UserTaxProfile extends Model
 
     /**
      * Scope: Individuals only.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeIndividuals(Builder $query): Builder
     {
@@ -354,6 +384,9 @@ class UserTaxProfile extends Model
 
     /**
      * Scope: EU VAT registered.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeEuVatRegistered(Builder $query): Builder
     {
@@ -362,6 +395,9 @@ class UserTaxProfile extends Model
 
     /**
      * Scope: VAT exempt.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeVatExempt(Builder $query): Builder
     {

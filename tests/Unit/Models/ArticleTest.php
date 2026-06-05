@@ -8,7 +8,10 @@ use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticleOverride;
 use AichaDigital\Larabill\Models\ArticlePrice;
 use AichaDigital\Larabill\Models\ArticleServiceStatus;
+use AichaDigital\Larabill\Models\Invoice;
+use AichaDigital\Larabill\Models\InvoiceItem;
 use AichaDigital\Larabill\Models\TaxGroup;
+use AichaDigital\Larabill\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 
@@ -109,6 +112,19 @@ describe('Article relationships', function () {
 
         expect($article->serviceStatuses)->toHaveCount(2)
             ->and($article->serviceStatuses->first())->toBeInstanceOf(ArticleServiceStatus::class);
+    });
+
+    it('has invoice items relationship', function () {
+        $article = Article::factory()->create();
+        $invoice = Invoice::factory()->create(['user_id' => TestCase::USER_UUID_1]);
+
+        InvoiceItem::factory()->create([
+            'invoice_id'  => $invoice->id,
+            'article_id'  => $article->id,
+            'description' => 'Article invoice line',
+        ]);
+
+        expect($article->invoiceItems()->exists())->toBeTrue();
     });
 });
 

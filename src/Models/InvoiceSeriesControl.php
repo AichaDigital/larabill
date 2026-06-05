@@ -32,7 +32,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $description
  * @property array|null $validation_rules
  * @property Carbon|null $last_used_at
- * @property int|null $user_id
+ * @property int|string|null $user_id
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
