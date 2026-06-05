@@ -23,6 +23,10 @@ All notable changes to `larabill` will be documented in this file.
 - Added `Article::invoiceItems()`.
 - Added `UserTaxProfile::invoices()`.
 
+### Changed
+
+- Updated the Composer `dev-main` branch alias to the `0.8.x-dev` series.
+
 ## [0.8.1] - 2026-06-04
 
 ### Fixed
