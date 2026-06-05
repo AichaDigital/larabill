@@ -135,7 +135,7 @@
             }
         },
         "branch-alias": {
-            "dev-main": "0.1.x-dev",
+            "dev-main": "0.8.x-dev",
             "dev-refactor/agnostic": "0.1.x-dev"
         }
     },
