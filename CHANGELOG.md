@@ -2,6 +2,40 @@
 
 All notable changes to `larabill` will be documented in this file.
 
+## [0.8.4] - 2026-06-06
+
+### Fixed
+
+- Reconciled the six core tables whose published `.php.stub` had drifted structurally from
+  their development `.php` — dev/tests validated a schema the installer did not ship:
+  - `company_fiscal_configs` — the stub created a stale `fiscal_settings` table (dropped by
+    a later migration), leaving consumers without the table the model needs.
+  - `tax_rates` — the stub stored `rate` as `decimal(5,4)`, breaking the base-100 integer
+    invariant; restored to the int base-100 schema.
+  - `invoice_items` — the stub used the pre-v0.3.3 single-tax columns
+    (`tax_rate`/`tax_category_id`/`tax_amount`); restored to the immutable tax snapshot
+    (`total_tax_amount`/`taxes_applied`).
+  - `company_template_settings` — the stub used `string` columns instead of the
+    tinyint-backed enums.
+  - `invoices` — restored the missing `billable_user_id` index.
+  - `article_prices` — comment alignment.
+
+### Added
+
+- `bin/sync-migration-stubs` — internal script that regenerates every `.php.stub` from its
+  timestamped `.php` source. The `.php.stub` is now a derived artifact, never hand-edited.
+- `docs/ADR-007-stub-derived-from-php.md` — records the decision: the timestamped `.php` is
+  the single source of truth; the published `.php.stub` is a byte-identical derived artifact.
+
+### Changed
+
+- `MigrationOrderConsistencyTest` now enforces byte-for-byte identity between each
+  `.php.stub` and its `.php` (`LARABILL_KNOWN_SCHEMA_DIVERGENCES` is empty, no longer a
+  frozen skip-list). Any drift fails CI with an actionable message: run `bin/sync-migration-stubs`.
+- Documentation: removed stale "Filament 4" references (the package is framework-agnostic)
+  and corrected residual `int|uuid|ulid` agnostic wording to UUID-first (ADR-006) across
+  `CLAUDE.md`, `AGENTS.md`, and `CONTRIBUTING.md`.
+
 ## [0.8.3] - 2026-06-05
 
 ### Fixed

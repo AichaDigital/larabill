@@ -66,7 +66,7 @@ return new class extends Migration
             $table->string('template_name')->nullable();
             $table->timestamps();
 
-            // Foreign keys are added in a later migration (2025_01_26_000001_add_invoices_foreign_keys)
+            // Foreign keys are added in a later migration (add_invoices_foreign_keys)
             // to avoid circular dependency issues with customers, company_fiscal_configs, customer_fiscal_data
 
             // Optimized indexes
