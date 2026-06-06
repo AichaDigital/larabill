@@ -39,4 +39,3 @@ return new class extends Migration
         Schema::dropIfExists('country_vat_rates');
     }
 };
-

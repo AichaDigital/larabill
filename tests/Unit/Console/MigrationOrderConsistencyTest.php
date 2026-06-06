@@ -45,25 +45,6 @@ function larabillTimestampedPhp(string $name): ?string
     return $matches[0] ?? null;
 }
 
-/** Normalize a migration file for structural comparison (ignore strict_types + blank lines + trailing ws). */
-function larabillNormalizeMigration(string $path): string
-{
-    $lines = file($path, FILE_IGNORE_NEW_LINES) ?: [];
-    $kept  = [];
-    foreach ($lines as $line) {
-        $trimmed = rtrim($line);
-        if (trim($trimmed) === '') {
-            continue;
-        }
-        if (str_contains($trimmed, 'declare(strict_types')) {
-            continue;
-        }
-        $kept[] = $trimmed;
-    }
-
-    return implode("\n", $kept);
-}
-
 // Stubs that intentionally modify the CONSUMER's users table: they have a `.php.stub`
 // but no timestamped `.php`, and are NOT part of $migrationOrder.
 const LARABILL_CONSUMER_ONLY_STUBS = [
@@ -71,18 +52,11 @@ const LARABILL_CONSUMER_ONLY_STUBS = [
     'rename_user_id_to_owner_user_id_in_user_tax_profiles',
 ];
 
-// Tables whose `.php` (dev) and `.php.stub` (prod) are KNOWN to diverge structurally.
-// This is pre-existing systemic debt scheduled for reconciliation in a dedicated ADR.
-// DO NOT add new entries here to silence drift — fix the migration instead.
-// Removing an entry (after reconciling its schemas) is the desired direction.
-const LARABILL_KNOWN_SCHEMA_DIVERGENCES = [
-    'create_invoices_table',
-    'create_invoice_items_table',
-    'create_tax_rates_table',
-    'create_article_prices_table',
-    'create_company_fiscal_configs_table',
-    'create_company_template_settings_table',
-];
+// Tables whose `.php` (dev) and `.php.stub` (prod) are allowed to diverge.
+// MUST stay empty: per ADR-007 the `.php.stub` is a DERIVED ARTIFACT of its `.php`
+// (byte-for-byte identical). Never add an entry here to silence drift — run
+// `bin/sync-migration-stubs` to regenerate the stub from its `.php` instead.
+const LARABILL_KNOWN_SCHEMA_DIVERGENCES = [];
 
 it('has a dedicated .php.stub for every $migrationOrder entry', function () {
     $dir     = larabillMigrationsDir();
@@ -120,8 +94,8 @@ it('references every package .php.stub in $migrationOrder (except consumer-only 
     );
 });
 
-it('keeps each table .php and .php.stub structurally in sync (no NEW drift)', function () {
-    $newDrift = [];
+it('keeps each table .php.stub byte-identical to its .php (ADR-007 — run bin/sync-migration-stubs)', function () {
+    $drift = [];
 
     foreach (larabillMigrationOrder() as $name) {
         $stub = larabillMigrationsDir()."/{$name}.php.stub";
@@ -131,16 +105,21 @@ it('keeps each table .php and .php.stub structurally in sync (no NEW drift)', fu
             continue; // existence is covered by the other tests
         }
 
-        $diverges = larabillNormalizeMigration($php) !== larabillNormalizeMigration($stub);
-        $known    = in_array($name, LARABILL_KNOWN_SCHEMA_DIVERGENCES, true);
+        if (in_array($name, LARABILL_KNOWN_SCHEMA_DIVERGENCES, true)) {
+            continue; // must stay empty — see the constant's note
+        }
 
-        if ($diverges && ! $known) {
-            $newDrift[] = $name;
+        // The `.php.stub` is a derived artifact of its timestamped `.php` (ADR-007):
+        // it must be byte-for-byte identical. dev/tests run the `.php`; consumers
+        // install the `.stub`. Byte equality makes that distinction impossible to drift.
+        if (file_get_contents($php) !== file_get_contents($stub)) {
+            $drift[] = $name;
         }
     }
 
-    expect($newDrift)->toBe(
+    expect($drift)->toBe(
         [],
-        'New .php vs .php.stub schema drift detected (dev tests would validate a schema the installer does not ship): '.implode(', ', $newDrift)
+        'These .php.stub files are not byte-identical to their .php source. The stub is a '
+        .'derived artifact (ADR-007); run `bin/sync-migration-stubs` to regenerate it: '.implode(', ', $drift)
     );
 });

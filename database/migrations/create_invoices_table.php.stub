@@ -38,7 +38,8 @@ return new class extends Migration
 
             // Relations (ADR-001 + ADR-003: CompanyFiscalConfig + UserTaxProfile architecture)
             MigrationHelper::userIdColumn($table);
-            $table->uuid('billable_user_id')->nullable()->comment('FK to users - User being billed (replaces customer_id per ADR-003)');
+            MigrationHelper::agnosticIdColumn($table, 'billable_user_id', nullable: true, index: true);
+            // Comment: FK to users - User being billed (replaces customer_id per ADR-003)
             $table->unsignedBigInteger('company_fiscal_config_id')->nullable()->comment('FK to company_fiscal_configs - Issuer snapshot');
             $table->unsignedBigInteger('user_tax_profile_id')->nullable()->comment('FK to user_tax_profiles - User fiscal snapshot (ADR-003)');
             $table->foreignUuid('proforma_id')->nullable()->constrained('invoices')->nullOnDelete()->comment('UUID FK if this invoice was converted from a proforma');

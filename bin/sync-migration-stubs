@@ -1,0 +1,86 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/*
+ * sync-migration-stubs — regenerate every published `.php.stub` from its
+ * timestamped `.php` source migration.
+ *
+ * Per ADR-007, the timestamped `.php` is the single editable source of truth
+ * for a package table's schema; the `.php.stub` published by `larabill:install`
+ * is a DERIVED ARTIFACT and must never be edited by hand. This script rewrites
+ * each `<name>.php.stub` with the exact content of its `<timestamp>_<name>.php`.
+ *
+ * The two consumer-only stubs (they modify the consumer's `users` table and
+ * have no `.php` counterpart) are skipped — those stay hand-maintained.
+ *
+ * Usage:  php bin/sync-migration-stubs
+ * Exit:   0 on success; 1 if a stub has no derivable `.php` source.
+ *
+ * The MigrationOrderConsistencyTest guardrail verifies the result in CI:
+ * if you edit a `.php` and forget to run this, the build fails.
+ */
+
+$migrationsDir = dirname(__DIR__).'/database/migrations';
+
+// Stubs that intentionally modify the CONSUMER's users table: no `.php` source.
+const CONSUMER_ONLY_STUBS = [
+    'add_user_relationships_to_users_table',
+    'rename_user_id_to_owner_user_id_in_user_tax_profiles',
+];
+
+$stubs = glob($migrationsDir.'/*.php.stub') ?: [];
+
+if ($stubs === []) {
+    fwrite(STDERR, "No .php.stub files found in {$migrationsDir}\n");
+    exit(1);
+}
+
+$updated   = 0;
+$unchanged = 0;
+$skipped   = 0;
+$missing   = [];
+
+foreach ($stubs as $stub) {
+    $name = basename($stub, '.php.stub');
+
+    if (in_array($name, CONSUMER_ONLY_STUBS, true)) {
+        $skipped++;
+
+        continue;
+    }
+
+    $matches = glob($migrationsDir."/[0-9]*_{$name}.php") ?: [];
+    $php     = $matches[0] ?? null;
+
+    if ($php === null) {
+        $missing[] = $name;
+
+        continue;
+    }
+
+    $source  = (string) file_get_contents($php);
+    $current = is_file($stub) ? (string) file_get_contents($stub) : null;
+
+    if ($source === $current) {
+        $unchanged++;
+
+        continue;
+    }
+
+    file_put_contents($stub, $source);
+    echo "  synced: {$name}.php.stub\n";
+    $updated++;
+}
+
+echo "\n";
+echo "Stubs synced from .php source: {$updated} updated, {$unchanged} unchanged, {$skipped} consumer-only skipped.\n";
+
+if ($missing !== []) {
+    fwrite(STDERR, "\nERROR: these stubs have no derivable .php source:\n  - ".implode("\n  - ", $missing)."\n");
+    fwrite(STDERR, "Add the timestamped .php, or list the stub as consumer-only in CONSUMER_ONLY_STUBS.\n");
+    exit(1);
+}
+
+exit(0);

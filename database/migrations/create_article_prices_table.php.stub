@@ -16,7 +16,6 @@ return new class extends Migration
         Schema::create('article_prices', function (Blueprint $table) {
             $table->id();
 
-            // Article relationship - use morphs pattern for flexibility
             $table->foreignId('article_id')
                 ->constrained('articles')
                 ->cascadeOnDelete();
