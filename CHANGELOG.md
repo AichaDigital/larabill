@@ -2,7 +2,12 @@
 
 All notable changes to `larabill` will be documented in this file.
 
-## [0.9.0] - 2026-06-11
+## [0.9.1] - 2026-06-11
+
+Identical content to the intended 0.9.0 release. The `v0.9.0` tag was pushed by
+mistake against the pre-merge `main` (0.8.4 content) and the repository tag
+rules forbid deleting it — do not use `v0.9.0`; Composer resolves `^0.9` to
+this release.
 
 ### Changed
 
