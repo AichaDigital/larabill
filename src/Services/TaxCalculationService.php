@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Services;
 
 use AichaDigital\Larabill\Contracts\Services\TaxCalculation\TaxCalculationStrategy;
+use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\TaxGroup;
 use Illuminate\Support\Facades\App;
 
@@ -52,17 +53,27 @@ class TaxCalculationService
      *
      * ADR-003: Uses billable_user_id instead of customer_id.
      *
+     * Units: `quantity` and `base_price` are base100 integers
+     * (qty=100 ⇒ 1.0 unit; price=10000 ⇒ €100.00); their product is divided
+     * by 100 once so the taxable amount stays in base100.
+     *
+     * Tax group resolution: an explicit `tax_group_id` wins; otherwise the
+     * article's `tax_group_id`. Without a resolvable tax group the item is
+     * tax-free (zero tax, empty taxes_applied).
+     *
      * @param  array{
-     *     article_id: int|mixed,
+     *     article_id?: int|mixed,
+     *     tax_group_id?: int|null,
      *     quantity: int|mixed,
      *     base_price: float|mixed,
      *     billable_user_id?: string|null
      * }  $itemData
      * @return array{
-     *     taxable_amount: float,
+     *     taxable_amount: int,
      *     tax_group_id: int|null,
-     *     total_tax_amount: float,
-     *     total_amount: float
+     *     total_tax_amount: int,
+     *     taxes_applied: array<int, array<string, mixed>>,
+     *     total_amount: int
      * }
      */
     public function calculateForInvoiceItem(array $itemData): array
@@ -73,27 +84,30 @@ class TaxCalculationService
         // Example: qty=100 (1.0 unit) * price=10000 (€100.00) / 100 = 10000 (€100.00)
         $taxableAmount = (int) (($quantity * $basePrice) / 100);
 
-        // TODO: Get tax group from article or billable user location
-        // For now, return basic calculation without taxes
-        $taxGroupId     = null;
-        $totalTaxAmount = 0;
-        $totalAmount    = $taxableAmount;
+        $taxGroupId = $itemData['tax_group_id']
+            ?? Article::query()->find($itemData['article_id'] ?? null)?->tax_group_id;
 
-        // If we have a tax group, calculate
-        // $taxGroup = TaxGroup::find($taxGroupId);
-        // if ($taxGroup) {
-        //     $result = $this->calculate($taxableAmount, $taxGroup, [
-        //         'billable_user_id' => $itemData['billable_user_id'],
-        //     ]);
-        //     $totalTaxAmount = $result['total_tax_amount'];
-        //     $totalAmount = $result['total_amount'];
-        // }
+        /** @var TaxGroup|null $taxGroup */
+        $taxGroup = TaxGroup::query()->with('taxRates')->find($taxGroupId);
+
+        $totalTaxAmount = 0;
+        $taxesApplied   = [];
+
+        if ($taxGroup) {
+            $result = $this->calculate($taxableAmount, $taxGroup, [
+                'billable_user_id' => $itemData['billable_user_id'] ?? null,
+            ]);
+
+            $totalTaxAmount = (int) $result['total_tax_amount'];
+            $taxesApplied   = $result['taxes_applied'];
+        }
 
         return [
             'taxable_amount'   => $taxableAmount,
-            'tax_group_id'     => $taxGroupId,
+            'tax_group_id'     => $taxGroup?->id,
             'total_tax_amount' => $totalTaxAmount,
-            'total_amount'     => $totalAmount,
+            'taxes_applied'    => $taxesApplied,
+            'total_amount'     => $taxableAmount + $totalTaxAmount,
         ];
     }
 }
