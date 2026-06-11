@@ -2,6 +2,38 @@
 
 All notable changes to `larabill` will be documented in this file.
 
+## [0.9.0] - 2026-06-11
+
+### Changed
+
+- **lara-verifactu constraint raised to `^0.9`** (sandbox-validated beta). The verifactu
+  bridge now targets the 0.9 schema and API; `dev-main` branch-alias moved to `0.9.x-dev`.
+- `VerifactuAdapter::toVerifactuInvoice()` updated to the 0.9 native invoice schema:
+  - Emits the consolidated `issue_datetime` (from `issued_at`, falling back to
+    `invoice_date`) instead of the removed `issue_date`/`issue_time` pair.
+  - Maps ROI-taxed invoices to operation key `04` (reverse charge) — `09` does not exist
+    in `OperationTypeEnum` 0.9 and made the model cast throw.
+  - No longer eager-loads the `customer`/`customerFiscalData` relations removed by
+    ADR-003 (was throwing `RelationNotFoundException` at runtime).
+- `VerifactuAdapter::toVerifactuBreakdown(InvoiceItem)` (one row per line item) replaced
+  by `VerifactuAdapter::toVerifactuBreakdowns(Invoice)`: AEAT Desglose rows grouped by
+  tax rate, with non-taxed items merged into a single exempt row, matching the 0.9
+  breakdown schema (`tax_type`/`tax_rate`/`base_amount`/`tax_amount`/`exempt`).
+- `InvoiceVerifactuService::createBreakdowns()` persists the grouped rows.
+
+### Added
+
+- Test coverage for the verifactu bridge (17 tests): adapter payload contract asserted
+  against the native 0.9 `fillable` (anti-drift guard), base-100 conversions, F1/F2/R1
+  mapping, ROI reverse charge, tax-rate grouping, exempt aggregation, and the service
+  registration round-trip.
+
+### Known limitations
+
+- Reverse-charge (S2) and not-subject (N1/N2) operation qualifications are not emitted
+  by lara-verifactu's XmlBuilder yet; ROI invoices currently produce an exempt breakdown
+  row. To be revisited during the high-volume sandbox testing phase (AID-129).
+
 ## [0.8.4] - 2026-06-06
 
 ### Fixed
