@@ -4,6 +4,7 @@ namespace AichaDigital\Larabill\Tests;
 
 use AichaDigital\Larabill\LarabillServiceProvider;
 use AichaDigital\Larabill\Tests\Models\TestUser;
+use AichaDigital\LaraVerifactu\LaraVerifactuServiceProvider;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Orchestra\Testbench\TestCase as Orchestra;
 
@@ -51,12 +52,17 @@ class TestCase extends Orchestra
 
         // Load package migrations (includes all .php timestamped files)
         $this->loadMigrationsFrom(__DIR__.'/../database/migrations');
+
+        // Load lara-verifactu migrations (its provider only publishes them);
+        // needed by the InvoiceVerifactuService bridge tests.
+        $this->loadMigrationsFrom(__DIR__.'/../vendor/aichadigital/lara-verifactu/database/migrations');
     }
 
     protected function getPackageProviders($app)
     {
         return [
             LarabillServiceProvider::class,
+            LaraVerifactuServiceProvider::class,
         ];
     }
 
