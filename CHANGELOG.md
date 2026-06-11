@@ -2,6 +2,18 @@
 
 All notable changes to `larabill` will be documented in this file.
 
+## [0.9.3] - 2026-06-11
+
+### Fixed
+
+- `VerifactuAdapter` classified invoices as F2 (simplified) by amount
+  (< 400) regardless of recipient data. AEAT validation 1190 rejects F2
+  records carrying a `Destinatarios` block, so any invoice with an
+  identified recipient submitted as F2 was refused by the sandbox. The
+  rule is now recipient-driven: identified recipient → F1 regardless of
+  amount; F2 reserved for invoices without recipient data. Found during
+  the AID-129 high-volume sandbox testing from Castris.
+
 ## [0.9.2] - 2026-06-11
 
 ### Fixed

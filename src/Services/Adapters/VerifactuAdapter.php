@@ -41,14 +41,14 @@ class VerifactuAdapter
         // Get customer fiscal data from the encrypted snapshot (ADR-001)
         $customerData = $invoice->getCustomerSnapshotData() ?? [];
 
-        // Determine if invoice is simplified (based on amount threshold or explicit flag)
-        $isSimplified = self::isSimplifiedInvoice($invoice);
+        // Simplified (F2) only when no recipient is identified (AEAT rule 1190)
+        $isSimplified = self::isSimplifiedInvoice($customerData);
 
         return [
             'serie'              => $invoice->serie->value ?? null,
             'number'             => (string) $invoice->series_number,
             'issue_datetime'     => $invoice->issued_at ?? $invoice->invoice_date,
-            'type'               => self::mapInvoiceType($invoice),
+            'type'               => self::mapInvoiceType($invoice, $isSimplified),
             'simplified'         => $isSimplified,
             'rectification_type' => self::getRectificationType($invoice),
             'base_amount'        => self::base100ToDecimal((int) $invoice->taxable_amount),
@@ -73,14 +73,15 @@ class VerifactuAdapter
     /**
      * Determine if invoice is simplified (factura simplificada).
      *
-     * In Spain, simplified invoices are allowed for amounts under 400€ (or 3000€ in some cases).
+     * AEAT validation 1190: an F2 record must not carry a Destinatarios
+     * block, so any invoice with an identified recipient is F1 regardless
+     * of amount; F2 is reserved for invoices without recipient data.
+     *
+     * @param  array<string, mixed>  $customerData  Customer fiscal data from snapshot
      */
-    private static function isSimplifiedInvoice(Invoice $invoice): bool
+    private static function isSimplifiedInvoice(array $customerData): bool
     {
-        // Check if total amount is under 400€ (40000 in base100)
-        $simplifiedThreshold = 40000;
-
-        return (int) $invoice->total_amount < $simplifiedThreshold;
+        return empty($customerData['tax_id']);
     }
 
     /**
@@ -188,9 +189,10 @@ class VerifactuAdapter
      * Map Larabill invoice type to Verifactu InvoiceTypeEnum.
      *
      * @param  Invoice  $invoice  The Larabill invoice
+     * @param  bool  $isSimplified  Whether the invoice has no identified recipient
      * @return string Verifactu invoice type (F1, F2, F3, R1-R5)
      */
-    private static function mapInvoiceType(Invoice $invoice): string
+    private static function mapInvoiceType(Invoice $invoice, bool $isSimplified): string
     {
         // F1: Factura completa
         // F2: Factura simplificada
@@ -200,7 +202,7 @@ class VerifactuAdapter
             return 'R1'; // Por diferencias (más común)
         }
 
-        return self::isSimplifiedInvoice($invoice) ? 'F2' : 'F1';
+        return $isSimplified ? 'F2' : 'F1';
     }
 
     /**
