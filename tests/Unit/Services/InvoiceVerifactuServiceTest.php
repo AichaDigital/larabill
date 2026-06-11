@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\InvoiceItem;
+use AichaDigital\Larabill\Models\UserTaxProfile;
 use AichaDigital\Larabill\Services\InvoiceVerifactuService;
 use AichaDigital\Larabill\Tests\Models\User;
 use AichaDigital\LaraVerifactu\Models\Invoice as VerifactuInvoice;
@@ -101,5 +102,30 @@ describe('InvoiceVerifactuService::validateForVerifactu', function () {
 
         expect($result['valid'])->toBeFalse()
             ->and($result['errors'])->toContain('Invoice is already registered with Verifactu');
+    });
+
+    it('accepts a fully fit invoice', function () {
+        // Regression: the check resolved the non-existent `taxProfile`
+        // relation (the model defines `userTaxProfile`), so every invoice
+        // failed with "must have a tax profile" regardless of its data.
+        $taxProfile = UserTaxProfile::factory()->create([
+            'owner_user_id' => $this->user->id,
+        ]);
+
+        $invoice = Invoice::factory()->create([
+            'user_id'             => $this->user->id,
+            'billable_user_id'    => $this->user->id,
+            'user_tax_profile_id' => $taxProfile->id,
+            'is_immutable'        => true,
+            'immutable_at'        => now(),
+            'taxable_amount'      => 10000,
+            'total_tax_amount'    => 2100,
+            'total_amount'        => 12100,
+        ]);
+
+        $result = $this->service->validateForVerifactu($invoice);
+
+        expect($result['errors'])->toBe([])
+            ->and($result['valid'])->toBeTrue();
     });
 });
