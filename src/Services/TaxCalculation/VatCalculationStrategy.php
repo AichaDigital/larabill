@@ -16,7 +16,10 @@ class VatCalculationStrategy implements TaxCalculationStrategy
 
         foreach ($taxGroup->taxRates as $taxRate) {
             // Lógica de cálculo de IVA simple por ahora. Se puede expandir.
-            $taxAmount = round($baseAmount * ($taxRate->rate / 10000));
+            // Int cast: monetary values are base-100 integers across the
+            // ecosystem (lara100 invariant), including the immutable
+            // taxes_applied snapshot persisted on invoice items.
+            $taxAmount = (int) round($baseAmount * ($taxRate->rate / 10000));
 
             $totalTaxAmount += $taxAmount;
             $taxesApplied[] = [

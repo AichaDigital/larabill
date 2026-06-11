@@ -2,6 +2,29 @@
 
 All notable changes to `larabill` will be documented in this file.
 
+## [0.9.4] - 2026-06-11
+
+### Fixed
+
+- `TaxCalculationService::calculateForInvoiceItem()` was a stub (the tax
+  lookup was commented out as TODO): it always returned zero tax and no
+  `taxes_applied`, so `InvoiceService::createInvoice()` produced invoices
+  without VAT — and, downstream, incorrect exempt Verifactu breakdowns.
+  It now resolves the tax group (explicit `tax_group_id` wins, otherwise
+  the article's) and delegates to the configured strategy (AID-138).
+- `InvoiceService::createInvoiceItem()` now persists the immutable
+  `taxes_applied` snapshot and the item's `article_id`, and forwards an
+  optional per-item `tax_group_id` override.
+- `VatCalculationStrategy` emits integer tax amounts (base-100 invariant);
+  it previously leaked floats from `round()` into `total_tax_amount` and
+  the `taxes_applied` snapshot.
+
+### Added
+
+- Tests: tax resolution from article, explicit override, tax-free fallback,
+  and the `InvoiceService::createInvoice` end-to-end regression asserting
+  VAT totals and the persisted `taxes_applied` snapshot.
+
 ## [0.9.3] - 2026-06-11
 
 ### Fixed
