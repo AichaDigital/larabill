@@ -2,6 +2,16 @@
 
 All notable changes to `larabill` will be documented in this file.
 
+## [0.9.2] - 2026-06-11
+
+### Fixed
+
+- `InvoiceVerifactuService::validateForVerifactu()` resolved the non-existent
+  `taxProfile` relation (the model defines `userTaxProfile`), so every invoice
+  failed validation with "Invoice must have a tax profile" regardless of its
+  data. Caught by the Castris consumer integration tests (AID-129); a
+  regression test for the fully-valid invoice case is now part of the suite.
+
 ## [0.9.1] - 2026-06-11
 
 Identical content to the intended 0.9.0 release. The `v0.9.0` tag was pushed by

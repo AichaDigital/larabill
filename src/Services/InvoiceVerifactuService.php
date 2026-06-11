@@ -123,7 +123,7 @@ class InvoiceVerifactuService
         }
 
         // Check tax profile exists
-        if (! $invoice->taxProfile) {
+        if (! $invoice->userTaxProfile) {
             $errors[] = 'Invoice must have a tax profile';
         }
 
