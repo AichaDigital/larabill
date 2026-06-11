@@ -10,15 +10,21 @@ use AichaDigital\LaraVerifactu\Enums\InvoiceTypeEnum;
 use AichaDigital\LaraVerifactu\Enums\OperationTypeEnum;
 use AichaDigital\LaraVerifactu\Models\Invoice as VerifactuInvoice;
 use AichaDigital\LaraVerifactu\Models\InvoiceBreakdown as VerifactuBreakdown;
+use Illuminate\Support\Facades\Crypt;
 
 /**
  * Create an invoice with deterministic base-100 amounts and optional items.
  *
  * @param  array<string, mixed>  $attributes
  * @param  array<int, array<string, mixed>>  $items
+ * @param  array<string, mixed>|null  $customerData  Encrypted customer snapshot payload
  */
-function makeVerifactuSourceInvoice(array $attributes = [], array $items = []): Invoice
+function makeVerifactuSourceInvoice(array $attributes = [], array $items = [], ?array $customerData = null): Invoice
 {
+    if ($customerData !== null) {
+        $attributes['customer_snapshot'] = Crypt::encryptString(json_encode($customerData));
+    }
+
     $invoice = Invoice::factory()->create(array_merge([
         'user_id'          => User::factory()->create()->id,
         'taxable_amount'   => 10000, // €100.00
@@ -72,12 +78,28 @@ describe('VerifactuAdapter::toVerifactuInvoice', function () {
             ->and($data['total_amount'])->toBe(149.38);
     });
 
-    it('maps complete invoices to F1 and simplified ones to F2', function () {
-        $complete   = makeVerifactuSourceInvoice(['total_amount' => 50000]); // €500.00
-        $simplified = makeVerifactuSourceInvoice(['total_amount' => 12100]); // €121.00
+    it('maps invoices with an identified recipient to F1 regardless of amount', function () {
+        // AEAT rule 1190: F2 must not carry a Destinatarios block, so any
+        // invoice with an identified recipient is F1 — even a €12 one.
+        $small = makeVerifactuSourceInvoice(
+            ['total_amount' => 1210], // €12.10
+            [],
+            ['tax_id' => 'B75685883', 'fiscal_name' => 'ACME SL', 'country_code' => 'ES'],
+        );
 
-        expect(VerifactuAdapter::toVerifactuInvoice($complete)['type'])->toBe('F1')
-            ->and(VerifactuAdapter::toVerifactuInvoice($simplified)['type'])->toBe('F2');
+        $data = VerifactuAdapter::toVerifactuInvoice($small);
+
+        expect($data['type'])->toBe('F1')
+            ->and($data['simplified'])->toBeFalse();
+    });
+
+    it('maps invoices without recipient to F2 regardless of amount', function () {
+        $large = makeVerifactuSourceInvoice(['total_amount' => 500000]); // €5000.00, no snapshot
+
+        $data = VerifactuAdapter::toVerifactuInvoice($large);
+
+        expect($data['type'])->toBe('F2')
+            ->and($data['simplified'])->toBeTrue();
     });
 
     it('maps rectificative invoices to R1', function () {
