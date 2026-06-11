@@ -2,6 +2,20 @@
 
 All notable changes to `larabill` will be documented in this file.
 
+## [0.10.0] - 2026-06-11
+
+### Changed
+
+- **lara-verifactu constraint raised to `^0.10`** (rectificative invoice
+  support); `dev-main` branch-alias moved to `0.10.x-dev`.
+- `VerifactuAdapter` rectification mapping (AID-135):
+  - `rectification_type` now emits the AEAT `ClaveTipoRectificativaType`
+    code `'I'` (incremental, por diferencias) instead of the invoice-type
+    code `'R1'` that leaked into the field.
+  - `metadata['rectified_invoices']` carries the rectified invoice
+    reference (serie+series_number and issue date) consumed by
+    lara-verifactu 0.10 to emit the AEAT `FacturasRectificadas` block.
+
 ## [0.9.4] - 2026-06-11
 
 ### Fixed

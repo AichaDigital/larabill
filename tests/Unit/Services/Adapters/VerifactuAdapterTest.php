@@ -102,14 +102,40 @@ describe('VerifactuAdapter::toVerifactuInvoice', function () {
             ->and($data['simplified'])->toBeTrue();
     });
 
-    it('maps rectificative invoices to R1', function () {
+    it('maps rectificative invoices to R1 with incremental rectification type', function () {
         $original      = makeVerifactuSourceInvoice();
         $rectificative = makeVerifactuSourceInvoice(['rectifies_invoice_id' => $original->id]);
 
         $data = VerifactuAdapter::toVerifactuInvoice($rectificative);
 
+        // AEAT ClaveTipoRectificativaType is S|I; larabill rectifications
+        // are por diferencias → 'I' (lara-verifactu 0.10 emits it verbatim).
         expect($data['type'])->toBe('R1')
-            ->and($data['rectification_type'])->toBe('R1');
+            ->and($data['rectification_type'])->toBe('I');
+    });
+
+    it('references the rectified invoice in metadata for FacturasRectificadas', function () {
+        $original = makeVerifactuSourceInvoice([
+            'issued_at'    => '2026-06-01 10:30:00',
+            'invoice_date' => '2026-06-01',
+        ]);
+        $rectificative = makeVerifactuSourceInvoice(['rectifies_invoice_id' => $original->id]);
+
+        $data = VerifactuAdapter::toVerifactuInvoice($rectificative);
+
+        $expectedNumber = $original->serie->value.$original->series_number;
+
+        expect($data['metadata']['rectified_invoices'])->toHaveCount(1)
+            ->and($data['metadata']['rectified_invoices'][0]['number'])->toBe((string) $expectedNumber)
+            ->and($data['metadata']['rectified_invoices'][0]['issue_date'])->toBe('2026-06-01');
+    });
+
+    it('does not add rectified_invoices metadata to non-rectificative invoices', function () {
+        $invoice = makeVerifactuSourceInvoice();
+
+        $data = VerifactuAdapter::toVerifactuInvoice($invoice);
+
+        expect($data['metadata'])->not->toHaveKey('rectified_invoices');
     });
 
     it('maps ROI-taxed invoices to the reverse charge operation key supported by the 0.9 enum', function () {
