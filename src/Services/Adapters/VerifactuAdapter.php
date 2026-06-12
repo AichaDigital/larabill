@@ -63,10 +63,11 @@ class VerifactuAdapter
             'regime_type'        => self::mapRegimeType($invoice),
             'operation_key'      => self::mapOperationKey($invoice),
             'description'        => $invoice->notes ?? null,
-            'metadata'           => [
+            'metadata'           => array_filter([
                 'larabill_invoice_id' => $invoice->id,
                 'is_roi_taxed'        => $invoice->is_roi_taxed,
-            ],
+                'rectified_invoices'  => self::rectifiedInvoiceReferences($invoice),
+            ], fn ($value) => $value !== []),
         ];
     }
 
@@ -86,6 +87,10 @@ class VerifactuAdapter
 
     /**
      * Get rectification type for rectificative invoices.
+     *
+     * AEAT ClaveTipoRectificativaType: 'S' (sustitución) | 'I' (incremental,
+     * por diferencias). Larabill rectifications are por diferencias, so 'I';
+     * lara-verifactu 0.10 emits the value verbatim as TipoRectificativa.
      */
     private static function getRectificationType(Invoice $invoice): ?string
     {
@@ -93,13 +98,37 @@ class VerifactuAdapter
             return null;
         }
 
-        // R1: Por diferencias (most common)
-        // R2: Por sustitución
-        // R3: Por corrección de errores registrales
-        // R4: Por corrección de errores de facturación
-        // R5: Por devolución de productos
+        return 'I';
+    }
 
-        return 'R1';
+    /**
+     * Build the rectified-invoice references consumed by lara-verifactu 0.10
+     * (metadata['rectified_invoices'] → AEAT FacturasRectificadas).
+     *
+     * The number uses the same serie+series_number composition the adapter
+     * gives the native model, so the reference matches the NumSerieFactura
+     * the rectified invoice was registered with.
+     *
+     * @return array<int, array{number: string, issue_date: string}>
+     */
+    private static function rectifiedInvoiceReferences(Invoice $invoice): array
+    {
+        if ($invoice->rectifies_invoice_id === null) {
+            return [];
+        }
+
+        $rectified = Invoice::query()->find($invoice->rectifies_invoice_id);
+
+        if (! $rectified) {
+            return [];
+        }
+
+        $issueDate = $rectified->issued_at ?? $rectified->invoice_date;
+
+        return [[
+            'number'     => ($rectified->serie->value ?? '').$rectified->series_number,
+            'issue_date' => $issueDate->format('Y-m-d'),
+        ]];
     }
 
     /**
