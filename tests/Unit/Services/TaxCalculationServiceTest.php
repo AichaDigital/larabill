@@ -3,7 +3,10 @@
 declare(strict_types=1);
 
 use AichaDigital\Larabill\Contracts\Services\TaxCalculation\TaxCalculationStrategy;
+use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\TaxGroup;
+use AichaDigital\Larabill\Models\TaxRate;
+use AichaDigital\Larabill\Services\TaxCalculation\VatCalculationStrategy;
 use AichaDigital\Larabill\Services\TaxCalculationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -254,4 +257,81 @@ it('returns null tax_group_id for invoice item by default', function () {
     $result = $this->service->calculateForInvoiceItem($itemData);
 
     expect($result['tax_group_id'])->toBeNull();
+});
+
+describe('calculateForInvoiceItem tax resolution (AID-138)', function () {
+    beforeEach(function () {
+        // Real strategy: these tests exercise the actual VAT math.
+        $this->realService = new TaxCalculationService(
+            new VatCalculationStrategy
+        );
+
+        $this->vatGroup = TaxGroup::factory()->create(['name' => 'IVA General']);
+        $rate           = TaxRate::factory()->create([
+            'name' => 'IVA General 21%',
+            'rate' => 2100,
+        ]);
+        $this->vatGroup->taxRates()->attach($rate->id);
+    });
+
+    it('resolves the tax group from the article and applies its rates', function () {
+        $article = Article::factory()->create([
+            'tax_group_id' => $this->vatGroup->id,
+        ]);
+
+        $result = $this->realService->calculateForInvoiceItem([
+            'article_id' => $article->id,
+            'quantity'   => 100,   // 1.0 unit in base100
+            'base_price' => 10000, // €100.00 in base100
+        ]);
+
+        expect($result['taxable_amount'])->toBe(10000)
+            ->and($result['tax_group_id'])->toBe($this->vatGroup->id)
+            ->and($result['total_tax_amount'])->toBe(2100)
+            ->and($result['total_amount'])->toBe(12100)
+            ->and($result['taxes_applied'])->toHaveCount(1)
+            ->and($result['taxes_applied'][0]['rate'])->toBe(2100)
+            ->and($result['taxes_applied'][0]['amount'])->toBe(2100);
+    });
+
+    it('prefers an explicit tax_group_id over the article default', function () {
+        $reducedGroup = TaxGroup::factory()->create(['name' => 'IVA Reducido']);
+        $reducedRate  = TaxRate::factory()->create([
+            'name' => 'IVA Reducido 10%',
+            'rate' => 1000,
+        ]);
+        $reducedGroup->taxRates()->attach($reducedRate->id);
+
+        $article = Article::factory()->create([
+            'tax_group_id' => $this->vatGroup->id, // 21%
+        ]);
+
+        $result = $this->realService->calculateForInvoiceItem([
+            'article_id'   => $article->id,
+            'tax_group_id' => $reducedGroup->id, // override → 10%
+            'quantity'     => 100,
+            'base_price'   => 10000,
+        ]);
+
+        expect($result['tax_group_id'])->toBe($reducedGroup->id)
+            ->and($result['total_tax_amount'])->toBe(1000)
+            ->and($result['total_amount'])->toBe(11000);
+    });
+
+    it('returns zero taxes and empty taxes_applied when the article has no tax group', function () {
+        $article = Article::factory()->create([
+            'tax_group_id' => null,
+        ]);
+
+        $result = $this->realService->calculateForInvoiceItem([
+            'article_id' => $article->id,
+            'quantity'   => 100,
+            'base_price' => 10000,
+        ]);
+
+        expect($result['total_tax_amount'])->toBe(0)
+            ->and($result['taxes_applied'])->toBe([])
+            ->and($result['tax_group_id'])->toBeNull()
+            ->and($result['total_amount'])->toBe(10000);
+    });
 });

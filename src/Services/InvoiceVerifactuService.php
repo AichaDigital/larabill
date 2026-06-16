@@ -62,24 +62,17 @@ class InvoiceVerifactuService
      */
     private function createBreakdowns(Invoice $invoice, VerifactuInvoice $verifactuInvoice): void
     {
-        foreach ($invoice->items as $item) {
-            $breakdownData = VerifactuAdapter::toVerifactuBreakdown($item);
+        $breakdowns = VerifactuAdapter::toVerifactuBreakdowns($invoice);
 
-            InvoiceBreakdown::create([
-                'invoice_id'   => $verifactuInvoice->id,
-                'description'  => $breakdownData['description'],
-                'quantity'     => $breakdownData['quantity'],
-                'unit_price'   => $breakdownData['unit_price'],
-                'base_amount'  => $breakdownData['base_amount'],
-                'tax_rate'     => $breakdownData['tax_rate'],
-                'tax_amount'   => $breakdownData['tax_amount'],
-                'total_amount' => $breakdownData['total_amount'],
-            ]);
+        foreach ($breakdowns as $breakdownData) {
+            InvoiceBreakdown::create(array_merge($breakdownData, [
+                'invoice_id' => $verifactuInvoice->id,
+            ]));
         }
 
         Log::info('Created invoice breakdowns', [
             'verifactu_invoice_id' => $verifactuInvoice->id,
-            'items_count'          => $invoice->items->count(),
+            'breakdowns_count'     => count($breakdowns),
         ]);
     }
 
@@ -130,7 +123,7 @@ class InvoiceVerifactuService
         }
 
         // Check tax profile exists
-        if (! $invoice->taxProfile) {
+        if (! $invoice->userTaxProfile) {
             $errors[] = 'Invoice must have a tax profile';
         }
 

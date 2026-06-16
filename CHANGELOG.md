@@ -2,6 +2,102 @@
 
 All notable changes to `larabill` will be documented in this file.
 
+## [0.10.0] - 2026-06-11
+
+### Changed
+
+- **lara-verifactu constraint raised to `^0.10`** (rectificative invoice
+  support); `dev-main` branch-alias moved to `0.10.x-dev`.
+- `VerifactuAdapter` rectification mapping (AID-135):
+  - `rectification_type` now emits the AEAT `ClaveTipoRectificativaType`
+    code `'I'` (incremental, por diferencias) instead of the invoice-type
+    code `'R1'` that leaked into the field.
+  - `metadata['rectified_invoices']` carries the rectified invoice
+    reference (serie+series_number and issue date) consumed by
+    lara-verifactu 0.10 to emit the AEAT `FacturasRectificadas` block.
+
+## [0.9.4] - 2026-06-11
+
+### Fixed
+
+- `TaxCalculationService::calculateForInvoiceItem()` was a stub (the tax
+  lookup was commented out as TODO): it always returned zero tax and no
+  `taxes_applied`, so `InvoiceService::createInvoice()` produced invoices
+  without VAT — and, downstream, incorrect exempt Verifactu breakdowns.
+  It now resolves the tax group (explicit `tax_group_id` wins, otherwise
+  the article's) and delegates to the configured strategy (AID-138).
+- `InvoiceService::createInvoiceItem()` now persists the immutable
+  `taxes_applied` snapshot and the item's `article_id`, and forwards an
+  optional per-item `tax_group_id` override.
+- `VatCalculationStrategy` emits integer tax amounts (base-100 invariant);
+  it previously leaked floats from `round()` into `total_tax_amount` and
+  the `taxes_applied` snapshot.
+
+### Added
+
+- Tests: tax resolution from article, explicit override, tax-free fallback,
+  and the `InvoiceService::createInvoice` end-to-end regression asserting
+  VAT totals and the persisted `taxes_applied` snapshot.
+
+## [0.9.3] - 2026-06-11
+
+### Fixed
+
+- `VerifactuAdapter` classified invoices as F2 (simplified) by amount
+  (< 400) regardless of recipient data. AEAT validation 1190 rejects F2
+  records carrying a `Destinatarios` block, so any invoice with an
+  identified recipient submitted as F2 was refused by the sandbox. The
+  rule is now recipient-driven: identified recipient → F1 regardless of
+  amount; F2 reserved for invoices without recipient data. Found during
+  the AID-129 high-volume sandbox testing from Castris.
+
+## [0.9.2] - 2026-06-11
+
+### Fixed
+
+- `InvoiceVerifactuService::validateForVerifactu()` resolved the non-existent
+  `taxProfile` relation (the model defines `userTaxProfile`), so every invoice
+  failed validation with "Invoice must have a tax profile" regardless of its
+  data. Caught by the Castris consumer integration tests (AID-129); a
+  regression test for the fully-valid invoice case is now part of the suite.
+
+## [0.9.1] - 2026-06-11
+
+Identical content to the intended 0.9.0 release. The `v0.9.0` tag was pushed by
+mistake against the pre-merge `main` (0.8.4 content) and the repository tag
+rules forbid deleting it — do not use `v0.9.0`; Composer resolves `^0.9` to
+this release.
+
+### Changed
+
+- **lara-verifactu constraint raised to `^0.9`** (sandbox-validated beta). The verifactu
+  bridge now targets the 0.9 schema and API; `dev-main` branch-alias moved to `0.9.x-dev`.
+- `VerifactuAdapter::toVerifactuInvoice()` updated to the 0.9 native invoice schema:
+  - Emits the consolidated `issue_datetime` (from `issued_at`, falling back to
+    `invoice_date`) instead of the removed `issue_date`/`issue_time` pair.
+  - Maps ROI-taxed invoices to operation key `04` (reverse charge) — `09` does not exist
+    in `OperationTypeEnum` 0.9 and made the model cast throw.
+  - No longer eager-loads the `customer`/`customerFiscalData` relations removed by
+    ADR-003 (was throwing `RelationNotFoundException` at runtime).
+- `VerifactuAdapter::toVerifactuBreakdown(InvoiceItem)` (one row per line item) replaced
+  by `VerifactuAdapter::toVerifactuBreakdowns(Invoice)`: AEAT Desglose rows grouped by
+  tax rate, with non-taxed items merged into a single exempt row, matching the 0.9
+  breakdown schema (`tax_type`/`tax_rate`/`base_amount`/`tax_amount`/`exempt`).
+- `InvoiceVerifactuService::createBreakdowns()` persists the grouped rows.
+
+### Added
+
+- Test coverage for the verifactu bridge (17 tests): adapter payload contract asserted
+  against the native 0.9 `fillable` (anti-drift guard), base-100 conversions, F1/F2/R1
+  mapping, ROI reverse charge, tax-rate grouping, exempt aggregation, and the service
+  registration round-trip.
+
+### Known limitations
+
+- Reverse-charge (S2) and not-subject (N1/N2) operation qualifications are not emitted
+  by lara-verifactu's XmlBuilder yet; ROI invoices currently produce an exempt breakdown
+  row. To be revisited during the high-volume sandbox testing phase (AID-129).
+
 ## [0.8.4] - 2026-06-06
 
 ### Fixed

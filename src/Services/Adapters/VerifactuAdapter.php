@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Services\Adapters;
 
 use AichaDigital\Larabill\Models\Invoice;
-use AichaDigital\Larabill\Models\InvoiceItem;
 
 /**
  * VerifactuAdapter
@@ -13,10 +12,19 @@ use AichaDigital\Larabill\Models\InvoiceItem;
  * Adapter to convert Larabill Invoice (base100 integers) to Lara-Verifactu format (decimal:2).
  * This adapter ensures proper conversion of monetary values for AEAT XML generation.
  *
+ * Targets lara-verifactu >= 0.9: consolidated `issue_datetime` column and
+ * per-tax-rate breakdowns (AEAT Desglose), not per-line-item rows.
+ *
  * @see https://github.com/AichaDigital/lara-verifactu
  */
 class VerifactuAdapter
 {
+    /**
+     * AEAT tax type for VAT (TaxTypeEnum::IVA). Larabill only models VAT today;
+     * IGIC/IPSI/IRPF mapping will require carrying the tax type in taxes_applied.
+     */
+    private const TAX_TYPE_VAT = '01';
+
     /**
      * Convert a Larabill Invoice to Verifactu-compatible array.
      *
@@ -28,21 +36,19 @@ class VerifactuAdapter
      */
     public static function toVerifactuInvoice(Invoice $invoice): array
     {
-        // Refresh invoice to ensure relationships are loaded
-        $invoice = $invoice->fresh(['customer', 'customerFiscalData']);
+        $invoice->loadMissing('billableUser');
 
-        // Get customer fiscal data from snapshot or relationship
+        // Get customer fiscal data from the encrypted snapshot (ADR-001)
         $customerData = $invoice->getCustomerSnapshotData() ?? [];
 
-        // Determine if invoice is simplified (based on amount threshold or explicit flag)
-        $isSimplified = self::isSimplifiedInvoice($invoice);
+        // Simplified (F2) only when no recipient is identified (AEAT rule 1190)
+        $isSimplified = self::isSimplifiedInvoice($customerData);
 
         return [
             'serie'              => $invoice->serie->value ?? null,
             'number'             => (string) $invoice->series_number,
-            'issue_date'         => $invoice->invoice_date,
-            'issue_time'         => $invoice->invoice_date,
-            'type'               => self::mapInvoiceType($invoice),
+            'issue_datetime'     => $invoice->issued_at ?? $invoice->invoice_date,
+            'type'               => self::mapInvoiceType($invoice, $isSimplified),
             'simplified'         => $isSimplified,
             'rectification_type' => self::getRectificationType($invoice),
             'base_amount'        => self::base100ToDecimal((int) $invoice->taxable_amount),
@@ -57,28 +63,34 @@ class VerifactuAdapter
             'regime_type'        => self::mapRegimeType($invoice),
             'operation_key'      => self::mapOperationKey($invoice),
             'description'        => $invoice->notes ?? null,
-            'metadata'           => [
+            'metadata'           => array_filter([
                 'larabill_invoice_id' => $invoice->id,
                 'is_roi_taxed'        => $invoice->is_roi_taxed,
-            ],
+                'rectified_invoices'  => self::rectifiedInvoiceReferences($invoice),
+            ], fn ($value) => $value !== []),
         ];
     }
 
     /**
      * Determine if invoice is simplified (factura simplificada).
      *
-     * In Spain, simplified invoices are allowed for amounts under 400€ (or 3000€ in some cases).
+     * AEAT validation 1190: an F2 record must not carry a Destinatarios
+     * block, so any invoice with an identified recipient is F1 regardless
+     * of amount; F2 is reserved for invoices without recipient data.
+     *
+     * @param  array<string, mixed>  $customerData  Customer fiscal data from snapshot
      */
-    private static function isSimplifiedInvoice(Invoice $invoice): bool
+    private static function isSimplifiedInvoice(array $customerData): bool
     {
-        // Check if total amount is under 400€ (40000 in base100)
-        $simplifiedThreshold = 40000;
-
-        return (int) $invoice->total_amount < $simplifiedThreshold;
+        return empty($customerData['tax_id']);
     }
 
     /**
      * Get rectification type for rectificative invoices.
+     *
+     * AEAT ClaveTipoRectificativaType: 'S' (sustitución) | 'I' (incremental,
+     * por diferencias). Larabill rectifications are por diferencias, so 'I';
+     * lara-verifactu 0.10 emits the value verbatim as TipoRectificativa.
      */
     private static function getRectificationType(Invoice $invoice): ?string
     {
@@ -86,32 +98,98 @@ class VerifactuAdapter
             return null;
         }
 
-        // R1: Por diferencias (most common)
-        // R2: Por sustitución
-        // R3: Por corrección de errores registrales
-        // R4: Por corrección de errores de facturación
-        // R5: Por devolución de productos
-
-        return 'R1';
+        return 'I';
     }
 
     /**
-     * Convert a Larabill InvoiceItem to Verifactu breakdown format.
+     * Build the rectified-invoice references consumed by lara-verifactu 0.10
+     * (metadata['rectified_invoices'] → AEAT FacturasRectificadas).
      *
-     * @param  InvoiceItem  $item  The invoice item to convert
-     * @return array<string, mixed> Verifactu-compatible breakdown data
+     * The number uses the same serie+series_number composition the adapter
+     * gives the native model, so the reference matches the NumSerieFactura
+     * the rectified invoice was registered with.
+     *
+     * @return array<int, array{number: string, issue_date: string}>
      */
-    public static function toVerifactuBreakdown(InvoiceItem $item): array
+    private static function rectifiedInvoiceReferences(Invoice $invoice): array
     {
-        return [
-            'description'  => $item->description ?? 'Item',
-            'quantity'     => self::base100ToDecimal((int) $item->quantity),
-            'unit_price'   => self::base100ToDecimal((int) $item->unit_price),
-            'base_amount'  => self::base100ToDecimal((int) $item->taxable_amount),
-            'tax_rate'     => self::base10000ToDecimal((int) ($item->tax_rate * 100)),
-            'tax_amount'   => self::base100ToDecimal((int) $item->total_tax_amount),
-            'total_amount' => self::base100ToDecimal((int) $item->total_amount),
-        ];
+        if ($invoice->rectifies_invoice_id === null) {
+            return [];
+        }
+
+        $rectified = Invoice::query()->find($invoice->rectifies_invoice_id);
+
+        if (! $rectified) {
+            return [];
+        }
+
+        $issueDate = $rectified->issued_at ?? $rectified->invoice_date;
+
+        return [[
+            'number'     => ($rectified->serie->value ?? '').$rectified->series_number,
+            'issue_date' => $issueDate->format('Y-m-d'),
+        ]];
+    }
+
+    /**
+     * Group invoice items into AEAT tax breakdowns (one row per tax rate).
+     *
+     * AEAT Desglose aggregates by tax type and rate; items without any tax
+     * applied are merged into a single exempt row.
+     *
+     * @param  Invoice  $invoice  The Larabill invoice
+     * @return array<int, array{tax_type: string, tax_rate: float, base_amount: float, tax_amount: float, exempt: bool, exemption_reason: string|null}>
+     */
+    public static function toVerifactuBreakdowns(Invoice $invoice): array
+    {
+        $invoice->loadMissing('items');
+
+        /** @var array<int, array{base: int, tax: int}> $groups keyed by rate in base10000 */
+        $groups     = [];
+        $exemptBase = 0;
+
+        foreach ($invoice->items as $item) {
+            $taxes = $item->taxes_applied ?? [];
+
+            if ($taxes === []) {
+                $exemptBase += (int) $item->taxable_amount;
+
+                continue;
+            }
+
+            foreach ($taxes as $tax) {
+                $rate = (int) $tax['rate'];
+
+                $groups[$rate]['base'] = ($groups[$rate]['base'] ?? 0) + (int) $item->taxable_amount;
+                $groups[$rate]['tax']  = ($groups[$rate]['tax'] ?? 0)  + (int) ($tax['amount'] ?? 0);
+            }
+        }
+
+        $breakdowns = [];
+
+        foreach ($groups as $rate => $group) {
+            $breakdowns[] = [
+                'tax_type'         => self::TAX_TYPE_VAT,
+                'tax_rate'         => self::base10000ToDecimal($rate),
+                'base_amount'      => self::base100ToDecimal($group['base']),
+                'tax_amount'       => self::base100ToDecimal($group['tax']),
+                'exempt'           => false,
+                'exemption_reason' => null,
+            ];
+        }
+
+        if ($exemptBase > 0) {
+            $breakdowns[] = [
+                'tax_type'         => self::TAX_TYPE_VAT,
+                'tax_rate'         => 0.0,
+                'base_amount'      => self::base100ToDecimal($exemptBase),
+                'tax_amount'       => 0.0,
+                'exempt'           => true,
+                'exemption_reason' => null, // XmlBuilder defaults to E1; refine per-invoice when needed
+            ];
+        }
+
+        return $breakdowns;
     }
 
     /**
@@ -140,9 +218,10 @@ class VerifactuAdapter
      * Map Larabill invoice type to Verifactu InvoiceTypeEnum.
      *
      * @param  Invoice  $invoice  The Larabill invoice
+     * @param  bool  $isSimplified  Whether the invoice has no identified recipient
      * @return string Verifactu invoice type (F1, F2, F3, R1-R5)
      */
-    private static function mapInvoiceType(Invoice $invoice): string
+    private static function mapInvoiceType(Invoice $invoice, bool $isSimplified): string
     {
         // F1: Factura completa
         // F2: Factura simplificada
@@ -152,7 +231,7 @@ class VerifactuAdapter
             return 'R1'; // Por diferencias (más común)
         }
 
-        return self::isSimplifiedInvoice($invoice) ? 'F2' : 'F1';
+        return $isSimplified ? 'F2' : 'F1';
     }
 
     /**
@@ -218,7 +297,7 @@ class VerifactuAdapter
         // ... (muchas más, ver AEAT docs)
 
         if ($invoice->is_roi_taxed) {
-            return '09'; // Inversión del sujeto pasivo (reverse charge)
+            return '04'; // OperationTypeEnum::REVERSE_CHARGE (inversión del sujeto pasivo)
         }
 
         return '01'; // Operación de régimen general

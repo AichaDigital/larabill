@@ -29,7 +29,7 @@ describe('VatCalculationStrategy', function () {
 
         expect($result)->toBeArray();
         expect($result)->toHaveKeys(['total_tax_amount', 'taxes_applied']);
-        expect($result['total_tax_amount'])->toBe(2100.0);
+        expect($result['total_tax_amount'])->toBe(2100);
         expect($result['taxes_applied'])->toHaveCount(1);
     });
 
@@ -50,7 +50,7 @@ describe('VatCalculationStrategy', function () {
         $strategy = new VatCalculationStrategy;
         $result   = $strategy->calculate(10000, $taxGroup);
 
-        expect($result['total_tax_amount'])->toBe(2620.0);
+        expect($result['total_tax_amount'])->toBe(2620);
         expect($result['taxes_applied'])->toHaveCount(2);
     });
 
@@ -65,7 +65,7 @@ describe('VatCalculationStrategy', function () {
         $strategy = new VatCalculationStrategy;
         $result   = $strategy->calculate(10000, $taxGroup);
 
-        expect($result['total_tax_amount'])->toBe(0.0);
+        expect($result['total_tax_amount'])->toBe(0);
     });
 
     it('handles empty tax group', function () {
@@ -93,7 +93,7 @@ describe('VatCalculationStrategy', function () {
         expect($appliedTax)->toHaveKeys(['source_rate_id', 'name', 'rate', 'amount']);
         expect($appliedTax['name'])->toBe('IVA 10%');
         expect($appliedTax['rate'])->toBe(1000);
-        expect($appliedTax['amount'])->toBe(500.0);
+        expect($appliedTax['amount'])->toBe(500);
     });
 
     it('ignores context parameter', function () {

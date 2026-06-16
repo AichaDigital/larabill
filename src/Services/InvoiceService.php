@@ -249,7 +249,8 @@ class InvoiceService
 
         // Calculate taxes using TaxCalculationService (ADR-003: billable_user_id)
         $taxCalculation = $this->taxCalculationService->calculateForInvoiceItem([
-            'article_id'       => $itemData['article_id'] ?? 0,
+            'article_id'       => $itemData['article_id']   ?? 0,
+            'tax_group_id'     => $itemData['tax_group_id'] ?? null,
             'quantity'         => $quantity,
             'base_price'       => $basePrice,
             'billable_user_id' => $invoice->billable_user_id,
@@ -257,11 +258,13 @@ class InvoiceService
 
         return InvoiceItem::create([
             'invoice_id'       => $invoice->id,
+            'article_id'       => $itemData['article_id']  ?? null,
             'description'      => $itemData['description'] ?? '',
             'quantity'         => $quantity,
             'unit_price'       => $basePrice,
             'taxable_amount'   => $taxCalculation['taxable_amount'],
             'total_tax_amount' => $taxCalculation['total_tax_amount'],
+            'taxes_applied'    => $taxCalculation['taxes_applied'],
             'total_amount'     => $taxCalculation['total_amount'],
         ]);
     }
