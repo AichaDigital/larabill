@@ -85,18 +85,21 @@ class PDFService
             }
 
             // Generate QR code if the invoice type requires it
-            $qrResult = ['success' => true, 'qr_code' => null, 'qr_url' => null, 'qr_data' => []];
+            $qrResult = $this->fiscalVerificationQrResult($invoice)
+                ?? ['success' => true, 'qr_code' => null, 'qr_url' => null, 'qr_data' => []];
             if ($invoice->shouldIncludeQR()) {
-                // Validate invoice for QR generation
-                if (! $connector->validateInvoice($invoice)) {
-                    throw new \Exception('Invoice validation failed for connector: '.$connector->getConnectorType());
-                }
+                if (! isset($qrResult['source'])) {
+                    // Validate invoice for QR generation
+                    if (! $connector->validateInvoice($invoice)) {
+                        throw new \Exception('Invoice validation failed for connector: '.$connector->getConnectorType());
+                    }
 
-                // Generate QR code
-                $qrResult = $connector->generateQR($invoice);
+                    // Generate QR code
+                    $qrResult = $connector->generateQR($invoice);
 
-                if (! $qrResult['success']) {
-                    throw new \Exception('QR generation failed: '.($qrResult['error'] ?? 'Unknown error'));
+                    if (! $qrResult['success']) {
+                        throw new \Exception('QR generation failed: '.($qrResult['error'] ?? 'Unknown error'));
+                    }
                 }
             }
 
@@ -148,6 +151,41 @@ class PDFService
                 'generated_at'   => now()->toISOString(),
             ];
         }
+    }
+
+    /**
+     * Build QR data from the fiscal verification persisted by lara-verifactu.
+     *
+     * @return array<string, mixed>|null
+     */
+    protected function fiscalVerificationQrResult(Invoice $invoice): ?array
+    {
+        if (! is_string($invoice->fiscal_verification_qr) || $invoice->fiscal_verification_qr === '') {
+            return null;
+        }
+
+        $qr       = $invoice->fiscal_verification_qr;
+        $metadata = $invoice->fiscal_verification_metadata ?? [];
+        $qrUrl    = $metadata['qr_url']                    ?? null;
+
+        $result = [
+            'success'        => true,
+            'source'         => 'fiscal_verification',
+            'qr_code'        => $qr,
+            'qr_url'         => is_string($qrUrl) ? $qrUrl : null,
+            'qr_data'        => [],
+            'connector_type' => 'fiscal_verification',
+            'generated_at'   => now()->toISOString(),
+            'metadata'       => $metadata,
+        ];
+
+        if (str_starts_with(ltrim($qr), '<svg')) {
+            $result['qr_svg'] = $qr;
+        } elseif (str_starts_with($qr, 'data:image/png;base64,')) {
+            $result['qr_png'] = $qr;
+        }
+
+        return $result;
     }
 
     /**

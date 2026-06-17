@@ -227,11 +227,25 @@ class Invoice extends Model
     public function update(array $attributes = [], array $options = []): bool
     {
         // Allow updating conversion-related fields even on immutable invoices (for proforma conversion)
-        $conversionFields    = ['is_immutable', 'converted_invoice_id', 'converted_at', 'status'];
-        $isConversionUpdate  = isset($attributes['converted_invoice_id']) || isset($attributes['converted_at']);
-        $isOnlyAllowedFields = empty(array_diff(array_keys($attributes), $conversionFields));
+        $conversionFields          = ['is_immutable', 'converted_invoice_id', 'converted_at', 'status'];
+        $fiscalVerificationFields  = [
+            'fiscal_verification_id',
+            'fiscal_verification_qr',
+            'fiscal_verification_hash',
+            'fiscal_verified_at',
+            'fiscal_verification_metadata',
+        ];
+        $attributeKeys              = array_keys($attributes);
+        $isConversionUpdate         = isset($attributes['converted_invoice_id']) || isset($attributes['converted_at']);
+        $isFiscalVerificationUpdate = array_intersect($attributeKeys, $fiscalVerificationFields) !== [];
+        $isOnlyConversionFields     = empty(array_diff($attributeKeys, $conversionFields));
+        $isOnlyFiscalFields         = empty(array_diff($attributeKeys, $fiscalVerificationFields));
 
-        if ($this->is_immutable && ! ($isConversionUpdate && $isOnlyAllowedFields)) {
+        if ($this->is_immutable
+            && ! (
+                ($isConversionUpdate && $isOnlyConversionFields)
+                || ($isFiscalVerificationUpdate && $isOnlyFiscalFields)
+            )) {
             throw new \Exception('Cannot update an immutable invoice');
         }
 
