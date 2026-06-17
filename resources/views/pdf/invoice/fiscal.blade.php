@@ -232,16 +232,23 @@
     <!-- QR Code Section (only for fiscal invoices) -->
     @if($include_qr && isset($qr_data))
         <div class="qr-section">
-            <div><strong>Código QR de Verificación Fiscal</strong></div>
+            <div><strong>QR tributario:</strong></div>
             <div class="qr-code">
-                <!-- QR Code would be rendered here -->
-                <div style="border: 1px solid #ccc; padding: 10px; display: inline-block;">
-                    QR: {{ $qr_data['qr_code'] ?? 'QR_CODE' }}
+                @if(!empty($qr_data['qr_svg']))
+                    {!! $qr_data['qr_svg'] !!}
+                @elseif(!empty($qr_data['qr_png']))
+                    <img src="{{ $qr_data['qr_png'] }}" alt="QR tributario" style="width: 35mm; height: 35mm;">
+                @else
+                    <div style="border: 1px solid #ccc; padding: 10px; display: inline-block;">
+                        {{ $qr_data['qr_code'] ?? 'QR_CODE' }}
+                    </div>
+                @endif
+            </div>
+            @if(!empty($qr_data['qr_url']))
+                <div style="font-size: 10px; color: #666;">
+                    URL: {{ $qr_data['qr_url'] }}
                 </div>
-            </div>
-            <div style="font-size: 10px; color: #666;">
-                URL: {{ $qr_data['qr_url'] ?? 'QR_URL' }}
-            </div>
+            @endif
         </div>
     @endif
 

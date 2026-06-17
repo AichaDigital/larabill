@@ -2,6 +2,22 @@
 
 All notable changes to `larabill` will be documented in this file.
 
+## [0.11.0] - 2026-06-17
+
+### Added
+
+- Larabill now syncs asynchronous lara-verifactu registration results back onto
+  the source invoice, including the AEAT registry number, QR, hash, verification
+  timestamp, and provider metadata.
+- Fiscal PDFs can render the persisted Veri*Factu QR as SVG or PNG and include
+  the AEAT verification URL when lara-verifactu provides it.
+
+### Changed
+
+- Immutable invoices now allow post-issue updates only for fiscal verification
+  fields, so asynchronous AEAT registration data can be persisted without
+  reopening invoice content for mutation.
+
 ## [0.10.0] - 2026-06-11
 
 ### Changed

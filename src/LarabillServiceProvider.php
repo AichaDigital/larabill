@@ -12,7 +12,9 @@ use AichaDigital\Larabill\Events\RecurringInvoiceGenerated;
 use AichaDigital\Larabill\Listeners\AlertBillingFailure;
 use AichaDigital\Larabill\Listeners\LogBillingSummary;
 use AichaDigital\Larabill\Listeners\SendInvoiceNotification;
+use AichaDigital\Larabill\Listeners\SyncLarabillInvoiceVerification;
 use AichaDigital\Larabill\Services\TaxCalculation\VatCalculationStrategy;
+use AichaDigital\LaraVerifactu\Events\InvoiceRegisteredEvent;
 use Illuminate\Support\Facades\Event;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
@@ -33,6 +35,9 @@ class LarabillServiceProvider extends PackageServiceProvider
         ],
         RecurringBillingFailed::class => [
             AlertBillingFailure::class,
+        ],
+        InvoiceRegisteredEvent::class => [
+            SyncLarabillInvoiceVerification::class,
         ],
     ];
 
