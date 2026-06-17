@@ -90,6 +90,29 @@ it('can generate PDF for invoice', function () {
     expect($result['connector_used'])->toBe('local');
 });
 
+it('uses the persisted fiscal verification QR when generating fiscal PDFs', function () {
+    $invoice = Invoice::factory()->create([
+        'fiscal_number'                 => 'TEST-FISCAL-QR',
+        'serie'                         => InvoiceSerieType::INVOICE->value,
+        'status'                        => InvoiceStatus::DRAFT->value,
+        'user_id'                       => TestCase::USER_UUID_1,
+        'taxable_amount'                => 10000,
+        'total_tax_amount'              => 2100,
+        'total_amount'                  => 12100,
+        'fiscal_verification_qr'        => '<svg data-testid="verifactu-qr"></svg>',
+        'fiscal_verification_metadata'  => [
+            'qr_url' => 'https://prewww2.aeat.es/qr?id=REG-000001',
+        ],
+    ]);
+
+    $result = $this->pdfService->generatePDF($invoice);
+
+    expect($result['success'])->toBeTrue()
+        ->and($result['qr_data']['source'])->toBe('fiscal_verification')
+        ->and($result['qr_data']['qr_svg'])->toBe('<svg data-testid="verifactu-qr"></svg>')
+        ->and($result['qr_data']['qr_url'])->toBe('https://prewww2.aeat.es/qr?id=REG-000001');
+});
+
 it('can handle PDF generation errors gracefully', function () {
     // Create an invoice with minimal fields
     $invoice = Invoice::factory()->create([
