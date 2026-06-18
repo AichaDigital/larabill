@@ -106,6 +106,12 @@ class PDFService
             // Generate PDF with QR code using DomPDF
             $pdfResult = $this->dompdfService->generatePDF($invoice, $qrResult);
 
+            // Do not report success when the underlying render failed; surface the error
+            // (a failed render must never be reported as a generated PDF).
+            if (! ($pdfResult['success'] ?? false)) {
+                throw new \RuntimeException('PDF rendering failed: '.($pdfResult['error'] ?? 'unknown error'));
+            }
+
             // Cache result if enabled
             if ($this->config['cache_pdfs']) {
                 $this->cachePDFResult($invoice, $pdfResult);
@@ -179,7 +185,12 @@ class PDFService
             'metadata'       => $metadata,
         ];
 
-        if (str_starts_with(ltrim($qr), '<svg')) {
+        // lara-verifactu emits the QR as an <svg> root that may be preceded by an XML
+        // declaration. Strip a leading XML declaration so both shapes are treated as
+        // inline SVG and render as an image rather than being dumped as escaped text.
+        $svgRoot = preg_replace('/^<\?xml[^>]*\?>\s*/i', '', ltrim($qr)) ?? ltrim($qr);
+
+        if (str_starts_with($svgRoot, '<svg')) {
             $result['qr_svg'] = $qr;
         } elseif (str_starts_with($qr, 'data:image/png;base64,')) {
             $result['qr_png'] = $qr;

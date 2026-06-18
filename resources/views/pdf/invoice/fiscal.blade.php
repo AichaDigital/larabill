@@ -163,7 +163,7 @@
             <div class="invoice-title">FACTURA</div>
             <div><strong>Número:</strong> {{ $invoice->number }}</div>
             <div><strong>Fecha:</strong> {{ $invoice->created_at ? $invoice->created_at->format('d/m/Y') : date('d/m/Y') }}</div>
-            <div><strong>Estado:</strong> {{ ucfirst($invoice->status) }}</div>
+            <div><strong>Estado:</strong> {{ $invoice->status?->label() }}</div>
         </div>
     </div>
 
@@ -244,6 +244,11 @@
                     </div>
                 @endif
             </div>
+            @if(($qr_data['source'] ?? null) === 'fiscal_verification')
+                <div class="verifactu-legend" style="margin-top: 8px; font-size: 10px; color: #555;">
+                    Factura verificable en la sede electrónica de la AEAT — VERI*FACTU
+                </div>
+            @endif
             @if(!empty($qr_data['qr_url']))
                 <div style="font-size: 10px; color: #666;">
                     URL: {{ $qr_data['qr_url'] }}

@@ -11,6 +11,7 @@ use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\InvoiceTemplate;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\View;
 
 /**
@@ -582,16 +583,28 @@ class DomPDFService
      */
     protected function renderTemplate(string $template, array $data): string
     {
-        try {
-            if (class_exists('\Illuminate\Support\Facades\View') && app()->bound('view')) {
-                return View::make($template, $data)->render();
-            }
-        } catch (\Exception $e) {
-            // Fall back to mock HTML for testing
+        // Pure-unit context without a booted view layer: return a clearly-marked mock.
+        if (! class_exists('\Illuminate\Support\Facades\View') || ! app()->bound('view')) {
+            return $this->generateMockHTML($template, $data);
         }
 
-        // Mock HTML for testing when View is not available
-        return $this->generateMockHTML($template, $data);
+        try {
+            return View::make($template, $data)->render();
+        } catch (\Throwable $e) {
+            // A real render failure must NOT be masked as a plausible-but-fake invoice.
+            // Log with context and surface the error so the caller reports failure.
+            $invoice = $data['invoice'] ?? null;
+
+            Log::error('larabill: invoice PDF template render failed; surfacing instead of falling back to a mock invoice', [
+                'invoice_id'      => $invoice instanceof Invoice ? $invoice->id : null,
+                'invoice_number'  => $invoice instanceof Invoice ? $invoice->fiscal_number : null,
+                'template'        => $template,
+                'exception_class' => $e::class,
+                'exception'       => $e->getMessage(),
+            ]);
+
+            throw $e;
+        }
     }
 
     /**

@@ -2,6 +2,32 @@
 
 All notable changes to `larabill` will be documented in this file.
 
+## [0.11.2] - 2026-06-18
+
+### Fixed
+
+- Fiscal PDF: the Veri*Factu QR emitted by lara-verifactu as an `<svg>` root
+  preceded by an XML declaration (`<?xml …?>`) was misclassified — neither the
+  bare `<svg` nor the PNG data-URI branch matched — and dumped as **escaped
+  text** instead of an image. A leading XML declaration is now stripped before
+  SVG detection, so the persisted QR renders inline.
+- `DomPDFService::renderTemplate()` swallowed any view render error and returned
+  a plausible **mock invoice** (`TEST-001`), masking real failures. It now
+  returns the mock only when no view layer is booted (pure-unit context); a
+  genuine render failure is logged with invoice context and rethrown.
+- `PDFService::generatePDF()` now throws instead of reporting `success: true`
+  when the underlying render failed.
+
+### Changed
+
+- Fiscal PDF template renders the invoice status via the `InvoiceStatus::label()`
+  accessor (was `ucfirst()` on the enum) and shows the Veri*Factu AEAT legend for
+  fiscal-verification QRs.
+- Tests: replaced the unit-only `FiscalQrRenderingTest` (synthetic object, string
+  status, bare `<svg>`) with `FiscalPdfRealRouteTest`, which drives the
+  production path (real `Invoice` + enum casts + XML-preamble QR) through
+  `fiscalVerificationQrResult → prepareTemplateData → renderTemplate`.
+
 ## [0.11.1] - 2026-06-18
 
 ### Changed
