@@ -69,12 +69,15 @@ Hay un bug conocido "table already exists" con SQLite in-memory en PHP 8.4 local
 - Asumir que `composer test` (suite SQLite) demuestra el contrato real → SQLite no preserva índices compuestos ni longitudes char(36) reales. El contrato se demuestra en `tests/Integration/Mysql/` contra MySQL 8.
 - Hardcodear `'user_id' => 1` (o cualquier int) en fixtures de test → usar las constantes `TestCase::USER_UUID_1/2/3`.
 
-## Estado actual (2026-06-06)
+## Estado actual (2026-06-18)
 
-- Tag actual: **v0.8.3**. Próximo tag: **v0.8.4** — reconciliación `.php`/`.stub` (ADR-007: el `.stub` es artefacto derivado del `.php`, regenerado con `bin/sync-migration-stubs`).
-- Bot de dependencias: migrado a **Renovate self-hosted** (`renovate.tabratino.com`). Ver paraguas para el protocolo de transición.
-- **Contrato vigente:** UUID-first total. `users.id` debe ser UUID v7 char(36); el `larabill:install` aborta con mensaje accionable si no lo es. La superficie agnóstica (`MigrationHelper::getUserIdType/detectUserIdType/getIdTypeDescription/isSupportedIdType`, `DetectUserIdTypeCommand`, flag CLI `--user-id-type=`, ENV `LARABILL_USER_ID_TYPE`, config `larabill.user_id_type`) ha sido retirada. Helper simplificado emite UUID exclusivamente.
-- **Tests SQLite** (`composer test`): 941 passed, 1 skipped, 0 failed.
-- **MySQL Integration:** `tests/Integration/Mysql/FreshInstallTest.php` reducido a un único caso UUID. CI job `mysql-integration` (PHP 8.3 + L12 + MySQL 8). Para correr local: env vars `LARABILL_TEST_MYSQL_*` + Docker (ver `CONTRIBUTING.md`).
-- **Constantes de fixture:** `tests/TestCase::USER_UUID_1/2/3` son los reemplazos canónicos del antiguo `'id' => 1/2/3`.
+- Tag actual: **v0.11.1** — re-tag de higiene desde `main`. `v0.11.0` se taggeó sobre un commit previo al bump de CI (#33) y quedó fuera de la historia de `main`; `v0.11.1` realinea el release. El payload distribuido por Composer es idéntico a v0.11.0 (el delta era solo SHA-pins de actions de CI, que no entran en el dist).
+- **Foco reciente: integración VeriFACTU/AEAT** vía `lara-verifactu` (Linear AID-129/135/138):
+  - **v0.9.2-0.9.4** — fixes de cálculo fiscal: `TaxCalculationService::calculateForInvoiceItem()` era un stub que devolvía 0 IVA; clasificación F1/F2 ahora recipient-driven (AEAT rechaza F2 con bloque `Destinatarios`); `taxes_applied` como entero base-100.
+  - **v0.10.0** — facturas rectificativas: constraint `lara-verifactu ^0.10`, `ClaveTipoRectificativaType 'I'`, bloque `FacturasRectificadas`.
+  - **v0.11.0** — verificación AEAT asíncrona sincronizada de vuelta a la factura (nº de registro, QR, hash, timestamp); QR VeriFACTU en PDF (SVG/PNG); las facturas inmutables solo admiten actualizar campos de verificación fiscal post-emisión.
+- Bot de dependencias: **Renovate self-hosted** (`renovate.tabratino.com`). Ver paraguas para el protocolo de transición.
+- **Contrato vigente:** UUID-first total (ADR-006). `users.id` debe ser UUID v7 char(36); el `larabill:install` aborta con mensaje accionable si no lo es. La superficie agnóstica (`int`/`ulid`, `larabill.user_id_type`, `LARABILL_USER_ID_TYPE`, flag CLI `--user-id-type=`) fue retirada en v0.8.0.
+- **Migraciones (ADR-007):** `.php` = fuente de verdad, `.php.stub` = artefacto derivado byte-exacto (`bin/sync-migration-stubs`); `$migrationOrder` 1:1 con los stubs, validado por `MigrationOrderConsistencyTest`. Constantes de fixture: `tests/TestCase::USER_UUID_1/2/3`.
+- **Tests:** SQLite (`composer test`) + MySQL Integration (`tests/Integration/Mysql/`). CI matriz PHP 8.3+8.4 × L12+L13 + job MySQL 8. PHP 8.4 local: bug "table already exists" → usar PHP 8.3 o confiar en CI.
 - **Onboarding consumidor:** `docs/setup-uuid.md` es la guía canónica.

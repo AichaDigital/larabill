@@ -2,6 +2,21 @@
 
 All notable changes to `larabill` will be documented in this file.
 
+## [0.11.1] - 2026-06-18
+
+### Changed
+
+- CI: refreshed pinned action SHAs (`shivammathur/setup-php`,
+  `codecov/codecov-action`, the `mysql:9` service image — #33). No runtime
+  code changes.
+
+### Fixed
+
+- Release hygiene: `v0.11.0` was tagged on a commit that predated the CI
+  dependency bump (#33), so the published tag sat off the `main` history.
+  `v0.11.1` re-tags from `main` to realign the release. The distributed
+  Composer payload is identical to `v0.11.0`.
+
 ## [0.11.0] - 2026-06-17
 
 ### Added
