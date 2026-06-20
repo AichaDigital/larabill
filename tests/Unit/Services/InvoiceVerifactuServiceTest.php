@@ -128,4 +128,31 @@ describe('InvoiceVerifactuService::validateForVerifactu', function () {
         expect($result['errors'])->toBe([])
             ->and($result['valid'])->toBeTrue();
     });
+
+    it('accepts a fit invoice whose tax profile has been soft-deleted', function () {
+        // AID-222: soft-deleting the referenced UserTaxProfile is fiscal-history
+        // closure, not erasure. The immutable invoice keeps its snapshot, so
+        // validation must not fail with "Invoice must have a tax profile".
+        $taxProfile = UserTaxProfile::factory()->create([
+            'owner_user_id' => $this->user->id,
+        ]);
+
+        $invoice = Invoice::factory()->create([
+            'user_id'             => $this->user->id,
+            'billable_user_id'    => $this->user->id,
+            'user_tax_profile_id' => $taxProfile->id,
+            'is_immutable'        => true,
+            'immutable_at'        => now(),
+            'taxable_amount'      => 10000,
+            'total_tax_amount'    => 2100,
+            'total_amount'        => 12100,
+        ]);
+
+        $taxProfile->delete();
+
+        $result = $this->service->validateForVerifactu(Invoice::findOrFail($invoice->id));
+
+        expect($result['errors'])->toBe([])
+            ->and($result['valid'])->toBeTrue();
+    });
 });
