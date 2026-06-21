@@ -14,6 +14,26 @@ All notable changes to `larabill` will be documented in this file.
   AID-129 recipient bug (the adapter → verifactu → XML path had never been
   exercised end-to-end).
 
+### Documentation
+
+- Backfilled release notes for two changes that shipped in **0.12.0** without an
+  entry (the AID-136 work landed in the same tag and crowded them out):
+  - **Legal retention contract (AID-221).** `Invoice` and `UserTaxProfile`
+    implement `AichaDigital\LaraPrivacyCore\Contracts\LegallyRetainable`, exposing
+    `retainedUntil(): ?DateTimeInterface` — the fiscal/accounting retention hold
+    the privacy layer reads to block/restrict a record while it is legally kept.
+    A fiscal invoice is held until the fiscal-year-end of its `invoice_date` plus
+    `larabill.retention.fiscal_years` (default 6 — Código de Comercio art. 30); a
+    proforma carries no hold. A `UserTaxProfile` is held for the latest hold among
+    its invoices, computed even when the profile is soft-deleted. Adds the
+    `aichadigital/lara-privacy-core: ^1.0` dependency.
+  - **Immutable fiscal snapshots survive soft-delete (AID-222).**
+    `Invoice::userTaxProfile()` and `Invoice::companyFiscalConfig()` now use
+    `withTrashed()`, so soft-deleting a referenced `UserTaxProfile` /
+    `CompanyFiscalConfig` no longer makes an already-issued invoice lose its
+    historical fiscal identity — which had broken Verifactu validation with
+    "Invoice must have a tax profile".
+
 ## [0.12.0] - 2026-06-21
 
 ### Added
