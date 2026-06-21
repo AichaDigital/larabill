@@ -162,6 +162,17 @@ describe('VerifactuAdapter::toVerifactuInvoice', function () {
 
         expect($data)->not->toHaveKey('operation_key');
     });
+
+    it('emits serie as a string so it satisfies the verifactu getSerie() ?string contract', function () {
+        // InvoiceSerieType is an int-backed enum; emitting ->value raw produced an
+        // int serie that broke VerifactuInvoice::getSerie() (typed ?string) during
+        // XML build. The adapter must cast it to a string.
+        $invoice = makeVerifactuSourceInvoice();
+
+        $data = VerifactuAdapter::toVerifactuInvoice($invoice);
+
+        expect($data['serie'])->toBeString();
+    });
 });
 
 describe('VerifactuAdapter::toVerifactuBreakdowns', function () {
