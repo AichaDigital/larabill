@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Models;
 
+use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\InvoiceItem;
+use AichaDigital\Larabill\Models\UserTaxProfile;
 use AichaDigital\Larabill\Tests\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -74,4 +76,44 @@ it('can have converted invoices collection', function () {
     ]);
 
     expect($proforma->convertedInvoices)->toHaveCount(2);
+});
+
+it('keeps the userTaxProfile snapshot accessible after the profile is soft-deleted', function () {
+    $user       = User::factory()->create();
+    $taxProfile = UserTaxProfile::factory()->create(['owner_user_id' => $user->id]);
+
+    $invoice = Invoice::factory()->immutable()->create([
+        'user_id'             => $user->id,
+        'user_tax_profile_id' => $taxProfile->id,
+    ]);
+
+    // Soft-deleting a tax profile is fiscal-history closure, NOT erasure.
+    // The immutable invoice must keep access to its historical snapshot.
+    $taxProfile->delete();
+
+    $fresh = Invoice::findOrFail($invoice->id);
+
+    expect($fresh->userTaxProfile)->not->toBeNull()
+        ->and($fresh->userTaxProfile->id)->toBe($taxProfile->id)
+        ->and($fresh->userTaxProfile->trashed())->toBeTrue();
+});
+
+it('keeps the companyFiscalConfig snapshot accessible after the config is soft-deleted', function () {
+    $user   = User::factory()->create();
+    $config = CompanyFiscalConfig::factory()->create();
+
+    $invoice = Invoice::factory()->immutable()->create([
+        'user_id'                  => $user->id,
+        'company_fiscal_config_id' => $config->id,
+    ]);
+
+    // Same principle as the tax profile: the issuer fiscal snapshot is
+    // immutable history and must survive a soft-delete of the config row.
+    $config->delete();
+
+    $fresh = Invoice::findOrFail($invoice->id);
+
+    expect($fresh->companyFiscalConfig)->not->toBeNull()
+        ->and($fresh->companyFiscalConfig->id)->toBe($config->id)
+        ->and($fresh->companyFiscalConfig->trashed())->toBeTrue();
 });

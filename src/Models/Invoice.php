@@ -371,11 +371,14 @@ class Invoice extends Model implements LegallyRetainable
      * This maintains a reference to the company's fiscal identity at invoice creation time.
      * IMMUTABLE: Once invoice is created, this relationship NEVER changes.
      *
+     * Uses withTrashed(): a soft-deleted config is fiscal-history closure, not erasure.
+     * The immutable invoice must keep access to its historical snapshot (AID-222).
+     *
      * @return BelongsTo<CompanyFiscalConfig, $this>
      */
     public function companyFiscalConfig(): BelongsTo
     {
-        return $this->belongsTo(CompanyFiscalConfig::class, 'company_fiscal_config_id');
+        return $this->belongsTo(CompanyFiscalConfig::class, 'company_fiscal_config_id')->withTrashed();
     }
 
     /**
@@ -384,11 +387,14 @@ class Invoice extends Model implements LegallyRetainable
      * This maintains a reference to the user's fiscal identity at invoice creation time.
      * IMMUTABLE: Once invoice is created, this relationship NEVER changes.
      *
+     * Uses withTrashed(): a soft-deleted profile is fiscal-history closure, not erasure.
+     * Without it, validateForVerifactu() wrongly fails on a valid issued invoice (AID-222).
+     *
      * @return BelongsTo<UserTaxProfile, $this>
      */
     public function userTaxProfile(): BelongsTo
     {
-        return $this->belongsTo(UserTaxProfile::class, 'user_tax_profile_id');
+        return $this->belongsTo(UserTaxProfile::class, 'user_tax_profile_id')->withTrashed();
     }
 
     // ========================================
