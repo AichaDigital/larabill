@@ -8,6 +8,7 @@ use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Services\Adapters\VerifactuAdapter;
 use AichaDigital\LaraVerifactu\Models\Invoice as VerifactuInvoice;
 use AichaDigital\LaraVerifactu\Models\InvoiceBreakdown;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -29,8 +30,16 @@ class InvoiceVerifactuService
      */
     public function registerInvoice(Invoice $invoice, bool $withBreakdowns = true): VerifactuInvoice
     {
-        // 1. Convert Larabill invoice to Verifactu format
+        // Build the full payload (invoice + breakdowns) BEFORE persisting anything.
+        // The adapter guards (intra-EU N2 predicate, OSS, anti-VAT-deletion, goods,
+        // incomplete reverse charge) throw here, so no orphan VerifactuInvoice row is
+        // created — a half-written row would make isRegistered() return true and block
+        // the retry (AID-136). The DB::transaction is a second safety net.
         $verifactuData = VerifactuAdapter::toVerifactuInvoice($invoice);
+
+        $breakdownData = ($withBreakdowns && $invoice->items()->exists())
+            ? VerifactuAdapter::toVerifactuBreakdowns($invoice)
+            : [];
 
         Log::info('Registering Larabill invoice with Verifactu', [
             'larabill_invoice_id' => $invoice->id,
@@ -38,42 +47,25 @@ class InvoiceVerifactuService
             'total_amount'        => $verifactuData['total_amount'],
         ]);
 
-        // 2. Create Verifactu invoice
-        $verifactuInvoice = VerifactuInvoice::create($verifactuData);
+        $verifactuInvoice = DB::transaction(function () use ($verifactuData, $breakdownData) {
+            $verifactuInvoice = VerifactuInvoice::create($verifactuData);
 
-        // 3. Create invoice breakdowns (line items) if requested
-        if ($withBreakdowns && $invoice->items()->exists()) {
-            $this->createBreakdowns($invoice, $verifactuInvoice);
-        }
+            foreach ($breakdownData as $breakdown) {
+                InvoiceBreakdown::create(array_merge($breakdown, [
+                    'invoice_id' => $verifactuInvoice->id,
+                ]));
+            }
+
+            return $verifactuInvoice;
+        });
 
         Log::info('Verifactu invoice created successfully', [
             'verifactu_invoice_id' => $verifactuInvoice->id,
             'larabill_invoice_id'  => $invoice->id,
+            'breakdowns_count'     => count($breakdownData),
         ]);
 
         return $verifactuInvoice;
-    }
-
-    /**
-     * Create invoice breakdowns for Verifactu.
-     *
-     * @param  Invoice  $invoice  The Larabill invoice
-     * @param  VerifactuInvoice  $verifactuInvoice  The Verifactu invoice
-     */
-    private function createBreakdowns(Invoice $invoice, VerifactuInvoice $verifactuInvoice): void
-    {
-        $breakdowns = VerifactuAdapter::toVerifactuBreakdowns($invoice);
-
-        foreach ($breakdowns as $breakdownData) {
-            InvoiceBreakdown::create(array_merge($breakdownData, [
-                'invoice_id' => $verifactuInvoice->id,
-            ]));
-        }
-
-        Log::info('Created invoice breakdowns', [
-            'verifactu_invoice_id' => $verifactuInvoice->id,
-            'breakdowns_count'     => count($breakdowns),
-        ]);
     }
 
     /**

@@ -5,7 +5,6 @@ declare(strict_types=1);
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Tests\TestCase;
 use AichaDigital\LaraVerifactu\Enums\InvoiceTypeEnum;
-use AichaDigital\LaraVerifactu\Enums\OperationTypeEnum;
 use AichaDigital\LaraVerifactu\Enums\RegimeTypeEnum;
 use AichaDigital\LaraVerifactu\Enums\RegistryStatusEnum;
 use AichaDigital\LaraVerifactu\Events\InvoiceRegisteredEvent;
@@ -26,13 +25,11 @@ it('updates the larabill invoice when lara-verifactu registers it asynchronously
         'number'            => '1',
         'issue_datetime'    => now(),
         'type'              => InvoiceTypeEnum::COMPLETE,
-        'simplified'        => false,
         'base_amount'       => 100.00,
         'tax_amount'        => 21.00,
         'total_amount'      => 121.00,
         'currency'          => 'EUR',
         'regime_type'       => RegimeTypeEnum::GENERAL,
-        'operation_key'     => OperationTypeEnum::NORMAL,
         'metadata'          => [
             'larabill_invoice_id' => $invoice->id,
         ],

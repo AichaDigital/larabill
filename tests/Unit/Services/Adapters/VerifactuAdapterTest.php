@@ -2,15 +2,17 @@
 
 declare(strict_types=1);
 
+use AichaDigital\Larabill\Enums\ItemType;
+use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\InvoiceItem;
 use AichaDigital\Larabill\Services\Adapters\VerifactuAdapter;
 use AichaDigital\Larabill\Tests\Models\User;
 use AichaDigital\LaraVerifactu\Enums\InvoiceTypeEnum;
-use AichaDigital\LaraVerifactu\Enums\OperationTypeEnum;
 use AichaDigital\LaraVerifactu\Models\Invoice as VerifactuInvoice;
 use AichaDigital\LaraVerifactu\Models\InvoiceBreakdown as VerifactuBreakdown;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Validation\ValidationException;
 
 /**
  * Create an invoice with deterministic base-100 amounts and optional items.
@@ -18,11 +20,16 @@ use Illuminate\Support\Facades\Crypt;
  * @param  array<string, mixed>  $attributes
  * @param  array<int, array<string, mixed>>  $items
  * @param  array<string, mixed>|null  $customerData  Encrypted customer snapshot payload
+ * @param  array<string, mixed>|null  $issuerData  Encrypted issuer snapshot payload (country_code, is_oss)
  */
-function makeVerifactuSourceInvoice(array $attributes = [], array $items = [], ?array $customerData = null): Invoice
+function makeVerifactuSourceInvoice(array $attributes = [], array $items = [], ?array $customerData = null, ?array $issuerData = null): Invoice
 {
     if ($customerData !== null) {
         $attributes['customer_snapshot'] = Crypt::encryptString(json_encode($customerData));
+    }
+
+    if ($issuerData !== null) {
+        $attributes['issuer_snapshot'] = Crypt::encryptString(json_encode($issuerData));
     }
 
     $invoice = Invoice::factory()->create(array_merge([
@@ -89,8 +96,8 @@ describe('VerifactuAdapter::toVerifactuInvoice', function () {
 
         $data = VerifactuAdapter::toVerifactuInvoice($small);
 
-        expect($data['type'])->toBe('F1')
-            ->and($data['simplified'])->toBeFalse();
+        // 'simplified' was dropped from the verifactu model (1.0); the F1/F2 type carries it.
+        expect($data['type'])->toBe('F1');
     });
 
     it('maps invoices without recipient to F2 regardless of amount', function () {
@@ -98,8 +105,7 @@ describe('VerifactuAdapter::toVerifactuInvoice', function () {
 
         $data = VerifactuAdapter::toVerifactuInvoice($large);
 
-        expect($data['type'])->toBe('F2')
-            ->and($data['simplified'])->toBeTrue();
+        expect($data['type'])->toBe('F2');
     });
 
     it('maps rectificative invoices to R1 with incremental rectification type', function () {
@@ -138,15 +144,6 @@ describe('VerifactuAdapter::toVerifactuInvoice', function () {
         expect($data['metadata'])->not->toHaveKey('rectified_invoices');
     });
 
-    it('maps ROI-taxed invoices to the reverse charge operation key supported by the 0.9 enum', function () {
-        $invoice = makeVerifactuSourceInvoice(['is_roi_taxed' => true]);
-
-        $data = VerifactuAdapter::toVerifactuInvoice($invoice);
-
-        // '09' does not exist in OperationTypeEnum 0.9; reverse charge is '04'.
-        expect($data['operation_key'])->toBe('04');
-    });
-
     it('produces a payload accepted by the native verifactu invoice model casts', function () {
         $invoice = makeVerifactuSourceInvoice();
 
@@ -155,8 +152,15 @@ describe('VerifactuAdapter::toVerifactuInvoice', function () {
         $verifactuInvoice = new VerifactuInvoice($data);
 
         expect($verifactuInvoice->issue_datetime)->not->toBeNull()
-            ->and($verifactuInvoice->type)->toBeInstanceOf(InvoiceTypeEnum::class)
-            ->and($verifactuInvoice->operation_key)->toBeInstanceOf(OperationTypeEnum::class);
+            ->and($verifactuInvoice->type)->toBeInstanceOf(InvoiceTypeEnum::class);
+    });
+
+    it('no longer emits the dropped operation_key field (lara-verifactu 1.0)', function () {
+        $invoice = makeVerifactuSourceInvoice(['is_roi_taxed' => true]);
+
+        $data = VerifactuAdapter::toVerifactuInvoice($invoice);
+
+        expect($data)->not->toHaveKey('operation_key');
     });
 });
 
@@ -245,5 +249,193 @@ describe('VerifactuAdapter::toVerifactuBreakdowns', function () {
         foreach ($breakdowns as $breakdown) {
             expect(array_diff(array_keys($breakdown), $fillable))->toBe([]);
         }
+    });
+});
+
+describe('VerifactuAdapter::toVerifactuInvoice (intra-EU recipient identification — AID-136)', function () {
+    it('emits a VAT-registered EU B2B recipient as IDOtro NIF-IVA (02) with a null recipient_nif', function () {
+        $invoice = makeVerifactuSourceInvoice([], [], [
+            'tax_id'               => 'DE129273398',
+            'fiscal_name'          => 'Muster GmbH',
+            'country_code'         => 'DE',
+            'is_company'           => true,
+            'is_eu_vat_registered' => true,
+        ], ['country_code' => 'ES', 'is_oss' => false]);
+
+        $data = VerifactuAdapter::toVerifactuInvoice($invoice);
+
+        // AEAT rule 1100: a foreign VAT must NOT be emitted as a Spanish <NIF>.
+        expect($data['recipient_nif'])->toBeNull()
+            ->and($data['recipient_id'])->toBe('DE129273398')
+            ->and($data['recipient_id_type'])->toBe('02')
+            ->and($data['recipient_country'])->toBe('DE');
+    });
+
+    it('emits an EU B2C consumer without VAT as IDOtro official document (04)', function () {
+        $invoice = makeVerifactuSourceInvoice([], [], [
+            'tax_id'               => 'X1234567Z',
+            'fiscal_name'          => 'Jean Client',
+            'country_code'         => 'FR',
+            'is_company'           => false,
+            'is_eu_vat_registered' => false,
+        ], ['country_code' => 'ES', 'is_oss' => false]);
+
+        $data = VerifactuAdapter::toVerifactuInvoice($invoice);
+
+        expect($data['recipient_nif'])->toBeNull()
+            ->and($data['recipient_id'])->toBe('X1234567Z')
+            ->and($data['recipient_id_type'])->toBe('04')
+            ->and($data['recipient_country'])->toBe('FR');
+    });
+
+    it('keeps a Spanish recipient as a domestic NIF (02) without regression', function () {
+        $invoice = makeVerifactuSourceInvoice([], [], [
+            'tax_id'               => 'B75685883',
+            'fiscal_name'          => 'ACME SL',
+            'country_code'         => 'ES',
+            'is_company'           => true,
+            'is_eu_vat_registered' => true,
+        ]);
+
+        $data = VerifactuAdapter::toVerifactuInvoice($invoice);
+
+        expect($data['recipient_nif'])->toBe('B75685883')
+            ->and($data['recipient_id_type'])->toBe('02')
+            ->and($data['recipient_country'])->toBe('ES');
+    });
+});
+
+describe('VerifactuAdapter::toVerifactuBreakdowns (intra-EU N2 + guards — AID-136)', function () {
+    $b2bDe = [
+        'tax_id'               => 'DE129273398',
+        'fiscal_name'          => 'Muster GmbH',
+        'country_code'         => 'DE',
+        'is_company'           => true,
+        'is_eu_vat_registered' => true,
+    ];
+    $esIssuer = ['country_code' => 'ES', 'is_oss' => false];
+
+    it('produces a single N2 breakdown for an EU B2B service invoice with a VAT-registered customer', function () use ($b2bDe, $esIssuer) {
+        $invoice = makeVerifactuSourceInvoice(
+            ['taxable_amount' => 10000, 'total_tax_amount' => 0, 'total_amount' => 10000],
+            [['taxable_amount' => 10000, 'total_tax_amount' => 0, 'total_amount' => 10000, 'item_type' => ItemType::SERVICE, 'taxes_applied' => []]],
+            $b2bDe,
+            $esIssuer,
+        );
+
+        $breakdowns = VerifactuAdapter::toVerifactuBreakdowns($invoice);
+
+        expect($breakdowns)->toHaveCount(1)
+            ->and($breakdowns[0]['calificacion'])->toBe('N2')
+            ->and($breakdowns[0]['tax_rate'])->toBe(0.0)
+            ->and($breakdowns[0]['tax_amount'])->toBe(0.0)
+            ->and($breakdowns[0]['base_amount'])->toBe(100.0)
+            ->and($breakdowns[0]['exempt'])->toBeFalse();
+    });
+
+    it('still produces N2 when only zero-amount tax snapshots are present (not real VAT)', function () use ($b2bDe, $esIssuer) {
+        $invoice = makeVerifactuSourceInvoice(
+            ['taxable_amount' => 10000, 'total_tax_amount' => 0, 'total_amount' => 10000],
+            [['taxable_amount' => 10000, 'total_tax_amount' => 0, 'total_amount' => 10000, 'item_type' => ItemType::SERVICE, 'taxes_applied' => [['rate' => 0, 'amount' => 0]]]],
+            $b2bDe,
+            $esIssuer,
+        );
+
+        $breakdowns = VerifactuAdapter::toVerifactuBreakdowns($invoice);
+
+        expect($breakdowns)->toHaveCount(1)
+            ->and($breakdowns[0]['calificacion'])->toBe('N2');
+    });
+
+    it('flags N2 for a non-Spanish issuer selling services to a VAT-registered customer in another EU country', function () {
+        $invoice = makeVerifactuSourceInvoice(
+            ['taxable_amount' => 30000, 'total_tax_amount' => 0, 'total_amount' => 30000],
+            [['taxable_amount' => 30000, 'total_tax_amount' => 0, 'total_amount' => 30000, 'item_type' => ItemType::SERVICE, 'taxes_applied' => []]],
+            ['tax_id'       => 'B75685883', 'country_code' => 'ES', 'is_company' => true, 'is_eu_vat_registered' => true],
+            ['country_code' => 'FR', 'is_oss' => false],
+        );
+
+        $breakdowns = VerifactuAdapter::toVerifactuBreakdowns($invoice);
+
+        expect($breakdowns)->toHaveCount(1)
+            ->and($breakdowns[0]['calificacion'])->toBe('N2');
+    });
+
+    it('does NOT flag N2 when issuer and customer share the same EU country, even with a live ES config (snapshot-immutable, non-Spain-centric)', function () {
+        // If the adapter read CompanyFiscalConfig::getActive() (ES) instead of the FR
+        // issuer snapshot, FR customer ≠ ES issuer would wrongly trigger N2.
+        CompanyFiscalConfig::factory()->create(['country_code' => 'ES', 'is_active' => true, 'valid_until' => null]);
+
+        $invoice = makeVerifactuSourceInvoice(
+            ['taxable_amount' => 20000, 'total_tax_amount' => 4200, 'total_amount' => 24200],
+            [['taxable_amount' => 20000, 'total_tax_amount' => 4200, 'total_amount' => 24200, 'item_type' => ItemType::SERVICE, 'taxes_applied' => [['rate' => 2100, 'amount' => 4200]]]],
+            ['tax_id'       => 'FR12345678901', 'country_code' => 'FR', 'is_company' => true, 'is_eu_vat_registered' => true],
+            ['country_code' => 'FR', 'is_oss' => false],
+        );
+
+        $breakdowns = VerifactuAdapter::toVerifactuBreakdowns($invoice);
+
+        expect(collect($breakdowns)->pluck('calificacion')->filter()->all())->toBe([]);
+    });
+
+    it('rejects intra-EU goods fail-loud (E5 art.25 entrega de bienes, out of scope) instead of emitting N2', function () use ($b2bDe, $esIssuer) {
+        $invoice = makeVerifactuSourceInvoice(
+            ['taxable_amount' => 10000, 'total_tax_amount' => 0, 'total_amount' => 10000],
+            [['taxable_amount' => 10000, 'total_tax_amount' => 0, 'total_amount' => 10000, 'item_type' => ItemType::GOOD, 'taxes_applied' => []]],
+            $b2bDe,
+            $esIssuer,
+        );
+
+        expect(fn () => VerifactuAdapter::toVerifactuBreakdowns($invoice))
+            ->toThrow(ValidationException::class);
+    });
+
+    it('rejects an N2 candidate that still carries real VAT fail-loud (rule 1237 anti-deletion)', function () use ($b2bDe, $esIssuer) {
+        $invoice = makeVerifactuSourceInvoice(
+            ['taxable_amount' => 10000, 'total_tax_amount' => 2100, 'total_amount' => 12100],
+            [['taxable_amount' => 10000, 'total_tax_amount' => 2100, 'total_amount' => 12100, 'item_type' => ItemType::SERVICE, 'taxes_applied' => [['rate' => 2100, 'amount' => 2100]]]],
+            $b2bDe,
+            $esIssuer,
+        );
+
+        expect(fn () => VerifactuAdapter::toVerifactuBreakdowns($invoice))
+            ->toThrow(ValidationException::class);
+    });
+
+    it('rejects a B2C OSS sale fail-loud (régimen 17 out of scope) instead of silently emitting S1', function () {
+        $invoice = makeVerifactuSourceInvoice(
+            ['taxable_amount' => 10000, 'total_tax_amount' => 1900, 'total_amount' => 11900],
+            [['taxable_amount' => 10000, 'total_tax_amount' => 1900, 'total_amount' => 11900, 'item_type' => ItemType::SERVICE, 'taxes_applied' => [['rate' => 1900, 'amount' => 1900]]]],
+            ['tax_id'       => 'FR-CONSUMER-1', 'country_code' => 'FR', 'is_company' => false, 'is_eu_vat_registered' => false],
+            ['country_code' => 'ES', 'is_oss' => true],
+        );
+
+        expect(fn () => VerifactuAdapter::toVerifactuBreakdowns($invoice))
+            ->toThrow(ValidationException::class);
+    });
+
+    it('rejects an incomplete reverse-charge invoice fail-loud (is_roi_taxed without a complete intra-EU recipient)', function () {
+        $invoice = makeVerifactuSourceInvoice(
+            ['taxable_amount' => 10000, 'total_tax_amount' => 0, 'total_amount' => 10000, 'is_roi_taxed' => true],
+            [['taxable_amount' => 10000, 'total_tax_amount' => 0, 'total_amount' => 10000, 'item_type' => ItemType::SERVICE, 'taxes_applied' => []]],
+        );
+
+        expect(fn () => VerifactuAdapter::toVerifactuBreakdowns($invoice))
+            ->toThrow(ValidationException::class);
+    });
+
+    it('keeps a domestic Spanish service invoice as S1 (no calificacion) without regression', function () {
+        $invoice = makeVerifactuSourceInvoice(
+            ['taxable_amount' => 10000, 'total_tax_amount' => 2100, 'total_amount' => 12100],
+            [['taxable_amount' => 10000, 'total_tax_amount' => 2100, 'total_amount' => 12100, 'item_type' => ItemType::SERVICE, 'taxes_applied' => [['rate' => 2100, 'amount' => 2100]]]],
+            ['tax_id'       => 'B75685883', 'country_code' => 'ES', 'is_company' => true, 'is_eu_vat_registered' => true],
+            ['country_code' => 'ES', 'is_oss' => false],
+        );
+
+        $breakdowns = VerifactuAdapter::toVerifactuBreakdowns($invoice);
+
+        expect($breakdowns)->toHaveCount(1)
+            ->and($breakdowns[0]['tax_rate'])->toBe(21.0)
+            ->and(collect($breakdowns)->pluck('calificacion')->filter()->all())->toBe([]);
     });
 });
