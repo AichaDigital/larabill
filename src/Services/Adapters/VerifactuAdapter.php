@@ -60,7 +60,9 @@ class VerifactuAdapter
         $recipientCountry = $customerData['country_code'] ?? 'ES';
 
         return [
-            'serie'              => $invoice->serie->value ?? null,
+            // InvoiceSerieType is int-backed; cast to string for the verifactu
+            // ?string serie contract (raw int breaks getSerie() during XML build).
+            'serie'              => $invoice->serie === null ? null : (string) $invoice->serie->value,
             'number'             => (string) $invoice->series_number,
             'issue_datetime'     => $invoice->issued_at ?? $invoice->invoice_date,
             'type'               => self::mapInvoiceType($invoice, $isSimplified),

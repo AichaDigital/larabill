@@ -2,6 +2,18 @@
 
 All notable changes to `larabill` will be documented in this file.
 
+## [0.12.1] - 2026-06-21
+
+### Fixed
+
+- `VerifactuAdapter::toVerifactuInvoice()` emitted `serie` as a raw int (from the
+  int-backed `InvoiceSerieType` enum), which broke `VerifactuInvoice::getSerie()`
+  (typed `?string`) with a `TypeError` during XML build — so no larabill invoice
+  could be registered/submitted end-to-end. The serie is now cast to a string.
+  Surfaced by the AID-136 consumer sandbox; same class of latent defect as the
+  AID-129 recipient bug (the adapter → verifactu → XML path had never been
+  exercised end-to-end).
+
 ## [0.12.0] - 2026-06-21
 
 ### Added
