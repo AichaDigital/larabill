@@ -2,6 +2,41 @@
 
 All notable changes to `larabill` will be documented in this file.
 
+## [0.12.0] - 2026-06-21
+
+### Added
+
+- Intra-EU services support (AID-136). `VerifactuAdapter::toVerifactuBreakdowns()`
+  now emits a single **N2** ("no sujeta por reglas de localización") breakdown for
+  cross-border EU B2B service invoices to a VAT-registered customer, and
+  `toVerifactuInvoice()` identifies foreign recipients through **IDOtro**
+  (`recipient_nif = null`; `recipient_id_type` `02` for a valid NIF-IVA, `04`
+  otherwise) instead of misemitting a foreign VAT as a Spanish `<NIF>` (AEAT rule
+  1100). The N2 predicate is read solely from the immutable issuer/customer
+  snapshots (both EU, issuer ≠ customer, customer VAT-registered), never from live
+  `CompanyFiscalConfig::getActive()`.
+
+### Changed
+
+- Requires `aichadigital/lara-verifactu: ^1.0.0-rc2` (N2 + IDOtro emission,
+  `InvoiceBreakdownContract::getCalificacion()`, `calificacion` column).
+- `InvoiceVerifactuService::registerInvoice()` builds the full payload (invoice +
+  breakdowns) and persists inside a transaction, so a guard rejection rolls back
+  cleanly instead of leaving an orphan `VerifactuInvoice` row that would block the
+  retry via `isRegistered()`.
+
+### Removed
+
+- `VerifactuAdapter` no longer emits the `operation_key` or `simplified` fields
+  (both dropped from the lara-verifactu invoice model in 1.0); the
+  `mapOperationKey()` helper was removed.
+
+### Guards (fail-loud — out of scope for AID-136)
+
+- Intra-EU **goods** (E5, art. 25), **OSS/IOSS** (régimen 17) B2C sales, N2 lines
+  carrying real VAT (rule 1237), and incomplete reverse-charge invoices are
+  rejected with a `ValidationException` rather than silently mapped to S1/E1.
+
 ## [0.11.2] - 2026-06-18
 
 ### Fixed

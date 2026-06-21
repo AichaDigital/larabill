@@ -2,12 +2,14 @@
 
 declare(strict_types=1);
 
+use AichaDigital\Larabill\Enums\ItemType;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\InvoiceItem;
 use AichaDigital\Larabill\Models\UserTaxProfile;
 use AichaDigital\Larabill\Services\InvoiceVerifactuService;
 use AichaDigital\Larabill\Tests\Models\User;
 use AichaDigital\LaraVerifactu\Models\Invoice as VerifactuInvoice;
+use Illuminate\Validation\ValidationException;
 
 beforeEach(function () {
     $this->service = new InvoiceVerifactuService;
@@ -60,6 +62,35 @@ describe('InvoiceVerifactuService::registerInvoice', function () {
         $verifactuInvoice = $this->service->registerInvoice($this->invoice, withBreakdowns: false);
 
         expect($verifactuInvoice->breakdowns)->toHaveCount(0);
+    });
+
+    it('does not leave an orphan verifactu invoice when a breakdown guard rejects the invoice', function () {
+        // AID-136: a guard that throws after VerifactuInvoice::create would leave an
+        // orphan row, making isRegistered() return true and blocking the retry.
+        // Build-before-persist (+ transaction) must roll the registration back.
+        $invoice = Invoice::factory()->create([
+            'user_id'          => $this->user->id,
+            'taxable_amount'   => 10000,
+            'total_tax_amount' => 0,
+            'total_amount'     => 10000,
+            'is_roi_taxed'     => true, // reverse-charge signalled but recipient is incomplete
+            'issued_at'        => '2026-06-01 10:30:00',
+            'invoice_date'     => '2026-06-01',
+        ]);
+
+        InvoiceItem::factory()->create([
+            'invoice_id'       => $invoice->id,
+            'taxable_amount'   => 10000,
+            'total_tax_amount' => 0,
+            'total_amount'     => 10000,
+            'item_type'        => ItemType::SERVICE,
+            'taxes_applied'    => [],
+        ]);
+
+        expect(fn () => $this->service->registerInvoice($invoice))
+            ->toThrow(ValidationException::class);
+
+        expect($this->service->isRegistered($invoice))->toBeFalse();
     });
 });
 
