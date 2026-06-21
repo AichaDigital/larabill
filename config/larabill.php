@@ -53,6 +53,15 @@ return [
         'start_day'   => env('LARABILL_FISCAL_START_DAY', 1),     // 1
     ],
 
+    // Legal retention (lara-privacy `LegallyRetainable` contract).
+    // How long a fiscal invoice must be kept, anchored at the end of the fiscal
+    // year of its legal date. The duration lives here, not as a magic number in
+    // the model. Default 6 years: Código de Comercio art. 30 (commercial books);
+    // the 4-year LGT tax prescription is shorter, so 6 is the conservative hold.
+    'retention' => [
+        'fiscal_years' => (int) env('LARABILL_RETENTION_FISCAL_YEARS', 6),
+    ],
+
     // Company fiscal data
     'company' => [
         'name'       => env('LARABILL_COMPANY_NAME', 'Your Company S.L.'),

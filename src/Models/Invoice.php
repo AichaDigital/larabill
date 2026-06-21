@@ -13,6 +13,8 @@ use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Services\FiscalIntegrityChecker;
 use AichaDigital\Larabill\Services\ModelMappingService;
 use AichaDigital\Larabill\Services\PDF\PDFService;
+use AichaDigital\LaraPrivacyCore\Contracts\LegallyRetainable;
+use DateTimeInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -85,7 +87,7 @@ use Illuminate\Support\Facades\Crypt;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-class Invoice extends Model
+class Invoice extends Model implements LegallyRetainable
 {
     use HasFactory, HasUserRelation, HasUuid;
 
@@ -206,6 +208,34 @@ class Invoice extends Model
             'customer_data'                => 'array',
             'is_roi_taxed'                 => 'boolean',
         ];
+    }
+
+    /**
+     * The instant until which this invoice must be retained under the ordinary
+     * commercial-accounting retention hold (lara-privacy `LegallyRetainable`).
+     *
+     * Fiscal invoices (INVOICE, SIMPLIFIED, RECTIFICATIVE) are anchored at the
+     * end of the fiscal year of their legal date and kept for the configured
+     * number of years (larabill.retention.fiscal_years, default 6 — Código de
+     * Comercio art. 30). A proforma is not a fiscal document, and a fiscal
+     * invoice without a legal date yet has no valid anchor, so both yield null.
+     *
+     * larabill owns this obligation; lara-privacy only reads it to block or
+     * restrict the record while the hold is active — it never decides erasure.
+     */
+    public function retainedUntil(): ?DateTimeInterface
+    {
+        if (! $this->serie->isFiscal()) {
+            return null;
+        }
+
+        if ($this->invoice_date === null) {
+            return null;
+        }
+
+        $years = (int) config('larabill.retention.fiscal_years', 6);
+
+        return $this->invoice_date->copy()->endOfYear()->addYears($years);
     }
 
     /**

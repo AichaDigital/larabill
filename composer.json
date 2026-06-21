@@ -41,6 +41,7 @@
     ],
     "require": {
         "php": "^8.3",
+        "aichadigital/lara-privacy-core": "^1.0",
         "aichadigital/lara-verifactu": "^0.10",
         "aichadigital/lara100": "^1.2",
         "aichadigital/lararoi": "^0.5",

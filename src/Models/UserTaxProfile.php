@@ -6,7 +6,9 @@ namespace AichaDigital\Larabill\Models;
 
 use AichaDigital\Larabill\Database\Factories\UserTaxProfileFactory;
 use AichaDigital\Larabill\Services\ModelMappingService;
+use AichaDigital\LaraPrivacyCore\Contracts\LegallyRetainable;
 use Carbon\Carbon;
+use DateTimeInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -52,7 +54,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @see ADR-003 for initial architecture
  * @see ADR-004 for authorization changes (user_id -> owner_user_id, shared profiles)
  */
-class UserTaxProfile extends Model
+class UserTaxProfile extends Model implements LegallyRetainable
 {
     use HasFactory;
     use SoftDeletes;
@@ -180,6 +182,31 @@ class UserTaxProfile extends Model
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class, 'user_tax_profile_id');
+    }
+
+    /**
+     * The instant until which this fiscal profile must be retained
+     * (lara-privacy `LegallyRetainable`).
+     *
+     * A profile has no flat retention of its own: it is held for as long as any
+     * fiscal invoice that references it is still held. So the answer is the
+     * latest (MAX) `retainedUntil()` across its invoices; a later rectificative
+     * pointing at this snapshot re-extends the hold. A profile that has never
+     * backed an invoice carries no obligation and returns null (decision C).
+     *
+     * The hold derives from the invoices, never from the profile's own
+     * `deleted_at`: a soft-deleted profile that still backs a live fiscal
+     * invoice remains held. Invoices are not soft-deletable, so the collection
+     * already covers every relevant record.
+     */
+    public function retainedUntil(): ?DateTimeInterface
+    {
+        $holds = $this->invoices
+            ->map(static fn (Invoice $invoice): ?DateTimeInterface => $invoice->retainedUntil())
+            ->filter()
+            ->all();
+
+        return $holds === [] ? null : max($holds);
     }
 
     // ========================================
