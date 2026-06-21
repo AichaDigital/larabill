@@ -1,89 +1,102 @@
 # Work note — fiscal/accounting retention contract for the privacy layer
 
-- **Status:** design converged — pending implementation
-- **Date:** 2026-06-19
-- **Origin:** `lara-privacy` fit analysis (`fit-analysis.md`)
+- **Status:** **implemented (T3, 2026-06-20)** — `Invoice` and `UserTaxProfile`
+  now implement `LegallyRetainable`.
+- **Date:** 2026-06-19 (design); realigned 2026-06-20 to the contract as shipped.
+- **Origin:** `lara-privacy` fit analysis (`fit-analysis.md`); contract shape
+  settled by `lara-privacy` ADR-003 (universal core, jurisdictional presets).
 
 ## Reframing (the core decision)
 
 The contract is a **fiscal/accounting retention obligation owned by larabill**, not a
 GDPR-erasure decision owned by the privacy layer. larabill **exposes** how long a record
-must be kept and why; `lara-privacy` only **respects** it — block/restrict during the
-hold, anonymise/erase only after it lapses.
+must be kept; `lara-privacy` only **respects** it — block/restrict during the hold,
+anonymise/erase only after it lapses.
 
 This inverts the original framing: the privacy layer does not decide the life of an
 invoice; the fiscal domain does. RGPD/LOPDGDD do not require destroying invoices while a
 legal duty to keep them exists — LOPDGDD art. 32 mandates *blocking/restriction* before
 destruction where applicable.
 
-`lara-privacy` keeps the **mechanism** (`RetentionPolicy`, scheduled prune, gate); it
-takes the durations, the anchor, and the hold signal from this contract.
+`lara-privacy` keeps the **mechanism** (the read-only gate today, the prune later) and
+reads only the **one** signal this contract exposes: `retainedUntil()`. The duration and
+the anchor live in larabill; "is it held right now" is **derived** by
+`lara-privacy-core`'s `CheckLegalHold`, not exposed by larabill.
 
-## The contract
+## The contract (as shipped)
 
-A PHP interface in `src/Contracts/` (working name `LegallyRetainable`), implemented by
-`Invoice` and `UserTaxProfile`. `lara-privacy` type-hints the interface, never the
-concrete larabill models.
+A PHP interface owned by **`lara-privacy-core`**
+(`AichaDigital\LaraPrivacyCore\Contracts\LegallyRetainable`), implemented by `Invoice` and
+`UserTaxProfile`. `lara-privacy` type-hints the interface, never the concrete models.
 
 ```
-retainedUntil(): ?CarbonInterface   // null = not under fiscal retention (e.g. proforma)
-retentionBasis(): RetentionBasis    // why + how it is computed (duration + anchor)
-isUnderRetention(): bool            // gate for lara-privacy block/restrict
-legalHold(): bool                   // alias of isUnderRetention() for lara-privacy compat
+retainedUntil(): ?DateTimeInterface   // the instant the hold lapses; null = no hold
 ```
 
-- **`legalHold()` is documented as "active legal retention hold"** (ordinary statutory
-  retention), **NOT** a litigation hold. A future exceptional hold (inspection,
-  litigation, indefinite block) is a *separate* concept/field — not this method.
+One method. ADR-003 collapsed the earlier four-method sketch
+(`retentionBasis`/`isUnderRetention`/`legalHold`):
 
-## Per-entity rules
+- **`isUnderRetention()` / `legalHold()` are NOT on the contract** — they derive in
+  `CheckLegalHold` (`retainedUntil > now`). The domain answers "until when"; the core
+  answers "held now?".
+- **`RetentionBasis` is gone.** The *why* (legal source) and the *how long* (duration) are
+  no longer a contract type: the duration is larabill config (and, optionally, a
+  `lara-privacy` jurisdictional preset), and the anchor is larabill's own fiscal logic.
+- The hold is the **ordinary statutory** retention hold, **NOT** a litigation/inspection
+  hold — that remains a separate, future concept.
+- Type is `?DateTimeInterface` (not `CarbonInterface`); the Eloquent Carbon accessors
+  satisfy it directly.
 
-- **`Invoice`** — fiscal types only, via the existing predicate `serie->isFiscal()`
-  (`INVOICE`, `SIMPLIFIED`, `RECTIFICATIVE`). Anchor = **end of the fiscal year of
-  `invoice_date`** (conservative: the exercise closes after the legal date), **+ 6 years**.
-  `PROFORMA` → not fiscal → `retainedUntil()` is `null`.
+## Per-entity rules (as implemented)
+
+- **`Invoice`** — fiscal types only, via `serie->isFiscal()` (`INVOICE`, `SIMPLIFIED`,
+  `RECTIFICATIVE`). Anchor = **end of the fiscal year of `invoice_date`** (`->endOfYear()`,
+  calendar year = the ES default), plus `config('larabill.retention.fiscal_years', 6)`
+  years (**decision A**). `PROFORMA` → not fiscal → `null`. **Decision B:** a fiscal
+  invoice with no `invoice_date` yet has no valid legal anchor → `null` (never invent a
+  date from `now()`).
 - **`UserTaxProfile`** — **no flat retention of its own.** `retainedUntil()` =
-  `MAX(retainedUntil())` over its related `invoices()` (`UserTaxProfile.php:180`). A
-  profile is retained while any live fiscal invoice references it — a recent rectificative
-  pointing at an old snapshot re-extends its hold. Evaluated **even when the profile row is
-  soft-deleted**; the hold ignores `deleted_at`.
-  - Edge: orphan profile never invoiced → no invoices → `MAX` is null. Fallback to a
-    self-anchored mini-hold on `valid_from`. Decide at implementation.
+  `MAX(retainedUntil())` over its related `invoices()`, nulls filtered. A recent
+  rectificative pointing at an old snapshot re-extends the hold. **The MAX does NOT use
+  `withTrashed()`** — `Invoice` is not soft-deletable; only `UserTaxProfile` is. Because the
+  hold derives from the invoices, a **soft-deleted profile** that still backs a live fiscal
+  invoice stays held (the hold ignores the profile's `deleted_at`). **Decision C:** an
+  orphan profile that never backed an invoice → `MAX` is null → no hold (no self-anchored
+  `valid_from` mini-hold in v1.0).
 
 ## Key design decisions
 
-- **Centralise the duration AND the anchor.** "6 vs 7 years" is only half the problem;
-  "*from when*" is the other half. `RetentionBasis` must carry **both** (duration +
-  computation anchor), because the anchor differs per entity:
-  - `Invoice` → fiscal/accounting anchor (fiscal-year-end of `invoice_date`).
-  - `RoiQuery` → query event (`created_at`), already materialised as
-    `legal_retention_until`, **7 years** (`RoiQuery.php:79`). Valid precedent, but its
-    naive `created_at + N` anchor is **wrong to copy** for invoices.
-  - `UserTaxProfile` → derived max over invoices.
-  - Duration alone never suffices — the enum must make the anchor explicit. Two distinct
-    in-domain periods (7y ROI logs, 6y invoices) must be an **explicit, justified**
-    decision, not each model inventing its own number.
-- **Compute, don't materialise (first step).** Cleaner, no drift, the legal rule lives in
-  code. If SQL-scale pruning is ever needed, materialise **only** `Invoice.retained_until`
-  (immutable row → column fixed at `creating`, never stale). **Never** materialise
-  `UserTaxProfile.retained_until` — it is derived from invoices that can be added later, so
-  it would go stale; compute it as a `MAX(...)` JOIN instead.
+- **Centralise the duration AND the anchor — but not in a `RetentionBasis` enum (dropped).**
+  The duration is one config key (`larabill.retention.fiscal_years`). The anchor is computed
+  per entity in the model, because it differs:
+  - `Invoice` → fiscal-year-end of `invoice_date`.
+  - `RoiQuery` → query event (`created_at`), already materialised as `legal_retention_until`,
+    **7 years** (`RoiQuery.php:79`). Valid precedent, but its naive `created_at + N` anchor
+    was **wrong to copy** for invoices — hence the fiscal-year-end anchor.
+  - `UserTaxProfile` → derived MAX over invoices.
+  - The two distinct in-domain periods (7y ROI logs, 6y invoices) stay an **explicit,
+    justified** split, not each model inventing a number.
+- **Compute, don't materialise (decision D).** Implemented as computed accessors; no
+  `retained_until` column. If SQL-scale pruning is ever needed, materialise **only**
+  `Invoice.retained_until` (immutable row → column fixed at `creating`, never stale).
+  **Never** materialise `UserTaxProfile.retained_until` — it is derived from invoices that
+  can be added later, so it would go stale.
 
-## Two separate pieces (related, delivered apart)
+## Status of the two pieces
 
-1. **The retention contract** (this note): interface + `Invoice`/`UserTaxProfile` impl +
-   `RetentionBasis` enum, computed.
-2. **`withTrashed()` fix — independent latent bug.** `UserTaxProfile` uses `SoftDeletes`
-   (`UserTaxProfile.php:58`) but `Invoice::userTaxProfile()` is a `belongsTo` **without**
-   `withTrashed()` (`Invoice.php:359`). Soft-deleting a referenced profile makes
-   `$invoice->userTaxProfile` null, which breaks
-   `InvoiceVerifactuService::validateForVerifactu()` ("Invoice must have a tax profile",
-   `InvoiceVerifactuService.php:126`) on an already-issued invoice. Pre-existing, anterior
-   to this contract; the contract makes it urgent. Fix = `->withTrashed()` on the relation.
-   **Do NOT fold it into the contract PR.**
+1. **The retention contract** (this note) — **DONE in T3.** `LegallyRetainable` (defined in
+   `lara-privacy-core`) implemented on `Invoice` + `UserTaxProfile`, computed, config-driven
+   duration, TDD-covered. No `RetentionBasis` enum.
+2. **`withTrashed()` fix — handled separately by AID-222, not by T3.** The fix
+   (`Invoice::userTaxProfile()->withTrashed()`) lives on branch
+   `abdelkarim/aid-222-invoice-usertaxprofile-withtrashed` (pending merge to `main`). T3
+   branches off `main`, which does **not** yet carry it, and T3 deliberately does not touch
+   that relation — `UserTaxProfile::retainedUntil()` walks `invoices()` the other way and
+   needs no `withTrashed()`. The handoff's "T11 — latent withTrashed bug, separate PR" item
+   is therefore **obsolete**: it is already done on AID-222.
 
-This bug is also the proof that fiscal `SoftDeletes` and GDPR erasure must never be
-conflated.
+This separation is itself the proof that fiscal `SoftDeletes` and GDPR erasure must never
+be conflated.
 
 ## Legal basis
 
