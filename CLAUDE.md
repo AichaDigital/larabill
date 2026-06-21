@@ -20,7 +20,7 @@ Larabill es el **núcleo de facturación** del ecosistema Larafactu (AichaDigita
 2. **`.claude/project.md`** — contexto exhaustivo de arquitectura, modelos, ADRs
 3. **`SCHEMA_REQUIREMENTS.md`** — qué exige al `users` de la app consumidora
 4. **`CONTRIBUTING.md`** — patrón de migraciones (.php + .stub + `$migrationOrder`)
-5. **`docs/ADR-*.md`** — decisiones arquitectónicas vigentes (ficheros reales): 003 (unificación user/customer), 004 (precios por frecuencia), 006 (UUID-first), 007 (`.php.stub` derivado del `.php`). Las decisiones previas 001/002/005 quedaron consolidadas en estas.
+5. **`docs/ADR-*.md`** — decisiones arquitectónicas vigentes (ficheros reales): 003 (unificación user/customer), 004 (precios por frecuencia), 006 (UUID-first), 007 (`.php.stub` derivado del `.php`), 008 (puerto de retención legal — `Invoice`/`UserTaxProfile` implementan `LegallyRetainable`; larabill NO ejecuta privacidad operativa). Las decisiones previas 001/002/005 quedaron consolidadas en estas.
 6. **`docs/2026-05-09-fresh-install-agnostic-mysql.md`** — histórico: describía un contrato agnóstico `int`/`uuid`/`ulid` **superado por ADR-006**. El contrato vigente es **UUID-first** (ver ADR-006), demostrado en `tests/Integration/Mysql/`.
 7. **`docs/2026-05-09-blocker-upgrade-test-customer-id-bigint-to-uuid.md`** — SUPERSEDED, conservado como rastro histórico de una premisa rota (no había producción, dev-main no promete upgrade).
 
