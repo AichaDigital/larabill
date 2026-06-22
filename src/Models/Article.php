@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use AichaDigital\Lara100\Casts\Base100Int;
+use AichaDigital\Lara100\Casts\FixedDecimalCast;
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Database\Factories\ArticleFactory;
 use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Enums\ItemType;
@@ -29,7 +30,7 @@ use Spatie\Translatable\HasTranslations;
  * @property array|null $description Description (translatable JSON)
  * @property ItemType $item_type
  * @property string|null $category
- * @property int|null $cost_price
+ * @property FixedDecimal|null $cost_price
  * @property string|null $subscription_type
  * @property int|null $tax_group_id
  * @property int|null $unit_measure_id
@@ -88,7 +89,7 @@ class Article extends Model
      */
     protected $casts = [
         'item_type'  => ItemType::class,
-        'cost_price' => Base100Int::class,
+        'cost_price' => FixedDecimalCast::class.':2',
         'is_active'  => 'boolean',
         'metadata'   => 'array',
     ];
@@ -278,9 +279,12 @@ class Article extends Model
      */
     public function getPriceFor(BillingFrequency $frequency): ?float
     {
+        // Eloquent's value() hydrates the casted attribute, so price comes back
+        // as a FixedDecimal; expose the raw base-100 cents to preserve the
+        // ?float contract and the int-cents expectations of every caller.
         return $this->activePrices()
             ->where('billing_frequency', $frequency)
-            ->value('price');
+            ->value('price')?->unscaledValue();
     }
 
     /**
@@ -310,7 +314,7 @@ class Article extends Model
         /** @var ArticlePrice|null $firstPrice */
         $firstPrice = $this->activePrices()->first();
 
-        return $firstPrice?->price;
+        return $firstPrice?->price?->unscaledValue();
     }
 
     /**
@@ -322,7 +326,7 @@ class Article extends Model
         if ($customerId) {
             $override = $this->getActiveOverrideFor($customerId);
             if ($override) {
-                return $override->custom_price;
+                return $override->custom_price?->unscaledValue();
             }
         }
 

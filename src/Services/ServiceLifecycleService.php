@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services;
 
+use AichaDigital\Lara100\RoundingMode;
 use AichaDigital\Larabill\Enums\CancellationType;
 use AichaDigital\Larabill\Enums\ServiceStatus;
 use AichaDigital\Larabill\Events\ServiceActivated;
@@ -124,10 +125,11 @@ final class ServiceLifecycleService
             return null;
         }
 
-        // Proportional refund
-        $refundAmount = (int) round(
-            ($service->effective_price * $unusedDays) / $totalDaysInPeriod
-        );
+        // Proportional refund, settled to the cent with HalfUp (EU/Spain norm).
+        $refundAmount = $service->effective_price
+            ->multipliedBy((int) $unusedDays)
+            ->dividedBy((int) $totalDaysInPeriod, 2, RoundingMode::HalfUp)
+            ->unscaledValue();
 
         return $refundAmount;
     }

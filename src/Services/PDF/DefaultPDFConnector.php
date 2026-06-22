@@ -74,7 +74,7 @@ class DefaultPDFConnector implements PDFConnectorInterface
                 'metadata'       => [
                     'invoice_id'     => $invoice->id,
                     'invoice_number' => $invoice->fiscal_number,
-                    'total_amount'   => $invoice->total_amount,
+                    'total_amount'   => $invoice->total_amount->unscaledValue(),
                     'currency'       => 'EUR', // Default currency
                 ],
             ];
@@ -219,7 +219,7 @@ class DefaultPDFConnector implements PDFConnectorInterface
         $data = [
             'invoice_id'     => $invoice->id,
             'invoice_number' => $invoice->fiscal_number,
-            'total_amount'   => $invoice->total_amount,
+            'total_amount'   => $invoice->total_amount->unscaledValue(),
             'status'         => $invoice->status,
             'created_at'     => $invoice->created_at?->toISOString(),
         ];
@@ -227,7 +227,7 @@ class DefaultPDFConnector implements PDFConnectorInterface
         // Include invoice data if configured
         if ($this->config['qr_include_invoice_data']) {
             $data['invoice_data'] = [
-                'taxable_amount' => $invoice->taxable_amount,
+                'taxable_amount' => $invoice->taxable_amount->unscaledValue(),
                 'tax_amount'     => $invoice->tax_amount,
                 'due_date'       => $invoice->due_date?->toISOString(),
             ];

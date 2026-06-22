@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use AichaDigital\Lara100\Casts\Base100Int;
+use AichaDigital\Lara100\Casts\FixedDecimalCast;
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Database\Factories\ArticleServiceStatusFactory;
 use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Enums\CancellationType;
@@ -33,7 +34,7 @@ use Illuminate\Support\Facades\Auth;
  * @property \Illuminate\Support\Carbon|null $cancellation_effective_at
  * @property bool $refund_unused
  * @property BillingFrequency $billing_frequency
- * @property int|null $effective_price
+ * @property FixedDecimal|null $effective_price
  * @property int|null $current_override_id
  * @property string|null $external_reference
  * @property array|null $instance_data
@@ -89,7 +90,7 @@ class ArticleServiceStatus extends Model
         'cancellation_effective_at' => 'date',
         'refund_unused'             => 'boolean',
         'billing_frequency'         => BillingFrequency::class,
-        'effective_price'           => Base100Int::class,
+        'effective_price'           => FixedDecimalCast::class.':2',
         'instance_data'             => 'array',
         'metadata'                  => 'array',
     ];
@@ -264,7 +265,8 @@ class ArticleServiceStatus extends Model
         $basePrice = $this->article->getPriceFor($this->billing_frequency);
 
         $this->update([
-            'effective_price'     => $override->custom_price ?? $basePrice,
+            'effective_price'     => $override->custom_price
+                ?? ($basePrice !== null ? FixedDecimal::ofUnscaled((int) $basePrice, 2) : null),
             'current_override_id' => $override?->id,
         ]);
     }

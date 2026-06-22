@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services;
 
+use AichaDigital\Lara100\RoundingMode;
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Models\Invoice;
@@ -81,9 +83,9 @@ class BillingService
             }
 
             // Now, calculate invoice totals based on its items
-            $invoice->taxable_amount   = $invoice->items->sum('taxable_amount');
-            $invoice->total_tax_amount = $invoice->items->sum('total_tax_amount');
-            $invoice->total_amount     = $invoice->items->sum('total_amount');
+            $invoice->taxable_amount   = $invoice->items->reduce(fn (FixedDecimal $c, InvoiceItem $i) => $c->plus($i->taxable_amount), FixedDecimal::zero(2));
+            $invoice->total_tax_amount = $invoice->items->reduce(fn (FixedDecimal $c, InvoiceItem $i) => $c->plus($i->total_tax_amount), FixedDecimal::zero(2));
+            $invoice->total_amount     = $invoice->items->reduce(fn (FixedDecimal $c, InvoiceItem $i) => $c->plus($i->total_amount), FixedDecimal::zero(2));
             $invoice->save();
 
             // Make immutable if requested
@@ -242,10 +244,15 @@ class BillingService
     {
         $taxGroup = TaxGroup::find($itemData['tax_group_id'] ?? null);
 
-        $quantity      = $itemData['quantity']   ?? 1;
-        $unitPrice     = $itemData['unit_price'] ?? 0;
-        // Both values are in base100, divide by 100
-        $taxableAmount = (int) (($quantity * $unitPrice) / 100);
+        $quantity  = (int) ($itemData['quantity']   ?? 1);
+        $unitPrice = (int) ($itemData['unit_price'] ?? 0);
+
+        // Both values are base100 cents. EU/Spain norm: settle quantity × unit_price
+        // to the cent with HalfUp (never truncation).
+        $taxableAmount = FixedDecimal::ofUnscaled($quantity, 2)
+            ->multipliedBy(FixedDecimal::ofUnscaled($unitPrice, 2))
+            ->toScale(2, RoundingMode::HalfUp)
+            ->unscaledValue();
 
         $taxCalculation = [
             'total_tax_amount' => 0,
@@ -256,15 +263,17 @@ class BillingService
             $taxCalculation = $this->taxCalculationService->calculate($taxableAmount, $taxGroup);
         }
 
+        $totalTaxAmount = (int) $taxCalculation['total_tax_amount'];
+
         return InvoiceItem::create([
             'invoice_id'       => $invoice->id,
             'description'      => $itemData['description'] ?? '',
-            'quantity'         => $quantity,
-            'unit_price'       => $unitPrice,
-            'taxable_amount'   => $taxableAmount,
-            'total_tax_amount' => $taxCalculation['total_tax_amount'],
+            'quantity'         => FixedDecimal::ofUnscaled($quantity, 2),
+            'unit_price'       => FixedDecimal::ofUnscaled($unitPrice, 2),
+            'taxable_amount'   => FixedDecimal::ofUnscaled($taxableAmount, 2),
+            'total_tax_amount' => FixedDecimal::ofUnscaled($totalTaxAmount, 2),
             'taxes_applied'    => $taxCalculation['taxes_applied'],
-            'total_amount'     => $taxableAmount + $taxCalculation['total_tax_amount'],
+            'total_amount'     => FixedDecimal::ofUnscaled($taxableAmount + $totalTaxAmount, 2),
         ]);
     }
 
@@ -284,8 +293,8 @@ class BillingService
             // For now, let's assume no tax on conversion for simplicity.
             return [
                 'description'  => $item->description,
-                'quantity'     => $item->quantity,
-                'unit_price'   => $item->unit_price,
+                'quantity'     => $item->quantity->unscaledValue(),
+                'unit_price'   => $item->unit_price->unscaledValue(),
                 'tax_group_id' => null,
             ];
         })->toArray();

@@ -47,15 +47,15 @@ it('creates invoices with VAT and the taxes_applied snapshot persisted', functio
 
     $item = $invoice->items->first();
 
-    expect((int) $item->taxable_amount)->toBe(10000)
-        ->and((int) $item->total_tax_amount)->toBe(2100)
-        ->and((int) $item->total_amount)->toBe(12100)
+    expect($item->taxable_amount->unscaledValue())->toBe(10000)
+        ->and($item->total_tax_amount->unscaledValue())->toBe(2100)
+        ->and($item->total_amount->unscaledValue())->toBe(12100)
         ->and($item->taxes_applied)->toHaveCount(1)
         ->and($item->taxes_applied[0]['rate'])->toBe(2100);
 
-    expect((int) $invoice->taxable_amount)->toBe(10000)
-        ->and((int) $invoice->total_tax_amount)->toBe(2100)
-        ->and((int) $invoice->total_amount)->toBe(12100);
+    expect($invoice->taxable_amount->unscaledValue())->toBe(10000)
+        ->and($invoice->total_tax_amount->unscaledValue())->toBe(2100)
+        ->and($invoice->total_amount->unscaledValue())->toBe(12100);
 });
 
 it('creates tax-free items for articles without a tax group', function () {
@@ -75,7 +75,7 @@ it('creates tax-free items for articles without a tax group', function () {
 
     $item = $invoice->items->first();
 
-    expect((int) $item->total_tax_amount)->toBe(0)
+    expect($item->total_tax_amount->unscaledValue())->toBe(0)
         ->and($item->taxes_applied)->toBe([])
-        ->and((int) $invoice->total_amount)->toBe(5000);
+        ->and($invoice->total_amount->unscaledValue())->toBe(5000);
 });

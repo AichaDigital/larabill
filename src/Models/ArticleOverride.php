@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use AichaDigital\Lara100\Casts\Base100Int;
+use AichaDigital\Lara100\Casts\FixedDecimalCast;
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Database\Factories\ArticleOverrideFactory;
 use AichaDigital\Larabill\Enums\BillingFrequency;
 use Carbon\Carbon;
@@ -19,7 +20,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $id
  * @property int|string $customer_id
  * @property int $article_id
- * @property int|null $custom_price
+ * @property FixedDecimal|null $custom_price
  * @property string|null $reason
  * @property \Illuminate\Support\Carbon|null $valid_from
  * @property \Illuminate\Support\Carbon|null $valid_to
@@ -54,7 +55,7 @@ class ArticleOverride extends Model
      * The attributes that should be cast.
      */
     protected $casts = [
-        'custom_price' => Base100Int::class,
+        'custom_price' => FixedDecimalCast::class.':2',
         'valid_from'   => 'date',
         'valid_to'     => 'date',
         'is_active'    => 'boolean',
@@ -183,7 +184,9 @@ class ArticleOverride extends Model
     {
         $basePrice = $this->article->getPriceFor($frequency) ?? 0.0;
 
-        return $basePrice - $this->custom_price;
+        // getPriceFor() reads the raw base-100 cents column; custom_price is a
+        // FixedDecimal — read its cents to stay in the same base-100 space.
+        return $basePrice - ($this->custom_price?->unscaledValue() ?? 0);
     }
 
     /**
@@ -198,7 +201,7 @@ class ArticleOverride extends Model
             return 0;
         }
 
-        return (int) ((($basePrice - $this->custom_price) / $basePrice) * 100);
+        return (int) ((($basePrice - ($this->custom_price?->unscaledValue() ?? 0)) / $basePrice) * 100);
     }
 
     /**

@@ -1,5 +1,6 @@
 <?php
 
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Tests\Integration\Mysql\MysqlIntegrationTestCase;
 use AichaDigital\Larabill\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -37,3 +38,37 @@ expect()->extend('toBeGreaterThanOrEqualTo', function ($expected) {
 expect()->extend('toBeLessThanOrEqualTo', function ($expected) {
     return $this->toBeLessThanOrEqual($expected);
 });
+
+/*
+|--------------------------------------------------------------------------
+| Money helper (FixedDecimal migration)
+|--------------------------------------------------------------------------
+|
+| `cents(1234)` builds a scale-2 FixedDecimal of 1234 unscaled cents (= €12.34).
+| Terse sugar for factory overrides and assertions now that monetary attributes
+| are FixedDecimal value objects instead of plain base-100 integers.
+|
+*/
+function cents(int $unscaled): FixedDecimal
+{
+    return FixedDecimal::ofUnscaled($unscaled, 2);
+}
+
+/**
+ * Wrap the integer base-100 money keys of an attribute array into FixedDecimal,
+ * so test bodies can keep passing readable integer cents to factories/models.
+ *
+ * @param  array<string, mixed>  $attrs
+ * @param  array<int, string>  $keys
+ * @return array<string, mixed>
+ */
+function fdMoney(array $attrs, array $keys): array
+{
+    foreach ($keys as $key) {
+        if (isset($attrs[$key]) && is_int($attrs[$key])) {
+            $attrs[$key] = cents($attrs[$key]);
+        }
+    }
+
+    return $attrs;
+}

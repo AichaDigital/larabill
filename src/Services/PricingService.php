@@ -36,7 +36,7 @@ class PricingService
 
         $override = $this->getActiveOverride($article, $customerId);
 
-        return $override->custom_price ?? $basePrice;
+        return $override?->custom_price?->unscaledValue() ?? $basePrice;
     }
 
     /**
@@ -102,7 +102,7 @@ class PricingService
     ): PricingDetails {
         $basePrice    = $article->getPriceFor($frequency) ?? 0.0;
         $override     = $customerId ? $this->getActiveOverride($article, $customerId) : null;
-        $appliedPrice = $override?->custom_price ?? $basePrice;
+        $appliedPrice = $override?->custom_price?->unscaledValue() ?? $basePrice;
 
         $discountAmount     = $this->calculateDiscountAmount($basePrice, $appliedPrice);
         $discountPercentage = $this->calculateDiscountPercentage($basePrice, $appliedPrice);
@@ -135,7 +135,7 @@ class PricingService
      */
     public function validatePrice(Article $article, float $price): bool
     {
-        if ($article->cost_price !== null && $article->cost_price > 0 && $price < $article->cost_price) {
+        if ($article->cost_price !== null && $article->cost_price->unscaledValue() > 0 && $price < $article->cost_price->unscaledValue()) {
             return false;
         }
 
@@ -147,11 +147,11 @@ class PricingService
      */
     public function calculateProfitMargin(Article $article, float $price): ?float
     {
-        if (! $article->cost_price) {
+        if ($article->cost_price === null || $article->cost_price->isZero()) {
             return null;
         }
 
-        return $price - $article->cost_price;
+        return $price - $article->cost_price->unscaledValue();
     }
 
     /**
@@ -159,7 +159,7 @@ class PricingService
      */
     public function calculateProfitMarginPercentage(Article $article, float $price): ?float
     {
-        if (! $article->cost_price || $price === 0.0) {
+        if ($article->cost_price === null || $article->cost_price->isZero() || $price === 0.0) {
             return null;
         }
 

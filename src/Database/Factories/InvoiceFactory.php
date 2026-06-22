@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Database\Factories;
 
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Models\Invoice;
@@ -67,9 +68,9 @@ class InvoiceFactory extends Factory
             'is_roi_taxed'      => $this->faker->boolean(10),
 
             // v0.3.3: Renamed amount fields
-            'taxable_amount'   => $taxableAmount,
-            'total_tax_amount' => $taxAmount,
-            'total_amount'     => $totalAmount,
+            'taxable_amount'   => FixedDecimal::ofUnscaled($taxableAmount, 2),
+            'total_tax_amount' => FixedDecimal::ofUnscaled($taxAmount, 2),
+            'total_amount'     => FixedDecimal::ofUnscaled($totalAmount, 2),
 
             // Immutability
             'is_immutable' => $this->faker->boolean(20), // 20% chance
@@ -196,9 +197,9 @@ class InvoiceFactory extends Factory
                 'fiscal_number'    => 'RECT-'.$currentYear.'-'.$this->faker->unique()->numerify('######'),
                 'prefix'           => 'RECT',
                 'serie'            => InvoiceSerieType::RECTIFICATIVE->value,
-                'taxable_amount'   => $taxableAmount,
-                'total_tax_amount' => $taxAmount,
-                'total_amount'     => $totalAmount,
+                'taxable_amount'   => FixedDecimal::ofUnscaled($taxableAmount, 2),
+                'total_tax_amount' => FixedDecimal::ofUnscaled($taxAmount, 2),
+                'total_amount'     => FixedDecimal::ofUnscaled($totalAmount, 2),
             ];
         });
     }

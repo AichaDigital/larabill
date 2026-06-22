@@ -65,7 +65,7 @@ class CommissionCalculationService
         return [
             'commission_id'     => $commission->id,
             'commission_name'   => $commission->name,
-            'commission_rate'   => $commission->rate,
+            'commission_rate'   => $commission->rate->unscaledValue(),
             'commission_type'   => $commission->type->value,
             'commission_amount' => $amount,
             'commission_level'  => $commission->level->value,

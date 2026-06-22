@@ -69,7 +69,7 @@ class AeatInvoiceValidator
         }
 
         // 8. ROI/Reverse charge validation
-        if ($invoice->is_roi_taxed && $invoice->total_tax_amount > 0) {
+        if ($invoice->is_roi_taxed && $invoice->total_tax_amount->unscaledValue() > 0) {
             $warnings[] = 'ROI invoices typically have zero tax amount (reverse charge)';
         }
 
@@ -131,26 +131,31 @@ class AeatInvoiceValidator
      */
     private function validateAmounts(Invoice $invoice, array &$errors, array &$warnings): void
     {
-        if ($invoice->total_amount <= 0) {
+        // Work in raw base-100 cents (integers); the amounts are FixedDecimal.
+        $taxable = $invoice->taxable_amount->unscaledValue();
+        $tax     = $invoice->total_tax_amount->unscaledValue();
+        $total   = $invoice->total_amount->unscaledValue();
+
+        if ($total <= 0) {
             $errors[] = 'total_amount must be greater than zero';
         }
 
-        if ($invoice->taxable_amount < 0) {
+        if ($taxable < 0) {
             $errors[] = 'taxable_amount cannot be negative';
         }
 
-        if ($invoice->total_tax_amount < 0) {
+        if ($tax < 0) {
             $errors[] = 'total_tax_amount cannot be negative';
         }
 
         // Verify calculation: total = taxable + tax
-        $expectedTotal = $invoice->taxable_amount + $invoice->total_tax_amount;
-        if ($invoice->total_amount !== $expectedTotal) {
+        $expectedTotal = $taxable + $tax;
+        if ($total !== $expectedTotal) {
             $errors[] = sprintf(
                 'total_amount (%d) must equal taxable_amount (%d) + total_tax_amount (%d) = %d',
-                $invoice->total_amount,
-                $invoice->taxable_amount,
-                $invoice->total_tax_amount,
+                $total,
+                $taxable,
+                $tax,
                 $expectedTotal
             );
         }

@@ -38,11 +38,10 @@ describe('Article creation', function () {
 
     it('casts cost_price to Base100Int (integer)', function () {
         $article = Article::factory()->create([
-            'cost_price' => 1500, // €15.00 in base100
+            'cost_price' => cents(1500), // €15.00 in base100
         ]);
 
-        expect($article->cost_price)->toBeInt()
-            ->and($article->cost_price)->toBe(1500);
+        expect($article->cost_price->unscaledValue())->toBe(1500);
     });
 
     it('casts booleans correctly', function () {
@@ -338,7 +337,7 @@ describe('Article pricing', function () {
             ->for($article)
             ->create([
                 'billing_frequency'       => BillingFrequency::MONTHLY,
-                'price'                   => 2900,
+                'price'                   => cents(2900),
                 'billing_days_in_advance' => 7,
             ]);
 
@@ -379,7 +378,7 @@ describe('Article price overrides', function () {
         ArticleOverride::factory()->create([
             'article_id'   => $article->id,
             'customer_id'  => $customer->id,
-            'custom_price' => 2400,
+            'custom_price' => cents(2400),
             'is_active'    => true,
         ]);
 
@@ -396,7 +395,7 @@ describe('Article price overrides', function () {
         ArticleOverride::factory()->create([
             'article_id'   => $article->id,
             'customer_id'  => $customerId,
-            'custom_price' => 2400,
+            'custom_price' => cents(2400),
             'is_active'    => true,
         ]);
 

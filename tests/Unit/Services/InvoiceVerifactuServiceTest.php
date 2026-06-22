@@ -15,7 +15,7 @@ beforeEach(function () {
     $this->service = new InvoiceVerifactuService;
     $this->user    = User::factory()->create();
 
-    $this->invoice = Invoice::factory()->create([
+    $this->invoice = Invoice::factory()->create(fdMoney([
         'user_id'          => $this->user->id,
         'taxable_amount'   => 10000,
         'total_tax_amount' => 2100,
@@ -23,9 +23,9 @@ beforeEach(function () {
         'is_roi_taxed'     => false,
         'issued_at'        => '2026-06-01 10:30:00',
         'invoice_date'     => '2026-06-01',
-    ]);
+    ], ['taxable_amount', 'total_tax_amount', 'total_amount']));
 
-    InvoiceItem::factory()->create([
+    InvoiceItem::factory()->create(fdMoney([
         'invoice_id'       => $this->invoice->id,
         'taxable_amount'   => 10000,
         'total_tax_amount' => 2100,
@@ -33,7 +33,7 @@ beforeEach(function () {
         'taxes_applied'    => [
             ['source_rate_id' => 1, 'name' => 'IVA 21%', 'rate' => 2100, 'amount' => 2100],
         ],
-    ]);
+    ], ['taxable_amount', 'total_tax_amount', 'total_amount']));
 });
 
 describe('InvoiceVerifactuService::registerInvoice', function () {
@@ -68,7 +68,7 @@ describe('InvoiceVerifactuService::registerInvoice', function () {
         // AID-136: a guard that throws after VerifactuInvoice::create would leave an
         // orphan row, making isRegistered() return true and blocking the retry.
         // Build-before-persist (+ transaction) must roll the registration back.
-        $invoice = Invoice::factory()->create([
+        $invoice = Invoice::factory()->create(fdMoney([
             'user_id'          => $this->user->id,
             'taxable_amount'   => 10000,
             'total_tax_amount' => 0,
@@ -76,16 +76,16 @@ describe('InvoiceVerifactuService::registerInvoice', function () {
             'is_roi_taxed'     => true, // reverse-charge signalled but recipient is incomplete
             'issued_at'        => '2026-06-01 10:30:00',
             'invoice_date'     => '2026-06-01',
-        ]);
+        ], ['taxable_amount', 'total_tax_amount', 'total_amount']));
 
-        InvoiceItem::factory()->create([
+        InvoiceItem::factory()->create(fdMoney([
             'invoice_id'       => $invoice->id,
             'taxable_amount'   => 10000,
             'total_tax_amount' => 0,
             'total_amount'     => 10000,
             'item_type'        => ItemType::SERVICE,
             'taxes_applied'    => [],
-        ]);
+        ], ['taxable_amount', 'total_tax_amount', 'total_amount']));
 
         expect(fn () => $this->service->registerInvoice($invoice))
             ->toThrow(ValidationException::class);
@@ -114,11 +114,11 @@ describe('InvoiceVerifactuService::isRegistered', function () {
 
 describe('InvoiceVerifactuService::validateForVerifactu', function () {
     it('rejects invoices that are not ready for fiscal registration', function () {
-        $draft = Invoice::factory()->create([
+        $draft = Invoice::factory()->create(fdMoney([
             'user_id'      => $this->user->id,
             'is_immutable' => false,
             'total_amount' => 0,
-        ]);
+        ], ['total_amount']));
 
         $result = $this->service->validateForVerifactu($draft);
 
@@ -143,7 +143,7 @@ describe('InvoiceVerifactuService::validateForVerifactu', function () {
             'owner_user_id' => $this->user->id,
         ]);
 
-        $invoice = Invoice::factory()->create([
+        $invoice = Invoice::factory()->create(fdMoney([
             'user_id'             => $this->user->id,
             'billable_user_id'    => $this->user->id,
             'user_tax_profile_id' => $taxProfile->id,
@@ -152,7 +152,7 @@ describe('InvoiceVerifactuService::validateForVerifactu', function () {
             'taxable_amount'      => 10000,
             'total_tax_amount'    => 2100,
             'total_amount'        => 12100,
-        ]);
+        ], ['taxable_amount', 'total_tax_amount', 'total_amount']));
 
         $result = $this->service->validateForVerifactu($invoice);
 
@@ -168,7 +168,7 @@ describe('InvoiceVerifactuService::validateForVerifactu', function () {
             'owner_user_id' => $this->user->id,
         ]);
 
-        $invoice = Invoice::factory()->create([
+        $invoice = Invoice::factory()->create(fdMoney([
             'user_id'             => $this->user->id,
             'billable_user_id'    => $this->user->id,
             'user_tax_profile_id' => $taxProfile->id,
@@ -177,7 +177,7 @@ describe('InvoiceVerifactuService::validateForVerifactu', function () {
             'taxable_amount'      => 10000,
             'total_tax_amount'    => 2100,
             'total_amount'        => 12100,
-        ]);
+        ], ['taxable_amount', 'total_tax_amount', 'total_amount']));
 
         $taxProfile->delete();
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Database\Factories;
 
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticlePrice;
@@ -28,7 +29,7 @@ class ArticlePriceFactory extends Factory
         return [
             'article_id'               => Article::factory()->withoutPrices(),
             'billing_frequency'        => BillingFrequency::MONTHLY,
-            'price'                    => $this->faker->numberBetween(1000, 50000), // €10 to €500
+            'price'                    => FixedDecimal::ofUnscaled($this->faker->numberBetween(1000, 50000), 2), // €10 to €500
             'billing_days_in_advance'  => null,
             'valid_from'               => null,
             'valid_to'                 => null,
@@ -52,7 +53,7 @@ class ArticlePriceFactory extends Factory
     public function price(int $price): static
     {
         return $this->state(fn (array $attributes) => [
-            'price' => $price,
+            'price' => FixedDecimal::ofUnscaled($price, 2),
         ]);
     }
 

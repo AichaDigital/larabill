@@ -40,7 +40,7 @@ it('returns override price when customer has active override', function () {
     ArticleOverride::factory()->create([
         'article_id'   => $article->id,
         'customer_id'  => $customer->id,
-        'custom_price' => 2400,
+        'custom_price' => cents(2400),
         'is_active'    => true,
     ]);
 
@@ -56,7 +56,7 @@ it('returns override price for UUID customer IDs', function () {
     ArticleOverride::factory()->create([
         'article_id'   => $article->id,
         'customer_id'  => $customerId,
-        'custom_price' => 2400,
+        'custom_price' => cents(2400),
         'is_active'    => true,
     ]);
 
@@ -155,7 +155,7 @@ it('creates pricing details with customer override', function () {
     $override = ArticleOverride::factory()->create([
         'article_id'   => $article->id,
         'customer_id'  => $customer->id,
-        'custom_price' => 2400,
+        'custom_price' => cents(2400),
         'is_active'    => true,
     ]);
 
@@ -181,7 +181,7 @@ it('validates price is not negative', function () {
 
 it('validates price is above cost price', function () {
     $article = Article::factory()->monthly(2900)->create([
-        'cost_price' => 1500,
+        'cost_price' => cents(1500),
     ]);
 
     expect($this->service->validatePrice($article, 2000.0))->toBeTrue()
@@ -191,7 +191,7 @@ it('validates price is above cost price', function () {
 
 it('calculates profit margin', function () {
     $article = Article::factory()->monthly(2900)->create([
-        'cost_price' => 1500,
+        'cost_price' => cents(1500),
     ]);
 
     $margin = $this->service->calculateProfitMargin($article, 2400.0);
@@ -211,7 +211,7 @@ it('returns null profit margin when no cost price', function () {
 
 it('calculates profit margin percentage', function () {
     $article = Article::factory()->monthly(2900)->create([
-        'cost_price' => 1500,
+        'cost_price' => cents(1500),
     ]);
 
     $percentage = $this->service->calculateProfitMarginPercentage($article, 2400.0);
@@ -231,7 +231,7 @@ it('returns null profit margin percentage when no cost price', function () {
 
 it('returns null profit margin percentage when price is zero', function () {
     $article = Article::factory()->monthly(2900)->create([
-        'cost_price' => 1500,
+        'cost_price' => cents(1500),
     ]);
 
     $percentage = $this->service->calculateProfitMarginPercentage($article, 0.0);

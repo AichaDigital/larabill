@@ -2,6 +2,53 @@
 
 All notable changes to `larabill` will be documented in this file.
 
+## [1.0.0] - 2026-06-22
+
+Adopts lara100 v2.0.0's `FixedDecimal` value object for every monetary model
+attribute. This is a **breaking change** for consumers and marks larabill's public
+API as stable (1.0). See `docs/ADR-009-fixeddecimal-money-type.md` and
+`docs/upgrade-1.0-fixeddecimal.md`.
+
+### Changed (BREAKING)
+
+- Monetary model attributes now expose an immutable `FixedDecimal` instead of a
+  plain integer. Affected (8 models / 13 attributes): `Article::cost_price`,
+  `ArticlePrice::price`, `ArticleOverride::custom_price`,
+  `ArticleServiceStatus::effective_price`,
+  `InvoiceItem::{quantity, unit_price, taxable_amount, total_tax_amount, total_amount}`,
+  `Invoice::{taxable_amount, total_tax_amount, total_amount}`, `Commission::rate`,
+  `TaxCategory::default_rate`.
+- Reading one of these returns `FixedDecimal` (or `null`). Convert at the boundary:
+  `->unscaledValue()` for the base-100 integer cents (the pre-1.0 value),
+  `->toDecimalString()` for an exact decimal string, `->toFloat()` for a float
+  (lossy — display only).
+- Assigning one of these now requires a `FixedDecimal`; assigning a scalar throws
+  `InvalidFixedDecimal`. Build with `FixedDecimal::ofUnscaled($cents, 2)`,
+  `::ofDecimalString('12.34')`, or `::ofFloat(12.34, 2)`.
+- Null semantics: `Base100Int` coerced `null → 0`; `FixedDecimalCast` preserves
+  `null`. Only `Article::cost_price` is nullable among the migrated columns.
+- **Database storage is unchanged**: columns remain `integer` storing the same
+  base-100 cents. No column migration and no data migration are required.
+
+### Fixed (EU/Spain rounding)
+
+- The per-line taxable amount (`quantity × unit_price`) now settles to the cent
+  with **HalfUp** (round half away from zero), per EU/Spain accounting rules,
+  instead of truncating toward zero. This changes the computed amount by at most
+  one cent on lines whose `quantity × unit_price` produced a fractional cent
+  (e.g. 1.50 × €12.33 = €18.4950 → **€18.50**, previously €18.49). Tax amounts were
+  already HalfUp and are unchanged.
+
+### Dependencies
+
+- `aichadigital/lara100`: `^1.2` → `^2.0`.
+
+### Notes
+
+- Out of scope (still raw base-100/base-10000 integers, by design): the parallel
+  systems in `EuSalesThreshold`, `CompanyConfig`, `CountryVatRate`, `VatCategory`,
+  and `Commission::{rate_base100, min_amount_base100, max_amount_base100}`.
+
 ## [0.12.1] - 2026-06-21
 
 ### Fixed

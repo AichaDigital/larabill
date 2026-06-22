@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Database\Factories;
 
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticleOverride;
@@ -26,7 +27,7 @@ class ArticleOverrideFactory extends Factory
         return [
             'customer_id'  => $userModel::factory(),
             'article_id'   => Article::factory(),
-            'custom_price' => $this->faker->numberBetween(500, 40000), // €5 to €400
+            'custom_price' => FixedDecimal::ofUnscaled($this->faker->numberBetween(500, 40000), 2), // €5 to €400
             'reason'       => $this->faker->randomElement([
                 'Premium customer discount',
                 'Annual contract',
@@ -105,7 +106,7 @@ class ArticleOverrideFactory extends Factory
     {
         return $this->afterMaking(function (ArticleOverride $override) use ($discountPercentage, $frequency) {
             $basePrice              = $override->article->getPriceFor($frequency) ?? 0;
-            $override->custom_price = (int) ($basePrice * (1 - $discountPercentage / 100));
+            $override->custom_price = FixedDecimal::ofUnscaled((int) ($basePrice * (1 - $discountPercentage / 100)), 2);
         });
     }
 

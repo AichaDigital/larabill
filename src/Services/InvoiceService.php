@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services;
 
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Contracts\Services\FiscalVerificationContract;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
@@ -106,9 +107,9 @@ class InvoiceService
             }
 
             // Calculate totals
-            $invoice->taxable_amount   = $invoice->items->sum('taxable_amount');
-            $invoice->total_tax_amount = $invoice->items->sum('total_tax_amount');
-            $invoice->total_amount     = $invoice->items->sum('total_amount');
+            $invoice->taxable_amount   = $invoice->items->reduce(fn (FixedDecimal $c, InvoiceItem $i) => $c->plus($i->taxable_amount), FixedDecimal::zero(2));
+            $invoice->total_tax_amount = $invoice->items->reduce(fn (FixedDecimal $c, InvoiceItem $i) => $c->plus($i->total_tax_amount), FixedDecimal::zero(2));
+            $invoice->total_amount     = $invoice->items->reduce(fn (FixedDecimal $c, InvoiceItem $i) => $c->plus($i->total_amount), FixedDecimal::zero(2));
 
             // Generate encrypted snapshots
             $invoice->issuer_snapshot   = $this->generateIssuerSnapshot($companyConfig);
@@ -224,8 +225,8 @@ class InvoiceService
             'fiscal_year'      => $invoice->fiscal_year,
             'invoice_date'     => $invoice->invoice_date,
             'billable_user_id' => $invoice->billable_user_id,
-            'total_amount'     => $invoice->total_amount,
-            'taxable_amount'   => $invoice->taxable_amount,
+            'total_amount'     => $invoice->total_amount->unscaledValue(),
+            'taxable_amount'   => $invoice->taxable_amount->unscaledValue(),
         ]);
 
         if ($result['success']) {
@@ -260,12 +261,12 @@ class InvoiceService
             'invoice_id'       => $invoice->id,
             'article_id'       => $itemData['article_id']  ?? null,
             'description'      => $itemData['description'] ?? '',
-            'quantity'         => $quantity,
-            'unit_price'       => $basePrice,
-            'taxable_amount'   => $taxCalculation['taxable_amount'],
-            'total_tax_amount' => $taxCalculation['total_tax_amount'],
+            'quantity'         => FixedDecimal::ofUnscaled((int) $quantity, 2),
+            'unit_price'       => FixedDecimal::ofUnscaled((int) $basePrice, 2),
+            'taxable_amount'   => FixedDecimal::ofUnscaled((int) $taxCalculation['taxable_amount'], 2),
+            'total_tax_amount' => FixedDecimal::ofUnscaled((int) $taxCalculation['total_tax_amount'], 2),
             'taxes_applied'    => $taxCalculation['taxes_applied'],
-            'total_amount'     => $taxCalculation['total_amount'],
+            'total_amount'     => FixedDecimal::ofUnscaled((int) $taxCalculation['total_amount'], 2),
         ]);
     }
 
@@ -365,8 +366,8 @@ class InvoiceService
                 'items'            => $proforma->items->map(fn ($item) => [
                     'article_id'  => $item->article_id,
                     'description' => $item->description,
-                    'quantity'    => $item->quantity,
-                    'base_price'  => $item->unit_price,
+                    'quantity'    => $item->quantity->unscaledValue(),
+                    'base_price'  => $item->unit_price->unscaledValue(),
                 ])->toArray(),
                 'type'          => 'invoice',
                 'status'        => 'pending',

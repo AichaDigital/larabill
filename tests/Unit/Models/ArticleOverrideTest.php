@@ -20,12 +20,12 @@ it('can create an article override', function () {
     $override = ArticleOverride::factory()->create([
         'customer_id'  => $customer->id,
         'article_id'   => $article->id,
-        'custom_price' => 2400, // €24.00 in base100
+        'custom_price' => cents(2400), // €24.00 in base100
     ]);
 
     expect($override->customer_id)->toBe($customer->id)
         ->and($override->article_id)->toBe($article->id)
-        ->and($override->custom_price)->toBe(2400)
+        ->and($override->custom_price->unscaledValue())->toBe(2400)
         ->and($override->exists)->toBeTrue();
 });
 
@@ -56,10 +56,9 @@ it('can create and scope overrides for UUID customer IDs', function () {
 });
 
 it('casts custom_price to integer (Base100Int)', function () {
-    $override = ArticleOverride::factory()->create(['custom_price' => 2400]);
+    $override = ArticleOverride::factory()->create(['custom_price' => cents(2400)]);
 
-    expect($override->custom_price)->toBeInt()
-        ->and($override->custom_price)->toBe(2400);
+    expect($override->custom_price->unscaledValue())->toBe(2400);
 });
 
 it('casts dates correctly', function () {
@@ -227,7 +226,7 @@ it('calculates discount amount', function () {
 
     $override = ArticleOverride::factory()->create([
         'article_id'   => $article->id,
-        'custom_price' => 2400,
+        'custom_price' => cents(2400),
     ]);
 
     expect($override->getDiscountAmount(BillingFrequency::MONTHLY))->toEqual(500);
@@ -238,7 +237,7 @@ it('calculates discount percentage', function () {
 
     $override = ArticleOverride::factory()->create([
         'article_id'   => $article->id,
-        'custom_price' => 2320, // 20% discount
+        'custom_price' => cents(2320), // 20% discount
     ]);
 
     $percentage = $override->getDiscountPercentage(BillingFrequency::MONTHLY);
@@ -252,7 +251,7 @@ it('returns zero discount percentage when base price is zero', function () {
 
     $override = ArticleOverride::factory()->create([
         'article_id'   => $article->id,
-        'custom_price' => 0,
+        'custom_price' => cents(0),
     ]);
 
     expect($override->getDiscountPercentage(BillingFrequency::MONTHLY))->toBe(0);
@@ -302,5 +301,5 @@ it('factory can create override with specific discount', function () {
         ->withDiscount(20) // Uses MONTHLY by default
         ->create();
 
-    expect($override->custom_price)->toBe(8000); // €80 (20% off) in base100
+    expect($override->custom_price->unscaledValue())->toBe(8000); // €80 (20% off) in base100
 });

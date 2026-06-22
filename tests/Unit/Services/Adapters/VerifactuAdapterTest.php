@@ -32,7 +32,7 @@ function makeVerifactuSourceInvoice(array $attributes = [], array $items = [], ?
         $attributes['issuer_snapshot'] = Crypt::encryptString(json_encode($issuerData));
     }
 
-    $invoice = Invoice::factory()->create(array_merge([
+    $invoiceAttrs = fdMoney(array_merge([
         'user_id'          => User::factory()->create()->id,
         'taxable_amount'   => 10000, // €100.00
         'total_tax_amount' => 2100,  // €21.00
@@ -40,12 +40,14 @@ function makeVerifactuSourceInvoice(array $attributes = [], array $items = [], ?
         'is_roi_taxed'     => false,
         'issued_at'        => '2026-06-01 10:30:00',
         'invoice_date'     => '2026-06-01',
-    ], $attributes));
+    ], $attributes), ['taxable_amount', 'total_tax_amount', 'total_amount']);
+
+    $invoice = Invoice::factory()->create($invoiceAttrs);
 
     foreach ($items as $itemAttributes) {
-        InvoiceItem::factory()->create(array_merge([
+        InvoiceItem::factory()->create(fdMoney(array_merge([
             'invoice_id' => $invoice->id,
-        ], $itemAttributes));
+        ], $itemAttributes), ['quantity', 'unit_price', 'taxable_amount', 'total_tax_amount', 'total_amount']));
     }
 
     return $invoice->fresh(['items']);

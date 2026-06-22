@@ -125,7 +125,7 @@ class InvoiceVerifactuService
         }
 
         // Check totals are valid
-        if ($invoice->total_amount <= 0) {
+        if ($invoice->total_amount->unscaledValue() <= 0) {
             $errors[] = 'Invoice total amount must be greater than zero';
         }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Database\Factories;
 
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Models\TaxCategory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -21,7 +22,7 @@ class TaxCategoryFactory extends Factory
             'name'         => $this->faker->words(3, true),
             'tax_type'     => 'vat',
             'description'  => $this->faker->sentence(),
-            'default_rate' => $this->faker->randomFloat(2, 0, 30),
+            'default_rate' => FixedDecimal::ofUnscaled((int) $this->faker->randomFloat(2, 0, 30), 2),
             'country_code' => 'ES',
             'region_code'  => null,
             'is_active'    => true,

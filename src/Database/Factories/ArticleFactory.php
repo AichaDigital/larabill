@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Database\Factories;
 
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Enums\ItemType;
 use AichaDigital\Larabill\Models\Article;
@@ -30,7 +31,7 @@ class ArticleFactory extends Factory
             'description'       => $this->faker->sentence(),
             'item_type'         => ItemType::SERVICE,
             'category'          => $this->faker->randomElement(['hosting', 'domains', 'licenses', 'software', 'hardware']),
-            'cost_price'        => $this->faker->numberBetween(500, 30000), // €5 to €300
+            'cost_price'        => FixedDecimal::ofUnscaled($this->faker->numberBetween(500, 30000), 2), // €5 to €300
             'subscription_type' => null,
             'tax_group_id'      => null,
             'unit_measure_id'   => null,
@@ -53,7 +54,7 @@ class ArticleFactory extends Factory
                         'billing_frequency' => $article->isService()
                             ? BillingFrequency::MONTHLY
                             : BillingFrequency::ONE_TIME,
-                        'price' => $this->faker->numberBetween(1000, 50000),
+                        'price' => FixedDecimal::ofUnscaled($this->faker->numberBetween(1000, 50000), 2),
                     ]);
             }
         });
@@ -93,7 +94,7 @@ class ArticleFactory extends Factory
                 ->for($article)
                 ->create([
                     'billing_frequency'        => $frequency,
-                    'price'                    => $price,
+                    'price'                    => FixedDecimal::ofUnscaled($price, 2),
                     'billing_days_in_advance'  => $daysInAdvance,
                 ]);
         });
@@ -130,7 +131,7 @@ class ArticleFactory extends Factory
                     ->for($article)
                     ->create([
                         'billing_frequency' => $frequency,
-                        'price'             => $price,
+                        'price'             => FixedDecimal::ofUnscaled((int) $price, 2),
                     ]);
             }
         });
@@ -252,7 +253,7 @@ class ArticleFactory extends Factory
     public function costPrice(int $costPrice): static
     {
         return $this->state(fn (array $attributes) => [
-            'cost_price' => $costPrice,
+            'cost_price' => FixedDecimal::ofUnscaled($costPrice, 2),
         ]);
     }
 
