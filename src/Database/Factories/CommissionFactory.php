@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Database\Factories;
 
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Enums\CommissionAppliesTo;
 use AichaDigital\Larabill\Enums\CommissionLevel;
 use AichaDigital\Larabill\Enums\CommissionType;
@@ -37,7 +38,7 @@ class CommissionFactory extends Factory
             'article_id'         => null,
             'product_group'      => null,
             'type'               => CommissionType::PERCENTAGE,
-            'rate'               => $rate,
+            'rate'               => FixedDecimal::ofUnscaled((int) $rate, 2),
             'rate_base100'       => (int) ($rate * 100),
             'applies_to'         => CommissionAppliesTo::TAXABLE_AMOUNT,
             'valid_from'         => now(),
@@ -93,7 +94,7 @@ class CommissionFactory extends Factory
 
         return $this->state(fn (array $attributes) => [
             'type'         => CommissionType::FIXED,
-            'rate'         => $fixedAmount,
+            'rate'         => FixedDecimal::ofUnscaled((int) $fixedAmount, 2),
             'rate_base100' => (int) ($fixedAmount * 100),
         ]);
     }
@@ -107,7 +108,7 @@ class CommissionFactory extends Factory
 
         return $this->state(fn (array $attributes) => [
             'type'         => CommissionType::PERCENTAGE,
-            'rate'         => $percentageRate,
+            'rate'         => FixedDecimal::ofUnscaled((int) $percentageRate, 2),
             'rate_base100' => (int) ($percentageRate * 100),
         ]);
     }

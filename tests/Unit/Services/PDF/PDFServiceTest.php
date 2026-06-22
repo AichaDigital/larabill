@@ -76,9 +76,9 @@ it('can generate PDF for invoice', function () {
         'serie'             => InvoiceSerieType::INVOICE->value,
         'status'            => InvoiceStatus::DRAFT->value,
         'user_id'           => TestCase::USER_UUID_1,
-        'taxable_amount'    => 100.0,
-        'total_tax_amount'  => 21.0,
-        'total_amount'      => 121.0,
+        'taxable_amount'    => cents((int) 100.0),
+        'total_tax_amount'  => cents((int) 21.0),
+        'total_amount'      => cents((int) 121.0),
     ]);
 
     $result = $this->pdfService->generatePDF($invoice);
@@ -96,9 +96,9 @@ it('uses the persisted fiscal verification QR when generating fiscal PDFs', func
         'serie'                         => InvoiceSerieType::INVOICE->value,
         'status'                        => InvoiceStatus::DRAFT->value,
         'user_id'                       => TestCase::USER_UUID_1,
-        'taxable_amount'                => 10000,
-        'total_tax_amount'              => 2100,
-        'total_amount'                  => 12100,
+        'taxable_amount'                => cents(10000),
+        'total_tax_amount'              => cents(2100),
+        'total_amount'                  => cents(12100),
         'fiscal_verification_qr'        => '<svg data-testid="verifactu-qr"></svg>',
         'fiscal_verification_metadata'  => [
             'qr_url' => 'https://prewww2.aeat.es/qr?id=REG-000001',
@@ -120,9 +120,9 @@ it('can handle PDF generation errors gracefully', function () {
         'serie'                => InvoiceSerieType::INVOICE->value,
         'status'               => InvoiceStatus::DRAFT->value,
         'user_id'              => TestCase::USER_UUID_1,
-        'taxable_amount'       => 10000,
-        'total_tax_amount'     => 2100,
-        'total_amount'         => 12100,
+        'taxable_amount'       => cents(10000),
+        'total_tax_amount'     => cents(2100),
+        'total_amount'         => cents(12100),
     ]);
 
     $result = $this->pdfService->generatePDF($invoice);
@@ -139,9 +139,9 @@ it('can cache PDF results', function () {
         'serie'                  => InvoiceSerieType::INVOICE->value,
         'status'                 => InvoiceStatus::DRAFT->value,
         'user_id'                => TestCase::USER_UUID_1,
-        'taxable_amount'         => 100.0,
-        'total_tax_amount'       => 21.0,
-        'total_amount'           => 121.0,
+        'taxable_amount'         => cents((int) 100.0),
+        'total_tax_amount'       => cents((int) 21.0),
+        'total_amount'           => cents((int) 121.0),
     ]);
 
     $result = $this->pdfService->generatePDF($invoice);
@@ -159,9 +159,9 @@ it('can clear PDF cache', function () {
         'serie'                => InvoiceSerieType::INVOICE->value,
         'status'               => InvoiceStatus::DRAFT->value,
         'user_id'              => TestCase::USER_UUID_1,
-        'taxable_amount'       => 10000,
-        'total_tax_amount'     => 2100,
-        'total_amount'         => 12100,
+        'taxable_amount'       => cents(10000),
+        'total_tax_amount'     => cents(2100),
+        'total_amount'         => cents(12100),
     ]);
 
     $this->pdfService->generatePDF($invoice);

@@ -54,11 +54,11 @@ class EuSalesThresholdService
         $fiscalYear = (int) ($invoice->fiscal_year ?? date('Y'));
 
         $threshold = EuSalesThreshold::getOrCreateForUser($userId, $fiscalYear);
-        $threshold->addAmount((float) $invoice->taxable_amount);
+        $threshold->addAmount((float) $invoice->taxable_amount->unscaledValue());
 
         Log::info('EU sales threshold updated', [
             'invoice_number' => $invoice->fiscal_number,
-            'amount'         => $invoice->taxable_amount,
+            'amount'         => $invoice->taxable_amount->unscaledValue(),
         ]);
     }
 
@@ -85,11 +85,11 @@ class EuSalesThresholdService
         $fiscalYear = (int) ($invoice->fiscal_year ?? date('Y'));
 
         $threshold = EuSalesThreshold::getOrCreateForUser($userId, $fiscalYear);
-        $threshold->addAmount((float) -$invoice->taxable_amount);
+        $threshold->addAmount((float) (-$invoice->taxable_amount->unscaledValue()));
 
         Log::info('EU sales threshold updated (refund)', [
             'invoice_number' => $invoice->fiscal_number,
-            'amount'         => -$invoice->taxable_amount,
+            'amount'         => -$invoice->taxable_amount->unscaledValue(),
         ]);
     }
 

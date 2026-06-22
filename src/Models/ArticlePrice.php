@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use AichaDigital\Lara100\Casts\Base100Int;
+use AichaDigital\Lara100\Casts\FixedDecimalCast;
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Database\Factories\ArticlePriceFactory;
 use AichaDigital\Larabill\Enums\BillingFrequency;
 use Carbon\Carbon;
@@ -23,7 +24,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property int $id
  * @property int $article_id
  * @property BillingFrequency $billing_frequency
- * @property int $price
+ * @property FixedDecimal $price
  * @property int|null $billing_days_in_advance
  * @property \Illuminate\Support\Carbon|null $valid_from
  * @property \Illuminate\Support\Carbon|null $valid_to
@@ -59,7 +60,7 @@ class ArticlePrice extends Model
      */
     protected $casts = [
         'billing_frequency'        => BillingFrequency::class,
-        'price'                    => Base100Int::class,
+        'price'                    => FixedDecimalCast::class.':2',
         'billing_days_in_advance'  => 'integer',
         'valid_from'               => 'date',
         'valid_to'                 => 'date',
@@ -201,11 +202,12 @@ class ArticlePrice extends Model
                 return null; // ONE_TIME has no monthly equivalent
             }
 
-            // Convert to monthly: price * (30 / days)
-            return $this->price * (30 / $days);
+            // Convert to monthly: price * (30 / days). Display approximation in
+            // base-100 cents; read the unscaled cents and keep the float ratio math.
+            return $this->price->unscaledValue() * (30 / $days);
         }
 
-        return $this->price / $months;
+        return $this->price->unscaledValue() / $months;
     }
 
     /**
@@ -219,7 +221,7 @@ class ArticlePrice extends Model
             return null; // ONE_TIME has no yearly equivalent
         }
 
-        return $this->price * (365 / $days);
+        return $this->price->unscaledValue() * (365 / $days);
     }
 
     /**

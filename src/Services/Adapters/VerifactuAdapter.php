@@ -67,9 +67,9 @@ class VerifactuAdapter
             'issue_datetime'     => $invoice->issued_at ?? $invoice->invoice_date,
             'type'               => self::mapInvoiceType($invoice, $isSimplified),
             'rectification_type' => self::getRectificationType($invoice),
-            'base_amount'        => self::base100ToDecimal((int) $invoice->taxable_amount),
-            'tax_amount'         => self::base100ToDecimal((int) ($invoice->total_tax_amount ?? 0)),
-            'total_amount'       => self::base100ToDecimal((int) $invoice->total_amount),
+            'base_amount'        => self::base100ToDecimal($invoice->taxable_amount->unscaledValue()),
+            'tax_amount'         => self::base100ToDecimal($invoice->total_tax_amount?->unscaledValue() ?? 0),
+            'total_amount'       => self::base100ToDecimal($invoice->total_amount->unscaledValue()),
             'currency'           => 'EUR',
             // AEAT rule 1100: <NIF> is for Spanish tax IDs only. A foreign recipient
             // carries its identifier through IDOtro (recipient_id + recipient_id_type),
@@ -197,7 +197,7 @@ class VerifactuAdapter
             return [[
                 'tax_type'         => self::TAX_TYPE_VAT,
                 'tax_rate'         => 0.0,
-                'base_amount'      => self::base100ToDecimal((int) $invoice->taxable_amount),
+                'base_amount'      => self::base100ToDecimal($invoice->taxable_amount->unscaledValue()),
                 'tax_amount'       => 0.0,
                 'exempt'           => false,
                 'exemption_reason' => null,
@@ -232,7 +232,7 @@ class VerifactuAdapter
             $taxes = $item->taxes_applied ?? [];
 
             if ($taxes === []) {
-                $exemptBase += (int) $item->taxable_amount;
+                $exemptBase += $item->taxable_amount->unscaledValue();
 
                 continue;
             }
@@ -240,7 +240,7 @@ class VerifactuAdapter
             foreach ($taxes as $tax) {
                 $rate = (int) $tax['rate'];
 
-                $groups[$rate]['base'] = ($groups[$rate]['base'] ?? 0) + (int) $item->taxable_amount;
+                $groups[$rate]['base'] = ($groups[$rate]['base'] ?? 0) + $item->taxable_amount->unscaledValue();
                 $groups[$rate]['tax']  = ($groups[$rate]['tax'] ?? 0)  + (int) ($tax['amount'] ?? 0);
             }
         }
@@ -387,7 +387,7 @@ class VerifactuAdapter
      */
     private static function invoiceHasRealTax(Invoice $invoice): bool
     {
-        if ((int) ($invoice->total_tax_amount ?? 0) > 0) {
+        if (($invoice->total_tax_amount?->unscaledValue() ?? 0) > 0) {
             return true;
         }
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Database\Factories;
 
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Enums\CancellationType;
 use AichaDigital\Larabill\Enums\ServiceStatus;
@@ -40,7 +41,7 @@ class ArticleServiceStatusFactory extends Factory
             'cancellation_effective_at' => null,
             'refund_unused'             => false,
             'billing_frequency'         => BillingFrequency::MONTHLY,
-            'effective_price'           => 2900, // Default price in Base100 (€29.00)
+            'effective_price'           => FixedDecimal::ofUnscaled(2900, 2), // Default €29.00
             'current_override_id'       => null,
             'external_reference'        => null,
             'instance_data'             => [],
@@ -200,7 +201,7 @@ class ArticleServiceStatusFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'article_id'        => $article->id,
             'billing_frequency' => $frequency,
-            'effective_price'   => $price,
+            'effective_price'   => FixedDecimal::ofUnscaled((int) $price, 2),
         ]);
     }
 
@@ -210,7 +211,7 @@ class ArticleServiceStatusFactory extends Factory
     public function price(int $price): static
     {
         return $this->state(fn (array $attributes) => [
-            'effective_price' => $price,
+            'effective_price' => FixedDecimal::ofUnscaled($price, 2),
         ]);
     }
 

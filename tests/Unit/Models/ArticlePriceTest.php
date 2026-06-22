@@ -15,12 +15,12 @@ describe('ArticlePrice creation', function () {
         $article = Article::factory()->withoutPrices()->create();
         $price   = ArticlePrice::factory()->for($article)->create([
             'billing_frequency' => BillingFrequency::MONTHLY,
-            'price'             => 2900,
+            'price'             => cents(2900),
         ]);
 
         expect($price->exists)->toBeTrue()
             ->and($price->billing_frequency)->toBe(BillingFrequency::MONTHLY)
-            ->and($price->price)->toBe(2900);
+            ->and($price->price->unscaledValue())->toBe(2900);
     });
 
     it('casts billing_frequency to enum', function () {
@@ -31,10 +31,9 @@ describe('ArticlePrice creation', function () {
     });
 
     it('casts price to Base100Int (integer)', function () {
-        $price = ArticlePrice::factory()->create(['price' => 2900]);
+        $price = ArticlePrice::factory()->create(['price' => cents(2900)]);
 
-        expect($price->price)->toBeInt()
-            ->and($price->price)->toBe(2900);
+        expect($price->price->unscaledValue())->toBe(2900);
     });
 
     it('casts dates correctly', function () {
@@ -206,9 +205,9 @@ describe('ArticlePrice validity', function () {
 
 describe('ArticlePrice calculations', function () {
     it('calculates monthly equivalent for month-based frequencies', function () {
-        $monthly   = ArticlePrice::factory()->monthly()->create(['price' => 2900]);
-        $quarterly = ArticlePrice::factory()->quarterly()->create(['price' => 8100]);
-        $yearly    = ArticlePrice::factory()->yearly()->create(['price' => 29000]);
+        $monthly   = ArticlePrice::factory()->monthly()->create(['price' => cents(2900)]);
+        $quarterly = ArticlePrice::factory()->quarterly()->create(['price' => cents(8100)]);
+        $yearly    = ArticlePrice::factory()->yearly()->create(['price' => cents(29000)]);
 
         expect($monthly->getMonthlyEquivalent())->toEqual(2900.0)
             ->and($quarterly->getMonthlyEquivalent())->toEqual(2700.0)  // 8100/3
@@ -216,21 +215,21 @@ describe('ArticlePrice calculations', function () {
     });
 
     it('returns null for one-time frequency monthly equivalent', function () {
-        $oneTime = ArticlePrice::factory()->oneTime()->create(['price' => 5000]);
+        $oneTime = ArticlePrice::factory()->oneTime()->create(['price' => cents(5000)]);
 
         expect($oneTime->getMonthlyEquivalent())->toBeNull();
     });
 
     it('calculates yearly equivalent', function () {
-        $monthly = ArticlePrice::factory()->monthly()->create(['price' => 2900]);
-        $yearly  = ArticlePrice::factory()->yearly()->create(['price' => 29000]);
+        $monthly = ArticlePrice::factory()->monthly()->create(['price' => cents(2900)]);
+        $yearly  = ArticlePrice::factory()->yearly()->create(['price' => cents(29000)]);
 
         expect($monthly->getYearlyEquivalent())->toBeGreaterThan(35000.0) // 2900 * 365/30 ≈ 35283
             ->and($yearly->getYearlyEquivalent())->toEqual(29000.0);
     });
 
     it('returns null for one-time frequency yearly equivalent', function () {
-        $oneTime = ArticlePrice::factory()->oneTime()->create(['price' => 5000]);
+        $oneTime = ArticlePrice::factory()->oneTime()->create(['price' => cents(5000)]);
 
         expect($oneTime->getYearlyEquivalent())->toBeNull();
     });

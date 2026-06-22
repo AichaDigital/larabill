@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services;
 
+use AichaDigital\Lara100\RoundingMode;
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Contracts\Services\TaxCalculation\TaxCalculationStrategy;
 use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\TaxGroup;
@@ -80,9 +82,13 @@ class TaxCalculationService
     {
         $quantity      = $itemData['quantity'];
         $basePrice     = $itemData['base_price'];
-        // Both values are in base100, so we need to divide by 100
-        // Example: qty=100 (1.0 unit) * price=10000 (€100.00) / 100 = 10000 (€100.00)
-        $taxableAmount = (int) (($quantity * $basePrice) / 100);
+        // Both values are base100 cents. EU/Spain norm: settle quantity × base_price
+        // to the cent with HalfUp (never truncation). Example: qty=100 (1.0 unit) ×
+        // price=10000 (€100.00) → €100.00 = 10000.
+        $taxableAmount = FixedDecimal::ofUnscaled((int) $quantity, 2)
+            ->multipliedBy(FixedDecimal::ofUnscaled((int) $basePrice, 2))
+            ->toScale(2, RoundingMode::HalfUp)
+            ->unscaledValue();
 
         $taxGroupId = $itemData['tax_group_id']
             ?? Article::query()->find($itemData['article_id'] ?? null)?->tax_group_id;

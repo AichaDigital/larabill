@@ -29,9 +29,9 @@ function realRouteFiscalInvoice(): Invoice
         'serie'                        => InvoiceSerieType::INVOICE->value,
         'status'                       => InvoiceStatus::SENT->value,
         'user_id'                      => TestCase::USER_UUID_1,
-        'taxable_amount'               => 1000,
-        'total_tax_amount'             => 210,
-        'total_amount'                 => 1210,
+        'taxable_amount'               => cents(1000),
+        'total_tax_amount'             => cents(210),
+        'total_amount'                 => cents(1210),
         'fiscal_verification_qr'       => VERIFACTU_QR_SVG,
         'fiscal_verification_metadata' => ['qr_url' => 'https://prewww2.aeat.es/qr?id=REG-20260618-000001'],
     ]);

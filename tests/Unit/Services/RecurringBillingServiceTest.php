@@ -34,7 +34,7 @@ describe('RecurringBillingService basic processing', function () {
             'billing_frequency' => BillingFrequency::MONTHLY,
             'status'            => ServiceStatus::ACTIVE,
             'next_billing_date' => now()->addDays(7), // Due in 7 days
-            'effective_price'   => 2900,
+            'effective_price'   => cents(2900),
         ]);
 
         $results = $this->service->processRecurringBilling(now());
@@ -147,7 +147,7 @@ describe('RecurringBillingService days_in_advance configuration', function () {
         // Create price with specific days_in_advance
         ArticlePrice::factory()->for($article)->create([
             'billing_frequency'       => BillingFrequency::MONTHLY,
-            'price'                   => 2900,
+            'price'                   => cents(2900),
             'billing_days_in_advance' => 15,
         ]);
 
@@ -233,7 +233,7 @@ describe('RecurringBillingService billing period calculations', function () {
         $customer        = $this->userModel::factory()->create();
         $article         = Article::factory()->create();
 
-        ArticlePrice::factory()->for($article)->weekly()->create(['price' => 500]);
+        ArticlePrice::factory()->for($article)->weekly()->create(['price' => cents(500)]);
 
         $nextBillingDate = Carbon::parse('2024-01-15');
 
@@ -283,7 +283,7 @@ describe('RecurringBillingService pricing', function () {
         ArticleOverride::factory()->create([
             'article_id'   => $article->id,
             'customer_id'  => $customer->id,
-            'custom_price' => 2400,
+            'custom_price' => cents(2400),
             'is_active'    => true,
         ]);
 
@@ -299,7 +299,7 @@ describe('RecurringBillingService pricing', function () {
         $invoice = Invoice::latest()->first();
         $item    = $invoice->items()->first();
 
-        expect($item->unit_price)->toBe(2400);
+        expect($item->unit_price->unscaledValue())->toBe(2400);
     });
 });
 
@@ -346,7 +346,7 @@ describe('RecurringBillingService idempotency', function () {
             'billing_frequency' => BillingFrequency::MONTHLY,
             'status'            => ServiceStatus::ACTIVE,
             'next_billing_date' => $billingDate,
-            'effective_price'   => 2900,
+            'effective_price'   => cents(2900),
         ]);
 
         // Process billing first time

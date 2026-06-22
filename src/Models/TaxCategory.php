@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use AichaDigital\Lara100\Casts\Base100Int;
+use AichaDigital\Lara100\Casts\FixedDecimalCast;
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Database\Factories\TaxCategoryFactory;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -22,7 +23,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $name Display name
  * @property string $tax_type Tax system (vat, sales_tax, gst, hst)
  * @property string|null $description
- * @property float $default_rate Default tax rate percentage
+ * @property FixedDecimal $default_rate Default tax rate percentage
  * @property string $country_code ISO 3166-1 alpha-2
  * @property string|null $region_code State/Province code
  * @property bool $is_active
@@ -58,7 +59,7 @@ class TaxCategory extends Model
     protected function casts(): array
     {
         return [
-            'default_rate' => Base100Int::class,
+            'default_rate' => FixedDecimalCast::class.':2',
             'is_active'    => 'boolean',
             'sort_order'   => 'integer',
             'metadata'     => 'array',

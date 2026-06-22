@@ -181,7 +181,7 @@ it('can calculate refund for unused period', function () {
         'billing_frequency' => BillingFrequency::MONTHLY,
         'status'            => ServiceStatus::ACTIVE,
         'next_billing_date' => $nextBillingDate,
-        'effective_price'   => 3000,
+        'effective_price'   => cents(3000),
         'refund_unused'     => true,
     ]);
 

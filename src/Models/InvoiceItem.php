@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use AichaDigital\Lara100\Casts\Base100Int;
+use AichaDigital\Lara100\Casts\FixedDecimalCast;
+use AichaDigital\Lara100\RoundingMode;
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Database\Factories\InvoiceItemFactory;
 use AichaDigital\Larabill\Enums\ItemType;
 use AichaDigital\Larabill\Services\ModelMappingService;
@@ -36,13 +38,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property ItemType $item_type Good or Service
  * @property string $description
  * @property string|null $internal_code User product/service code
- * @property float $quantity Base-100 integer (1.5 => 150)
+ * @property FixedDecimal $quantity Scale-2 FixedDecimal (1.50 stored unscaled 150)
  * @property int|null $unit_measure_id FK to unit_measures
- * @property float $unit_price Base-100 integer (€12.34 => 1234)
- * @property float $taxable_amount Base-100 integer (€12.34 => 1234)
- * @property float $total_tax_amount Base-100 integer - sum of all taxes
+ * @property FixedDecimal $unit_price Scale-2 FixedDecimal (€12.34 stored unscaled 1234)
+ * @property FixedDecimal $taxable_amount Scale-2 FixedDecimal (€12.34 stored unscaled 1234)
+ * @property FixedDecimal $total_tax_amount Scale-2 FixedDecimal - sum of all taxes
  * @property array $taxes_applied JSON snapshot of applied taxes (immutable)
- * @property float $total_amount Base-100 integer (€12.34 => 1234)
+ * @property FixedDecimal $total_amount Scale-2 FixedDecimal (€12.34 stored unscaled 1234)
  * @property int $tax_rate Computed from taxes_applied (first tax rate or 0)
  * @property Carbon|null $service_date_from Service start date
  * @property Carbon|null $service_date_to Service end date
@@ -98,12 +100,12 @@ class InvoiceItem extends Model
     {
         return [
             'item_type'         => ItemType::class, // PHP Enum
-            'quantity'          => Base100Int::class, // 1.5 ↔ 150
-            'unit_price'        => Base100Int::class, // €12.34 ↔ 1234
-            'taxable_amount'    => Base100Int::class, // €12.34 ↔ 1234
-            'total_tax_amount'  => Base100Int::class,
+            'quantity'          => FixedDecimalCast::class.':2', // 1.50 ↔ 150
+            'unit_price'        => FixedDecimalCast::class.':2', // €12.34 ↔ 1234
+            'taxable_amount'    => FixedDecimalCast::class.':2', // €12.34 ↔ 1234
+            'total_tax_amount'  => FixedDecimalCast::class.':2',
             'taxes_applied'     => 'array',
-            'total_amount'      => Base100Int::class, // €12.34 ↔ 1234
+            'total_amount'      => FixedDecimalCast::class.':2', // €12.34 ↔ 1234
             'service_date_from' => 'date',
             'service_date_to'   => 'date',
             'metadata'          => 'array',
@@ -143,12 +145,16 @@ class InvoiceItem extends Model
 
     /**
      * Calculate taxable amount from quantity and unit price.
-     * Base100 cast handles conversion automatically.
+     *
+     * EU/Spain norm: settle quantity × unit_price to the cent with HalfUp
+     * (round half away from zero), never truncation. The exact product is
+     * scale 4; toScale(2, HalfUp) rounds it to the persisted cent.
      */
-    public function calculateTaxableAmount(): int
+    public function calculateTaxableAmount(): FixedDecimal
     {
-        // Both quantity and unit_price are in base100, divide by 100
-        return (int) (($this->quantity * $this->unit_price) / 100);
+        return $this->quantity
+            ->multipliedBy($this->unit_price)
+            ->toScale(2, RoundingMode::HalfUp);
     }
 
     /**

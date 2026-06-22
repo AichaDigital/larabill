@@ -92,10 +92,9 @@ it('casts booleans correctly', function () {
 });
 
 it('casts effective_price to integer (Base100Int)', function () {
-    $service = ArticleServiceStatus::factory()->create(['effective_price' => 2900]);
+    $service = ArticleServiceStatus::factory()->create(['effective_price' => cents(2900)]);
 
-    expect($service->effective_price)->toBeInt()
-        ->and($service->effective_price)->toBe(2900);
+    expect($service->effective_price->unscaledValue())->toBe(2900);
 });
 
 it('casts arrays correctly', function () {
@@ -326,19 +325,19 @@ it('updates effective price from override', function () {
     $override = ArticleOverride::factory()->create([
         'customer_id'  => $customer->id,
         'article_id'   => $article->id,
-        'custom_price' => 2400,
+        'custom_price' => cents(2400),
     ]);
 
     $service = ArticleServiceStatus::factory()->create([
         'customer_id'       => $customer->id,
         'article_id'        => $article->id,
         'billing_frequency' => BillingFrequency::MONTHLY,
-        'effective_price'   => 2900,
+        'effective_price'   => cents(2900),
     ]);
 
     $service->updateEffectivePrice();
 
-    expect($service->fresh()->effective_price)->toBe(2400)
+    expect($service->fresh()->effective_price->unscaledValue())->toBe(2400)
         ->and($service->fresh()->current_override_id)->toBe($override->id);
 });
 
@@ -348,12 +347,12 @@ it('updates effective price to base when no override', function () {
     $service = ArticleServiceStatus::factory()->create([
         'article_id'        => $article->id,
         'billing_frequency' => BillingFrequency::MONTHLY,
-        'effective_price'   => 2400,
+        'effective_price'   => cents(2400),
     ]);
 
     $service->updateEffectivePrice();
 
-    expect($service->fresh()->effective_price)->toBe(2900)
+    expect($service->fresh()->effective_price->unscaledValue())->toBe(2900)
         ->and($service->fresh()->current_override_id)->toBeNull();
 });
 

@@ -66,9 +66,9 @@ it('can validate valid invoice', function () {
         'serie'                  => InvoiceSerieType::INVOICE->value,
         'status'                 => InvoiceStatus::DRAFT->value,
         'user_id'                => TestCase::USER_UUID_1,
-        'taxable_amount'         => 100.0,
-        'total_tax_amount'       => 21.0,
-        'total_amount'           => 121.0,
+        'taxable_amount'         => cents((int) 100.0),
+        'total_tax_amount'       => cents((int) 21.0),
+        'total_amount'           => cents((int) 121.0),
     ]);
     // Save to generate UUID
     $invoice->save();
@@ -89,9 +89,9 @@ it('can generate QR for valid invoice', function () {
         'serie'                  => InvoiceSerieType::INVOICE->value,
         'status'                 => InvoiceStatus::DRAFT->value,
         'user_id'                => TestCase::USER_UUID_1,
-        'taxable_amount'         => 100.0,
-        'total_tax_amount'       => 21.0,
-        'total_amount'           => 121.0,
+        'taxable_amount'         => cents((int) 100.0),
+        'total_tax_amount'       => cents((int) 21.0),
+        'total_amount'           => cents((int) 121.0),
     ]);
 
     $result = $this->connector->generateQR($invoice);
@@ -122,9 +122,9 @@ it('includes invoice data in QR', function () {
         'serie'                  => InvoiceSerieType::INVOICE->value,
         'status'                 => InvoiceStatus::DRAFT->value,
         'user_id'                => TestCase::USER_UUID_1,
-        'taxable_amount'         => 100.0,
-        'total_tax_amount'       => 21.0,
-        'total_amount'           => 121.0,
+        'taxable_amount'         => cents((int) 100.0),
+        'total_tax_amount'       => cents((int) 21.0),
+        'total_amount'           => cents((int) 121.0),
     ]);
 
     $result = $this->connector->generateQR($invoice);
@@ -159,9 +159,9 @@ it('generates QR URL with custom base URL', function () {
         'serie'                  => InvoiceSerieType::INVOICE->value,
         'status'                 => InvoiceStatus::DRAFT->value,
         'user_id'                => TestCase::USER_UUID_1,
-        'taxable_amount'         => 100.0,
-        'total_tax_amount'       => 21.0,
-        'total_amount'           => 121.0,
+        'taxable_amount'         => cents((int) 100.0),
+        'total_tax_amount'       => cents((int) 21.0),
+        'total_amount'           => cents((int) 121.0),
     ]);
 
     $result = $connector->generateQR($invoice);
@@ -184,9 +184,9 @@ it('returns false when validating invoice if connector is not available', functi
         'serie'                => InvoiceSerieType::INVOICE->value,
         'status'               => InvoiceStatus::DRAFT->value,
         'user_id'              => TestCase::USER_UUID_1,
-        'taxable_amount'       => 10000,
-        'total_tax_amount'     => 2100,
-        'total_amount'         => 12100,
+        'taxable_amount'       => cents(10000),
+        'total_tax_amount'     => cents(2100),
+        'total_amount'         => cents(12100),
     ]);
 
     expect($connector->validateInvoice($invoice))->toBeFalse();

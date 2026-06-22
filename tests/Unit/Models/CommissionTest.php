@@ -10,12 +10,12 @@ it('can create a commission', function () {
     $commission = Commission::factory()->create([
         'name'  => 'Test Commission',
         'level' => CommissionLevel::GLOBAL,
-        'rate'  => 1050, // 10.50% in base100
+        'rate'  => cents(1050), // 10.50% in base100
     ]);
 
     expect($commission->name)->toBe('Test Commission')
         ->and($commission->level)->toBe(CommissionLevel::GLOBAL)
-        ->and($commission->rate)->toBe(1050) // 10.50% in base100
+        ->and($commission->rate->unscaledValue())->toBe(1050) // 10.50% in base100
         ->and($commission->exists)->toBeTrue();
 });
 
@@ -77,14 +77,14 @@ it('handles commission without end date as always valid', function () {
 });
 
 it('supports multi-level commission structure', function () {
-    $global  = Commission::factory()->create(['level' => CommissionLevel::GLOBAL, 'rate' => 5.0]);
-    $group   = Commission::factory()->create(['level' => CommissionLevel::PRODUCT_GROUP, 'rate' => 7.5]);
-    $product = Commission::factory()->create(['level' => CommissionLevel::PRODUCT, 'rate' => 10.0]);
+    $global  = Commission::factory()->create(['level' => CommissionLevel::GLOBAL, 'rate' => cents((int) 5.0)]);
+    $group   = Commission::factory()->create(['level' => CommissionLevel::PRODUCT_GROUP, 'rate' => cents((int) 7.5)]);
+    $product = Commission::factory()->create(['level' => CommissionLevel::PRODUCT, 'rate' => cents((int) 10.0)]);
 
     expect($global->level)->toBe(CommissionLevel::GLOBAL)
         ->and($group->level)->toBe(CommissionLevel::PRODUCT_GROUP)
         ->and($product->level)->toBe(CommissionLevel::PRODUCT)
-        ->and($product->rate)->toBeGreaterThan($group->rate);
+        ->and($product->rate->isGreaterThan($group->rate))->toBeTrue();
 });
 
 it('uses soft deletes', function () {

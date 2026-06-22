@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use AichaDigital\Lara100\Casts\Base100Int;
+use AichaDigital\Lara100\Casts\FixedDecimalCast;
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Enums\CommissionAppliesTo;
 use AichaDigital\Larabill\Enums\CommissionLevel;
 use AichaDigital\Larabill\Enums\CommissionType;
@@ -29,7 +30,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int|null $article_id FK to articles (for level=product)
  * @property string|null $product_group (for level=product_group)
  * @property CommissionType $type Commission type enum
- * @property float $rate Percentage (20.5000) or fixed amount (20.50)
+ * @property FixedDecimal $rate Percentage (20.50) or fixed amount (€20.50), base-100 cents
  * @property int|null $rate_base100 Base-100 for calculations
  * @property CommissionAppliesTo $applies_to What the commission applies to
  * @property \Illuminate\Support\Carbon $valid_from
@@ -89,7 +90,7 @@ class Commission extends Model
             'level'              => CommissionLevel::class,
             'type'               => CommissionType::class,
             'applies_to'         => CommissionAppliesTo::class,
-            'rate'               => Base100Int::class, // 10.5% ↔ 1050 or €20.50 ↔ 2050
+            'rate'               => FixedDecimalCast::class.':2', // 10.50% ↔ 1050 or €20.50 ↔ 2050
             'rate_base100'       => 'integer',
             'valid_from'         => 'date',
             'valid_until'        => 'date',
@@ -133,11 +134,11 @@ class Commission extends Model
         }
 
         if ($this->type === CommissionType::PERCENTAGE) {
-            return $baseAmount * ($this->rate / 100);
+            return $baseAmount * ($this->rate->unscaledValue() / 100);
         }
 
-        // Fixed amount - Base100 cast already returns float
-        return $this->rate;
+        // Fixed amount: the stored base-100 cents value (FixedDecimal → cents).
+        return (float) $this->rate->unscaledValue();
     }
 
     /**

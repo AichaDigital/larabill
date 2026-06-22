@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use AichaDigital\Lara100\Casts\Base100Int;
+use AichaDigital\Lara100\Casts\FixedDecimalCast;
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Concerns\HasUserRelation;
 use AichaDigital\Larabill\Concerns\HasUuid;
 use AichaDigital\Larabill\Database\Factories\InvoiceFactory;
@@ -72,12 +73,12 @@ use Illuminate\Support\Facades\Crypt;
  * @property array<string, mixed>|null $vat_verification
  * @property bool $is_roi_taxed ROI reverse charge
  * @property string $type invoice|proforma|rectificative
- * @property float $taxable_amount Base amount before tax
+ * @property FixedDecimal $taxable_amount Base amount before tax
  * @property float $tax_amount Calculated tax
- * @property float $total_amount Total with tax
+ * @property FixedDecimal $total_amount Total with tax
  * @property float|null $total Total amount (alias)
  * @property float|null $subtotal Subtotal (alias for taxable_amount)
- * @property float|null $total_tax_amount Total tax (alias)
+ * @property FixedDecimal $total_tax_amount Total tax
  * @property string|null $converted_invoice_id UUID of final invoice (if proforma converted)
  * @property bool $is_immutable
  * @property Carbon|null $immutable_at
@@ -199,9 +200,9 @@ class Invoice extends Model implements LegallyRetainable
             'fiscal_verified_at'           => 'datetime',
             'is_immutable'                 => 'boolean',
             'immutable_at'                 => 'datetime',
-            'taxable_amount'               => Base100Int::class, // €12.34 ↔ 1234
-            'total_tax_amount'             => Base100Int::class,
-            'total_amount'                 => Base100Int::class, // €12.34 ↔ 1234
+            'taxable_amount'               => FixedDecimalCast::class.':2', // €12.34 ↔ 1234
+            'total_tax_amount'             => FixedDecimalCast::class.':2',
+            'total_amount'                 => FixedDecimalCast::class.':2', // €12.34 ↔ 1234
             'fiscal_data'                  => 'array',
             'fiscal_verification_metadata' => 'array',
             'vat_verification'             => 'array',
@@ -891,9 +892,12 @@ class Invoice extends Model implements LegallyRetainable
      */
     public function calculateTotals(): self
     {
-        $this->taxable_amount   = (int) $this->items()->sum('taxable_amount');
-        $this->total_tax_amount = (int) $this->items()->sum('total_tax_amount');
-        $this->total_amount     = (int) $this->items()->sum('total_amount');
+        // Items persist integer cents, so the SQL SUM is exact (sum of per-line
+        // rounded amounts — the EU/Spain aggregation rule). Wrap back into a
+        // scale-2 FixedDecimal for the cast.
+        $this->taxable_amount   = FixedDecimal::ofUnscaled((int) $this->items()->sum('taxable_amount'), 2);
+        $this->total_tax_amount = FixedDecimal::ofUnscaled((int) $this->items()->sum('total_tax_amount'), 2);
+        $this->total_amount     = FixedDecimal::ofUnscaled((int) $this->items()->sum('total_amount'), 2);
 
         return $this;
     }

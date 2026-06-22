@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services;
 
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\DataTransferObjects\BillingDetails;
 use AichaDigital\Larabill\DataTransferObjects\InvoiceItemMetadata;
 use AichaDigital\Larabill\DataTransferObjects\SourceReference;
@@ -207,9 +208,9 @@ final class RecurringBillingService
                 'invoice_date'   => $date,
                 'due_date'       => $date->copy()->addDays(config('larabill.recurring_billing.payment_terms_days', 15)),
                 'status'         => InvoiceStatus::SENT,
-                'taxable_amount' => $pricingDetails->appliedPrice,
-                'tax_amount'     => 0, // TODO: Calculate tax
-                'total_amount'   => $pricingDetails->appliedPrice,
+                'taxable_amount' => FixedDecimal::ofUnscaled((int) $pricingDetails->appliedPrice, 2),
+                'tax_amount'     => 0, // TODO: Calculate tax (alias, not a cast attribute)
+                'total_amount'   => FixedDecimal::ofUnscaled((int) $pricingDetails->appliedPrice, 2),
                 'metadata'       => [
                     'recurring_billing' => true,
                     'service_id'        => $service->id,
@@ -239,8 +240,8 @@ final class RecurringBillingService
                 'invoice_id'        => $invoice->id,
                 'item_type'         => $article->item_type,
                 'description'       => $article->name,
-                'quantity'          => 1,
-                'unit_price'        => $pricingDetails->appliedPrice,
+                'quantity'          => FixedDecimal::ofUnscaled(1, 2),
+                'unit_price'        => FixedDecimal::ofUnscaled((int) $pricingDetails->appliedPrice, 2),
                 'service_date_from' => $periodStart,
                 'service_date_to'   => $periodEnd,
                 'metadata'          => $metadata->toArray(),
