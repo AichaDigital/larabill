@@ -1,10 +1,14 @@
 # Larabill - Professional Billing & Invoicing for Laravel
 
-[![Tests](https://img.shields.io/github/actions/workflow/status/AichaDigital/larabill/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/AichaDigital/larabill/actions/workflows/tests.yml)
-[![codecov](https://codecov.io/gh/AichaDigital/larabill/branch/main/graph/badge.svg?style=flat-square)](https://codecov.io/gh/AichaDigital/larabill)
-[![PHP Version](https://img.shields.io/badge/php-%5E8.3-blue?style=flat-square)](https://php.net)
-[![Laravel](https://img.shields.io/badge/laravel-%5E12.0%20%7C%20%5E13.0-red?style=flat-square)](https://laravel.com)
-[![License](https://img.shields.io/badge/license-AGPL--3.0--or--later-green?style=flat-square)](LICENSE.md)
+<!-- AI-BADGES:START profile=essential -->
+[![Latest Version](https://img.shields.io/packagist/v/aichadigital/larabill.svg?style=flat-square)](https://packagist.org/packages/aichadigital/larabill)
+[![Total Downloads](https://img.shields.io/packagist/dt/aichadigital/larabill.svg?style=flat-square)](https://packagist.org/packages/aichadigital/larabill)
+[![Tests](https://img.shields.io/github/actions/workflow/status/AichaDigital/larabill/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/AichaDigital/larabill/actions?query=workflow%3Arun-tests+branch%3Amain)
+[![PHPStan level 5](https://img.shields.io/badge/PHPStan-level%205-green.svg?style=flat-square&logo=php)](https://phpstan.org/)
+[![PHP Version](https://img.shields.io/packagist/php-v/aichadigital/larabill.svg?style=flat-square&logo=php)](https://packagist.org/packages/aichadigital/larabill)
+[![Laravel Version](https://img.shields.io/badge/Laravel-12.x%20%7C%2013.x-red.svg?style=flat-square&logo=laravel)](https://laravel.com)
+[![License](https://img.shields.io/packagist/l/aichadigital/larabill.svg?style=flat-square)](https://packagist.org/packages/aichadigital/larabill)
+<!-- AI-BADGES:END -->
 
 > ⚠️ **DEVELOPMENT VERSION** — This package is under active development (`dev-main`). Schema upgrades between versions are not promised; use `migrate:fresh`.
 
