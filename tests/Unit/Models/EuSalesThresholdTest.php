@@ -3,15 +3,17 @@
 declare(strict_types=1);
 
 /**
- * @deprecated v0.4.0 - EuSalesThreshold merged into IssuerConfig
- * These tests use legacy API/tables that no longer exist in v0.4.0.
+ * EuSalesThreshold — base-100 / FixedDecimal contract (AID-240).
+ *
+ * Monetary amounts (total_amount, threshold_amount) are FixedDecimal:2 over an
+ * integer column of base-100 minor units. breakdown_by_country is a JSON map of
+ * raw integer cents per country. Per-country and aggregate amounts are exposed
+ * as FixedDecimal; the raw breakdown attribute stays integer cents.
+ *
+ * cents(500000) === €5,000.00 (helper from tests/Pest.php).
  */
 
-// Skip all tests - legacy code
-beforeEach(function () {
-    // REACTIVATED v0.4.1: $this->markTestSkipped('Legacy test - deprecated in v0.4.0');
-});
-
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Models\EuSalesThreshold;
 use AichaDigital\Larabill\Tests\TestCase;
 use Carbon\Carbon;
@@ -20,28 +22,29 @@ it('can create an EU sales threshold', function () {
     $threshold = EuSalesThreshold::create([
         'user_id'              => TestCase::USER_UUID_1,
         'fiscal_year'          => 2024,
-        'total_amount'         => 5000.00,
+        'total_amount'         => cents(500000), // €5,000.00
         'threshold_exceeded'   => false,
         'notification_sent'    => false,
         'breakdown_by_country' => [
-            'DE' => 2000.00,
-            'FR' => 3000.00,
+            'DE' => 200000, // €2,000.00
+            'FR' => 300000, // €3,000.00
         ],
     ]);
 
     expect($threshold)->toBeInstanceOf(EuSalesThreshold::class);
     expect($threshold->user_id)->toBe(TestCase::USER_UUID_1);
     expect($threshold->fiscal_year)->toBe(2024);
-    expect($threshold->total_amount)->toBe(5000.00);
+    expect($threshold->total_amount)->toBeInstanceOf(FixedDecimal::class);
+    expect($threshold->total_amount->isEqualTo(cents(500000)))->toBeTrue();
     expect($threshold->threshold_exceeded)->toBeFalse();
-    expect($threshold->breakdown_by_country['DE'])->toBe(2000.00);
+    expect($threshold->breakdown_by_country['DE'])->toBe(200000);
 });
 
 it('can find EU sales threshold by company and year', function () {
     EuSalesThreshold::create([
         'user_id'      => TestCase::USER_UUID_1,
         'fiscal_year'  => 2024,
-        'total_amount' => 5000.00,
+        'total_amount' => cents(500000),
     ]);
 
     $found = EuSalesThreshold::findByUserAndYear(TestCase::USER_UUID_1, 2024);
@@ -52,15 +55,13 @@ it('can find EU sales threshold by company and year', function () {
 });
 
 it('can get or create EU sales threshold for company', function () {
-    // First call should create
     $threshold1 = EuSalesThreshold::getOrCreateForUser(TestCase::USER_UUID_2, 2024);
 
     expect($threshold1)->toBeInstanceOf(EuSalesThreshold::class);
     expect($threshold1->user_id)->toBe(TestCase::USER_UUID_2);
     expect($threshold1->fiscal_year)->toBe(2024);
-    expect($threshold1->total_amount)->toBe(0.00);
+    expect($threshold1->total_amount->isZero())->toBeTrue();
 
-    // Second call should return existing
     $threshold2 = EuSalesThreshold::getOrCreateForUser(TestCase::USER_UUID_2, 2024);
 
     expect($threshold2->id)->toBe($threshold1->id);
@@ -70,51 +71,50 @@ it('can add sales amount', function () {
     $threshold = EuSalesThreshold::create([
         'user_id'              => TestCase::USER_UUID_1,
         'fiscal_year'          => 2024,
-        'total_amount'         => 5000.00,
+        'total_amount'         => cents(500000),
         'breakdown_by_country' => [
-            'DE' => 2000.00,
-            'FR' => 3000.00,
+            'DE' => 200000,
+            'FR' => 300000,
         ],
     ]);
 
-    $updated = $threshold->addSalesAmount('IT', 1000.00);
+    $updated = $threshold->addSalesAmount('IT', cents(100000));
 
-    expect($updated->total_amount)->toBe(6000.00);
-    expect($updated->breakdown_by_country['IT'])->toBe(1000.00);
-    expect($updated->breakdown_by_country['DE'])->toBe(2000.00);
-    expect($updated->breakdown_by_country['FR'])->toBe(3000.00);
+    expect($updated->total_amount->isEqualTo(cents(600000)))->toBeTrue();
+    expect($updated->breakdown_by_country['IT'])->toBe(100000);
+    expect($updated->breakdown_by_country['DE'])->toBe(200000);
+    expect($updated->breakdown_by_country['FR'])->toBe(300000);
 });
 
 it('can update existing country amount', function () {
     $threshold = EuSalesThreshold::create([
         'user_id'              => TestCase::USER_UUID_1,
         'fiscal_year'          => 2024,
-        'total_amount'         => 5000.00,
+        'total_amount'         => cents(500000),
         'breakdown_by_country' => [
-            'DE' => 2000.00,
-            'FR' => 3000.00,
+            'DE' => 200000,
+            'FR' => 300000,
         ],
     ]);
 
-    $updated = $threshold->addSalesAmount('DE', 500.00);
+    $updated = $threshold->addSalesAmount('DE', cents(50000));
 
-    expect($updated->total_amount)->toBe(5500.00);
-    expect($updated->breakdown_by_country['DE'])->toBe(2500.00);
-    expect($updated->breakdown_by_country['FR'])->toBe(3000.00);
+    expect($updated->total_amount->isEqualTo(cents(550000)))->toBeTrue();
+    expect($updated->breakdown_by_country['DE'])->toBe(250000);
+    expect($updated->breakdown_by_country['FR'])->toBe(300000);
 });
 
 it('can check if threshold is exceeded', function () {
     $threshold = EuSalesThreshold::create([
         'user_id'            => TestCase::USER_UUID_1,
         'fiscal_year'        => 2024,
-        'total_amount'       => 5000.00,
+        'total_amount'       => cents(500000),
         'threshold_exceeded' => false,
     ]);
 
     expect($threshold->isThresholdExceeded())->toBeFalse();
 
-    // Update to exceed threshold
-    $threshold->update(['total_amount' => 12000.00, 'threshold_exceeded' => true]);
+    $threshold->update(['total_amount' => cents(1200000), 'threshold_exceeded' => true]);
 
     expect($threshold->isThresholdExceeded())->toBeTrue();
 });
@@ -123,7 +123,7 @@ it('can mark threshold as exceeded', function () {
     $threshold = EuSalesThreshold::create([
         'user_id'            => TestCase::USER_UUID_1,
         'fiscal_year'        => 2024,
-        'total_amount'       => 12000.00,
+        'total_amount'       => cents(1200000),
         'threshold_exceeded' => false,
     ]);
 
@@ -150,26 +150,26 @@ it('can get sales amount by country', function () {
     $threshold = EuSalesThreshold::create([
         'user_id'              => TestCase::USER_UUID_1,
         'fiscal_year'          => 2024,
-        'total_amount'         => 5000.00,
+        'total_amount'         => cents(500000),
         'breakdown_by_country' => [
-            'DE' => 2000.00,
-            'FR' => 3000.00,
+            'DE' => 200000,
+            'FR' => 300000,
         ],
     ]);
 
-    expect($threshold->getSalesAmountByCountry('DE'))->toBe(2000.00);
-    expect($threshold->getSalesAmountByCountry('FR'))->toBe(3000.00);
-    expect($threshold->getSalesAmountByCountry('IT'))->toBe(0.00);
+    expect($threshold->getSalesAmountByCountry('DE')->isEqualTo(cents(200000)))->toBeTrue();
+    expect($threshold->getSalesAmountByCountry('FR')->isEqualTo(cents(300000)))->toBeTrue();
+    expect($threshold->getSalesAmountByCountry('IT')->isZero())->toBeTrue();
 });
 
 it('can get all countries with sales', function () {
     $threshold = EuSalesThreshold::create([
         'user_id'              => TestCase::USER_UUID_1,
         'fiscal_year'          => 2024,
-        'total_amount'         => 5000.00,
+        'total_amount'         => cents(500000),
         'breakdown_by_country' => [
-            'DE' => 2000.00,
-            'FR' => 3000.00,
+            'DE' => 200000,
+            'FR' => 300000,
         ],
     ]);
 
@@ -184,20 +184,20 @@ it('can reset sales amounts', function () {
     $threshold = EuSalesThreshold::create([
         'user_id'              => TestCase::USER_UUID_1,
         'fiscal_year'          => 2024,
-        'total_amount'         => 12000.00,
+        'total_amount'         => cents(1200000),
         'threshold_exceeded'   => true,
         'exceeded_at'          => now(),
         'notification_sent'    => true,
         'breakdown_by_country' => [
-            'DE' => 2000.00,
-            'FR' => 3000.00,
-            'IT' => 7000.00,
+            'DE' => 200000,
+            'FR' => 300000,
+            'IT' => 700000,
         ],
     ]);
 
     $reset = $threshold->resetSalesAmounts();
 
-    expect($reset->total_amount)->toBe(0.00);
+    expect($reset->total_amount->isZero())->toBeTrue();
     expect($reset->threshold_exceeded)->toBeFalse();
     expect($reset->exceeded_at)->toBeNull();
     expect($reset->notification_sent)->toBeFalse();
@@ -208,7 +208,7 @@ it('can use scopes correctly', function () {
     EuSalesThreshold::create([
         'user_id'            => TestCase::USER_UUID_1,
         'fiscal_year'        => 2024,
-        'total_amount'       => 12000.00,
+        'total_amount'       => cents(1200000),
         'threshold_exceeded' => true,
         'notification_sent'  => true,
     ]);
@@ -216,7 +216,7 @@ it('can use scopes correctly', function () {
     EuSalesThreshold::create([
         'user_id'            => TestCase::USER_UUID_2,
         'fiscal_year'        => 2024,
-        'total_amount'       => 5000.00,
+        'total_amount'       => cents(500000),
         'threshold_exceeded' => false,
         'notification_sent'  => false,
     ]);
@@ -224,47 +224,36 @@ it('can use scopes correctly', function () {
     EuSalesThreshold::create([
         'user_id'            => TestCase::USER_UUID_3,
         'fiscal_year'        => 2023,
-        'total_amount'       => 15000.00,
+        'total_amount'       => cents(1500000),
         'threshold_exceeded' => true,
         'notification_sent'  => false,
     ]);
 
-    // Test by fiscal year scope
-    $thresholds2024 = EuSalesThreshold::byFiscalYear(2024)->get();
-    expect($thresholds2024)->toHaveCount(2);
-
-    // Test threshold exceeded scope
-    $exceededThresholds = EuSalesThreshold::thresholdExceeded()->get();
-    expect($exceededThresholds)->toHaveCount(2);
-
-    // Test by company scope
-    $companyThresholds = EuSalesThreshold::byUser(TestCase::USER_UUID_1)->get();
-    expect($companyThresholds)->toHaveCount(1);
-
-    // Test needs notification scope
-    $needsNotificationThresholds = EuSalesThreshold::needsNotification()->get();
-    expect($needsNotificationThresholds)->toHaveCount(1); // Only company-789
+    expect(EuSalesThreshold::byFiscalYear(2024)->get())->toHaveCount(2);
+    expect(EuSalesThreshold::thresholdExceeded()->get())->toHaveCount(2);
+    expect(EuSalesThreshold::byUser(TestCase::USER_UUID_1)->get())->toHaveCount(1);
+    expect(EuSalesThreshold::needsNotification()->get())->toHaveCount(1);
 });
 
 it('can get threshold statistics', function () {
     EuSalesThreshold::create([
         'user_id'              => TestCase::USER_UUID_1,
         'fiscal_year'          => 2024,
-        'total_amount'         => 12000.00,
+        'total_amount'         => cents(1200000),
         'threshold_exceeded'   => true,
         'breakdown_by_country' => [
-            'DE' => 5000.00,
-            'FR' => 7000.00,
+            'DE' => 500000,
+            'FR' => 700000,
         ],
     ]);
 
     EuSalesThreshold::create([
         'user_id'              => TestCase::USER_UUID_2,
         'fiscal_year'          => 2024,
-        'total_amount'         => 5000.00,
+        'total_amount'         => cents(500000),
         'threshold_exceeded'   => false,
         'breakdown_by_country' => [
-            'IT' => 5000.00,
+            'IT' => 500000,
         ],
     ]);
 
@@ -272,24 +261,24 @@ it('can get threshold statistics', function () {
 
     expect($stats['total_companies'])->toBe(2);
     expect($stats['exceeded_companies'])->toBe(1);
-    expect($stats['total_sales_amount'])->toBe(17000.00);
-    expect($stats['breakdown_by_country']['DE'])->toBe(5000.00);
-    expect($stats['breakdown_by_country']['FR'])->toBe(7000.00);
-    expect($stats['breakdown_by_country']['IT'])->toBe(5000.00);
+    expect($stats['total_sales_amount']->isEqualTo(cents(1700000)))->toBeTrue();
+    expect($stats['breakdown_by_country']['DE'])->toBe(500000);
+    expect($stats['breakdown_by_country']['FR'])->toBe(700000);
+    expect($stats['breakdown_by_country']['IT'])->toBe(500000);
 });
 
 it('can get companies exceeding threshold', function () {
     EuSalesThreshold::create([
         'user_id'            => TestCase::USER_UUID_1,
         'fiscal_year'        => 2024,
-        'total_amount'       => 12000.00,
+        'total_amount'       => cents(1200000),
         'threshold_exceeded' => true,
     ]);
 
     EuSalesThreshold::create([
         'user_id'            => TestCase::USER_UUID_2,
         'fiscal_year'        => 2024,
-        'total_amount'       => 5000.00,
+        'total_amount'       => cents(500000),
         'threshold_exceeded' => false,
     ]);
 
@@ -303,7 +292,7 @@ it('can get companies needing notification', function () {
     EuSalesThreshold::create([
         'user_id'            => TestCase::USER_UUID_1,
         'fiscal_year'        => 2024,
-        'total_amount'       => 12000.00,
+        'total_amount'       => cents(1200000),
         'threshold_exceeded' => true,
         'notification_sent'  => false,
     ]);
@@ -311,7 +300,7 @@ it('can get companies needing notification', function () {
     EuSalesThreshold::create([
         'user_id'            => TestCase::USER_UUID_2,
         'fiscal_year'        => 2024,
-        'total_amount'       => 12000.00,
+        'total_amount'       => cents(1200000),
         'threshold_exceeded' => true,
         'notification_sent'  => true,
     ]);
@@ -326,14 +315,12 @@ it('can calculate threshold percentage', function () {
     $threshold = EuSalesThreshold::create([
         'user_id'      => TestCase::USER_UUID_1,
         'fiscal_year'  => 2024,
-        'total_amount' => 7500.00,
+        'total_amount' => cents(750000), // €7,500 against default €10,000 threshold
     ]);
 
-    // Assuming default threshold is 10000
     expect($threshold->getThresholdPercentage())->toBe(75.0);
 
-    // Test with zero threshold
-    $threshold->update(['total_amount' => 0]);
+    $threshold->update(['total_amount' => cents(0)]);
     expect($threshold->getThresholdPercentage())->toBe(0.0);
 });
 
@@ -341,42 +328,37 @@ it('can get remaining threshold amount', function () {
     $threshold = EuSalesThreshold::create([
         'user_id'      => TestCase::USER_UUID_1,
         'fiscal_year'  => 2024,
-        'total_amount' => 7500.00,
+        'total_amount' => cents(750000),
     ]);
 
-    // Assuming default threshold is 10000
-    expect($threshold->getRemainingThresholdAmount())->toBe(2500.00);
+    expect($threshold->getRemainingThresholdAmount()->isEqualTo(cents(250000)))->toBeTrue();
 
-    // Test when threshold is exceeded
-    $threshold->update(['total_amount' => 12000.00]);
-    expect($threshold->getRemainingThresholdAmount())->toBe(0.0);
+    $threshold->update(['total_amount' => cents(1200000)]);
+    expect($threshold->getRemainingThresholdAmount()->isZero())->toBeTrue();
 });
 
 it('can get default threshold from config', function () {
     config(['larabill.destination_vat.default_threshold' => 1500000]); // €15,000.00 in base 100
 
-    expect(EuSalesThreshold::getDefaultThreshold())->toBe(1500000); // Base 100 integer
+    expect(EuSalesThreshold::getDefaultThreshold())->toBe(1500000);
 });
 
 it('can check if company needs threshold monitoring', function () {
-    // Company with no threshold record
     expect(EuSalesThreshold::companyNeedsThresholdMonitoring('company-new', 2024))->toBeTrue();
 
-    // Company with threshold record but not exceeded
     EuSalesThreshold::create([
         'user_id'            => TestCase::USER_UUID_1,
         'fiscal_year'        => 2024,
-        'total_amount'       => 5000.00,
+        'total_amount'       => cents(500000),
         'threshold_exceeded' => false,
     ]);
 
     expect(EuSalesThreshold::companyNeedsThresholdMonitoring(TestCase::USER_UUID_1, 2024))->toBeFalse();
 
-    // Company with threshold exceeded
     EuSalesThreshold::create([
         'user_id'            => TestCase::USER_UUID_2,
         'fiscal_year'        => 2024,
-        'total_amount'       => 12000.00,
+        'total_amount'       => cents(1200000),
         'threshold_exceeded' => true,
     ]);
 
@@ -413,11 +395,11 @@ it('can get top countries by sales', function () {
     EuSalesThreshold::create([
         'user_id'              => TestCase::USER_UUID_1,
         'fiscal_year'          => 2024,
-        'total_amount'         => 15000.00,
+        'total_amount'         => cents(1500000),
         'breakdown_by_country' => [
-            'DE' => 8000.00,
-            'FR' => 5000.00,
-            'IT' => 2000.00,
+            'DE' => 800000,
+            'FR' => 500000,
+            'IT' => 200000,
         ],
     ]);
 
@@ -425,32 +407,53 @@ it('can get top countries by sales', function () {
 
     expect($topCountries)->toHaveCount(2);
     expect($topCountries[0]['country'])->toBe('DE');
-    expect($topCountries[0]['amount'])->toBe(8000.00);
+    expect($topCountries[0]['amount']->isEqualTo(cents(800000)))->toBeTrue();
     expect($topCountries[1]['country'])->toBe('FR');
-    expect($topCountries[1]['amount'])->toBe(5000.00);
+    expect($topCountries[1]['amount']->isEqualTo(cents(500000)))->toBeTrue();
+});
+
+it('compares total against threshold in the same base-100 unit (euro-vs-cents bug regression)', function () {
+    // Regression for AID-240: the legacy model stored total_amount in cents
+    // (fed by taxable_amount->unscaledValue()) but seeded threshold_amount from a
+    // euro-denominated config default (10000.0), so €80 of sales falsely exceeded
+    // a €10,000 threshold. With everything in base-100 minor units this holds.
+    $threshold = EuSalesThreshold::getOrCreateForUser(TestCase::USER_UUID_1, 2024);
+
+    // Default threshold is €10,000.00 (1,000,000 minor units).
+    expect($threshold->threshold_amount->isEqualTo(cents(1000000)))->toBeTrue();
+
+    // €8,000 of sales must NOT exceed the €10,000 threshold.
+    $threshold->addAmount(cents(800000));
+    expect($threshold->total_amount->isEqualTo(cents(800000)))->toBeTrue();
+    expect($threshold->checkThreshold())->toBeFalse();
+    expect($threshold->fresh()->threshold_exceeded)->toBeFalse();
+
+    // A further €3,000 (total €11,000) crosses the threshold.
+    $threshold->addAmount(cents(300000));
+    expect($threshold->total_amount->isEqualTo(cents(1100000)))->toBeTrue();
+    expect($threshold->checkThreshold())->toBeTrue();
+    expect($threshold->fresh()->threshold_exceeded)->toBeTrue();
 });
 
 it('can get sales growth by company', function () {
-    // Create previous year data
     EuSalesThreshold::create([
         'user_id'      => TestCase::USER_UUID_1,
         'fiscal_year'  => 2023,
-        'total_amount' => 8000.00,
+        'total_amount' => cents(800000),
     ]);
 
-    // Create current year data
     EuSalesThreshold::create([
         'user_id'      => TestCase::USER_UUID_1,
         'fiscal_year'  => 2024,
-        'total_amount' => 12000.00,
+        'total_amount' => cents(1200000),
     ]);
 
     $growth = EuSalesThreshold::getSalesGrowthByCompany(TestCase::USER_UUID_1, 2024);
 
     expect($growth['current_year'])->toBe(2024);
-    expect($growth['current_amount'])->toBe(12000.00);
+    expect($growth['current_amount']->isEqualTo(cents(1200000)))->toBeTrue();
     expect($growth['previous_year'])->toBe(2023);
-    expect($growth['previous_amount'])->toBe(8000.00);
-    expect($growth['growth_amount'])->toBe(4000.00);
+    expect($growth['previous_amount']->isEqualTo(cents(800000)))->toBeTrue();
+    expect($growth['growth_amount']->isEqualTo(cents(400000)))->toBeTrue();
     expect($growth['growth_percentage'])->toBe(50.0);
 });

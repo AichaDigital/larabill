@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services;
 
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\CountryVatRate;
 use AichaDigital\Larabill\Models\EuSalesThreshold;
@@ -100,7 +101,8 @@ class DestinationVatService
         }
 
         $threshold = EuSalesThreshold::getOrCreateForUser($userId, $fiscalYear);
-        $threshold->addSalesForCountry($countryCode, $amount);
+        // $amount is a decimal euro figure; store it as base-100 minor units.
+        $threshold->addSalesForCountry($countryCode, FixedDecimal::ofFloat($amount, 2));
 
         $this->clearCompanyCache($userId);
     }

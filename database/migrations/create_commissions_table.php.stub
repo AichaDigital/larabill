@@ -29,7 +29,7 @@ return new class extends Migration
                 ->default(0)
                 ->comment('Tipo de comisión: 0=percentage, 1=fixed (CommissionType enum)');
 
-            $table->decimal('rate', 8, 4)->comment('Tasa de comisión (20.5000 = 20.5% o €20.50 fijo)');
+            $table->integer('rate')->comment('Base-100 minor units: 2050 = 20.50% o €20.50 fijo (FixedDecimalCast:2)');
             $table->integer('rate_base100')->nullable()->comment('Base-100 para cálculos (2050 = 20.50)');
 
             $table->unsignedTinyInteger('applies_to')

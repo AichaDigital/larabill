@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
+use AichaDigital\Lara100\Casts\FixedDecimalCast;
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Concerns\HasUserRelation;
 use AichaDigital\Larabill\Services\ModelMappingService;
 use Illuminate\Database\Eloquent\Builder;
@@ -15,16 +17,18 @@ use Illuminate\Support\Carbon;
  * EuSalesThreshold Model
  *
  * Represents EU sales thresholds for companies, tracking total sales amounts and threshold exceedance.
- * All monetary amounts are stored as decimal values (e.g., €12.34 => 12.34).
+ * Monetary amounts are FixedDecimal:2 over integer base-100 minor-unit columns
+ * (AID-240): €5,000.00 is stored as 500000. breakdown_by_country is a JSON map
+ * of raw integer cents per country.
  *
  * @property string $user_id
  * @property int $fiscal_year
- * @property float $total_amount Monetary amount (e.g., 12.34 => €12.34)
- * @property float $threshold_amount Monetary amount (e.g., 10000.00 => €10,000.00)
+ * @property FixedDecimal $total_amount Base-100 minor units (e.g., 500000 => €5,000.00)
+ * @property FixedDecimal $threshold_amount Base-100 minor units (e.g., 1000000 => €10,000.00)
  * @property bool $threshold_exceeded
  * @property Carbon|null $exceeded_at
  * @property bool $notification_sent
- * @property array<string, float>|null $breakdown_by_country
+ * @property array<string, int>|null $breakdown_by_country Raw integer cents per country
  * @property string $currency
  * @property Carbon|null $last_updated
  */
@@ -51,14 +55,14 @@ class EuSalesThreshold extends Model
     /**
      * Casts for attributes.
      *
-     * Uses decimal values for monetary amounts (amounts, thresholds)
-     * Example: €12.34 is stored as 12.34, €10,000.00 as 10000.00
+     * Monetary amounts are FixedDecimal:2 over integer base-100 columns.
+     * Example: €5,000.00 is stored as 500000, €10,000.00 as 1000000.
      */
     public function casts(): array
     {
         return [
-            'total_amount'         => 'float', // Monetary amount: €12.34
-            'threshold_amount'     => 'float', // Monetary amount: €10000.00
+            'total_amount'         => FixedDecimalCast::class.':2',
+            'threshold_amount'     => FixedDecimalCast::class.':2',
             'threshold_exceeded'   => 'boolean',
             'notification_sent'    => 'boolean',
             'breakdown_by_country' => 'array',
@@ -68,10 +72,10 @@ class EuSalesThreshold extends Model
     }
 
     /**
-     * Accessor for breakdown_by_country to ensure float values.
+     * Accessor for breakdown_by_country: raw integer cents per country.
      *
      * @param  mixed  $value
-     * @return array<string, float>
+     * @return array<string, int>
      */
     public function getBreakdownByCountryAttribute($value): array
     {
@@ -79,66 +83,14 @@ class EuSalesThreshold extends Model
             return [];
         }
 
-        $breakdown = json_decode($value, true) ?? [];
+        $breakdown = is_array($value) ? $value : (json_decode($value, true) ?? []);
 
-        // Ensure all values are float
+        // Storage representation is integer base-100 minor units.
         foreach ($breakdown as $country => $amount) {
-            $breakdown[$country] = (float) $amount;
+            $breakdown[$country] = (int) $amount;
         }
 
         return $breakdown;
-    }
-
-    /**
-     * Convert monetary amount to base 100 integer.
-     */
-    public static function amountToBase100(float $amount): int
-    {
-        return (int) ($amount * 100);
-    }
-
-    /**
-     * Convert base 100 integer to monetary amount.
-     */
-    public static function base100ToAmount(int $base100): float
-    {
-        return $base100 / 100.0;
-    }
-
-    /**
-     * Get total amount as monetary amount.
-     */
-    public function getTotalAmountAsAmount(): float
-    {
-        return (float) $this->total_amount;
-    }
-
-    /**
-     * Get threshold amount as monetary amount.
-     */
-    public function getThresholdAmountAsAmount(): float
-    {
-        return (float) $this->threshold_amount;
-    }
-
-    /**
-     * Set total amount from monetary amount.
-     */
-    public function setTotalAmountFromAmount(float $amount): self
-    {
-        $this->update(['total_amount' => static::amountToBase100($amount)]);
-
-        return $this;
-    }
-
-    /**
-     * Set threshold amount from monetary amount.
-     */
-    public function setThresholdAmountFromAmount(float $amount): self
-    {
-        $this->update(['threshold_amount' => static::amountToBase100($amount)]);
-
-        return $this;
     }
 
     /**
@@ -151,7 +103,10 @@ class EuSalesThreshold extends Model
         static::creating(function ($model) {
             // Set default threshold amount if not provided
             if (! $model->threshold_amount) {
-                $model->threshold_amount = config('larabill.destination_vat.default_threshold', 10000.0);
+                $model->threshold_amount = FixedDecimal::ofUnscaled(
+                    (int) config('larabill.destination_vat.default_threshold', 1000000),
+                    2
+                );
             }
 
             // Set default currency if not provided
@@ -218,31 +173,35 @@ class EuSalesThreshold extends Model
                 'fiscal_year' => $fiscalYear,
             ],
             [
-                'total_amount'         => 0,
+                'total_amount'         => FixedDecimal::zero(2),
                 'threshold_exceeded'   => false,
                 'notification_sent'    => false,
                 'breakdown_by_country' => [],
-                'threshold_amount'     => config('larabill.destination_vat.default_threshold', 10000.0),
+                'threshold_amount'     => FixedDecimal::ofUnscaled(
+                    (int) config('larabill.destination_vat.default_threshold', 1000000),
+                    2
+                ),
                 'currency'             => config('larabill.destination_vat.currency', 'EUR'),
             ]
         );
     }
 
     /**
-     * Calculate total sales amount.
+     * Calculate total sales amount from the per-country breakdown.
      */
-    public function calculateTotal(): float
+    public function calculateTotal(): FixedDecimal
     {
         $breakdown = $this->breakdown_by_country ?? [];
         $total     = 0;
 
         foreach ($breakdown as $amount) {
-            $total += (float) $amount;
+            $total += (int) $amount;
         }
 
-        $this->update(['total_amount' => $total]);
+        $totalAmount = FixedDecimal::ofUnscaled($total, 2);
+        $this->update(['total_amount' => $totalAmount]);
 
-        return $total;
+        return $totalAmount;
     }
 
     /**
@@ -250,7 +209,7 @@ class EuSalesThreshold extends Model
      */
     public function checkThreshold(): bool
     {
-        $exceeded = $this->total_amount >= $this->threshold_amount;
+        $exceeded = $this->total_amount->compareTo($this->threshold_amount) >= 0;
 
         if ($exceeded && ! $this->threshold_exceeded) {
             $this->update([
@@ -265,15 +224,15 @@ class EuSalesThreshold extends Model
     /**
      * Add sales amount for a specific country.
      */
-    public function addSalesForCountry(string $countryCode, float $amount): self
+    public function addSalesForCountry(string $countryCode, FixedDecimal $amount): self
     {
         $breakdown               = $this->breakdown_by_country ?? [];
-        $currentAmount           = $breakdown[$countryCode]    ?? 0;
-        $breakdown[$countryCode] = $currentAmount + $amount;
+        $currentAmount           = (int) ($breakdown[$countryCode] ?? 0);
+        $breakdown[$countryCode] = $currentAmount + $amount->unscaledValue();
 
         $this->update([
             'breakdown_by_country' => $breakdown,
-            'total_amount'         => $this->total_amount + $amount,
+            'total_amount'         => $this->total_amount->plus($amount),
         ]);
 
         $this->checkThreshold();
@@ -284,11 +243,11 @@ class EuSalesThreshold extends Model
     /**
      * Get sales amount for a specific country.
      */
-    public function getSalesForCountry(string $countryCode): float
+    public function getSalesForCountry(string $countryCode): FixedDecimal
     {
         $breakdown = $this->breakdown_by_country ?? [];
 
-        return (float) ($breakdown[$countryCode] ?? 0);
+        return FixedDecimal::ofUnscaled((int) ($breakdown[$countryCode] ?? 0), 2);
     }
 
     /**
@@ -301,14 +260,14 @@ class EuSalesThreshold extends Model
         $breakdown = $this->breakdown_by_country ?? [];
 
         return array_keys(array_filter($breakdown, function ($amount) {
-            return $amount > 0;
+            return (int) $amount > 0;
         }));
     }
 
     /**
      * Get top countries by sales amount (instance method).
      *
-     * @return array<string, float>
+     * @return array<string, int> Raw integer cents per country
      */
     public function getTopCountriesBySalesForInstance(int $limit = 10): array
     {
@@ -324,19 +283,21 @@ class EuSalesThreshold extends Model
      */
     public function getThresholdPercentage(): float
     {
-        if ($this->threshold_amount <= 0) {
+        if (! $this->threshold_amount->isPositive()) {
             return 0.0;
         }
 
-        return (float) min(100, ($this->total_amount / $this->threshold_amount) * 100);
+        return (float) min(100, ($this->total_amount->toFloat() / $this->threshold_amount->toFloat()) * 100);
     }
 
     /**
      * Get remaining amount until threshold.
      */
-    public function getRemainingThresholdAmount(): float
+    public function getRemainingThresholdAmount(): FixedDecimal
     {
-        return (float) max(0, $this->threshold_amount - $this->total_amount);
+        $remaining = $this->threshold_amount->minus($this->total_amount);
+
+        return $remaining->isNegative() ? FixedDecimal::zero(2) : $remaining;
     }
 
     /**
@@ -364,7 +325,7 @@ class EuSalesThreshold extends Model
     {
         $this->update([
             'fiscal_year'          => $newFiscalYear,
-            'total_amount'         => 0,
+            'total_amount'         => FixedDecimal::zero(2),
             'threshold_exceeded'   => false,
             'exceeded_at'          => null,
             'notification_sent'    => false,
@@ -458,25 +419,27 @@ class EuSalesThreshold extends Model
                     if (! isset($breakdown[$country])) {
                         $breakdown[$country] = 0;
                     }
-                    $breakdown[$country] += (float) $amount;
+                    $breakdown[$country] += (int) $amount;
                 }
             }
         }
 
+        $totalSales = $thresholds->sum(fn (self $threshold): int => $threshold->total_amount->unscaledValue());
+
         return [
             'total_companies'      => $thresholds->count(),
             'exceeded_companies'   => $thresholds->where('threshold_exceeded', true)->count(),
-            'total_sales_amount'   => $thresholds->sum('total_amount'),
+            'total_sales_amount'   => FixedDecimal::ofUnscaled((int) $totalSales, 2),
             'breakdown_by_country' => $breakdown,
         ];
     }
 
     /**
-     * Get default threshold amount from config.
+     * Get default threshold amount from config (base-100 minor units).
      */
     public static function getDefaultThreshold(): int
     {
-        return config('larabill.destination_vat.default_threshold', 1000000); // Base 100 integer
+        return (int) config('larabill.destination_vat.default_threshold', 1000000);
     }
 
     /**
@@ -490,14 +453,14 @@ class EuSalesThreshold extends Model
     /**
      * Add sales amount for a specific country.
      */
-    public function addSalesAmount(string $countryCode, float $amount): self
+    public function addSalesAmount(string $countryCode, FixedDecimal $amount): self
     {
         $breakdown               = $this->breakdown_by_country ?? [];
-        $breakdown[$countryCode] = ($breakdown[$countryCode] ?? 0) + $amount;
+        $breakdown[$countryCode] = (int) ($breakdown[$countryCode] ?? 0) + $amount->unscaledValue();
 
         $this->update([
             'breakdown_by_country' => $breakdown,
-            'total_amount'         => $this->total_amount + $amount,
+            'total_amount'         => $this->total_amount->plus($amount),
             'last_updated'         => now(),
         ]);
 
@@ -507,10 +470,10 @@ class EuSalesThreshold extends Model
     /**
      * Add amount to total (without country breakdown).
      */
-    public function addAmount(float $amount): self
+    public function addAmount(FixedDecimal $amount): self
     {
         $this->update([
-            'total_amount'  => $this->total_amount + $amount,
+            'total_amount'  => $this->total_amount->plus($amount),
             'last_updated'  => now(),
         ]);
 
@@ -524,7 +487,7 @@ class EuSalesThreshold extends Model
      */
     public function isThresholdExceeded(): bool
     {
-        return $this->total_amount >= $this->threshold_amount;
+        return $this->total_amount->compareTo($this->threshold_amount) >= 0;
     }
 
     /**
@@ -543,11 +506,11 @@ class EuSalesThreshold extends Model
     /**
      * Get sales amount by country.
      */
-    public function getSalesAmountByCountry(string $countryCode): float
+    public function getSalesAmountByCountry(string $countryCode): FixedDecimal
     {
         $breakdown = $this->breakdown_by_country ?? [];
 
-        return $breakdown[$countryCode] ?? 0.0;
+        return FixedDecimal::ofUnscaled((int) ($breakdown[$countryCode] ?? 0), 2);
     }
 
     /**
@@ -556,7 +519,7 @@ class EuSalesThreshold extends Model
     public function resetSalesAmounts(): self
     {
         $this->update([
-            'total_amount'         => 0,
+            'total_amount'         => FixedDecimal::zero(2),
             'breakdown_by_country' => [],
             'threshold_exceeded'   => false,
             'exceeded_at'          => null,
@@ -672,7 +635,7 @@ class EuSalesThreshold extends Model
                     if (! isset($countryTotals[$country])) {
                         $countryTotals[$country] = 0;
                     }
-                    $countryTotals[$country] += (float) $amount;
+                    $countryTotals[$country] += (int) $amount;
                 }
             }
         }
@@ -680,7 +643,7 @@ class EuSalesThreshold extends Model
         // Sort by amount descending
         arsort($countryTotals);
 
-        // Convert to array format expected by tests
+        // Convert to array format expected by tests (amount as FixedDecimal).
         $result = [];
         $count  = 0;
         foreach ($countryTotals as $country => $amount) {
@@ -689,7 +652,7 @@ class EuSalesThreshold extends Model
             }
             $result[] = [
                 'country' => $country,
-                'amount'  => $amount,
+                'amount'  => FixedDecimal::ofUnscaled((int) $amount, 2),
             ];
             $count++;
         }
@@ -712,11 +675,13 @@ class EuSalesThreshold extends Model
             ->where('fiscal_year', $fiscalYear - 1)
             ->first();
 
-        $currentAmount  = $current ? $current->total_amount : 0;
-        $previousAmount = $previous ? $previous->total_amount : 0;
+        $currentAmount  = $current ? $current->total_amount : FixedDecimal::zero(2);
+        $previousAmount = $previous ? $previous->total_amount : FixedDecimal::zero(2);
 
-        $growthAmount     = $currentAmount - $previousAmount;
-        $growthPercentage = $previousAmount > 0 ? (($currentAmount - $previousAmount) / $previousAmount) * 100 : 0;
+        $growthAmount     = $currentAmount->minus($previousAmount);
+        $growthPercentage = $previousAmount->isPositive()
+            ? (($currentAmount->toFloat() - $previousAmount->toFloat()) / $previousAmount->toFloat()) * 100
+            : 0.0;
 
         return [
             'user_id'           => $companyId,
