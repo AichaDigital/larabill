@@ -2,6 +2,46 @@
 
 All notable changes to `larabill` will be documented in this file.
 
+## [Unreleased]
+
+Preparatory work toward **v3.0.0** (AID-242), continuing the FixedDecimal money
+migration into the small base-100 systems AID-240 left untouched. **Breaking**,
+but NOT yet released as 3.0.0: the large rate models (`VatCategory`,
+`CountryVatRate`) still expose their legacy base-100 API and are deferred to a
+dedicated PR before any 3.0.0 tag.
+
+### Changed (BREAKING — Commission)
+
+- `Commission::min_amount`/`max_amount` (renamed from `min_amount_base100`/
+  `max_amount_base100`) are now `FixedDecimal:2` instead of plain base-100
+  integers. `calculateAmount()` compares against them via `unscaledValue()`.
+- Removed `Commission::rate_base100` (column + cast + fillable): it duplicated
+  `rate`, which has been `FixedDecimal` since 2.0.0 and is the value
+  `calculateAmount()` actually uses.
+
+### Fixed (schema hygiene)
+
+- Removed the orphan `tax_group_id` from `InvoiceItem::$fillable`: the table has
+  no such column (it is a transient input resolved by `TaxCalculationService`),
+  so a mass-assignment was silently dropped.
+
+### Added
+
+- `tests/Integration/Mysql/FillableSchemaConsistencyTest`: a MySQL guardrail that
+  fails when a core model declares a `$fillable` column that does not exist in
+  its table. Carries a documented allow-list of pre-existing `Invoice` orphans
+  (`user_tax_info_encrypted`, `customer_data`, `fiscal_data`, `vat_verification`,
+  residue of the ADR-003 refactor) tracked as a separate follow-up; the list may
+  only shrink.
+
+### Notes
+
+- Still on the legacy base-100 API by design (deferred): `VatCategory.vat_rate`,
+  `CountryVatRate.{standard_rate,reduced_rates}` (rate refactor — own PR) and
+  `TaxRate.rate` (base-10000 fiscal core — excluded). `CompanyConfig` (dead,
+  table-less legacy of `CompanyFiscalConfig`) is left untouched pending a
+  removal/deprecation decision.
+
 ## [2.0.0] - 2026-06-23
 
 Closes the **"no decimals in the database"** rule for the parallel money/rate

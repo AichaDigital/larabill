@@ -31,13 +31,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property string|null $product_group (for level=product_group)
  * @property CommissionType $type Commission type enum
  * @property FixedDecimal $rate Percentage (20.50) or fixed amount (€20.50), base-100 cents
- * @property int|null $rate_base100 Base-100 for calculations
  * @property CommissionAppliesTo $applies_to What the commission applies to
  * @property \Illuminate\Support\Carbon $valid_from
  * @property \Illuminate\Support\Carbon|null $valid_until
  * @property bool $is_active
- * @property int|null $min_amount_base100 Base-100 minimum amount
- * @property int|null $max_amount_base100 Base-100 maximum amount
+ * @property FixedDecimal|null $min_amount Base-100 minimum amount (FixedDecimal:2)
+ * @property FixedDecimal|null $max_amount Base-100 maximum amount (FixedDecimal:2)
  * @property int|null $min_quantity Minimum quantity
  * @property string $name
  * @property string|null $description
@@ -64,13 +63,12 @@ class Commission extends Model
         'product_group',
         'type',
         'rate',
-        'rate_base100',
         'applies_to',
         'valid_from',
         'valid_until',
         'is_active',
-        'min_amount_base100',
-        'max_amount_base100',
+        'min_amount',
+        'max_amount',
         'min_quantity',
         'name',
         'description',
@@ -91,12 +89,11 @@ class Commission extends Model
             'type'               => CommissionType::class,
             'applies_to'         => CommissionAppliesTo::class,
             'rate'               => FixedDecimalCast::class.':2', // 10.50% ↔ 1050 or €20.50 ↔ 2050
-            'rate_base100'       => 'integer',
             'valid_from'         => 'date',
             'valid_until'        => 'date',
             'is_active'          => 'boolean',
-            'min_amount_base100' => 'integer',
-            'max_amount_base100' => 'integer',
+            'min_amount'         => FixedDecimalCast::class.':2',
+            'max_amount'         => FixedDecimalCast::class.':2',
             'min_quantity'       => 'integer',
             'metadata'           => 'array',
         ];
@@ -124,12 +121,14 @@ class Commission extends Model
             return 0;
         }
 
-        // Check amount limits
-        if ($this->min_amount_base100 && $baseAmount * 100 < $this->min_amount_base100) {
+        // Check amount limits (base in cents vs FixedDecimal:2 minor units).
+        $baseCents = (int) round($baseAmount * 100);
+
+        if ($this->min_amount && $baseCents < $this->min_amount->unscaledValue()) {
             return 0;
         }
 
-        if ($this->max_amount_base100 && $baseAmount * 100 > $this->max_amount_base100) {
+        if ($this->max_amount && $baseCents > $this->max_amount->unscaledValue()) {
             return 0;
         }
 
