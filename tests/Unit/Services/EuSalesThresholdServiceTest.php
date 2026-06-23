@@ -44,7 +44,7 @@ describe('EuSalesThresholdService', function () {
 
         $status = $service->getThresholdStatus($userId, $fiscalYear);
 
-        expect($status['current_amount'])->toBeNumeric()->toBe(0.0);
+        expect($status['current_amount']->isZero())->toBeTrue();
         expect($status['exceeded'])->toBeFalse();
     });
 
@@ -54,7 +54,7 @@ describe('EuSalesThresholdService', function () {
 
         $status = $service->getThresholdStatus($userId, 2020);
 
-        expect($status['current_amount'])->toBe(0);
+        expect($status['current_amount']->isZero())->toBeTrue();
     });
 
     it('resets for new fiscal year', function () {
@@ -65,14 +65,14 @@ describe('EuSalesThresholdService', function () {
 
         // Create old year threshold with some amount
         $oldThreshold = EuSalesThreshold::getOrCreateForUser($userId, $oldYear);
-        $oldThreshold->addAmount(50000);
+        $oldThreshold->addAmount(cents(50000));
 
         // Reset for new year
         $service->resetForNewFiscalYear($userId, $oldYear, $newYear);
 
         // New year should exist and be at 0
         $newStatus = $service->getThresholdStatus($userId, $newYear);
-        expect($newStatus['current_amount'])->toBeNumeric()->toBe(0.0);
+        expect($newStatus['current_amount']->isZero())->toBeTrue();
     });
 
     it('determines notification needed when threshold exceeded', function () {

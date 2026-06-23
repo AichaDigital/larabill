@@ -2,6 +2,63 @@
 
 All notable changes to `larabill` will be documented in this file.
 
+## [2.0.0] - 2026-06-23
+
+Closes the **"no decimals in the database"** rule for the parallel money/rate
+systems that 1.0.0 (`FixedDecimal` migration, AID-237) left untouched. Two real
+`decimal` columns owned by the package are migrated to `integer` base-100 minor
+units, and `EuSalesThreshold` moves from a `float` euro API to `FixedDecimal`.
+This is a **breaking change** for `EuSalesThreshold` consumers. See
+`docs/upgrade-2.0-eu-sales-thresholds.md`. Scope is deliberately limited to the
+real violations (AID-240 plan, option C); the cosmetic unification of the
+already-integer rate systems (`vat_categories`, `country_vat_rates`,
+`commissions.*_base100`, `tax_rates`) is a separate follow-up.
+
+### Changed (BREAKING — `EuSalesThreshold`)
+
+- `total_amount` and `threshold_amount` now expose an immutable `FixedDecimal:2`
+  instead of a `float`. Reading returns `FixedDecimal`; convert at the boundary
+  with `->unscaledValue()` (base-100 cents), `->toDecimalString()`, or
+  `->toFloat()` (lossy, display only).
+- `breakdown_by_country` is now a JSON map of **integer cents per country**
+  (`{"DE": 200000}` = €2,000.00), previously a map of euro floats. Per-country
+  getters (`getSalesAmountByCountry()`, `getSalesForCountry()`) return
+  `FixedDecimal`; the raw attribute stays integer cents.
+- Mutators now require a `FixedDecimal`: `addAmount()`, `addSalesAmount()` and
+  `addSalesForCountry()` take a `FixedDecimal` instead of a `float`.
+- Aggregate getters expose `FixedDecimal`: `getThresholdStatistics()['total_sales_amount']`,
+  `getTopCountriesBySales()[]['amount']`, `getSalesGrowthByCompany()` amounts,
+  `getRemainingThresholdAmount()`, `calculateTotal()`,
+  `EuSalesThresholdService::getThresholdStatus()['current_amount'|'threshold']`,
+  and `EuSalesThresholdService::recalculateEuSales()`.
+- Removed the float helper surface from `EuSalesThreshold`: `amountToBase100()`,
+  `base100ToAmount()`, `getTotalAmountAsAmount()`, `getThresholdAmountAsAmount()`,
+  `setTotalAmountFromAmount()`, `setThresholdAmountFromAmount()`.
+
+### Changed (database — DB-only, no data migration)
+
+- `commissions.rate`: `decimal(8,4)` → `integer`. The cast was already
+  `FixedDecimalCast:2` (1.0.0); the column now matches it, removing the
+  `9999.9999` overflow ceiling on fixed commissions above €99.99.
+- `eu_sales_thresholds.total_amount` / `threshold_amount`: `decimal(15,2)` →
+  `integer` base-100 minor units.
+- `config('larabill.destination_vat.default_threshold')`: `10000.0` (euros) →
+  `1000000` (base-100 minor units).
+
+### Fixed
+
+- **Euro-vs-cents threshold bug**: the legacy model fed `total_amount` in cents
+  (from `taxable_amount->unscaledValue()`) but seeded `threshold_amount` from a
+  euro-denominated config default, so ~€80 of sales falsely tripped a €10,000
+  threshold. With both sides in base-100 minor units the comparison is correct;
+  covered by a regression test.
+
+### Verification
+
+- MySQL integration test asserts `commissions.rate`,
+  `eu_sales_thresholds.total_amount` and `threshold_amount` report `int`
+  (`information_schema`), never `decimal`.
+
 ## [1.0.0] - 2026-06-22
 
 Adopts lara100 v2.0.0's `FixedDecimal` value object for every monetary model

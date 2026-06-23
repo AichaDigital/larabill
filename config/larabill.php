@@ -119,7 +119,7 @@ return [
 
     // Destination VAT settings
     'destination_vat' => [
-        'default_threshold'      => 10000.0, // €10,000.00 (Base100 uses floats)
+        'default_threshold'      => 1000000, // €10,000.00 in base-100 minor units (FixedDecimal:2)
         'currency'               => 'EUR',
         'fiscal_year_start'      => '01-01', // MM-DD format
         'auto_apply_destination' => true,

@@ -19,12 +19,12 @@ return new class extends Migration
             MigrationHelper::userIdColumn($table, 'user_id');
 
             $table->integer('fiscal_year'); // e.g., 2024
-            $table->decimal('total_amount', 15, 2)->default(0.00); // Monetary amount
-            $table->decimal('threshold_amount', 15, 2)->default(10000.00); // Default EU threshold
+            $table->integer('total_amount')->default(0); // Base-100 minor units (FixedDecimalCast:2): 500000 = €5,000.00
+            $table->integer('threshold_amount')->default(1000000); // Base-100 minor units: 1000000 = €10,000.00 (default EU threshold)
             $table->boolean('threshold_exceeded')->default(false);
             $table->timestamp('exceeded_at')->nullable();
             $table->boolean('notification_sent')->default(false);
-            $table->json('breakdown_by_country')->nullable(); // {"ES": 5000.00, "FR": 3000.00}
+            $table->json('breakdown_by_country')->nullable(); // Base-100 minor units per country: {"DE": 200000, "FR": 300000}
             $table->string('currency', 3)->default('EUR'); // ISO 4217
             $table->timestamp('last_updated')->nullable();
             $table->timestamps();
