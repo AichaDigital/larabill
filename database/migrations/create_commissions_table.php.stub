@@ -30,7 +30,6 @@ return new class extends Migration
                 ->comment('Tipo de comisión: 0=percentage, 1=fixed (CommissionType enum)');
 
             $table->integer('rate')->comment('Base-100 minor units: 2050 = 20.50% o €20.50 fijo (FixedDecimalCast:2)');
-            $table->integer('rate_base100')->nullable()->comment('Base-100 para cálculos (2050 = 20.50)');
 
             $table->unsignedTinyInteger('applies_to')
                 ->default(0)
@@ -42,8 +41,8 @@ return new class extends Migration
             $table->boolean('is_active')->default(true)->comment('Si la comisión está activa');
 
             // Additional Conditions
-            $table->integer('min_amount_base100')->nullable()->comment('Base-100: Monto mínimo para aplicar comisión');
-            $table->integer('max_amount_base100')->nullable()->comment('Base-100: Monto máximo para comisión');
+            $table->integer('min_amount')->nullable()->comment('Base-100 minor units: monto mínimo para aplicar comisión (FixedDecimalCast:2)');
+            $table->integer('max_amount')->nullable()->comment('Base-100 minor units: monto máximo para comisión (FixedDecimalCast:2)');
             $table->unsignedInteger('min_quantity')->nullable()->comment('Cantidad mínima de artículos');
 
             // Description

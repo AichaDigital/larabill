@@ -96,3 +96,20 @@ it('uses soft deletes', function () {
     expect(Commission::find($commissionId))->toBeNull()
         ->and(Commission::withTrashed()->find($commissionId))->not->toBeNull();
 });
+
+it('exposes min/max amount as FixedDecimal and enforces them in calculateAmount', function () {
+    // €10.00 fixed commission, only applicable for a base of €50.00–€200.00.
+    $commission = Commission::factory()->create([
+        'type'       => CommissionType::FIXED,
+        'rate'       => cents(1000),  // €10.00 fixed
+        'min_amount' => cents(5000),  // €50.00
+        'max_amount' => cents(20000), // €200.00
+    ]);
+
+    expect($commission->min_amount->isEqualTo(cents(5000)))->toBeTrue()
+        ->and($commission->max_amount->isEqualTo(cents(20000)))->toBeTrue();
+
+    expect($commission->calculateAmount(30.0))->toBe(0.0)       // below min
+        ->and($commission->calculateAmount(250.0))->toBe(0.0)   // above max
+        ->and($commission->calculateAmount(100.0))->toBe(1000.0); // within → €10.00 (cents)
+});

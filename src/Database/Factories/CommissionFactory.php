@@ -39,13 +39,12 @@ class CommissionFactory extends Factory
             'product_group'      => null,
             'type'               => CommissionType::PERCENTAGE,
             'rate'               => FixedDecimal::ofUnscaled((int) $rate, 2),
-            'rate_base100'       => (int) ($rate * 100),
             'applies_to'         => CommissionAppliesTo::TAXABLE_AMOUNT,
             'valid_from'         => now(),
             'valid_until'        => null,
             'is_active'          => true,
-            'min_amount_base100' => null,
-            'max_amount_base100' => null,
+            'min_amount'         => null,
+            'max_amount'         => null,
             'min_quantity'       => null,
             'name'               => $this->faker->words(3, true),
             'description'        => $this->faker->optional()->sentence(),
@@ -93,9 +92,8 @@ class CommissionFactory extends Factory
         $fixedAmount = $amount ?? $this->faker->randomFloat(2, 1, 100);
 
         return $this->state(fn (array $attributes) => [
-            'type'         => CommissionType::FIXED,
-            'rate'         => FixedDecimal::ofUnscaled((int) $fixedAmount, 2),
-            'rate_base100' => (int) ($fixedAmount * 100),
+            'type' => CommissionType::FIXED,
+            'rate' => FixedDecimal::ofUnscaled((int) $fixedAmount, 2),
         ]);
     }
 
@@ -107,9 +105,8 @@ class CommissionFactory extends Factory
         $percentageRate = $rate ?? $this->faker->randomFloat(4, 1, 30);
 
         return $this->state(fn (array $attributes) => [
-            'type'         => CommissionType::PERCENTAGE,
-            'rate'         => FixedDecimal::ofUnscaled((int) $percentageRate, 2),
-            'rate_base100' => (int) ($percentageRate * 100),
+            'type' => CommissionType::PERCENTAGE,
+            'rate' => FixedDecimal::ofUnscaled((int) $percentageRate, 2),
         ]);
     }
 
