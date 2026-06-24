@@ -59,7 +59,6 @@ use Illuminate\Support\Facades\Crypt;
  * @property int|null $user_tax_profile_id FK to user_tax_profiles (ADR-003)
  * @property string|null $proforma_id UUID if converted from proforma
  * @property string|null $rectifies_invoice_id UUID if rectificative
- * @property string|null $user_tax_info_encrypted
  * @property string|null $issuer_snapshot Encrypted issuer data (v0.4.0)
  * @property string|null $customer_snapshot Encrypted customer data (v0.4.0)
  * @property string|null $fiscal_snapshot Encrypted fiscal context (v0.4.0)
@@ -68,9 +67,6 @@ use Illuminate\Support\Facades\Crypt;
  * @property string|null $fiscal_verification_hash Hash (v0.4.0)
  * @property Carbon|null $fiscal_verified_at (v0.4.0)
  * @property array<string, mixed>|null $fiscal_verification_metadata (v0.4.0)
- * @property array<string, mixed>|null $customer_data
- * @property array<string, mixed>|null $fiscal_data
- * @property array<string, mixed>|null $vat_verification
  * @property bool $is_roi_taxed ROI reverse charge
  * @property string $type invoice|proforma|rectificative
  * @property FixedDecimal $taxable_amount Base amount before tax
@@ -152,7 +148,6 @@ class Invoice extends Model implements LegallyRetainable
         'user_tax_profile_id',
         'proforma_id',
         'rectifies_invoice_id',
-        'user_tax_info_encrypted',
         'issuer_snapshot',
         'customer_snapshot',
         'fiscal_snapshot',
@@ -161,9 +156,6 @@ class Invoice extends Model implements LegallyRetainable
         'fiscal_verification_hash',
         'fiscal_verified_at',
         'fiscal_verification_metadata',
-        'customer_data',
-        'fiscal_data',
-        'vat_verification',
         'is_roi_taxed',
         'taxable_amount',
         'total_tax_amount',
@@ -203,10 +195,7 @@ class Invoice extends Model implements LegallyRetainable
             'taxable_amount'               => FixedDecimalCast::class.':2', // €12.34 ↔ 1234
             'total_tax_amount'             => FixedDecimalCast::class.':2',
             'total_amount'                 => FixedDecimalCast::class.':2', // €12.34 ↔ 1234
-            'fiscal_data'                  => 'array',
             'fiscal_verification_metadata' => 'array',
-            'vat_verification'             => 'array',
-            'customer_data'                => 'array',
             'is_roi_taxed'                 => 'boolean',
         ];
     }

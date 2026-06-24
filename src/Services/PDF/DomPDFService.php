@@ -246,10 +246,8 @@ class DomPDFService
      */
     protected function isReverseCharge(Invoice $invoice): bool
     {
-        // Check fiscal data for reverse charge indicators
-        $fiscalData = $invoice->fiscal_data ?? [];
-
-        return isset($fiscalData['reverse_charge']) && $fiscalData['reverse_charge'] === true;
+        // Reverse charge (inversión del sujeto pasivo) is the immutable ROI flag.
+        return $invoice->is_roi_taxed;
     }
 
     /**
@@ -260,10 +258,8 @@ class DomPDFService
      */
     protected function isExemptInvoice(Invoice $invoice): bool
     {
-        // Check fiscal data for exempt indicators
-        $fiscalData = $invoice->fiscal_data ?? [];
-
-        return isset($fiscalData['exempt']) && $fiscalData['exempt'] === true;
+        // VAT exemption comes from the recipient's immutable fiscal snapshot.
+        return (bool) $invoice->userTaxProfile?->is_exempt_vat;
     }
 
     /**
@@ -282,7 +278,10 @@ class DomPDFService
             'client'            => $this->getClientData($invoice),
             'items'             => $this->getInvoiceItems($invoice),
             'totals'            => $this->getInvoiceTotals($invoice),
-            'fiscal_data'       => $invoice->fiscal_data ?? [],
+            'fiscal_data'       => [
+                'reverse_charge' => $this->isReverseCharge($invoice),
+                'exempt'         => $this->isExemptInvoice($invoice),
+            ],
             'include_qr'        => $includeQR,
             'generated_at'      => now(),
             'notes'             => $this->getInvoiceNotes($invoice),
@@ -327,22 +326,21 @@ class DomPDFService
      */
     protected function getClientData(Invoice $invoice): array
     {
-        // Decrypt client data if immutable
-        $clientData = [];
+        // Recipient identity comes from the immutable UserTaxProfile snapshot.
+        $profile = $invoice->userTaxProfile;
 
-        if ($invoice->user_tax_info_encrypted) {
-            // In a real implementation, decrypt the client data
-            $clientData = [
-                'name'        => 'Cliente',
-                'address'     => 'Dirección del cliente',
-                'city'        => 'Ciudad del cliente',
-                'postal_code' => '00000',
-                'country'     => 'España',
-                'tax_id'      => 'NIF: 87654321B',
-            ];
+        if (! $profile) {
+            return [];
         }
 
-        return $clientData;
+        return [
+            'name'        => $profile->fiscal_name,
+            'address'     => $profile->address,
+            'city'        => $profile->city,
+            'postal_code' => $profile->zip_code,
+            'country'     => $profile->country_code,
+            'tax_id'      => $profile->tax_id,
+        ];
     }
 
     /**

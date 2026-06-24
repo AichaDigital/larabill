@@ -32,17 +32,10 @@ describe('AID-242 — fillable ↔ schema consistency (MySQL)', function () {
             Article::class     => 'articles',
         ];
 
-        // Pre-existing orphans in Invoice::$fillable, out of scope for AID-242 and
-        // tracked as a follow-up. Residue of the ADR-003 Customer→User / fiscal-snapshot
-        // refactor: these fillable keys have no column. `user_tax_info_encrypted` is
-        // additionally read in code (EuSalesThresholdService, PDF) so it may be a latent
-        // fiscal bug. This list may only shrink — a NEW orphan fails the test.
-        $knownOrphans = [
-            'invoices.user_tax_info_encrypted',
-            'invoices.customer_data',
-            'invoices.fiscal_data',
-            'invoices.vat_verification',
-        ];
+        // No known orphans: the ADR-003 residue in Invoice::$fillable
+        // (user_tax_info_encrypted, customer_data, fiscal_data, vat_verification)
+        // was removed in AID-245. This list may only shrink — a NEW orphan fails.
+        $knownOrphans = [];
 
         $orphans = [];
         foreach ($models as $model => $table) {
