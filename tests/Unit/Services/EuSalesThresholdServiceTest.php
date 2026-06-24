@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use AichaDigital\Larabill\Models\EuSalesThreshold;
+use AichaDigital\Larabill\Models\Invoice;
+use AichaDigital\Larabill\Models\UserTaxProfile;
 use AichaDigital\Larabill\Services\EuSalesThresholdService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -139,5 +141,28 @@ describe('EuSalesThresholdService', function () {
 
         $threshold->refresh();
         expect($threshold->notification_sent)->toBeTrue();
+    });
+
+    it('reads the recipient country from userTaxProfile to detect an EU sale', function () {
+        // AID-245 regression: isEuSale() read $invoice->user_tax_info_encrypted, an
+        // orphan with no column → always null → every sale was treated as non-EU and
+        // the OSS threshold never moved. The recipient country lives in userTaxProfile.
+        // Exercised on an in-memory Invoice (no persistence, no creating-hook side
+        // effects) so it stays isolated from the PDF suite.
+        $service  = new EuSalesThresholdService;
+        $isEuSale = (new ReflectionMethod($service, 'isEuSale'));
+        $isEuSale->setAccessible(true);
+
+        $frInvoice = new Invoice;
+        $frInvoice->setRelation('userTaxProfile', UserTaxProfile::factory()->make(['country_code' => 'FR']));
+        expect($isEuSale->invoke($service, $frInvoice))->toBeTrue();
+
+        $esInvoice = new Invoice;
+        $esInvoice->setRelation('userTaxProfile', UserTaxProfile::factory()->make(['country_code' => 'ES']));
+        expect($isEuSale->invoke($service, $esInvoice))->toBeFalse(); // domestic, not intra-EU
+
+        $noProfile = new Invoice;
+        $noProfile->setRelation('userTaxProfile', null);
+        expect($isEuSale->invoke($service, $noProfile))->toBeFalse();
     });
 });

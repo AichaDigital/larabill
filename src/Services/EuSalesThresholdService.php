@@ -99,32 +99,22 @@ class EuSalesThresholdService
      */
     private function isEuSale(Invoice $invoice): bool
     {
-        $userTaxInfo = $invoice->user_tax_info_encrypted;
-        if (! $userTaxInfo) {
-            return false;
-        }
-
-        $taxInfo = $userTaxInfo;
-
-        if (is_string($taxInfo)) {
-            $taxInfo = json_decode($taxInfo, true);
-        }
-
-        $countryCode = $taxInfo['country_code'] ?? null;
+        // The recipient's fiscal country lives in the immutable UserTaxProfile
+        // snapshot (ADR-003), not in the removed `user_tax_info_encrypted` column.
+        $countryCode = $invoice->userTaxProfile?->country_code;
 
         if (! $countryCode) {
             return false;
         }
 
+        // EU member states, excluding ES (a domestic sale is not an intra-EU sale).
         $euCountries = [
             'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR',
             'DE', 'GR', 'HU', 'IE', 'IT', 'LV', 'LT', 'LU', 'MT', 'NL',
-            'PL', 'PT', 'RO', 'SK', 'SI', 'ES', 'SE',
+            'PL', 'PT', 'RO', 'SK', 'SI', 'SE',
         ];
 
-        $euCountries = array_diff($euCountries, ['ES']);
-
-        return in_array(strtoupper($countryCode), $euCountries);
+        return in_array(strtoupper($countryCode), $euCountries, true);
     }
 
     /**

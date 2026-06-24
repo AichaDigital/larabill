@@ -236,16 +236,14 @@ class DefaultPDFConnector implements PDFConnectorInterface
         // Include tax data if configured
         if ($this->config['qr_include_tax_data']) {
             $data['tax_data'] = [
-                'fiscal_data'      => $invoice->fiscal_data,
-                'vat_verification' => $invoice->vat_verification,
+                'reverse_charge' => $invoice->is_roi_taxed,
             ];
         }
 
         // Include company data if configured
         if ($this->config['qr_include_company_data']) {
             $data['company_data'] = [
-                'user_id'                 => $invoice->user_id,
-                'user_tax_info_encrypted' => $invoice->user_tax_info_encrypted,
+                'user_id' => $invoice->user_id,
             ];
         }
 

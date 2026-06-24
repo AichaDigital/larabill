@@ -70,10 +70,9 @@ class BillingService
                 'status'           => $status,
                 'user_id'          => $userId,
                 'is_immutable'     => false,
-                'due_date'         => $invoiceData['due_date']         ?? null,
-                'payment_terms'    => $invoiceData['payment_terms']    ?? null,
-                'template_name'    => $invoiceData['template_name']    ?? null,
-                'vat_verification' => $invoiceData['vat_verification'] ?? null,
+                'due_date'         => $invoiceData['due_date']       ?? null,
+                'payment_terms'    => $invoiceData['payment_terms']  ?? null,
+                'template_name'    => $invoiceData['template_name']  ?? null,
             ]);
 
             // Create invoice items, which now handle their own tax calculation
@@ -150,7 +149,6 @@ class BillingService
                 'due_date'         => $proforma->due_date,
                 'payment_terms'    => $proforma->payment_terms,
                 'template_name'    => $proforma->template_name,
-                'vat_verification' => $proforma->vat_verification,
                 'items'            => $this->getInvoiceItemsData($proforma),
             ];
 

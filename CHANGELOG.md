@@ -41,6 +41,32 @@ dedicated PR before any 3.0.0 tag.
   order entry and zero consumers across the umbrella (including `larabill-filament`),
   so it was never functional. Consumers must use `CompanyFiscalConfig`.
 
+### Fixed (latent fiscal/PDF bugs — AID-245)
+
+- The four orphan `Invoice::$fillable` keys flagged by the AID-242 guardrail
+  (`user_tax_info_encrypted`, `customer_data`, `fiscal_data`, `vat_verification`)
+  were not just dead fillable: code read them, and because the columns never
+  existed the reads always returned `null`. Removed them from `$fillable`/casts
+  and fixed every reader to use the real ADR-003 sources:
+  - **`EuSalesThresholdService::isEuSale()`** read `user_tax_info_encrypted` →
+    always `null` → **every sale was treated as non-EU and the OSS/EU threshold
+    never moved**. Now reads `Invoice::userTaxProfile->country_code`.
+  - **`DomPDFService::isReverseCharge()`** read `fiscal_data['reverse_charge']` →
+    always `false`. Now returns `Invoice::is_roi_taxed`.
+  - **`DomPDFService::isExemptInvoice()`** read `fiscal_data['exempt']` → always
+    `false`. Now reads `userTaxProfile->is_exempt_vat`.
+  - **`DomPDFService::getClientData()`** returned hard-coded placeholder data
+    behind a check on the always-null orphan. Now builds the client block from
+    the `userTaxProfile` snapshot.
+  - `DefaultPDFConnector` QR and `BillingService` no longer reference the orphans.
+- The guardrail allow-list is now empty (a regression test covers the EU-threshold
+  fix; the PDF flags are covered via reflection).
+- **Reverse-charge / exempt PDF templates now render.** Fixing `isReverseCharge()`/
+  `isExemptInvoice()` finally routes ROI / exempt invoices to
+  `reverse-charge.blade.php` / `exempt.blade.php`, which had never rendered and
+  still carried the `ucfirst($invoice->status)` enum bug (fixed in `fiscal.blade.php`
+  back in 0.11.2) — now use `$invoice->status->label()`. Render-smoke tests added.
+
 ### Notes
 
 - Still on the legacy base-100 API by design (deferred): `VatCategory.vat_rate`,
