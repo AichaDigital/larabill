@@ -34,13 +34,18 @@ dedicated PR before any 3.0.0 tag.
   residue of the ADR-003 refactor) tracked as a separate follow-up; the list may
   only shrink.
 
+### Removed (BREAKING — AID-244)
+
+- Removed the `CompanyConfig` model and its test: dead, table-less legacy of the
+  ADR-001/003 refactor to `CompanyFiscalConfig`. It had no migration, no install
+  order entry and zero consumers across the umbrella (including `larabill-filament`),
+  so it was never functional. Consumers must use `CompanyFiscalConfig`.
+
 ### Notes
 
 - Still on the legacy base-100 API by design (deferred): `VatCategory.vat_rate`,
-  `CountryVatRate.{standard_rate,reduced_rates}` (rate refactor — own PR) and
-  `TaxRate.rate` (base-10000 fiscal core — excluded). `CompanyConfig` (dead,
-  table-less legacy of `CompanyFiscalConfig`) is left untouched pending a
-  removal/deprecation decision.
+  `CountryVatRate.{standard_rate,reduced_rates}` (rate refactor — own PR, AID-246) and
+  `TaxRate.rate` (base-10000 fiscal core — excluded).
 
 ## [2.0.0] - 2026-06-23
 
