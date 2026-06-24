@@ -157,7 +157,7 @@
             <div class="invoice-title">FACTURA REVERSE CHARGE</div>
             <div><strong>Número:</strong> {{ $invoice->number }}</div>
             <div><strong>Fecha:</strong> {{ $invoice->created_at ? $invoice->created_at->format('d/m/Y') : date('d/m/Y') }}</div>
-            <div><strong>Estado:</strong> {{ ucfirst($invoice->status) }}</div>
+            <div><strong>Estado:</strong> {{ $invoice->status->label() }}</div>
         </div>
     </div>
 

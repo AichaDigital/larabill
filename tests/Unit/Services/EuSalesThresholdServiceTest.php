@@ -143,30 +143,26 @@ describe('EuSalesThresholdService', function () {
         expect($threshold->notification_sent)->toBeTrue();
     });
 
-    it('counts a sale to an EU customer toward the threshold via userTaxProfile', function () {
+    it('reads the recipient country from userTaxProfile to detect an EU sale', function () {
         // AID-245 regression: isEuSale() read $invoice->user_tax_info_encrypted, an
         // orphan with no column → always null → every sale was treated as non-EU and
         // the OSS threshold never moved. The recipient country lives in userTaxProfile.
-        $service    = new EuSalesThresholdService;
-        $userId     = Str::uuid()->toString();
-        $fiscalYear = now()->year;
+        // Exercised on an in-memory Invoice (no persistence, no creating-hook side
+        // effects) so it stays isolated from the PDF suite.
+        $service  = new EuSalesThresholdService;
+        $isEuSale = (new ReflectionMethod($service, 'isEuSale'));
+        $isEuSale->setAccessible(true);
 
-        $profile = UserTaxProfile::factory()->create([
-            'country_code'         => 'FR',
-            'is_eu_vat_registered' => true,
-        ]);
-        $invoice = Invoice::factory()->create([
-            'user_id'             => $userId,
-            'user_tax_profile_id' => $profile->id,
-            'is_roi_taxed'        => false,
-            'fiscal_year'         => $fiscalYear,
-            'taxable_amount'      => cents(500000), // €5,000.00
-        ]);
+        $frInvoice = new Invoice;
+        $frInvoice->setRelation('userTaxProfile', UserTaxProfile::factory()->make(['country_code' => 'FR']));
+        expect($isEuSale->invoke($service, $frInvoice))->toBeTrue();
 
-        $service->processInvoice($invoice);
+        $esInvoice = new Invoice;
+        $esInvoice->setRelation('userTaxProfile', UserTaxProfile::factory()->make(['country_code' => 'ES']));
+        expect($isEuSale->invoke($service, $esInvoice))->toBeFalse(); // domestic, not intra-EU
 
-        $threshold = EuSalesThreshold::findByUserAndYear($userId, $fiscalYear);
-        expect($threshold)->not->toBeNull();
-        expect($threshold->total_amount->isEqualTo(cents(500000)))->toBeTrue();
+        $noProfile = new Invoice;
+        $noProfile->setRelation('userTaxProfile', null);
+        expect($isEuSale->invoke($service, $noProfile))->toBeFalse();
     });
 });

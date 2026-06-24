@@ -61,6 +61,11 @@ dedicated PR before any 3.0.0 tag.
   - `DefaultPDFConnector` QR and `BillingService` no longer reference the orphans.
 - The guardrail allow-list is now empty (a regression test covers the EU-threshold
   fix; the PDF flags are covered via reflection).
+- **Reverse-charge / exempt PDF templates now render.** Fixing `isReverseCharge()`/
+  `isExemptInvoice()` finally routes ROI / exempt invoices to
+  `reverse-charge.blade.php` / `exempt.blade.php`, which had never rendered and
+  still carried the `ucfirst($invoice->status)` enum bug (fixed in `fiscal.blade.php`
+  back in 0.11.2) — now use `$invoice->status->label()`. Render-smoke tests added.
 
 ### Notes
 
