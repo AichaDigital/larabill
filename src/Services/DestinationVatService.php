@@ -54,20 +54,21 @@ class DestinationVatService
             if ($category) {
                 $vatCategory = VatCategory::findByNameAndCountry($category, $countryCode);
                 if ($vatCategory) {
-                    return (float) $vatCategory->vat_rate / 100.0;
+                    // FixedDecimal:2 already represents the percentage (21.50).
+                    return $vatCategory->vat_rate->toFloat();
                 }
             }
 
             $countryVatRate = CountryVatRate::findByCountry($countryCode);
             if ($countryVatRate) {
                 if ($category) {
-                    return (float) $countryVatRate->getRateForCategory($category);
+                    return $countryVatRate->getRateForCategory($category)?->toFloat() ?? 0.0;
                 }
 
-                return (float) $countryVatRate->standard_rate;
+                return $countryVatRate->standard_rate->toFloat();
             }
 
-            return (float) CountryVatRate::getDefaultRateForCountry($countryCode);
+            return CountryVatRate::getDefaultRateForCountry($countryCode)->toFloat();
         });
     }
 
@@ -219,7 +220,7 @@ class DestinationVatService
             throw new \InvalidArgumentException("VAT rate not found for country: {$countryCode}");
         }
 
-        return (float) $countryVatRate->standard_rate;
+        return $countryVatRate->standard_rate->toFloat();
     }
 
     /**

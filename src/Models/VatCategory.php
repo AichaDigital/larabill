@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
+use AichaDigital\Lara100\Casts\FixedDecimalCast;
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Services\ModelMappingService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -21,7 +23,7 @@ use Illuminate\Support\Carbon;
  * @property string $name
  * @property string|null $description
  * @property string $country_code
- * @property int $vat_rate Base-100 integer (e.g., 2150 => 21.50%)
+ * @property FixedDecimal $vat_rate FixedDecimal:2 over base-100 integer column (e.g., 2150 => 21.50%)
  * @property string $category_type
  * @property bool $is_active
  * @property bool $applies_to_products
@@ -74,13 +76,13 @@ class VatCategory extends Model
     /**
      * Casts for attributes.
      *
-     * Uses integers in base 100 for VAT rates (percentages)
-     * Example: 21.50% is stored as 2150, 12.34% as 1234
+     * VAT rate is a FixedDecimal:2 over a base-100 integer column.
+     * Example: 21.50% is stored as 2150, 12.34% as 1234.
      */
     public function casts(): array
     {
         return [
-            'vat_rate'            => 'integer', // Base 100: 21.50% = 2150
+            'vat_rate'            => FixedDecimalCast::class.':2', // Base 100: 21.50% = 2150
             'is_active'           => 'boolean',
             'applies_to_products' => 'boolean',
             'applies_to_services' => 'boolean',
@@ -88,65 +90,6 @@ class VatCategory extends Model
             'last_updated'        => 'datetime',
             'sort_order'          => 'integer',
         ];
-    }
-
-    /**
-     * Get VAT rate as base-100 integer.
-     *
-     * @param  mixed  $value
-     */
-    public function getVatRateAttribute($value): int
-    {
-        return $value === null ? 0 : (int) $value;
-    }
-
-    /**
-     * Mutator for vat_rate to convert percentage to base 100.
-     *
-     * @param  mixed  $value
-     */
-    public function setVatRateAttribute($value): void
-    {
-        // If the value is a float (like 21.00), convert to base 100 integer
-        if (is_float($value)) {
-            $this->attributes['vat_rate'] = static::percentageToBase100($value);
-        } else {
-            $this->attributes['vat_rate'] = $value;
-        }
-    }
-
-    /**
-     * Convert percentage to base 100 integer.
-     */
-    public static function percentageToBase100(float $percentage): int
-    {
-        return (int) ($percentage * 100);
-    }
-
-    /**
-     * Convert base 100 integer to percentage.
-     */
-    public static function base100ToPercentage(int $base100): float
-    {
-        return $base100 / 100.0;
-    }
-
-    /**
-     * Get VAT rate as percentage.
-     */
-    public function getVatRateAsPercentage(): float
-    {
-        return static::base100ToPercentage($this->vat_rate);
-    }
-
-    /**
-     * Set VAT rate from percentage.
-     */
-    public function setVatRateFromPercentage(float $percentage): self
-    {
-        $this->update(['vat_rate' => static::percentageToBase100($percentage)]);
-
-        return $this;
     }
 
     /**
@@ -246,58 +189,58 @@ class VatCategory extends Model
     /**
      * Get VAT rate for a specific category and country.
      */
-    public static function getVatRate(string $categoryName, string $countryCode): ?float
+    public static function getVatRate(string $categoryName, string $countryCode): ?FixedDecimal
     {
         $category = static::findByNameAndCountry($categoryName, $countryCode);
 
-        return $category ? $category->vat_rate : null;
+        return $category?->vat_rate;
     }
 
     /**
      * Get VAT rate for this category instance.
      */
-    public function getRate(): int
+    public function getRate(): FixedDecimal
     {
-        return (int) $this->vat_rate;
+        return $this->vat_rate;
     }
 
     /**
      * Get standard VAT rate for a country.
      */
-    public static function getStandardRate(string $countryCode): ?float
+    public static function getStandardRate(string $countryCode): ?FixedDecimal
     {
         $category = static::where('country_code', $countryCode)
             ->where('category_type', self::TYPE_STANDARD)
             ->where('is_active', true)
             ->first();
 
-        return $category ? $category->vat_rate : null;
+        return $category?->vat_rate;
     }
 
     /**
      * Get reduced VAT rate for a country.
      */
-    public static function getReducedRate(string $countryCode): ?float
+    public static function getReducedRate(string $countryCode): ?FixedDecimal
     {
         $category = static::where('country_code', $countryCode)
             ->where('category_type', self::TYPE_REDUCED)
             ->where('is_active', true)
             ->first();
 
-        return $category ? $category->vat_rate : null;
+        return $category?->vat_rate;
     }
 
     /**
      * Get super reduced VAT rate for a country.
      */
-    public static function getSuperReducedRate(string $countryCode): ?float
+    public static function getSuperReducedRate(string $countryCode): ?FixedDecimal
     {
         $category = static::where('country_code', $countryCode)
             ->where('category_type', self::TYPE_SUPER_REDUCED)
             ->where('is_active', true)
             ->first();
 
-        return $category ? $category->vat_rate : null;
+        return $category?->vat_rate;
     }
 
     /**
@@ -529,7 +472,7 @@ class VatCategory extends Model
      */
     public function isExempt(): bool
     {
-        return $this->category_type === self::TYPE_EXEMPT || $this->vat_rate === 0.0;
+        return $this->category_type === self::TYPE_EXEMPT || $this->vat_rate->isZero();
     }
 
     /**
@@ -541,7 +484,7 @@ class VatCategory extends Model
             return 'Exempt';
         }
 
-        return number_format($this->vat_rate, 2).'%';
+        return number_format($this->vat_rate->toFloat(), 2).'%';
     }
 
     /**
@@ -601,16 +544,14 @@ class VatCategory extends Model
     }
 
     /**
-     * Find VAT categories by rate.
+     * Find VAT category by rate (percentage), e.g. findByRate('ES', 21.00).
+     *
+     * The percentage is converted to the stored base-100 integer for the WHERE
+     * (query builder compares against the raw column, not the FixedDecimal cast).
      */
-    public static function findByRate(string $countryCode, int|string|float $vatRate): ?self
+    public static function findByRate(string $countryCode, float $vatRate): ?self
     {
-        // Convert percentage to base 100 if needed
-        if (is_float($vatRate)) {
-            $rate = static::percentageToBase100($vatRate);
-        } else {
-            $rate = (int) $vatRate;
-        }
+        $rate = FixedDecimal::ofFloat($vatRate, 2)->unscaledValue();
 
         return static::where('country_code', $countryCode)
             ->where('vat_rate', $rate)

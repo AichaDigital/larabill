@@ -2,25 +2,14 @@
 
 declare(strict_types=1);
 
-/**
- * @deprecated v0.4.0 - VatCategory table/model removed in v0.4.0
- * The tax system was refactored to use TaxRate + TaxGroup architecture.
- * These tests use legacy API that no longer exists.
- */
-
 use AichaDigital\Larabill\Models\VatCategory;
-
-// Skip all tests - legacy code
-beforeEach(function () {
-    // REACTIVATED v0.4.1: $this->markTestSkipped('VatCategory deprecated in v0.4.0 - Use TaxRate/TaxGroup instead');
-});
 
 it('can create a VAT category', function () {
     $category = VatCategory::create([
         'name'                => 'Standard Goods',
         'description'         => 'Standard VAT rate for general goods',
         'country_code'        => 'ES',
-        'vat_rate'            => 21.00,
+        'vat_rate'            => pct(21.00),
         'category_type'       => VatCategory::CATEGORY_TYPE_STANDARD,
         'is_active'           => true,
         'applies_to_products' => true,
@@ -30,7 +19,7 @@ it('can create a VAT category', function () {
     expect($category)->toBeInstanceOf(VatCategory::class);
     expect($category->name)->toBe('Standard Goods');
     expect($category->country_code)->toBe('ES');
-    expect($category->vat_rate)->toBe(2100); // 21% in base 100
+    expect($category->vat_rate->unscaledValue())->toBe(2100); // 21% in base 100
     expect($category->is_active)->toBeTrue();
 });
 
@@ -38,7 +27,7 @@ it('can find VAT category by country and name', function () {
     VatCategory::create([
         'name'          => 'Standard Goods',
         'country_code'  => 'ES',
-        'vat_rate'      => 21.00,
+        'vat_rate'      => pct(21.00),
         'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
     ]);
 
@@ -53,21 +42,21 @@ it('can find VAT categories by country', function () {
     VatCategory::create([
         'name'          => 'Standard Goods',
         'country_code'  => 'ES',
-        'vat_rate'      => 21.00,
+        'vat_rate'      => pct(21.00),
         'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
     ]);
 
     VatCategory::create([
         'name'          => 'Reduced Goods',
         'country_code'  => 'ES',
-        'vat_rate'      => 10.00,
+        'vat_rate'      => pct(10.00),
         'category_type' => VatCategory::CATEGORY_TYPE_REDUCED,
     ]);
 
     VatCategory::create([
         'name'          => 'Standard Goods',
         'country_code'  => 'FR',
-        'vat_rate'      => 20.00,
+        'vat_rate'      => pct(20.00),
         'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
     ]);
 
@@ -82,21 +71,21 @@ it('can find VAT categories by type', function () {
     VatCategory::create([
         'name'          => 'Standard Goods',
         'country_code'  => 'ES',
-        'vat_rate'      => 21.00,
+        'vat_rate'      => pct(21.00),
         'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
     ]);
 
     VatCategory::create([
         'name'          => 'Reduced Goods',
         'country_code'  => 'ES',
-        'vat_rate'      => 10.00,
+        'vat_rate'      => pct(10.00),
         'category_type' => VatCategory::CATEGORY_TYPE_REDUCED,
     ]);
 
     VatCategory::create([
         'name'          => 'Exempt Goods',
         'country_code'  => 'ES',
-        'vat_rate'      => 0.00,
+        'vat_rate'      => pct(0.00),
         'category_type' => VatCategory::CATEGORY_TYPE_EXEMPT,
     ]);
 
@@ -113,7 +102,7 @@ it('can find active VAT categories', function () {
     VatCategory::create([
         'name'          => 'Active Category',
         'country_code'  => 'ES',
-        'vat_rate'      => 21.00,
+        'vat_rate'      => pct(21.00),
         'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
         'is_active'     => true,
     ]);
@@ -121,7 +110,7 @@ it('can find active VAT categories', function () {
     VatCategory::create([
         'name'          => 'Inactive Category',
         'country_code'  => 'ES',
-        'vat_rate'      => 10.00,
+        'vat_rate'      => pct(10.00),
         'category_type' => VatCategory::CATEGORY_TYPE_REDUCED,
         'is_active'     => false,
     ]);
@@ -138,7 +127,7 @@ it('can find VAT categories for products and services', function () {
     VatCategory::create([
         'name'                => 'Products Only',
         'country_code'        => 'ES',
-        'vat_rate'            => 21.00,
+        'vat_rate'            => pct(21.00),
         'category_type'       => VatCategory::CATEGORY_TYPE_STANDARD,
         'applies_to_products' => true,
         'applies_to_services' => false,
@@ -147,7 +136,7 @@ it('can find VAT categories for products and services', function () {
     VatCategory::create([
         'name'                => 'Services Only',
         'country_code'        => 'ES',
-        'vat_rate'            => 21.00,
+        'vat_rate'            => pct(21.00),
         'category_type'       => VatCategory::CATEGORY_TYPE_STANDARD,
         'applies_to_products' => false,
         'applies_to_services' => true,
@@ -156,7 +145,7 @@ it('can find VAT categories for products and services', function () {
     VatCategory::create([
         'name'                => 'Both Products and Services',
         'country_code'        => 'ES',
-        'vat_rate'            => 21.00,
+        'vat_rate'            => pct(21.00),
         'category_type'       => VatCategory::CATEGORY_TYPE_STANDARD,
         'applies_to_products' => true,
         'applies_to_services' => true,
@@ -175,14 +164,14 @@ it('can find VAT category by rate', function () {
     VatCategory::create([
         'name'          => 'Standard 21%',
         'country_code'  => 'ES',
-        'vat_rate'      => 21.00,
+        'vat_rate'      => pct(21.00),
         'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
     ]);
 
     VatCategory::create([
         'name'          => 'Reduced 10%',
         'country_code'  => 'ES',
-        'vat_rate'      => 10.00,
+        'vat_rate'      => pct(10.00),
         'category_type' => VatCategory::CATEGORY_TYPE_REDUCED,
     ]);
 
@@ -204,7 +193,7 @@ it('can use scopes correctly', function () {
     VatCategory::create([
         'name'                => 'Standard ES',
         'country_code'        => 'ES',
-        'vat_rate'            => 21.00,
+        'vat_rate'            => pct(21.00),
         'category_type'       => VatCategory::CATEGORY_TYPE_STANDARD,
         'is_active'           => true,
         'applies_to_products' => true,
@@ -213,7 +202,7 @@ it('can use scopes correctly', function () {
     VatCategory::create([
         'name'                => 'Reduced FR',
         'country_code'        => 'FR',
-        'vat_rate'            => 5.50,
+        'vat_rate'            => pct(5.50),
         'category_type'       => VatCategory::CATEGORY_TYPE_REDUCED,
         'is_active'           => false,
         'applies_to_products' => false,
@@ -245,18 +234,18 @@ it('can get VAT rate for category', function () {
     $category = VatCategory::create([
         'name'          => 'Standard Goods',
         'country_code'  => 'ES',
-        'vat_rate'      => 21.00,
+        'vat_rate'      => pct(21.00),
         'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
     ]);
 
-    expect($category->getRate())->toBe(2100); // 21% in base 100
+    expect($category->getRate()->unscaledValue())->toBe(2100); // 21% in base 100
 });
 
 it('can check if category applies to products', function () {
     $productCategory = VatCategory::create([
         'name'                => 'Product Category',
         'country_code'        => 'ES',
-        'vat_rate'            => 21.00,
+        'vat_rate'            => pct(21.00),
         'category_type'       => VatCategory::CATEGORY_TYPE_STANDARD,
         'applies_to_products' => true,
         'applies_to_services' => false,
@@ -265,7 +254,7 @@ it('can check if category applies to products', function () {
     $serviceCategory = VatCategory::create([
         'name'                => 'Service Category',
         'country_code'        => 'ES',
-        'vat_rate'            => 21.00,
+        'vat_rate'            => pct(21.00),
         'category_type'       => VatCategory::CATEGORY_TYPE_STANDARD,
         'applies_to_products' => false,
         'applies_to_services' => true,
@@ -281,7 +270,7 @@ it('can check if category is active', function () {
     $activeCategory = VatCategory::create([
         'name'          => 'Active Category',
         'country_code'  => 'ES',
-        'vat_rate'      => 21.00,
+        'vat_rate'      => pct(21.00),
         'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
         'is_active'     => true,
     ]);
@@ -289,7 +278,7 @@ it('can check if category is active', function () {
     $inactiveCategory = VatCategory::create([
         'name'          => 'Inactive Category',
         'country_code'  => 'ES',
-        'vat_rate'      => 21.00,
+        'vat_rate'      => pct(21.00),
         'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
         'is_active'     => false,
     ]);
@@ -302,7 +291,7 @@ it('can activate and deactivate category', function () {
     $category = VatCategory::create([
         'name'          => 'Test Category',
         'country_code'  => 'ES',
-        'vat_rate'      => 21.00,
+        'vat_rate'      => pct(21.00),
         'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
         'is_active'     => false,
     ]);
@@ -318,7 +307,7 @@ it('can get special conditions', function () {
     $category = VatCategory::create([
         'name'               => 'Special Category',
         'country_code'       => 'ES',
-        'vat_rate'           => 21.00,
+        'vat_rate'           => pct(21.00),
         'category_type'      => VatCategory::CATEGORY_TYPE_STANDARD,
         'special_conditions' => [
             'min_amount'             => 100,
@@ -339,7 +328,7 @@ it('can set special conditions', function () {
     $category = VatCategory::create([
         'name'          => 'Test Category',
         'country_code'  => 'ES',
-        'vat_rate'      => 21.00,
+        'vat_rate'      => pct(21.00),
         'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
     ]);
 
@@ -358,14 +347,14 @@ it('can get category type name', function () {
     $standardCategory = VatCategory::create([
         'name'          => 'Standard Category',
         'country_code'  => 'ES',
-        'vat_rate'      => 21.00,
+        'vat_rate'      => pct(21.00),
         'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
     ]);
 
     $reducedCategory = VatCategory::create([
         'name'          => 'Reduced Category',
         'country_code'  => 'ES',
-        'vat_rate'      => 10.00,
+        'vat_rate'      => pct(10.00),
         'category_type' => VatCategory::CATEGORY_TYPE_REDUCED,
     ]);
 
@@ -388,7 +377,7 @@ it('automatically sets last_updated on creation and update', function () {
     $category = VatCategory::create([
         'name'          => 'Test Category',
         'country_code'  => 'ES',
-        'vat_rate'      => 21.00,
+        'vat_rate'      => pct(21.00),
         'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
     ]);
 
@@ -399,7 +388,7 @@ it('automatically sets last_updated on creation and update', function () {
 
     // Update and check last_updated changes
     $beforeUpdate = now();
-    $category->update(['vat_rate' => 20.00]);
+    $category->update(['vat_rate' => pct(20.00)]);
     $afterUpdate = now();
 
     expect($category->fresh()->last_updated->timestamp)->toBeGreaterThanOrEqualTo($beforeUpdate->timestamp);
@@ -410,7 +399,7 @@ it('can get category statistics', function () {
     VatCategory::create([
         'name'          => 'Standard 1',
         'country_code'  => 'ES',
-        'vat_rate'      => 21.00,
+        'vat_rate'      => pct(21.00),
         'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
         'is_active'     => true,
     ]);
@@ -418,7 +407,7 @@ it('can get category statistics', function () {
     VatCategory::create([
         'name'          => 'Standard 2',
         'country_code'  => 'ES',
-        'vat_rate'      => 21.00,
+        'vat_rate'      => pct(21.00),
         'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
         'is_active'     => false,
     ]);
@@ -426,7 +415,7 @@ it('can get category statistics', function () {
     VatCategory::create([
         'name'          => 'Reduced 1',
         'country_code'  => 'FR',
-        'vat_rate'      => 5.50,
+        'vat_rate'      => pct(5.50),
         'category_type' => VatCategory::CATEGORY_TYPE_REDUCED,
         'is_active'     => true,
     ]);
@@ -442,44 +431,34 @@ it('can get category statistics', function () {
     expect($stats['by_country']['FR'])->toBe(1);
 });
 
-it('can convert percentage to base 100', function () {
-    expect(VatCategory::percentageToBase100(21.00))->toBe(2100);
-    expect(VatCategory::percentageToBase100(10.50))->toBe(1050);
-    expect(VatCategory::percentageToBase100(0.00))->toBe(0);
-});
-
-it('can convert base 100 to percentage', function () {
-    expect(VatCategory::base100ToPercentage(2100))->toBe(21.00);
-    expect(VatCategory::base100ToPercentage(1050))->toBe(10.50);
-    expect(VatCategory::base100ToPercentage(0))->toBe(0.00);
-});
-
-it('can get VAT rate as percentage', function () {
+it('exposes vat_rate as a FixedDecimal over the base-100 column', function () {
     $category = VatCategory::create([
         'name'          => 'Test Category',
         'country_code'  => 'ES',
-        'vat_rate'      => 21.00,
+        'vat_rate'      => pct(21.00),
         'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
     ]);
 
-    expect($category->getVatRateAsPercentage())->toBe(21.00);
+    expect($category->vat_rate->unscaledValue())->toBe(2100);
+    expect($category->vat_rate->toFloat())->toBe(21.00);
+    expect($category->vat_rate->toDecimalString())->toBe('21.00');
 });
 
-it('can set VAT rate from percentage', function () {
+it('updates vat_rate from a FixedDecimal percentage', function () {
     $category = VatCategory::create([
         'name'          => 'Test Category',
         'country_code'  => 'ES',
-        'vat_rate'      => 21.00,
+        'vat_rate'      => pct(21.00),
         'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
     ]);
 
-    $updated = $category->setVatRateFromPercentage(15.50);
+    $category->update(['vat_rate' => pct(15.50)]);
 
-    expect($updated->vat_rate)->toBe(1550);
-    expect($updated->getVatRateAsPercentage())->toBe(15.50);
+    expect($category->fresh()->vat_rate->unscaledValue())->toBe(1550);
+    expect($category->fresh()->vat_rate->toFloat())->toBe(15.50);
 });
 
-it('can handle integer vat_rate assignment', function () {
+it('accepts direct FixedDecimal vat_rate assignment', function () {
     $category = new VatCategory;
     $category->fill([
         'name'          => 'Test Category',
@@ -487,17 +466,37 @@ it('can handle integer vat_rate assignment', function () {
         'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
     ]);
 
-    // Test direct integer assignment
-    $category->vat_rate = 2100;
+    $category->vat_rate = cents(2100);
 
-    expect($category->vat_rate)->toBe(2100);
+    expect($category->vat_rate->unscaledValue())->toBe(2100);
+});
+
+it('reports exempt categories via isZero on the rate', function () {
+    $exempt = VatCategory::create([
+        'name'          => 'Exempt',
+        'country_code'  => 'ES',
+        'vat_rate'      => pct(0.00),
+        'category_type' => VatCategory::CATEGORY_TYPE_STANDARD, // exempt by zero rate, not type
+    ]);
+
+    $standard = VatCategory::create([
+        'name'          => 'Standard',
+        'country_code'  => 'ES',
+        'vat_rate'      => pct(21.00),
+        'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
+    ]);
+
+    expect($exempt->isExempt())->toBeTrue();
+    expect($standard->isExempt())->toBeFalse();
+    expect($standard->getFormattedVatRate())->toBe('21.00%');
+    expect($exempt->getFormattedVatRate())->toBe('Exempt');
 });
 
 it('can get categories by country', function () {
     VatCategory::create([
         'name'          => 'ES Standard',
         'country_code'  => 'ES',
-        'vat_rate'      => 21.00,
+        'vat_rate'      => pct(21.00),
         'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
         'is_active'     => true,
         'sort_order'    => 1,
@@ -506,7 +505,7 @@ it('can get categories by country', function () {
     VatCategory::create([
         'name'          => 'ES Reduced',
         'country_code'  => 'ES',
-        'vat_rate'      => 10.00,
+        'vat_rate'      => pct(10.00),
         'category_type' => VatCategory::CATEGORY_TYPE_REDUCED,
         'is_active'     => true,
         'sort_order'    => 2,
@@ -515,7 +514,7 @@ it('can get categories by country', function () {
     VatCategory::create([
         'name'          => 'ES Inactive',
         'country_code'  => 'ES',
-        'vat_rate'      => 4.00,
+        'vat_rate'      => pct(4.00),
         'category_type' => VatCategory::CATEGORY_TYPE_SUPER_REDUCED,
         'is_active'     => false,
         'sort_order'    => 3,
@@ -524,7 +523,7 @@ it('can get categories by country', function () {
     VatCategory::create([
         'name'          => 'FR Standard',
         'country_code'  => 'FR',
-        'vat_rate'      => 20.00,
+        'vat_rate'      => pct(20.00),
         'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
         'is_active'     => true,
         'sort_order'    => 1,
@@ -541,7 +540,7 @@ it('can get categories by category type', function () {
     VatCategory::create([
         'name'          => 'ES Standard',
         'country_code'  => 'ES',
-        'vat_rate'      => 21.00,
+        'vat_rate'      => pct(21.00),
         'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
         'is_active'     => true,
         'sort_order'    => 1,
@@ -550,7 +549,7 @@ it('can get categories by category type', function () {
     VatCategory::create([
         'name'          => 'FR Standard',
         'country_code'  => 'FR',
-        'vat_rate'      => 20.00,
+        'vat_rate'      => pct(20.00),
         'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
         'is_active'     => true,
         'sort_order'    => 2,
@@ -559,7 +558,7 @@ it('can get categories by category type', function () {
     VatCategory::create([
         'name'          => 'ES Reduced',
         'country_code'  => 'ES',
-        'vat_rate'      => 10.00,
+        'vat_rate'      => pct(10.00),
         'category_type' => VatCategory::CATEGORY_TYPE_REDUCED,
         'is_active'     => true,
         'sort_order'    => 1,
@@ -575,7 +574,7 @@ it('can get categories by country and type', function () {
     VatCategory::create([
         'name'          => 'ES Standard',
         'country_code'  => 'ES',
-        'vat_rate'      => 21.00,
+        'vat_rate'      => pct(21.00),
         'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
         'is_active'     => true,
         'sort_order'    => 1,
@@ -584,7 +583,7 @@ it('can get categories by country and type', function () {
     VatCategory::create([
         'name'          => 'ES Reduced',
         'country_code'  => 'ES',
-        'vat_rate'      => 10.00,
+        'vat_rate'      => pct(10.00),
         'category_type' => VatCategory::CATEGORY_TYPE_REDUCED,
         'is_active'     => true,
         'sort_order'    => 2,
@@ -593,7 +592,7 @@ it('can get categories by country and type', function () {
     VatCategory::create([
         'name'          => 'FR Standard',
         'country_code'  => 'FR',
-        'vat_rate'      => 20.00,
+        'vat_rate'      => pct(20.00),
         'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
         'is_active'     => true,
         'sort_order'    => 1,
@@ -611,14 +610,14 @@ it('can get VAT rate by category name and country', function () {
     VatCategory::create([
         'name'          => 'Standard Goods',
         'country_code'  => 'ES',
-        'vat_rate'      => 21.00,
+        'vat_rate'      => pct(21.00),
         'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
     ]);
 
     $rate            = VatCategory::getVatRate('Standard Goods', 'ES');
     $nonExistentRate = VatCategory::getVatRate('Nonexistent', 'ES');
 
-    expect($rate)->toBe(2100.0); // Returns float due to method signature
+    expect($rate->unscaledValue())->toBe(2100);
     expect($nonExistentRate)->toBeNull();
 });
 
@@ -626,7 +625,7 @@ it('can get standard rate for a country', function () {
     VatCategory::create([
         'name'          => 'Standard',
         'country_code'  => 'ES',
-        'vat_rate'      => 21.00,
+        'vat_rate'      => pct(21.00),
         'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
         'is_active'     => true,
     ]);
@@ -634,7 +633,7 @@ it('can get standard rate for a country', function () {
     VatCategory::create([
         'name'          => 'Reduced',
         'country_code'  => 'ES',
-        'vat_rate'      => 10.00,
+        'vat_rate'      => pct(10.00),
         'category_type' => VatCategory::CATEGORY_TYPE_REDUCED,
         'is_active'     => true,
     ]);
@@ -642,7 +641,7 @@ it('can get standard rate for a country', function () {
     $rate            = VatCategory::getStandardRate('ES');
     $nonExistentRate = VatCategory::getStandardRate('FR');
 
-    expect($rate)->toBe(2100.0); // Returns float due to method signature
+    expect($rate->unscaledValue())->toBe(2100);
     expect($nonExistentRate)->toBeNull();
 });
 
@@ -650,7 +649,7 @@ it('can get reduced rate for a country', function () {
     VatCategory::create([
         'name'          => 'Standard',
         'country_code'  => 'ES',
-        'vat_rate'      => 21.00,
+        'vat_rate'      => pct(21.00),
         'category_type' => VatCategory::CATEGORY_TYPE_STANDARD,
         'is_active'     => true,
     ]);
@@ -658,7 +657,7 @@ it('can get reduced rate for a country', function () {
     VatCategory::create([
         'name'          => 'Reduced',
         'country_code'  => 'ES',
-        'vat_rate'      => 10.00,
+        'vat_rate'      => pct(10.00),
         'category_type' => VatCategory::CATEGORY_TYPE_REDUCED,
         'is_active'     => true,
     ]);
@@ -666,7 +665,7 @@ it('can get reduced rate for a country', function () {
     $rate            = VatCategory::getReducedRate('ES');
     $nonExistentRate = VatCategory::getReducedRate('FR');
 
-    expect($rate)->toBe(1000.0); // Returns float due to method signature
+    expect($rate->unscaledValue())->toBe(1000);
     expect($nonExistentRate)->toBeNull();
 });
 
@@ -674,7 +673,7 @@ it('can get super reduced rate for a country', function () {
     VatCategory::create([
         'name'          => 'Super Reduced',
         'country_code'  => 'ES',
-        'vat_rate'      => 4.00,
+        'vat_rate'      => pct(4.00),
         'category_type' => VatCategory::CATEGORY_TYPE_SUPER_REDUCED,
         'is_active'     => true,
     ]);
@@ -682,6 +681,6 @@ it('can get super reduced rate for a country', function () {
     $rate            = VatCategory::getSuperReducedRate('ES');
     $nonExistentRate = VatCategory::getSuperReducedRate('FR');
 
-    expect($rate)->toBe(400.0); // Returns float due to method signature
+    expect($rate->unscaledValue())->toBe(400);
     expect($nonExistentRate)->toBeNull();
 });

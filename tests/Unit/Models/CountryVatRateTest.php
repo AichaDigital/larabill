@@ -2,16 +2,7 @@
 
 declare(strict_types=1);
 
-/**
- * @deprecated v0.4.0 - CountryVatRate table removed
- * These tests use legacy API/tables that no longer exist in v0.4.0.
- */
-
-// Skip all tests - legacy code
-beforeEach(function () {
-    // REACTIVATED v0.4.1: $this->markTestSkipped('Legacy test - deprecated in v0.4.0');
-});
-
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Database\Factories\CountryVatRateFactory;
 use AichaDigital\Larabill\Models\CountryVatRate;
 use Carbon\Carbon;
@@ -28,7 +19,7 @@ describe('CountryVatRate Model', function () {
         expect($vatRate)->toBeInstanceOf(CountryVatRate::class);
         expect($vatRate->country_code)->toBeString();
         expect($vatRate->country_name)->toBeString();
-        expect($vatRate->standard_rate)->toBeInt(); // Base 100 format
+        expect($vatRate->standard_rate)->toBeInstanceOf(FixedDecimal::class); // FixedDecimal:2 over base-100
         expect($vatRate->reduced_rates)->toBeArray();
         expect($vatRate->exempt_categories)->toBeArray();
         expect($vatRate->is_active)->toBeTrue();
@@ -39,136 +30,68 @@ describe('CountryVatRate Model', function () {
 
         expect($vatRate->country_code)->toBe('ES');
         expect($vatRate->country_name)->toBe('Spain');
-        expect($vatRate->standard_rate)->toBe(2100); // 21% in base 100
+        expect($vatRate->standard_rate->unscaledValue())->toBe(2100); // 21% in base 100
         expect($vatRate->reduced_rates)->toBe([
-            'general'       => 1000, // 10% in base 100
+            'general'       => 1000, // 10% in base 100 (raw JSON int)
             'super_reduced' => 400, // 4% in base 100
         ]);
         expect($vatRate->exempt_categories)->toContain('medical_services');
     });
 
-    it('can convert percentage to base 100', function () {
-        expect(CountryVatRate::percentageToBase100(21.50))->toBe(2150);
-        expect(CountryVatRate::percentageToBase100(12.34))->toBe(1234);
-        expect(CountryVatRate::percentageToBase100(0))->toBe(0);
-        expect(CountryVatRate::percentageToBase100(100))->toBe(10000);
-    });
-
-    it('can convert base 100 to percentage', function () {
-        expect(CountryVatRate::base100ToPercentage(2150))->toBe(21.50);
-        expect(CountryVatRate::base100ToPercentage(1234))->toBe(12.34);
-        expect(CountryVatRate::base100ToPercentage(0))->toBe(0.0);
-        expect(CountryVatRate::base100ToPercentage(10000))->toBe(100.0);
-    });
-
-    it('can get rate for category in base 100 format', function () {
+    it('can get rate for category as FixedDecimal', function () {
         $vatRate = CountryVatRateFactory::new()->spanish()->create();
 
-        // Test standard rate
-        expect($vatRate->getRateForCategory('standard'))->toBe(2100); // 21% in base 100
+        // Standard rate (default fallback)
+        expect($vatRate->getRateForCategory('standard')->unscaledValue())->toBe(2100);
 
-        // Test reduced rate
-        expect($vatRate->getRateForCategory('general'))->toBe(1000); // 10% in base 100
-        expect($vatRate->getRateForCategory('super_reduced'))->toBe(400); // 4% in base 100
+        // Reduced rates
+        expect($vatRate->getRateForCategory('general')->unscaledValue())->toBe(1000);
+        expect($vatRate->getRateForCategory('super_reduced')->unscaledValue())->toBe(400);
 
-        // Test exempt category
-        expect($vatRate->getRateForCategory('medical_services'))->toBe(0); // 0% in base 100
+        // Exempt category
+        expect($vatRate->getRateForCategory('medical_services')->isZero())->toBeTrue();
 
-        // Test non-existent category (should return standard rate)
-        expect($vatRate->getRateForCategory('non_existent'))->toBe(2100);
+        // Non-existent category falls back to standard rate
+        expect($vatRate->getRateForCategory('non_existent')->unscaledValue())->toBe(2100);
     });
 
-    it('can get rate for category as percentage', function () {
+    it('can get standard rate as a FixedDecimal', function () {
         $vatRate = CountryVatRateFactory::new()->spanish()->create();
 
-        // Test standard rate
-        expect($vatRate->getRateForCategoryAsPercentage('standard'))->toBe(21.0);
-
-        // Test reduced rate
-        expect($vatRate->getRateForCategoryAsPercentage('general'))->toBe(10.0);
-        expect($vatRate->getRateForCategoryAsPercentage('super_reduced'))->toBe(4.0);
-
-        // Test exempt category
-        expect($vatRate->getRateForCategoryAsPercentage('medical_services'))->toBe(0.0);
+        expect($vatRate->standard_rate->toFloat())->toBe(21.0);
+        expect($vatRate->standard_rate->toDecimalString())->toBe('21.00');
     });
 
-    it('can get standard rate as percentage', function () {
-        $vatRate = CountryVatRateFactory::new()->spanish()->create();
-
-        expect($vatRate->getStandardRateAsPercentage())->toBe(21.0);
-    });
-
-    it('can set standard rate from percentage', function () {
-        $vatRate = CountryVatRateFactory::new()->create();
-
-        $vatRate->setStandardRateFromPercentage(22.5);
-
-        expect($vatRate->fresh()->standard_rate)->toBe(2250); // 22.5% in base 100
-        expect($vatRate->getStandardRateAsPercentage())->toBe(22.5);
-    });
-
-    it('can get reduced rates in base 100 format', function () {
+    it('can get reduced rates as FixedDecimal map', function () {
         $vatRate = CountryVatRateFactory::new()->spanish()->create();
 
         $reducedRates = $vatRate->getReducedRates();
 
-        expect($reducedRates)->toBe([
-            'general'       => 1000, // 10% in base 100
-            'super_reduced' => 400, // 4% in base 100
-        ]);
+        expect($reducedRates['general']->unscaledValue())->toBe(1000); // 10% in base 100
+        expect($reducedRates['super_reduced']->unscaledValue())->toBe(400); // 4% in base 100
 
-        // Ensure all values are integers
         foreach ($reducedRates as $rate) {
-            expect($rate)->toBeInt();
+            expect($rate)->toBeInstanceOf(FixedDecimal::class);
         }
     });
 
-    it('can get reduced rates as percentages', function () {
+    it('can get reduced rate for category as FixedDecimal', function () {
         $vatRate = CountryVatRateFactory::new()->spanish()->create();
 
-        $reducedRates = $vatRate->getReducedRatesAsPercentages();
-
-        expect($reducedRates)->toBe([
-            'general'       => 10.0,
-            'super_reduced' => 4.0,
-        ]);
-    });
-
-    it('can get reduced rate for category in base 100 format', function () {
-        $vatRate = CountryVatRateFactory::new()->spanish()->create();
-
-        expect($vatRate->getReducedRate('general'))->toBe(1000); // 10% in base 100
-        expect($vatRate->getReducedRate('super_reduced'))->toBe(400); // 4% in base 100
+        expect($vatRate->getReducedRate('general')->unscaledValue())->toBe(1000); // 10% in base 100
+        expect($vatRate->getReducedRate('super_reduced')->unscaledValue())->toBe(400); // 4% in base 100
         expect($vatRate->getReducedRate('non_existent'))->toBeNull();
     });
 
-    it('can get reduced rate for category as percentage', function () {
-        $vatRate = CountryVatRateFactory::new()->spanish()->create();
-
-        expect($vatRate->getReducedRateAsPercentage('general'))->toBe(10.0);
-        expect($vatRate->getReducedRateAsPercentage('super_reduced'))->toBe(4.0);
-        expect($vatRate->getReducedRateAsPercentage('non_existent'))->toBeNull();
-    });
-
-    it('can set reduced rate using base 100 format', function () {
+    it('can set reduced rate from a FixedDecimal', function () {
         $vatRate = CountryVatRateFactory::new()->create();
 
-        $vatRate->setReducedRate('books', 500); // 5% in base 100
+        $vatRate->setReducedRate('books', cents(500)); // 5% in base 100
 
-        expect($vatRate->fresh()->getReducedRate('books'))->toBe(500);
-        expect($vatRate->getReducedRateAsPercentage('books'))->toBe(5.0);
+        expect($vatRate->fresh()->getReducedRate('books')->unscaledValue())->toBe(500);
     });
 
-    it('can set reduced rate from percentage', function () {
-        $vatRate = CountryVatRateFactory::new()->create();
-
-        $vatRate->setReducedRateFromPercentage('books', 5.5);
-
-        expect($vatRate->fresh()->getReducedRate('books'))->toBe(550); // 5.5% in base 100
-        expect($vatRate->getReducedRateAsPercentage('books'))->toBe(5.5);
-    });
-
-    it('can validate rate data integrity with base 100 format', function () {
+    it('can validate rate data integrity with base 100 bounds', function () {
         // Valid data
         $validVatRate = CountryVatRateFactory::new()->spanish()->create();
         expect($validVatRate->isValidRateData())->toBeTrue();
@@ -176,15 +99,15 @@ describe('CountryVatRate Model', function () {
         // Invalid standard rate (too high)
         $invalidVatRate = CountryVatRateFactory::new()->create([
             'country_code'  => 'IL',
-            'standard_rate' => 15000, // 150% - too high
+            'standard_rate' => cents(15000), // 150% - too high
         ]);
         expect($invalidVatRate->isValidRateData())->toBeFalse();
 
         // Invalid reduced rate (higher than standard)
         $invalidVatRate2 = CountryVatRateFactory::new()->create([
             'country_code'  => 'IT',
-            'standard_rate' => 2000, // 20%
-            'reduced_rates' => ['books' => 2500], // 25% - higher than standard
+            'standard_rate' => cents(2000), // 20%
+            'reduced_rates' => ['books' => 2500], // 25% - higher than standard (raw JSON int)
         ]);
         expect($invalidVatRate2->isValidRateData())->toBeFalse();
     });
@@ -269,7 +192,7 @@ describe('CountryVatRate Model', function () {
         expect($categories)->toHaveKey('super_reduced');
         expect($categories)->toHaveKey('medical_services');
         expect($categories['general']['type'])->toBe('reduced');
-        expect($categories['general']['rate'])->toBe(1000);
+        expect($categories['general']['rate'])->toBe(1000); // raw base-100 int from JSON structure
         expect($categories['medical_services']['type'])->toBe('exempt');
         expect($categories['medical_services']['rate'])->toBe(0);
     });
@@ -321,20 +244,31 @@ describe('CountryVatRate Model', function () {
         expect($spanishRates->first()->country_code)->toBe('ES');
     });
 
-    it('can scope by rate range', function () {
-        CountryVatRateFactory::new()->create(['standard_rate' => 1500]); // 15%
-        CountryVatRateFactory::new()->create(['standard_rate' => 2000]); // 20%
-        CountryVatRateFactory::new()->create(['standard_rate' => 2500]); // 25%
+    it('can scope by rate range (percentage args)', function () {
+        CountryVatRateFactory::new()->create(['standard_rate' => cents(1500)]); // 15%
+        CountryVatRateFactory::new()->create(['standard_rate' => cents(2000)]); // 20%
+        CountryVatRateFactory::new()->create(['standard_rate' => cents(2500)]); // 25%
 
         $midRangeRates = CountryVatRate::byRate(18.0, 23.0)->get();
 
         expect($midRangeRates)->toHaveCount(1);
-        expect($midRangeRates->first()->standard_rate)->toBe(2000);
+        expect($midRangeRates->first()->standard_rate->unscaledValue())->toBe(2000);
+    });
+
+    it('includes the boundary rates in scopeByRate (inclusive)', function () {
+        CountryVatRateFactory::new()->create(['standard_rate' => cents(1800)]); // 18.00% lower bound
+        CountryVatRateFactory::new()->create(['standard_rate' => cents(1850)]); // 18.50%
+        CountryVatRateFactory::new()->create(['standard_rate' => cents(2300)]); // 23.00% upper bound
+        CountryVatRateFactory::new()->create(['standard_rate' => cents(2301)]); // 23.01% just outside
+
+        $inRange = CountryVatRate::byRate(18.0, 23.0)->get();
+
+        expect($inRange)->toHaveCount(3); // 18.00, 18.50, 23.00 — 23.01 excluded
     });
 
     it('can scope by min rate only', function () {
-        CountryVatRateFactory::new()->create(['standard_rate' => 1500]); // 15%
-        CountryVatRateFactory::new()->create(['standard_rate' => 2000]); // 20%
+        CountryVatRateFactory::new()->create(['standard_rate' => cents(1500)]); // 15%
+        CountryVatRateFactory::new()->create(['standard_rate' => cents(2000)]); // 20%
 
         $highRates = CountryVatRate::byRate(18.0, null)->get();
 
@@ -342,8 +276,8 @@ describe('CountryVatRate Model', function () {
     });
 
     it('can scope by max rate only', function () {
-        CountryVatRateFactory::new()->create(['standard_rate' => 1500]); // 15%
-        CountryVatRateFactory::new()->create(['standard_rate' => 2000]); // 20%
+        CountryVatRateFactory::new()->create(['standard_rate' => cents(1500)]); // 15%
+        CountryVatRateFactory::new()->create(['standard_rate' => cents(2000)]); // 20%
 
         $lowRates = CountryVatRate::byRate(null, 18.0)->get();
 
@@ -389,7 +323,7 @@ describe('CountryVatRate Model', function () {
             [
                 'country_code'      => 'ES',
                 'country_name'      => 'Spain',
-                'standard_rate'     => 2100,
+                'standard_rate'     => 2100, // external source: raw base-100 int
                 'reduced_rates'     => ['general' => 1000],
                 'exempt_categories' => ['medical'],
             ],
@@ -408,6 +342,7 @@ describe('CountryVatRate Model', function () {
 
         expect($imported)->toBe(2); // Only 2 valid records
         expect(CountryVatRate::where('data_source', 'test-import')->count())->toBe(2);
+        expect(CountryVatRate::findByCountry('ES')->standard_rate->unscaledValue())->toBe(2100);
     });
 
     it('can find by country code', function () {
@@ -433,13 +368,13 @@ describe('CountryVatRate Model', function () {
     });
 
     it('can get default rate for known country', function () {
-        expect(CountryVatRate::getDefaultRateForCountry('ES'))->toBe(21.0);
-        expect(CountryVatRate::getDefaultRateForCountry('FR'))->toBe(20.0);
-        expect(CountryVatRate::getDefaultRateForCountry('DE'))->toBe(19.0);
+        expect(CountryVatRate::getDefaultRateForCountry('ES')->unscaledValue())->toBe(2100);
+        expect(CountryVatRate::getDefaultRateForCountry('FR')->unscaledValue())->toBe(2000);
+        expect(CountryVatRate::getDefaultRateForCountry('DE')->unscaledValue())->toBe(1900);
     });
 
     it('returns zero for unknown country default rate', function () {
-        expect(CountryVatRate::getDefaultRateForCountry('XX'))->toBe(0.0);
+        expect(CountryVatRate::getDefaultRateForCountry('XX')->isZero())->toBeTrue();
     });
 
     it('can find by country code or fail', function () {
@@ -451,24 +386,26 @@ describe('CountryVatRate Model', function () {
         expect($found->country_code)->toBe('ES');
     });
 
-    it('can find by standard rate range', function () {
-        CountryVatRateFactory::new()->create(['standard_rate' => 15.0, 'is_active' => true]); // 15%
-        CountryVatRateFactory::new()->create(['standard_rate' => 20.0, 'is_active' => true]); // 20%
-        CountryVatRateFactory::new()->create(['standard_rate' => 25.0, 'is_active' => true]); // 25%
+    it('can find by standard rate range (percentage args)', function () {
+        CountryVatRateFactory::new()->create(['standard_rate' => cents(1500), 'is_active' => true]); // 15%
+        CountryVatRateFactory::new()->create(['standard_rate' => cents(2000), 'is_active' => true]); // 20%
+        CountryVatRateFactory::new()->create(['standard_rate' => cents(2500), 'is_active' => true]); // 25%
 
         $midRange = CountryVatRate::findByStandardRateRange(18.0, 23.0)->get();
 
-        expect($midRange->count())->toBeGreaterThanOrEqual(1);
+        expect($midRange)->toHaveCount(1);
+        expect($midRange->first()->standard_rate->unscaledValue())->toBe(2000);
     });
 
-    it('can find similar rates within tolerance', function () {
-        CountryVatRateFactory::new()->create(['standard_rate' => 2000, 'is_active' => true]); // 20% in base-100
-        CountryVatRateFactory::new()->create(['standard_rate' => 2100, 'is_active' => true]); // 21%
-        CountryVatRateFactory::new()->create(['standard_rate' => 1500, 'is_active' => true]); // 15%
+    it('can find similar rates within tolerance (percentage args)', function () {
+        CountryVatRateFactory::new()->create(['standard_rate' => cents(2000), 'is_active' => true]); // 20%
+        CountryVatRateFactory::new()->create(['standard_rate' => cents(2100), 'is_active' => true]); // 21%
+        CountryVatRateFactory::new()->create(['standard_rate' => cents(1500), 'is_active' => true]); // 15%
 
         $similar = CountryVatRate::findSimilarRates(20.0, 2.0)->get();
 
-        expect($similar->count())->toBeGreaterThanOrEqual(1);
+        // 20% ± 2% exclusive => (18.00, 22.00): captures 20% and 21%, not 15%
+        expect($similar)->toHaveCount(2);
     });
 
     it('updates last_updated timestamp on update', function () {
@@ -481,10 +418,10 @@ describe('CountryVatRate Model', function () {
         expect($vatRate->fresh()->last_updated->gt($oldTimestamp))->toBeTrue();
     });
 
-    it('can get standard rate getter', function () {
-        $vatRate = CountryVatRateFactory::new()->create(['standard_rate' => 2100]);
+    it('can get standard rate getter as FixedDecimal', function () {
+        $vatRate = CountryVatRateFactory::new()->create(['standard_rate' => cents(2100)]);
 
-        expect($vatRate->getStandardRate())->toBe(2100.0);
+        expect($vatRate->getStandardRate()->unscaledValue())->toBe(2100);
     });
 
     it('can check if category is exempt using alias method', function () {
@@ -502,7 +439,8 @@ describe('CountryVatRate Model', function () {
         expect($allRates)->toBeArray();
         expect($allRates)->toHaveKey('standard');
         expect($allRates)->toHaveKey('reduced');
-        expect($allRates['standard'])->toBe(2100.0);
+        expect($allRates['standard']->unscaledValue())->toBe(2100);
+        expect($allRates['reduced']['general']->unscaledValue())->toBe(1000);
     });
 
     it('can activate VAT rate', function () {
@@ -526,14 +464,14 @@ describe('CountryVatRate Model', function () {
     });
 
     it('can update VAT rates', function () {
-        $vatRate = CountryVatRateFactory::new()->create(['standard_rate' => 2000]);
+        $vatRate = CountryVatRateFactory::new()->create(['standard_rate' => cents(2000)]);
 
         $updated = $vatRate->updateVatRates([
-            'standard_rate' => 2100,
+            'standard_rate' => cents(2100),
             'reduced_rates' => ['books' => 500],
         ]);
 
-        expect($updated->standard_rate)->toBe(2100);
+        expect($updated->standard_rate->unscaledValue())->toBe(2100);
         expect($updated->reduced_rates)->toHaveKey('books');
     });
 
@@ -599,9 +537,9 @@ describe('CountryVatRate Model', function () {
     });
 
     it('can get VAT rate statistics', function () {
-        CountryVatRateFactory::new()->create(['standard_rate' => 2100, 'is_active' => true]); // 21%
-        CountryVatRateFactory::new()->create(['standard_rate' => 2000, 'is_active' => true]); // 20%
-        CountryVatRateFactory::new()->create(['standard_rate' => 1900, 'is_active' => false]); // 19% inactive
+        CountryVatRateFactory::new()->create(['standard_rate' => cents(2100), 'is_active' => true]); // 21%
+        CountryVatRateFactory::new()->create(['standard_rate' => cents(2000), 'is_active' => true]); // 20%
+        CountryVatRateFactory::new()->create(['standard_rate' => cents(1900), 'is_active' => false]); // 19% inactive
 
         $stats = CountryVatRate::getVatRateStatistics();
 

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
+use AichaDigital\Lara100\Casts\FixedDecimalCast;
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Services\ModelMappingService;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Builder;
@@ -20,8 +22,8 @@ use Illuminate\Support\Collection;
  *
  * @property string $country_code
  * @property string $country_name
- * @property int $standard_rate Base-100 integer (e.g., 2150 => 21.50%)
- * @property array<string,int>|null $reduced_rates Map of category => base-100 integer
+ * @property FixedDecimal $standard_rate FixedDecimal:2 over base-100 integer column (e.g., 2150 => 21.50%)
+ * @property array<string,int>|null $reduced_rates Map of category => base-100 integer (raw JSON)
  * @property array<int,string>|null $exempt_categories List of exempt category slugs
  * @property Carbon|null $last_updated
  * @property string $data_source
@@ -51,14 +53,15 @@ class CountryVatRate extends Model
     /**
      * Casts for attributes.
      *
-     * Uses integers in base 100 for monetary values (percentages, rates)
-     * Example: 21.50% is stored as 2150, 12.34% as 1234
+     * standard_rate is a FixedDecimal:2 over a base-100 integer column.
+     * reduced_rates stays a raw integer base-100 JSON map (semantic getters
+     * materialize FixedDecimal); example: 21.50% is stored as 2150.
      */
     public function casts(): array
     {
         return [
-            'standard_rate'     => 'integer', // Base 100: 21.50% = 2150
-            'reduced_rates'     => 'json',    // Array of integers in base 100 - explicit JSON cast
+            'standard_rate'     => FixedDecimalCast::class.':2', // Base 100: 21.50% = 2150
+            'reduced_rates'     => 'json',    // Raw integers in base 100 - explicit JSON cast
             'exempt_categories' => 'json', // Explicit JSON cast
             'is_active'         => 'boolean',
             'last_updated'      => 'datetime',
@@ -129,30 +132,6 @@ class CountryVatRate extends Model
     }
 
     /**
-     * Convert percentage to base 100 integer.
-     *
-     * @param  float  $percentage  The percentage value (e.g., 21.50)
-     * @return int The base 100 integer (e.g., 2150)
-     */
-    public static function percentageToBase100(float $percentage): int
-    {
-        // Multiply by 100 and cast to int to avoid floating point precision issues
-        // For exact percentages like 21.50, this gives us 2150 without rounding errors
-        return (int) ($percentage * 100);
-    }
-
-    /**
-     * Convert base 100 integer to percentage.
-     *
-     * @param  int  $base100  The base 100 integer (e.g., 2150)
-     * @return float The percentage value (e.g., 21.50)
-     */
-    public static function base100ToPercentage(int $base100): float
-    {
-        return $base100 / 100.0;
-    }
-
-    /**
      * Find VAT rate by country code.
      */
     public static function findByCountry(string $countryCode): ?self
@@ -163,23 +142,21 @@ class CountryVatRate extends Model
     }
 
     /**
-     * Get VAT rate for a specific category.
-     * Returns rate in base 100 (integer).
+     * Get VAT rate for a specific category as a FixedDecimal:2.
      *
      * @param  string  $category  The category to get rate for
-     * @return int|null Rate in base 100 (e.g., 2150 for 21.50%) or null if not found
      */
-    public function getRateForCategory(string $category): ?int
+    public function getRateForCategory(string $category): ?FixedDecimal
     {
         // Check if category is exempt
         if (in_array($category, $this->exempt_categories ?? [])) {
-            return 0; // 0% in base 100
+            return FixedDecimal::zero(2); // 0% in base 100
         }
 
-        // Check reduced rates
+        // Check reduced rates (stored as raw base-100 integers)
         $reducedRates = $this->reduced_rates ?? [];
         if (isset($reducedRates[$category])) {
-            return (int) $reducedRates[$category];
+            return FixedDecimal::ofUnscaled((int) $reducedRates[$category], 2);
         }
 
         // Return standard rate as default
@@ -187,25 +164,11 @@ class CountryVatRate extends Model
     }
 
     /**
-     * Get VAT rate for a specific category as percentage.
-     *
-     * @param  string  $category  The category to get rate for
-     * @return float|null Rate as percentage (e.g., 21.50) or null if not found
-     */
-    public function getRateForCategoryAsPercentage(string $category): ?float
-    {
-        $rate = $this->getRateForCategory($category);
-
-        return $rate !== null ? static::base100ToPercentage($rate) : null;
-    }
-
-    /**
-     * Validate rate data integrity.
-     * Validates rates in base 100 format.
+     * Validate rate data integrity (base-100 unscaled bounds).
      */
     public function isValidRateData(): bool
     {
-        $standard = (int) $this->standard_rate;
+        $standard = $this->standard_rate->unscaledValue();
         // Standard rate should be between 0 and 10000 (0% to 100% in base 100)
         if ($standard < 0 || $standard > 10000) {
             return false;
@@ -224,33 +187,19 @@ class CountryVatRate extends Model
     }
 
     /**
-     * Get all reduced rates in base 100 format.
+     * Get all reduced rates as FixedDecimal:2, keyed by category.
      *
-     * @return array<string, int>
+     * @return array<string, FixedDecimal>
      */
     public function getReducedRates(): array
     {
         $rates = $this->reduced_rates ?? [];
+        $out   = [];
         foreach ($rates as $k => $v) {
-            $rates[$k] = (int) $v; // Ensure integer in base 100
+            $out[$k] = FixedDecimal::ofUnscaled((int) $v, 2);
         }
 
-        return $rates;
-    }
-
-    /**
-     * Get all reduced rates as percentages.
-     *
-     * @return array<string, float>
-     */
-    public function getReducedRatesAsPercentages(): array
-    {
-        $rates = $this->getReducedRates();
-        foreach ($rates as $k => $v) {
-            $rates[$k] = static::base100ToPercentage($v);
-        }
-
-        return $rates;
+        return $out;
     }
 
     /**
@@ -282,44 +231,28 @@ class CountryVatRate extends Model
     }
 
     /**
-     * Get reduced rate for a category in base 100 format.
+     * Get reduced rate for a category as a FixedDecimal:2.
      */
-    public function getReducedRate(string $category): ?int
+    public function getReducedRate(string $category): ?FixedDecimal
     {
         $reducedRates = $this->reduced_rates ?? [];
 
-        return isset($reducedRates[$category]) ? (int) $reducedRates[$category] : null;
+        return isset($reducedRates[$category])
+            ? FixedDecimal::ofUnscaled((int) $reducedRates[$category], 2)
+            : null;
     }
 
     /**
-     * Get reduced rate for a category as percentage.
+     * Add or update a reduced rate from a FixedDecimal:2 (stored as base-100 int).
      */
-    public function getReducedRateAsPercentage(string $category): ?float
-    {
-        $rate = $this->getReducedRate($category);
-
-        return $rate !== null ? static::base100ToPercentage($rate) : null;
-    }
-
-    /**
-     * Add or update a reduced rate using base 100 format.
-     */
-    public function setReducedRate(string $category, int $rate): self
+    public function setReducedRate(string $category, FixedDecimal $rate): self
     {
         $reducedRates            = $this->reduced_rates ?? [];
-        $reducedRates[$category] = $rate;
+        $reducedRates[$category] = $rate->toScale(2)->unscaledValue();
 
         $this->update(['reduced_rates' => $reducedRates]);
 
         return $this;
-    }
-
-    /**
-     * Add or update a reduced rate using percentage.
-     */
-    public function setReducedRateFromPercentage(string $category, float $percentage): self
-    {
-        return $this->setReducedRate($category, static::percentageToBase100($percentage));
     }
 
     /**
@@ -331,24 +264,6 @@ class CountryVatRate extends Model
         unset($reducedRates[$category]);
 
         $this->update(['reduced_rates' => $reducedRates]);
-
-        return $this;
-    }
-
-    /**
-     * Get standard rate as percentage.
-     */
-    public function getStandardRateAsPercentage(): float
-    {
-        return static::base100ToPercentage($this->standard_rate);
-    }
-
-    /**
-     * Set standard rate from percentage.
-     */
-    public function setStandardRateFromPercentage(float $percentage): self
-    {
-        $this->update(['standard_rate' => static::percentageToBase100($percentage)]);
 
         return $this;
     }
@@ -418,7 +333,7 @@ class CountryVatRate extends Model
      */
     public function getFormattedStandardRate(): string
     {
-        return number_format(static::base100ToPercentage((int) $this->standard_rate), 2).'%';
+        return number_format($this->standard_rate->toFloat(), 2).'%';
     }
 
     /**
@@ -432,7 +347,7 @@ class CountryVatRate extends Model
         $reducedRates = $this->reduced_rates ?? [];
 
         foreach ($reducedRates as $category => $rate) {
-            $formatted[$category] = number_format(static::base100ToPercentage((int) $rate), 2).'%';
+            $formatted[$category] = number_format(FixedDecimal::ofUnscaled((int) $rate, 2)->toFloat(), 2).'%';
         }
 
         return $formatted;
@@ -468,12 +383,14 @@ class CountryVatRate extends Model
      */
     public function scopeByRate(Builder $query, ?float $minRate = null, ?float $maxRate = null): Builder
     {
+        // Percentage args are converted to the stored base-100 integer for the
+        // WHERE (query builder compares against the raw column, not the cast).
         if ($minRate !== null) {
-            $query->where('standard_rate', '>=', static::percentageToBase100($minRate));
+            $query->where('standard_rate', '>=', FixedDecimal::ofFloat($minRate, 2)->unscaledValue());
         }
 
         if ($maxRate !== null) {
-            $query->where('standard_rate', '<=', static::percentageToBase100($maxRate));
+            $query->where('standard_rate', '<=', FixedDecimal::ofFloat($maxRate, 2)->unscaledValue());
         }
 
         return $query;
@@ -542,7 +459,8 @@ class CountryVatRate extends Model
                 ['country_code' => $countryCode],
                 [
                     'country_name'      => $countryName,
-                    'standard_rate'     => $standardRate,
+                    // External data source carries raw base-100 integers.
+                    'standard_rate'     => FixedDecimal::ofUnscaled((int) $standardRate, 2),
                     'reduced_rates'     => $countryData['reduced_rates']     ?? [],
                     'exempt_categories' => $countryData['exempt_categories'] ?? [],
                     'data_source'       => $dataSource,
@@ -569,9 +487,9 @@ class CountryVatRate extends Model
     }
 
     /**
-     * Get default VAT rate for a country (fallback).
+     * Get default VAT rate for a country (fallback) as a FixedDecimal:2.
      */
-    public static function getDefaultRateForCountry(string $countryCode): float
+    public static function getDefaultRateForCountry(string $countryCode): FixedDecimal
     {
         $defaultRates = [
             'ES' => 21.0,
@@ -586,7 +504,8 @@ class CountryVatRate extends Model
             'GR' => 24.0,
         ];
 
-        return $defaultRates[$countryCode] ?? 0.0; // Default to 0% for unknown countries
+        // Default to 0% for unknown countries.
+        return FixedDecimal::ofFloat($defaultRates[$countryCode] ?? 0.0, 2);
     }
 
     /**
@@ -608,35 +527,30 @@ class CountryVatRate extends Model
     }
 
     /**
-     * Finder: by standard rate range (inclusive).
+     * Finder: by standard rate range (percentage args, inclusive bounds).
      *
      * @return Builder<static>
      */
     public static function findByStandardRateRange(float $minRate, float $maxRate): Builder
     {
-        $query = static::query()->where('standard_rate', '>=', $minRate);
+        $min = FixedDecimal::ofFloat($minRate, 2)->unscaledValue();
+        $max = FixedDecimal::ofFloat($maxRate, 2)->unscaledValue();
 
-        // Heuristic to satisfy test expectations: use inclusive upper bound when max is an odd integer like 21
-        $useInclusiveMax = fmod($maxRate, 1.0) === 0.0 && ((int) $maxRate % 2 === 1);
-
-        if ($useInclusiveMax) {
-            $query->where('standard_rate', '<=', $maxRate);
-        } else {
-            $query->where('standard_rate', '<', $maxRate);
-        }
-
-        return $query->where('is_active', true);
+        return static::query()
+            ->where('standard_rate', '>=', $min)
+            ->where('standard_rate', '<=', $max)
+            ->where('is_active', true);
     }
 
     /**
-     * Finder: similar rates within a tolerance around a target.
+     * Finder: similar rates within a tolerance around a target (percentage args).
      *
      * @return Builder<static>
      */
     public static function findSimilarRates(float $targetRate, float $tolerance): Builder
     {
-        $min = static::percentageToBase100($targetRate - $tolerance);
-        $max = static::percentageToBase100($targetRate + $tolerance);
+        $min = FixedDecimal::ofFloat($targetRate - $tolerance, 2)->unscaledValue();
+        $max = FixedDecimal::ofFloat($targetRate + $tolerance, 2)->unscaledValue();
 
         return static::query()
             ->where('standard_rate', '>', $min)
@@ -716,9 +630,9 @@ class CountryVatRate extends Model
     /**
      * Getters/aliases required by tests.
      */
-    public function getStandardRate(): float
+    public function getStandardRate(): FixedDecimal
     {
-        return (float) $this->standard_rate;
+        return $this->standard_rate;
     }
 
     public function isExemptCategory(string $category): bool
@@ -727,12 +641,12 @@ class CountryVatRate extends Model
     }
 
     /**
-     * @return array<string, mixed>
+     * @return array{standard: FixedDecimal, reduced: array<string, FixedDecimal>}
      */
     public function getAllRates(): array
     {
         return [
-            'standard' => (float) $this->standard_rate,
+            'standard' => $this->standard_rate,
             'reduced'  => $this->getReducedRates(),
         ];
     }
@@ -834,7 +748,7 @@ class CountryVatRate extends Model
     {
         return $collection->pluck('standard_rate')
             ->filter(fn ($rate) => $rate !== null)
-            ->map(fn ($rate) => static::base100ToPercentage((int) $rate))
+            ->map(fn (FixedDecimal $rate) => $rate->toFloat())
             ->values();
     }
 

@@ -32,7 +32,7 @@ El cálculo viejo de la base imponible `(int) (qty × unit_price / 100)` **trunc
 ## No-decisión (lo que esta ADR NO hace)
 
 - **No cambia el almacenamiento.** Las columnas siguen siendo `integer` con los mismos céntimos. No hay migración de columnas ni de datos. Cumple la restricción "nada decimal en la base de datos" por diseño — es el propósito anti-float de lara100.
-- **No migra los sistemas base-100 paralelos** fuera de los 8 modelos: `EuSalesThreshold`, `CompanyConfig`, `CountryVatRate`, `VatCategory` (que además usa base-10000 para tipos de IVA) y los enteros `Commission::{rate_base100, min_amount_base100, max_amount_base100}`. Siguen como `int` crudo (también enteros en BD). El híbrido resultante queda documentado; su unificación es un follow-up opcional.
+- **No migra los sistemas base-100 paralelos** fuera de los 8 modelos: `EuSalesThreshold`, `CompanyConfig` y los enteros `Commission::{rate_base100, min_amount_base100, max_amount_base100}`. Siguen como `int` crudo (también enteros en BD). El híbrido resultante queda documentado; su unificación es un follow-up opcional. (Actualización AID-240/242/246: `EuSalesThreshold` y `Commission` se migraron después en 2.0.0, y `VatCategory.vat_rate` + `CountryVatRate.standard_rate` en 3.0.0 — todos base-100 escala 2, **no** base-10000; la mención previa a "base-10000" para los tipos de IVA era incorrecta: `percentageToBase100` siempre fue `× 100`.)
 - **No reescribe la semántica (quirky) de las comisiones.** `Commission::rate` se migra preservando su valor exacto (donde el código usaba `$this->rate` int, ahora usa `->unscaledValue()`); cualquier corrección de su lógica es trabajo aparte.
 
 ## Consecuencias

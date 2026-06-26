@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Database\Factories;
 
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Models\VatCategory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -65,17 +66,19 @@ class VatCategoryFactory extends Factory
     }
 
     /**
-     * Get appropriate rate for category type
+     * Get appropriate rate for category type (FixedDecimal:2 over base-100).
      */
-    private function getRateForCategoryType(string $categoryType): int
+    private function getRateForCategoryType(string $categoryType): FixedDecimal
     {
-        return match ($categoryType) {
+        $base100 = match ($categoryType) {
             'standard'      => $this->faker->randomElement([2100, 2000, 1900]), // 21%, 20%, 19% in base 100
             'reduced'       => $this->faker->randomElement([1000, 800, 600]), // 10%, 8%, 6% in base 100
             'super_reduced' => $this->faker->randomElement([400, 300, 200]), // 4%, 3%, 2% in base 100
             'exempt'        => 0, // 0% in base 100
             default         => 2100, // Default to 21% in base 100
         };
+
+        return FixedDecimal::ofUnscaled($base100, 2);
     }
 
     /**
@@ -87,7 +90,7 @@ class VatCategoryFactory extends Factory
             return [
                 'country_code'        => 'ES',
                 'name'                => 'IVA Estándar España',
-                'vat_rate'            => 2100, // 21% in base 100
+                'vat_rate'            => FixedDecimal::ofUnscaled(2100, 2), // 21% in base 100
                 'category_type'       => 'standard',
                 'applies_to_products' => true,
                 'applies_to_services' => true,
@@ -104,7 +107,7 @@ class VatCategoryFactory extends Factory
         return $this->state(function (array $attributes) {
             return [
                 'category_type'       => 'standard',
-                'vat_rate'            => $this->faker->randomElement([2100, 2000, 1900]), // 21%, 20%, 19% in base 100
+                'vat_rate'            => FixedDecimal::ofUnscaled($this->faker->randomElement([2100, 2000, 1900]), 2), // 21%, 20%, 19% in base 100
                 'applies_to_products' => true,
                 'applies_to_services' => true,
             ];
@@ -119,7 +122,7 @@ class VatCategoryFactory extends Factory
         return $this->state(function (array $attributes) {
             return [
                 'category_type'       => 'reduced',
-                'vat_rate'            => $this->faker->randomElement([1000, 800, 600]), // 10%, 8%, 6% in base 100
+                'vat_rate'            => FixedDecimal::ofUnscaled($this->faker->randomElement([1000, 800, 600]), 2), // 10%, 8%, 6% in base 100
                 'applies_to_products' => $this->faker->boolean(80),
                 'applies_to_services' => $this->faker->boolean(60),
                 'special_conditions'  => $this->faker->randomElements([
@@ -140,7 +143,7 @@ class VatCategoryFactory extends Factory
         return $this->state(function (array $attributes) {
             return [
                 'category_type'       => 'super_reduced',
-                'vat_rate'            => $this->faker->randomElement([400, 300, 200]), // 4%, 3%, 2% in base 100
+                'vat_rate'            => FixedDecimal::ofUnscaled($this->faker->randomElement([400, 300, 200]), 2), // 4%, 3%, 2% in base 100
                 'applies_to_products' => true,
                 'applies_to_services' => false,
                 'special_conditions'  => $this->faker->randomElements([
@@ -161,7 +164,7 @@ class VatCategoryFactory extends Factory
         return $this->state(function (array $attributes) {
             return [
                 'category_type'       => 'exempt',
-                'vat_rate'            => 0, // 0% in base 100
+                'vat_rate'            => FixedDecimal::ofUnscaled(0, 2), // 0% in base 100
                 'applies_to_products' => $this->faker->boolean(60),
                 'applies_to_services' => $this->faker->boolean(80),
                 'special_conditions'  => $this->faker->randomElements([
