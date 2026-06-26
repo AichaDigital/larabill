@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Database\Factories;
 
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Models\CountryVatRate;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -24,7 +25,7 @@ class CountryVatRateFactory extends Factory
         return [
             'country_code'  => $this->faker->unique()->countryCode(),
             'country_name'  => $this->faker->country(),
-            'standard_rate' => $this->faker->numberBetween(1500, 2700), // 15% to 27% in base 100
+            'standard_rate' => FixedDecimal::ofUnscaled($this->faker->numberBetween(1500, 2700), 2), // 15% to 27% in base 100
             'reduced_rates' => [
                 'general'       => $this->faker->numberBetween(500, 1500), // 5% to 15% in base 100
                 'super_reduced' => $this->faker->numberBetween(0, 500), // 0% to 5% in base 100
@@ -48,7 +49,7 @@ class CountryVatRateFactory extends Factory
             return [
                 'country_code'  => 'ES',
                 'country_name'  => 'Spain',
-                'standard_rate' => 2100, // 21% in base 100
+                'standard_rate' => FixedDecimal::ofUnscaled(2100, 2), // 21% in base 100
                 'reduced_rates' => [
                     'general'       => 1000, // 10% in base 100
                     'super_reduced' => 400, // 4% in base 100
@@ -72,7 +73,7 @@ class CountryVatRateFactory extends Factory
             return [
                 'country_code'  => 'FR',
                 'country_name'  => 'France',
-                'standard_rate' => 2000, // 20% in base 100
+                'standard_rate' => FixedDecimal::ofUnscaled(2000, 2), // 20% in base 100
                 'reduced_rates' => [
                     'general'       => 1000, // 10% in base 100
                     'super_reduced' => 550, // 5.5% in base 100
@@ -95,7 +96,7 @@ class CountryVatRateFactory extends Factory
             return [
                 'country_code'  => 'DE',
                 'country_name'  => 'Germany',
-                'standard_rate' => 1900, // 19% in base 100
+                'standard_rate' => FixedDecimal::ofUnscaled(1900, 2), // 19% in base 100
                 'reduced_rates' => [
                     'general' => 700, // 7% in base 100
                 ],

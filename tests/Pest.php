@@ -55,6 +55,16 @@ function cents(int $unscaled): FixedDecimal
 }
 
 /**
+ * `pct(21.50)` builds a scale-2 FixedDecimal of the percentage 21.50 (stored as
+ * 2150 unscaled base-100). Readable sugar for VAT-rate factory overrides and
+ * assertions now that VatCategory/CountryVatRate rates are FixedDecimal:2.
+ */
+function pct(int|float $percentage): FixedDecimal
+{
+    return FixedDecimal::ofFloat((float) $percentage, 2);
+}
+
+/**
  * Wrap the integer base-100 money keys of an attribute array into FixedDecimal,
  * so test bodies can keep passing readable integer cents to factories/models.
  *

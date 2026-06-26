@@ -4,11 +4,40 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
-Preparatory work toward **v3.0.0** (AID-242), continuing the FixedDecimal money
-migration into the small base-100 systems AID-240 left untouched. **Breaking**,
-but NOT yet released as 3.0.0: the large rate models (`VatCategory`,
-`CountryVatRate`) still expose their legacy base-100 API and are deferred to a
-dedicated PR before any 3.0.0 tag.
+**v3.0.0** — completes the "no decimals / no float in rate systems" program
+(AID-237 → AID-240 → AID-242 → **AID-246**). The two large VAT rate models
+(`VatCategory`, `CountryVatRate`) now expose `FixedDecimal` instead of their
+legacy base-100 `int`/`float` API, the last blocker for the 3.0.0 tag. No schema
+change: the columns were already `integer`/`json` base-100.
+
+### Changed (BREAKING — VAT rate models, AID-246)
+
+- `VatCategory::vat_rate` is now `FixedDecimal:2` (was a base-100 `int`). The
+  statics `getVatRate()`, `getStandardRate()`, `getReducedRate()`,
+  `getSuperReducedRate()` and the instance `getRate()` return `?FixedDecimal`.
+  `findByRate(string, float)` takes the percentage and converts internally.
+- `CountryVatRate::standard_rate` is now `FixedDecimal:2` (was a base-100 `int`).
+  `reduced_rates` stays a raw base-100 integer JSON map; the semantic getters
+  (`getRateForCategory()`, `getReducedRate()`, `getReducedRates()`,
+  `getStandardRate()`, `getDefaultRateForCountry()`, `getAllRates()['standard']`)
+  return `FixedDecimal`. `setReducedRate(string, FixedDecimal)` now takes a
+  `FixedDecimal`.
+- Removed the manual percentage/base-100 converters from both models
+  (`percentageToBase100`, `base100ToPercentage`, `getVatRateAsPercentage`,
+  `setVatRateFromPercentage`, `getStandardRateAsPercentage`,
+  `setStandardRateFromPercentage`, `getRateForCategoryAsPercentage`,
+  `getReducedRatesAsPercentages`, `getReducedRateAsPercentage`,
+  `setReducedRateFromPercentage`): the `FixedDecimal:2` value already *is* the
+  percentage.
+- Range scopes/finders (`scopeByRate`, `findByStandardRateRange`,
+  `findSimilarRates`) keep their `float` percentage signatures and convert
+  internally to the stored base-100 integer for the WHERE.
+- `VatCategory::isExempt()` now uses `vat_rate->isZero()` (fixing a latent
+  `=== 0.0` comparison that never matched an integer column), and
+  `DestinationVatService::getDestinationVatRate()` now returns the correct
+  percentage on every branch (the `standard_rate`/`getRateForCategory` branches
+  previously leaked the base-100 integer, e.g. `2100` instead of `21.0`).
+- See `docs/upgrade-3.0-vat-rate-fixeddecimal.md`.
 
 ### Changed (BREAKING — Commission)
 
