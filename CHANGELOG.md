@@ -4,6 +4,8 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+## [3.0.0] - 2026-06-26
+
 **v3.0.0** — completes the "no decimals / no float in rate systems" program
 (AID-237 → AID-240 → AID-242 → **AID-246**). The two large VAT rate models
 (`VatCategory`, `CountryVatRate`) now expose `FixedDecimal` instead of their
