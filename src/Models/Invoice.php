@@ -20,6 +20,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Carbon;
@@ -313,6 +314,18 @@ class Invoice extends Model implements LegallyRetainable
 
         // @phpstan-ignore-next-line return.type,argument.templateType
         return $this->belongsTo($userModel, 'billable_user_id');
+    }
+
+    /**
+     * Grouped payments that settled (or did settle, if reversed) this invoice.
+     *
+     * @return BelongsToMany<GroupedPayment, $this>
+     */
+    public function groupedPayments(): BelongsToMany
+    {
+        return $this->belongsToMany(GroupedPayment::class, 'grouped_payment_invoice', 'invoice_id', 'grouped_payment_id')
+            ->withPivot(['applied_amount', 'previous_status', 'previous_paid_at', 'active_invoice_id'])
+            ->withTimestamps();
     }
 
     /**
