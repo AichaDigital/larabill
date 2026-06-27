@@ -250,7 +250,7 @@ class Invoice extends Model implements LegallyRetainable
     public function markAsPaidViaGroupedPayment(DateTimeInterface $paidAt): void
     {
         $this->status  = InvoiceStatus::PAID;
-        $this->paid_at = $paidAt;
+        $this->paid_at = Carbon::instance($paidAt);
         $this->save();
     }
 
@@ -261,7 +261,7 @@ class Invoice extends Model implements LegallyRetainable
     public function restoreStateViaGroupedPaymentReversal(InvoiceStatus $status, ?DateTimeInterface $paidAt): void
     {
         $this->status  = $status;
-        $this->paid_at = $paidAt;
+        $this->paid_at = $paidAt !== null ? Carbon::instance($paidAt) : null;
         $this->save();
     }
 

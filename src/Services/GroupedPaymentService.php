@@ -110,17 +110,25 @@ class GroupedPaymentService
                 'reverse_reason' => $reason,
             ]);
 
-            foreach ($locked->invoices()->get() as $invoice) {
-                $invoice->restoreStateViaGroupedPaymentReversal(
-                    InvoiceStatus::from((int) $invoice->pivot->previous_status),
-                    $invoice->pivot->previous_paid_at !== null ? Carbon::parse($invoice->pivot->previous_paid_at) : null,
-                );
+            $pivotRows = DB::table('grouped_payment_invoice')
+                ->where('grouped_payment_id', $locked->id)
+                ->get();
 
-                DB::table('grouped_payment_invoice')
-                    ->where('grouped_payment_id', $locked->id)
-                    ->where('invoice_id', $invoice->id)
-                    ->update(['active_invoice_id' => null]);
+            foreach ($pivotRows as $pivotRow) {
+                $invoice = Invoice::find($pivotRow->invoice_id);
+                if ($invoice === null) {
+                    continue;
+                }
+
+                $invoice->restoreStateViaGroupedPaymentReversal(
+                    InvoiceStatus::from((int) $pivotRow->previous_status),
+                    $pivotRow->previous_paid_at !== null ? Carbon::parse($pivotRow->previous_paid_at) : null,
+                );
             }
+
+            DB::table('grouped_payment_invoice')
+                ->where('grouped_payment_id', $locked->id)
+                ->update(['active_invoice_id' => null]);
 
             return $locked->load('invoices');
         });
@@ -138,7 +146,7 @@ class GroupedPaymentService
 
         if (count($invoiceIds) !== count(array_unique($invoiceIds))) {
             $dupes = array_keys(array_filter(array_count_values($invoiceIds), fn (int $n): bool => $n > 1));
-            throw GroupedPaymentValidationException::duplicateInvoices(array_values($dupes));
+            throw GroupedPaymentValidationException::duplicateInvoices(array_map(static fn ($id): string => (string) $id, $dupes));
         }
 
         $found   = $invoices->pluck('id')->map(fn ($id): string => (string) $id)->all();
