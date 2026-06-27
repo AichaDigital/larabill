@@ -5,6 +5,7 @@ declare(strict_types=1);
 use AichaDigital\Larabill\Enums\GroupedPaymentStatus;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Exceptions\GroupedPaymentValidationException;
+use AichaDigital\Larabill\Exceptions\IdempotencyConflictException;
 use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\GroupedPayment;
 use AichaDigital\Larabill\Models\Invoice;
@@ -114,3 +115,37 @@ it('rejects an invoice already covered by an active payment', function () {
     // the alreadyActivelyPaid branch is reached and throws.
     app(GroupedPaymentService::class)->register(TestCase::USER_UUID_2, [$a->id], now(), cents(5000), 'EUR');
 })->throws(GroupedPaymentValidationException::class, 'already covered by an active grouped payment');
+
+// D2: idempotency
+
+it('returns the same posted payment when a provided key is replayed', function () {
+    $a = makeSentInvoice(5000);
+    $svc = app(GroupedPaymentService::class);
+    $first  = $svc->register(TestCase::USER_UUID_2, [$a->id], now(), cents(5000), 'EUR', idempotencyKey: 'idem-1');
+    $second = $svc->register(TestCase::USER_UUID_2, [$a->id], now(), cents(5000), 'EUR', idempotencyKey: 'idem-1');
+    expect($second->id)->toBe($first->id)->and(GroupedPayment::count())->toBe(1);
+});
+
+it('returns the same payment when the derived key matches', function () {
+    $a = makeSentInvoice(5000);
+    $svc = app(GroupedPaymentService::class);
+    $first  = $svc->register(TestCase::USER_UUID_2, [$a->id], now(), cents(5000), 'EUR');
+    $second = $svc->register(TestCase::USER_UUID_2, [$a->id], now(), cents(5000), 'EUR');
+    expect($second->id)->toBe($first->id)->and(GroupedPayment::count())->toBe(1);
+});
+
+it('ignores a differing reference on replay (reference is not identity)', function () {
+    $a = makeSentInvoice(5000);
+    $svc = app(GroupedPaymentService::class);
+    $first  = $svc->register(TestCase::USER_UUID_2, [$a->id], now(), cents(5000), 'EUR', reference: 'TRF-A', idempotencyKey: 'idem-2');
+    $second = $svc->register(TestCase::USER_UUID_2, [$a->id], now(), cents(5000), 'EUR', reference: 'TRF-B', idempotencyKey: 'idem-2');
+    expect($second->id)->toBe($first->id)->and($second->reference)->toBe('TRF-A');
+});
+
+it('throws on a reused posted key with a different payload', function () {
+    $a = makeSentInvoice(5000);
+    $b = makeSentInvoice(3000);
+    $svc = app(GroupedPaymentService::class);
+    $svc->register(TestCase::USER_UUID_2, [$a->id], now(), cents(5000), 'EUR', idempotencyKey: 'idem-3');
+    $svc->register(TestCase::USER_UUID_2, [$b->id], now(), cents(3000), 'EUR', idempotencyKey: 'idem-3');
+})->throws(IdempotencyConflictException::class);

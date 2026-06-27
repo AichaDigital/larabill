@@ -9,9 +9,11 @@ use AichaDigital\Larabill\Enums\GroupedPaymentStatus;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Exceptions\GroupedPaymentValidationException;
+use AichaDigital\Larabill\Exceptions\IdempotencyConflictException;
 use AichaDigital\Larabill\Models\GroupedPayment;
 use AichaDigital\Larabill\Models\Invoice;
 use DateTimeInterface;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -29,41 +31,65 @@ class GroupedPaymentService
     ): GroupedPayment {
         $key = $idempotencyKey ?? $this->deriveIdempotencyKey($billableUserId, $invoiceIds, $currency, $amount);
 
-        return DB::transaction(function () use ($billableUserId, $invoiceIds, $paidAt, $amount, $currency, $reference, $key): GroupedPayment {
-            $orderedIds = $invoiceIds;
-            sort($orderedIds); // deterministic lock order (deadlock-safe)
+        try {
+            return DB::transaction(function () use ($billableUserId, $invoiceIds, $paidAt, $amount, $currency, $reference, $key): GroupedPayment {
+                $existing = GroupedPayment::where('idempotency_key', $key)->first();
+                if ($existing !== null) {
+                    if ($existing->isReversed()) {
+                        throw IdempotencyConflictException::keySpentByReversal($key); // D2: spent key
+                    }
+                    if (! $this->payloadMatches($existing, $billableUserId, $invoiceIds, $amount, $currency)) {
+                        throw IdempotencyConflictException::forKey($key);
+                    }
 
-            $invoices = Invoice::whereIn('id', $orderedIds)
-                ->with('companyFiscalConfig')
-                ->orderBy('id')
-                ->lockForUpdate()
-                ->get();
+                    return $existing->load('invoices');
+                }
 
-            $this->assertEligible($billableUserId, $currency, $orderedIds, $invoices, $amount);
+                $orderedIds = $invoiceIds;
+                sort($orderedIds); // deterministic lock order (deadlock-safe)
 
-            $payment = GroupedPayment::create([
-                'billable_user_id' => $billableUserId,
-                'amount'           => $amount,
-                'currency'         => $currency,
-                'paid_at'          => $paidAt,
-                'reference'        => $reference,
-                'idempotency_key'  => $key,
-                'status'           => GroupedPaymentStatus::POSTED,
-            ]);
+                $invoices = Invoice::whereIn('id', $orderedIds)
+                    ->with('companyFiscalConfig')
+                    ->orderBy('id')
+                    ->lockForUpdate()
+                    ->get();
 
-            foreach ($invoices as $invoice) {
-                $payment->invoices()->attach($invoice->id, [
-                    'applied_amount'    => $invoice->total_amount->unscaledValue(),
-                    'previous_status'   => $invoice->status->value,
-                    'previous_paid_at'  => $invoice->paid_at,
-                    'active_invoice_id' => $invoice->id,
+                $this->assertEligible($billableUserId, $currency, $orderedIds, $invoices, $amount);
+
+                $payment = GroupedPayment::create([
+                    'billable_user_id' => $billableUserId,
+                    'amount'           => $amount,
+                    'currency'         => $currency,
+                    'paid_at'          => $paidAt,
+                    'reference'        => $reference,
+                    'idempotency_key'  => $key,
+                    'status'           => GroupedPaymentStatus::POSTED,
                 ]);
 
-                $invoice->markAsPaidViaGroupedPayment($paidAt); // D1: works on immutable invoices
-            }
+                foreach ($invoices as $invoice) {
+                    $payment->invoices()->attach($invoice->id, [
+                        'applied_amount'    => $invoice->total_amount->unscaledValue(),
+                        'previous_status'   => $invoice->status->value,
+                        'previous_paid_at'  => $invoice->paid_at,
+                        'active_invoice_id' => $invoice->id,
+                    ]);
 
-            return $payment->load('invoices');
-        });
+                    $invoice->markAsPaidViaGroupedPayment($paidAt); // D1: works on immutable invoices
+                }
+
+                return $payment->load('invoices');
+            });
+        } catch (QueryException $e) {
+            // Concurrency backstop: another tx won the unique idempotency_key race (the tx rolled back).
+            if ($this->isIdempotencyKeyViolation($e)) {
+                $raced = GroupedPayment::where('idempotency_key', $key)->first();
+                if ($raced !== null && $raced->isPosted() && $this->payloadMatches($raced, $billableUserId, $invoiceIds, $amount, $currency)) {
+                    return $raced->load('invoices');
+                }
+                throw IdempotencyConflictException::forKey($key);
+            }
+            throw $e;
+        }
     }
 
     /**
@@ -120,6 +146,27 @@ class GroupedPaymentService
         if ($sum->compareTo($amount) !== 0) {
             throw GroupedPaymentValidationException::amountMismatch($sum->unscaledValue(), $amount->unscaledValue());
         }
+    }
+
+    /** @param list<string> $invoiceIds */
+    private function payloadMatches(GroupedPayment $existing, string $billableUserId, array $invoiceIds, FixedDecimal $amount, string $currency): bool
+    {
+        if ((string) $existing->billable_user_id !== $billableUserId || $existing->currency !== $currency) {
+            return false;
+        }
+        if ($existing->amount->compareTo($amount) !== 0) {
+            return false;
+        }
+        $existingIds  = $existing->invoices->pluck('id')->map(fn ($id): string => (string) $id)->sort()->values()->all();
+        $requestedIds = collect($invoiceIds)->map(fn ($id): string => (string) $id)->sort()->values()->all();
+
+        return $existingIds === $requestedIds;
+    }
+
+    private function isIdempotencyKeyViolation(QueryException $e): bool
+    {
+        // SQLSTATE 23000 = integrity constraint violation; message names the column/index.
+        return $e->getCode() === '23000' && str_contains($e->getMessage(), 'idempotency_key');
     }
 
     /** @param list<string> $invoiceIds */
