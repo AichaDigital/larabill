@@ -3,13 +3,14 @@
 declare(strict_types=1);
 
 use AichaDigital\Larabill\Enums\GroupedPaymentStatus;
-use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Exceptions\GroupedPaymentValidationException;
 use AichaDigital\Larabill\Models\CompanyFiscalConfig;
+use AichaDigital\Larabill\Models\GroupedPayment;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Services\GroupedPaymentService;
 use AichaDigital\Larabill\Tests\TestCase;
+use Illuminate\Support\Facades\DB;
 
 // Pinned non-immutable, unpaid SENT fixture (Codex #2: factory randomizes both).
 function makeSentInvoice(int $totalCents): Invoice
@@ -95,7 +96,21 @@ it('rejects an amount that does not equal the sum of totals', function () {
 })->throws(GroupedPaymentValidationException::class);
 
 it('rejects an invoice already covered by an active payment', function () {
-    $a = makeSentInvoice(5000);
-    app(GroupedPaymentService::class)->register(TestCase::USER_UUID_2, [$a->id], now(), cents(5000), 'EUR', idempotencyKey: 'first');
-    app(GroupedPaymentService::class)->register(TestCase::USER_UUID_2, [$a->id], now(), cents(5000), 'EUR', idempotencyKey: 'second');
-})->throws(GroupedPaymentValidationException::class);
+    $payment = GroupedPayment::factory()->create(['billable_user_id' => TestCase::USER_UUID_2]);
+    $a = makeSentInvoice(5000); // stays SENT — not paid, payable status
+
+    DB::table('grouped_payment_invoice')->insert([
+        'grouped_payment_id' => $payment->id,
+        'invoice_id'         => $a->id,
+        'applied_amount'     => 5000,
+        'previous_status'    => InvoiceStatus::SENT->value,
+        'previous_paid_at'   => null,
+        'active_invoice_id'  => $a->id, // pivot marks this invoice as actively covered
+        'created_at'         => now(),
+        'updated_at'         => now(),
+    ]);
+
+    // Invoice is still SENT (payable), so notPayableStatus is NOT thrown;
+    // the alreadyActivelyPaid branch is reached and throws.
+    app(GroupedPaymentService::class)->register(TestCase::USER_UUID_2, [$a->id], now(), cents(5000), 'EUR');
+})->throws(GroupedPaymentValidationException::class, 'already covered by an active grouped payment');
