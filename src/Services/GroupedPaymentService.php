@@ -14,6 +14,7 @@ use AichaDigital\Larabill\Models\GroupedPayment;
 use AichaDigital\Larabill\Models\Invoice;
 use DateTimeInterface;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -90,6 +91,39 @@ class GroupedPaymentService
             }
             throw $e;
         }
+    }
+
+    public function reverse(GroupedPayment $payment, string $reason, ?string $reversedBy = null): GroupedPayment
+    {
+        return DB::transaction(function () use ($payment, $reason, $reversedBy): GroupedPayment {
+            // Re-read + lock so two concurrent reversals can't both write (Codex #8).
+            $locked = GroupedPayment::whereKey($payment->getKey())->lockForUpdate()->first() ?? $payment;
+
+            if ($locked->isReversed()) {
+                return $locked->load('invoices'); // stable no-op, audit fields untouched
+            }
+
+            $locked->update([
+                'status'         => GroupedPaymentStatus::REVERSED,
+                'reversed_at'    => now(),
+                'reversed_by'    => $reversedBy,
+                'reverse_reason' => $reason,
+            ]);
+
+            foreach ($locked->invoices()->get() as $invoice) {
+                $invoice->restoreStateViaGroupedPaymentReversal(
+                    InvoiceStatus::from((int) $invoice->pivot->previous_status),
+                    $invoice->pivot->previous_paid_at !== null ? Carbon::parse($invoice->pivot->previous_paid_at) : null,
+                );
+
+                DB::table('grouped_payment_invoice')
+                    ->where('grouped_payment_id', $locked->id)
+                    ->where('invoice_id', $invoice->id)
+                    ->update(['active_invoice_id' => null]);
+            }
+
+            return $locked->load('invoices');
+        });
     }
 
     /**
