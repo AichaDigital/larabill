@@ -24,6 +24,11 @@ return [
         'converted' => 'Convertida',
     ],
 
+    'grouped_payment_status' => [
+        'posted'   => 'Registrado',
+        'reversed' => 'Revertido',
+    ],
+
     'unit_category' => [
         'count'  => 'Unidad',
         'weight' => 'Peso',
