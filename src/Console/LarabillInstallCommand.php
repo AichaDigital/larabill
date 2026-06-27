@@ -58,6 +58,9 @@ class LarabillInstallCommand extends Command
         '030' => 'add_invoices_foreign_keys',
         '031' => 'make_articles_translatable',
         '032' => 'add_article_id_to_invoice_items_table',
+        // === GROUPED PAYMENTS (AID-30) ===
+        '033' => 'create_grouped_payments_table',
+        '034' => 'create_grouped_payment_invoice_table',
     ];
 
     public function handle(): int
