@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Models;
 
 use AichaDigital\Lara100\Casts\FixedDecimalCast;
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Concerns\HasUuid;
 use AichaDigital\Larabill\Database\Factories\GroupedPaymentFactory;
 use AichaDigital\Larabill\Enums\GroupedPaymentStatus;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Carbon;
 
 /**
  * GroupedPayment — accounting record of one external collection settling N issued invoices.
@@ -19,13 +21,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  *
  * @property string $id
  * @property string $billable_user_id
- * @property \AichaDigital\Lara100\ValueObjects\FixedDecimal $amount
+ * @property FixedDecimal $amount
  * @property string $currency
- * @property \Illuminate\Support\Carbon $paid_at
+ * @property Carbon $paid_at
  * @property string|null $reference
  * @property string $idempotency_key
  * @property GroupedPaymentStatus $status
- * @property \Illuminate\Support\Carbon|null $reversed_at
+ * @property Carbon|null $reversed_at
  * @property string|null $reversed_by
  * @property string|null $reverse_reason
  * @property string|null $notes

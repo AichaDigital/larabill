@@ -35,7 +35,7 @@ it('casts amount to FixedDecimal and status to the enum, with a valid default fa
 
 it('relates a payment to its invoices and back', function () {
     $invoice = Invoice::factory()->sent()->create([
-        'user_id' => TestCase::USER_UUID_1, 'billable_user_id' => TestCase::USER_UUID_2,
+        'user_id'      => TestCase::USER_UUID_1, 'billable_user_id' => TestCase::USER_UUID_2,
         'total_amount' => cents(5000), 'is_immutable' => false, 'paid_at' => null,
     ]);
     $payment = GroupedPayment::factory()->create(['billable_user_id' => TestCase::USER_UUID_2]);

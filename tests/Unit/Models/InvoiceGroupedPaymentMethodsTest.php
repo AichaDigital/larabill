@@ -8,7 +8,7 @@ use AichaDigital\Larabill\Tests\TestCase;
 
 it('marks an IMMUTABLE invoice as paid without tripping the update() guard', function () {
     $invoice = Invoice::factory()->sent()->immutable()->create([
-        'user_id' => TestCase::USER_UUID_1, 'billable_user_id' => TestCase::USER_UUID_2,
+        'user_id'      => TestCase::USER_UUID_1, 'billable_user_id' => TestCase::USER_UUID_2,
         'total_amount' => cents(5000), 'paid_at' => null,
     ]);
     expect($invoice->is_immutable)->toBeTrue();
@@ -21,7 +21,7 @@ it('marks an IMMUTABLE invoice as paid without tripping the update() guard', fun
 
 it('restores collection state on an immutable invoice', function () {
     $invoice = Invoice::factory()->sent()->immutable()->create([
-        'user_id' => TestCase::USER_UUID_1, 'billable_user_id' => TestCase::USER_UUID_2,
+        'user_id'      => TestCase::USER_UUID_1, 'billable_user_id' => TestCase::USER_UUID_2,
         'total_amount' => cents(5000), 'paid_at' => null,
     ]);
     $invoice->markAsPaidViaGroupedPayment(now());
@@ -33,7 +33,7 @@ it('restores collection state on an immutable invoice', function () {
 
 it('still blocks a plain update() on an immutable invoice (guard intact)', function () {
     $invoice = Invoice::factory()->immutable()->create([
-        'user_id' => TestCase::USER_UUID_1, 'billable_user_id' => TestCase::USER_UUID_2,
+        'user_id'      => TestCase::USER_UUID_1, 'billable_user_id' => TestCase::USER_UUID_2,
         'total_amount' => cents(5000),
     ]);
     expect(fn () => $invoice->update(['status' => InvoiceStatus::PAID->value, 'paid_at' => now()]))

@@ -12,12 +12,13 @@ use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Services\GroupedPaymentService;
 use AichaDigital\Larabill\Tests\TestCase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 // Pinned non-immutable, unpaid SENT fixture (Codex #2: factory randomizes both).
 function makeSentInvoice(int $totalCents): Invoice
 {
     return Invoice::factory()->sent()->create([
-        'user_id' => TestCase::USER_UUID_1, 'billable_user_id' => TestCase::USER_UUID_2,
+        'user_id'      => TestCase::USER_UUID_1, 'billable_user_id' => TestCase::USER_UUID_2,
         'total_amount' => cents($totalCents), 'is_immutable' => false, 'paid_at' => null,
     ]);
 }
@@ -53,13 +54,13 @@ it('rejects duplicate invoice ids', function () {
 })->throws(GroupedPaymentValidationException::class);
 
 it('rejects a nonexistent invoice id', function () {
-    app(GroupedPaymentService::class)->register(TestCase::USER_UUID_2, [(string) \Illuminate\Support\Str::orderedUuid()], now(), cents(5000), 'EUR');
+    app(GroupedPaymentService::class)->register(TestCase::USER_UUID_2, [(string) Str::orderedUuid()], now(), cents(5000), 'EUR');
 })->throws(GroupedPaymentValidationException::class);
 
 it('rejects invoices belonging to different billable users', function () {
     $a = makeSentInvoice(5000);
     $b = Invoice::factory()->sent()->create([
-        'user_id' => TestCase::USER_UUID_1, 'billable_user_id' => TestCase::USER_UUID_3,
+        'user_id'      => TestCase::USER_UUID_1, 'billable_user_id' => TestCase::USER_UUID_3,
         'total_amount' => cents(5000), 'is_immutable' => false, 'paid_at' => null,
     ]);
     app(GroupedPaymentService::class)->register(TestCase::USER_UUID_2, [$a->id, $b->id], now(), cents(10000), 'EUR');
@@ -67,9 +68,9 @@ it('rejects invoices belonging to different billable users', function () {
 
 it('rejects a currency that differs from the invoice fiscal config (D3)', function () {
     $config = CompanyFiscalConfig::factory()->create(['currency' => 'USD']);
-    $usd = Invoice::factory()->sent()->create([
-        'user_id' => TestCase::USER_UUID_1, 'billable_user_id' => TestCase::USER_UUID_2,
-        'total_amount' => cents(5000), 'is_immutable' => false, 'paid_at' => null,
+    $usd    = Invoice::factory()->sent()->create([
+        'user_id'                  => TestCase::USER_UUID_1, 'billable_user_id' => TestCase::USER_UUID_2,
+        'total_amount'             => cents(5000), 'is_immutable' => false, 'paid_at' => null,
         'company_fiscal_config_id' => $config->id,
     ]);
     app(GroupedPaymentService::class)->register(TestCase::USER_UUID_2, [$usd->id], now(), cents(5000), 'EUR');
@@ -77,7 +78,7 @@ it('rejects a currency that differs from the invoice fiscal config (D3)', functi
 
 it('rejects a proforma', function () {
     $p = Invoice::factory()->proforma()->create([
-        'user_id' => TestCase::USER_UUID_1, 'billable_user_id' => TestCase::USER_UUID_2,
+        'user_id'      => TestCase::USER_UUID_1, 'billable_user_id' => TestCase::USER_UUID_2,
         'total_amount' => cents(5000), 'is_immutable' => false,
     ]);
     app(GroupedPaymentService::class)->register(TestCase::USER_UUID_2, [$p->id], now(), cents(5000), 'EUR');
@@ -85,7 +86,7 @@ it('rejects a proforma', function () {
 
 it('rejects a draft (not-payable status)', function () {
     $d = Invoice::factory()->draft()->create([
-        'user_id' => TestCase::USER_UUID_1, 'billable_user_id' => TestCase::USER_UUID_2,
+        'user_id'      => TestCase::USER_UUID_1, 'billable_user_id' => TestCase::USER_UUID_2,
         'total_amount' => cents(5000), 'is_immutable' => false,
     ]);
     app(GroupedPaymentService::class)->register(TestCase::USER_UUID_2, [$d->id], now(), cents(5000), 'EUR');
@@ -98,7 +99,7 @@ it('rejects an amount that does not equal the sum of totals', function () {
 
 it('rejects an invoice already covered by an active payment', function () {
     $payment = GroupedPayment::factory()->create(['billable_user_id' => TestCase::USER_UUID_2]);
-    $a = makeSentInvoice(5000); // stays SENT — not paid, payable status
+    $a       = makeSentInvoice(5000); // stays SENT — not paid, payable status
 
     DB::table('grouped_payment_invoice')->insert([
         'grouped_payment_id' => $payment->id,
@@ -119,32 +120,32 @@ it('rejects an invoice already covered by an active payment', function () {
 // D2: idempotency
 
 it('returns the same posted payment when a provided key is replayed', function () {
-    $a = makeSentInvoice(5000);
-    $svc = app(GroupedPaymentService::class);
+    $a      = makeSentInvoice(5000);
+    $svc    = app(GroupedPaymentService::class);
     $first  = $svc->register(TestCase::USER_UUID_2, [$a->id], now(), cents(5000), 'EUR', idempotencyKey: 'idem-1');
     $second = $svc->register(TestCase::USER_UUID_2, [$a->id], now(), cents(5000), 'EUR', idempotencyKey: 'idem-1');
     expect($second->id)->toBe($first->id)->and(GroupedPayment::count())->toBe(1);
 });
 
 it('returns the same payment when the derived key matches', function () {
-    $a = makeSentInvoice(5000);
-    $svc = app(GroupedPaymentService::class);
+    $a      = makeSentInvoice(5000);
+    $svc    = app(GroupedPaymentService::class);
     $first  = $svc->register(TestCase::USER_UUID_2, [$a->id], now(), cents(5000), 'EUR');
     $second = $svc->register(TestCase::USER_UUID_2, [$a->id], now(), cents(5000), 'EUR');
     expect($second->id)->toBe($first->id)->and(GroupedPayment::count())->toBe(1);
 });
 
 it('ignores a differing reference on replay (reference is not identity)', function () {
-    $a = makeSentInvoice(5000);
-    $svc = app(GroupedPaymentService::class);
+    $a      = makeSentInvoice(5000);
+    $svc    = app(GroupedPaymentService::class);
     $first  = $svc->register(TestCase::USER_UUID_2, [$a->id], now(), cents(5000), 'EUR', reference: 'TRF-A', idempotencyKey: 'idem-2');
     $second = $svc->register(TestCase::USER_UUID_2, [$a->id], now(), cents(5000), 'EUR', reference: 'TRF-B', idempotencyKey: 'idem-2');
     expect($second->id)->toBe($first->id)->and($second->reference)->toBe('TRF-A');
 });
 
 it('throws on a reused posted key with a different payload', function () {
-    $a = makeSentInvoice(5000);
-    $b = makeSentInvoice(3000);
+    $a   = makeSentInvoice(5000);
+    $b   = makeSentInvoice(3000);
     $svc = app(GroupedPaymentService::class);
     $svc->register(TestCase::USER_UUID_2, [$a->id], now(), cents(5000), 'EUR', idempotencyKey: 'idem-3');
     $svc->register(TestCase::USER_UUID_2, [$b->id], now(), cents(3000), 'EUR', idempotencyKey: 'idem-3');

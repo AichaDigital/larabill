@@ -8,6 +8,7 @@ use AichaDigital\Larabill\LarabillServiceProvider;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 /**
@@ -128,7 +129,7 @@ abstract class MysqlIntegrationTestCase extends Orchestra
      */
     protected function seedUser(): string
     {
-        $id = (string) \Illuminate\Support\Str::orderedUuid();
+        $id = (string) Str::orderedUuid();
         DB::table('users')->insert([
             'id'         => $id,
             'name'       => 'Test User',

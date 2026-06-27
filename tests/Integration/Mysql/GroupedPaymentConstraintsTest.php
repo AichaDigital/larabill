@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use AichaDigital\Larabill\Models\GroupedPayment;
 use AichaDigital\Larabill\Models\Invoice;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 
 describe('AID-30 — grouped payment schema on MySQL', function () {
@@ -30,17 +31,17 @@ describe('AID-30 — grouped payment schema on MySQL', function () {
 
         $insert = fn () => DB::table('grouped_payment_invoice')->insert(pivotRow($payment->id, $invoice->id, null));
         $insert();
-        expect($insert)->toThrow(\Illuminate\Database\QueryException::class);
+        expect($insert)->toThrow(QueryException::class);
     });
 
     it('allows many reversed (null) rows but one active payment per invoice', function () {
         $this->bootstrap();
         $userId = $this->seedUser();
-        $invA = Invoice::factory()->sent()->create(['user_id' => $userId, 'billable_user_id' => $userId, 'is_immutable' => false, 'paid_at' => null]);
-        $invB = Invoice::factory()->sent()->create(['user_id' => $userId, 'billable_user_id' => $userId, 'is_immutable' => false, 'paid_at' => null]);
-        $invC = Invoice::factory()->sent()->create(['user_id' => $userId, 'billable_user_id' => $userId, 'is_immutable' => false, 'paid_at' => null]);
-        $p1 = GroupedPayment::factory()->create();
-        $p2 = GroupedPayment::factory()->create();
+        $invA   = Invoice::factory()->sent()->create(['user_id' => $userId, 'billable_user_id' => $userId, 'is_immutable' => false, 'paid_at' => null]);
+        $invB   = Invoice::factory()->sent()->create(['user_id' => $userId, 'billable_user_id' => $userId, 'is_immutable' => false, 'paid_at' => null]);
+        $invC   = Invoice::factory()->sent()->create(['user_id' => $userId, 'billable_user_id' => $userId, 'is_immutable' => false, 'paid_at' => null]);
+        $p1     = GroupedPayment::factory()->create();
+        $p2     = GroupedPayment::factory()->create();
 
         // Two reversed rows (active_invoice_id NULL) for the same invoice → allowed.
         DB::table('grouped_payment_invoice')->insert(pivotRow($p1->id, $invA->id, null));
@@ -49,7 +50,7 @@ describe('AID-30 — grouped payment schema on MySQL', function () {
         // Two ACTIVE rows carrying the same active_invoice_id (invB) → second rejected by unique(active_invoice_id).
         DB::table('grouped_payment_invoice')->insert(pivotRow($p1->id, $invB->id, $invB->id));
         expect(fn () => DB::table('grouped_payment_invoice')->insert(pivotRow($p2->id, $invC->id, $invB->id)))
-            ->toThrow(\Illuminate\Database\QueryException::class);
+            ->toThrow(QueryException::class);
     });
 
 });
