@@ -240,6 +240,32 @@ class Invoice extends Model implements LegallyRetainable
     }
 
     /**
+     * Mark this invoice PAID as part of a grouped payment (AID-30).
+     *
+     * Collection state (status + paid_at) is NOT fiscal content, so this is a
+     * permitted transition even on immutable invoices. It goes through save()
+     * deliberately, bypassing the update() immutability guard, which protects
+     * fiscal content (amounts, dates, snapshots) — not payment state.
+     */
+    public function markAsPaidViaGroupedPayment(DateTimeInterface $paidAt): void
+    {
+        $this->status  = InvoiceStatus::PAID;
+        $this->paid_at = $paidAt;
+        $this->save();
+    }
+
+    /**
+     * Restore this invoice's collection state when its grouped payment is reversed.
+     * Same rationale as markAsPaidViaGroupedPayment(): permitted on immutable invoices.
+     */
+    public function restoreStateViaGroupedPaymentReversal(InvoiceStatus $status, ?DateTimeInterface $paidAt): void
+    {
+        $this->status  = $status;
+        $this->paid_at = $paidAt;
+        $this->save();
+    }
+
+    /**
      * Override update to prevent modifications of immutable invoices.
      *
      * @param  array<string, mixed>  $attributes
