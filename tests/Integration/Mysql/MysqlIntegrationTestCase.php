@@ -123,6 +123,24 @@ abstract class MysqlIntegrationTestCase extends Orchestra
     }
 
     /**
+     * Insert a minimal user row into the locally-created `users` table and
+     * return its UUID. Only for tests that need a real FK-valid user id.
+     */
+    protected function seedUser(): string
+    {
+        $id = (string) \Illuminate\Support\Str::orderedUuid();
+        DB::table('users')->insert([
+            'id'         => $id,
+            'name'       => 'Test User',
+            'email'      => $id.'@example.test',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return $id;
+    }
+
+    /**
      * Drop every table in the test database. Uses FK-checks bypass so order
      * does not matter — robust against arbitrary FK graphs.
      */
