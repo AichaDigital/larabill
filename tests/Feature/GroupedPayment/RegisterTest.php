@@ -3,7 +3,10 @@
 declare(strict_types=1);
 
 use AichaDigital\Larabill\Enums\GroupedPaymentStatus;
+use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
+use AichaDigital\Larabill\Exceptions\GroupedPaymentValidationException;
+use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Services\GroupedPaymentService;
 use AichaDigital\Larabill\Tests\TestCase;
@@ -37,3 +40,62 @@ it('settles a set of issued invoices in one posted payment', function () {
     expect((int) $pivot->previous_status)->toBe(InvoiceStatus::SENT->value)
         ->and($pivot->active_invoice_id)->toBe($a->id);
 });
+
+it('rejects an empty invoice list', function () {
+    app(GroupedPaymentService::class)->register(TestCase::USER_UUID_2, [], now(), cents(0), 'EUR');
+})->throws(GroupedPaymentValidationException::class);
+
+it('rejects duplicate invoice ids', function () {
+    $a = makeSentInvoice(5000);
+    app(GroupedPaymentService::class)->register(TestCase::USER_UUID_2, [$a->id, $a->id], now(), cents(10000), 'EUR');
+})->throws(GroupedPaymentValidationException::class);
+
+it('rejects a nonexistent invoice id', function () {
+    app(GroupedPaymentService::class)->register(TestCase::USER_UUID_2, [(string) \Illuminate\Support\Str::orderedUuid()], now(), cents(5000), 'EUR');
+})->throws(GroupedPaymentValidationException::class);
+
+it('rejects invoices belonging to different billable users', function () {
+    $a = makeSentInvoice(5000);
+    $b = Invoice::factory()->sent()->create([
+        'user_id' => TestCase::USER_UUID_1, 'billable_user_id' => TestCase::USER_UUID_3,
+        'total_amount' => cents(5000), 'is_immutable' => false, 'paid_at' => null,
+    ]);
+    app(GroupedPaymentService::class)->register(TestCase::USER_UUID_2, [$a->id, $b->id], now(), cents(10000), 'EUR');
+})->throws(GroupedPaymentValidationException::class);
+
+it('rejects a currency that differs from the invoice fiscal config (D3)', function () {
+    $config = CompanyFiscalConfig::factory()->create(['currency' => 'USD']);
+    $usd = Invoice::factory()->sent()->create([
+        'user_id' => TestCase::USER_UUID_1, 'billable_user_id' => TestCase::USER_UUID_2,
+        'total_amount' => cents(5000), 'is_immutable' => false, 'paid_at' => null,
+        'company_fiscal_config_id' => $config->id,
+    ]);
+    app(GroupedPaymentService::class)->register(TestCase::USER_UUID_2, [$usd->id], now(), cents(5000), 'EUR');
+})->throws(GroupedPaymentValidationException::class);
+
+it('rejects a proforma', function () {
+    $p = Invoice::factory()->proforma()->create([
+        'user_id' => TestCase::USER_UUID_1, 'billable_user_id' => TestCase::USER_UUID_2,
+        'total_amount' => cents(5000), 'is_immutable' => false,
+    ]);
+    app(GroupedPaymentService::class)->register(TestCase::USER_UUID_2, [$p->id], now(), cents(5000), 'EUR');
+})->throws(GroupedPaymentValidationException::class);
+
+it('rejects a draft (not-payable status)', function () {
+    $d = Invoice::factory()->draft()->create([
+        'user_id' => TestCase::USER_UUID_1, 'billable_user_id' => TestCase::USER_UUID_2,
+        'total_amount' => cents(5000), 'is_immutable' => false,
+    ]);
+    app(GroupedPaymentService::class)->register(TestCase::USER_UUID_2, [$d->id], now(), cents(5000), 'EUR');
+})->throws(GroupedPaymentValidationException::class);
+
+it('rejects an amount that does not equal the sum of totals', function () {
+    $a = makeSentInvoice(6000);
+    app(GroupedPaymentService::class)->register(TestCase::USER_UUID_2, [$a->id], now(), cents(5999), 'EUR');
+})->throws(GroupedPaymentValidationException::class);
+
+it('rejects an invoice already covered by an active payment', function () {
+    $a = makeSentInvoice(5000);
+    app(GroupedPaymentService::class)->register(TestCase::USER_UUID_2, [$a->id], now(), cents(5000), 'EUR', idempotencyKey: 'first');
+    app(GroupedPaymentService::class)->register(TestCase::USER_UUID_2, [$a->id], now(), cents(5000), 'EUR', idempotencyKey: 'second');
+})->throws(GroupedPaymentValidationException::class);
