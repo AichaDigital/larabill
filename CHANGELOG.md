@@ -4,6 +4,8 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+## [3.1.1] - 2026-06-28
+
 ### Changed
 
 - **Grouped payments money columns are now `bigInteger` (AID-272).**
