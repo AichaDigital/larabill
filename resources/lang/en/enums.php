@@ -24,6 +24,11 @@ return [
         'converted' => 'Converted',
     ],
 
+    'grouped_payment_status' => [
+        'posted'   => 'Posted',
+        'reversed' => 'Reversed',
+    ],
+
     'unit_category' => [
         'count'  => 'Count',
         'weight' => 'Weight',

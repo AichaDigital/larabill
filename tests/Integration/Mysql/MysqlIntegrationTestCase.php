@@ -8,6 +8,7 @@ use AichaDigital\Larabill\LarabillServiceProvider;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Orchestra\Testbench\TestCase as Orchestra;
 
 /**
@@ -120,6 +121,24 @@ abstract class MysqlIntegrationTestCase extends Orchestra
         }
 
         return true;
+    }
+
+    /**
+     * Insert a minimal user row into the locally-created `users` table and
+     * return its UUID. Only for tests that need a real FK-valid user id.
+     */
+    protected function seedUser(): string
+    {
+        $id = (string) Str::orderedUuid();
+        DB::table('users')->insert([
+            'id'         => $id,
+            'name'       => 'Test User',
+            'email'      => $id.'@example.test',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return $id;
     }
 
     /**
