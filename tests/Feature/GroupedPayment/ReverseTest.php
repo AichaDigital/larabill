@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-// tests/Feature/GroupedPayment/ReverseTest.php
 use AichaDigital\Larabill\Enums\GroupedPaymentStatus;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Exceptions\IdempotencyConflictException;

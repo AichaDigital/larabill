@@ -4,6 +4,21 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **Grouped payments (AID-30).** `GroupedPaymentService::register()` settles a set
+  of issued invoices in one posted, idempotent payment; `reverse()` undoes it and
+  restores each invoice's prior collection state. Idempotency (D2): replaying a key
+  returns the same posted payment, while reusing a key with a different payload — or
+  one already spent by a reversal — throws `IdempotencyConflictException`. Currency
+  is validated (D3) against each invoice's effective fiscal config. New
+  `grouped_payments` and `grouped_payment_invoice` tables (UUID v7 char(36) ids,
+  base-100 integer money, `unique(grouped_payment_id, invoice_id)` and a
+  NULL-permissive `unique(active_invoice_id)`). Settle and reverse are permitted on
+  immutable invoices through dedicated collection-state methods (D1) without
+  weakening the `Invoice::update()` immutability guard. Includes MySQL integration
+  tests for the column types and unique constraints.
+
 ## [3.0.0] - 2026-06-26
 
 **v3.0.0** — completes the "no decimals / no float in rate systems" program

@@ -39,11 +39,11 @@ class GroupedPaymentService
                     if ($existing->isReversed()) {
                         throw IdempotencyConflictException::keySpentByReversal($key); // D2: spent key
                     }
-                    if (! $this->payloadMatches($existing, $billableUserId, $invoiceIds, $amount, $currency)) {
-                        throw IdempotencyConflictException::forKey($key);
+                    if ($existing->isPosted() && $this->payloadMatches($existing, $billableUserId, $invoiceIds, $amount, $currency)) {
+                        return $existing->load('invoices');
                     }
 
-                    return $existing->load('invoices');
+                    throw IdempotencyConflictException::forKey($key);
                 }
 
                 $orderedIds = $invoiceIds;
