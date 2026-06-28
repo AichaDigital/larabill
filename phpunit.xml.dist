@@ -18,6 +18,10 @@
     <testsuites>
         <testsuite name="AichaDigital Test Suite">
             <directory>tests</directory>
+            <!-- Fork-based concurrency ITs: opt-in only (RUN_CONCURRENCY_IT=1 +
+                 MySQL env), never loaded by the default CI run. Run on demand:
+                 RUN_CONCURRENCY_IT=1 vendor/bin/pest tests/Concurrency -->
+            <exclude>tests/Concurrency</exclude>
         </testsuite>
     </testsuites>
     <logging>

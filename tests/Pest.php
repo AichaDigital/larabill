@@ -22,6 +22,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(MysqlIntegrationTestCase::class)
     ->in('Integration/Mysql');
 
+// Concurrency (fork) tests also need a real, committed MySQL connection — forked
+// children read parent-committed rows on their own connections, which SQLite
+// :memory: + RefreshDatabase cannot provide. They self-gate on RUN_CONCURRENCY_IT.
+uses(MysqlIntegrationTestCase::class)
+    ->in('Concurrency');
+
 // NOTE: 'Integration' is NOT used as a recursive path here because Pest rejects
 // rebinding a folder once any subpath has been bound. Add explicit paths for
 // any non-Mysql integration test that should use the SQLite TestCase.
