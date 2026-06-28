@@ -4,6 +4,19 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- **Grouped payments money columns are now `bigInteger` (AID-272).**
+  `grouped_payments.amount` (the aggregate of N settled invoice totals) and
+  `grouped_payment_invoice.applied_amount` move from `integer` to `bigInteger`.
+  As a signed `integer` the aggregate capped at €21,474,836.47 (base-100); summing
+  many invoices can plausibly approach that, so the aggregate columns get 64-bit
+  headroom. Schema-only change applied in the create migrations (dev-main has no
+  upgrade promise — fresh installs are born in `bigint`); the model API is
+  unchanged (`FixedDecimalCast` works over the unscaled integer). `invoices.*`
+  money columns stay `integer` — the cosmetic money-column unification remains out
+  of scope (as noted for v2.0.0).
+
 ## [3.1.0] - 2026-06-28
 
 ### Added

@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignUuid('grouped_payment_id')->constrained('grouped_payments')->cascadeOnDelete();
             $table->foreignUuid('invoice_id')->constrained('invoices');
 
-            $table->integer('applied_amount')->comment('Base-100 (FixedDecimalCast:2); v1 = invoice total');
+            $table->bigInteger('applied_amount')->comment('Base-100 (FixedDecimalCast:2); v1 = invoice total. bigInteger for symmetry with grouped_payments.amount (money flows applied_amount → amount)');
             $table->unsignedTinyInteger('previous_status')->comment('InvoiceStatus before marking PAID (exact restore on reverse)');
             $table->dateTime('previous_paid_at')->nullable()->comment('Invoice paid_at before (exact restore)');
 
