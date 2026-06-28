@@ -25,24 +25,10 @@
             "role": "Developer"
         }
     ],
-    "repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/AichaDigital/lara-verifactu"
-        },
-        {
-            "type": "vcs",
-            "url": "https://github.com/AichaDigital/lararoi"
-        },
-        {
-            "type": "vcs",
-            "url": "https://github.com/AichaDigital/lara100"
-        }
-    ],
     "require": {
         "php": "^8.3",
         "aichadigital/lara-privacy-core": "^1.0",
-        "aichadigital/lara-verifactu": "^1.0.0-rc2",
+        "aichadigital/lara-verifactu": "^1.0",
         "aichadigital/lara100": "^2.0",
         "aichadigital/lararoi": "^0.5",
         "dompdf/dompdf": "^3.1",
