@@ -4,6 +4,8 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+## [3.1.0] - 2026-06-28
+
 ### Added
 
 - **Grouped payments (AID-30).** `GroupedPaymentService::register()` settles a set
