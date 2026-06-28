@@ -17,7 +17,7 @@ return new class extends Migration
             // Payer (user being billed). char(36) + index, no hard FK. (No extra index() — userIdColumn already adds one.)
             MigrationHelper::userIdColumn($table, 'billable_user_id');
 
-            $table->integer('amount')->comment('Base-100 (FixedDecimalCast:2): €12.34 = 1234. Equals sum of settled invoice totals');
+            $table->bigInteger('amount')->comment('Base-100 (FixedDecimalCast:2): €12.34 = 1234. Equals sum of settled invoice totals. bigInteger: aggregate of N invoices can exceed a 32-bit int (€21.4M cap)');
             $table->string('currency', 3)->default('EUR')->comment('ISO 4217 — validated against each invoice companyFiscalConfig currency (D3)');
             $table->dateTime('paid_at')->comment('Date the external collection happened');
             $table->string('reference')->nullable()->comment('Bank/accounting reference — metadata, not identity');
