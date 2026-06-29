@@ -655,14 +655,14 @@ class CountryVatRate extends Model
     {
         $this->update(['is_active' => true]);
 
-        return $this->fresh();
+        return $this->fresh() ?? $this;
     }
 
     public function deactivate(): self
     {
         $this->update(['is_active' => false]);
 
-        return $this->fresh();
+        return $this->fresh() ?? $this;
     }
 
     /**
@@ -682,7 +682,7 @@ class CountryVatRate extends Model
             $this->update($payload);
         }
 
-        return $this->fresh();
+        return $this->fresh() ?? $this;
     }
 
     public function getDataSource(): ?string

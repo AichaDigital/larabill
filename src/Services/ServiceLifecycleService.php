@@ -111,7 +111,7 @@ final class ServiceLifecycleService
      */
     public function calculateRefund(ArticleServiceStatus $service): ?int
     {
-        if (! $service->refund_unused || ! $service->next_billing_date) {
+        if (! $service->refund_unused || ! $service->next_billing_date || $service->effective_price === null) {
             return null;
         }
 
@@ -204,10 +204,15 @@ final class ServiceLifecycleService
                         return;
                     }
 
+                    $cancellationType = $service->cancellation_type;
+                    if ($cancellationType === null) {
+                        throw new \RuntimeException("Service {$service->id} is scheduled for cancellation but has no cancellation_type.");
+                    }
+
                     $service->update(['status' => ServiceStatus::CANCELLED]);
                     ServiceCancelled::dispatch(
                         $service,
-                        $service->cancellation_type,
+                        $cancellationType,
                         $service->metadata['cancellation']['reason'] ?? null
                     );
                 });

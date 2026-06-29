@@ -148,6 +148,11 @@ final class RecurringBillingService
      */
     protected function shouldGenerateInvoice(ArticleServiceStatus $service, Carbon $date): bool
     {
+        $nextBillingDate = $service->next_billing_date;
+        if ($nextBillingDate === null) {
+            return false;
+        }
+
         // Get days in advance from ArticlePrice for the service's frequency, or global config
         $daysInAdvance = $service->article->getBillingDaysInAdvanceFor($service->billing_frequency)
             ?? config('larabill.recurring_billing.days_in_advance', 7);
@@ -155,7 +160,7 @@ final class RecurringBillingService
         // Calculate the date when we should start generating the invoice
         // If next_billing_date is 2024-10-26 and daysInAdvance is 7,
         // then generateDate is 2024-10-19 (we start generating 7 days before)
-        $generateDate = $service->next_billing_date->copy()->subDays($daysInAdvance);
+        $generateDate = $nextBillingDate->copy()->subDays($daysInAdvance);
 
         // Compare dates as strings to avoid time component issues
         return $date->toDateString() >= $generateDate->toDateString();
@@ -170,9 +175,17 @@ final class RecurringBillingService
     protected function createInvoiceForService(ArticleServiceStatus $service, Carbon $date): Invoice
     {
         return DB::transaction(function () use ($service, $date): Invoice {
-            // Idempotency check: look for existing invoice item for this service + period
             $periodStart = $service->next_billing_date;
+            if ($periodStart === null) {
+                throw new \RuntimeException("Cannot bill service {$service->id} without a next_billing_date.");
+            }
 
+            $customer = $service->customer;
+            if ($customer === null) {
+                throw new \RuntimeException("Cannot bill service {$service->id} without a customer.");
+            }
+
+            // Idempotency check: look for existing invoice item for this service + period
             $existingItem = InvoiceItem::query()
                 ->whereRaw(
                     "json_extract(metadata, '$.source_reference.service_status_id') = ?",
@@ -186,12 +199,10 @@ final class RecurringBillingService
                 return $existingItem->invoice;
             }
 
-            $article  = $service->article;
-            $customer = $service->customer;
+            $article = $service->article;
 
             // Calculate billing period
-            $periodStart = $service->next_billing_date;
-            $periodEnd   = $this->calculatePeriodEnd($service);
+            $periodEnd = $this->calculatePeriodEnd($service);
 
             // Get effective pricing (with customer overrides) using service's billing frequency
             $pricingDetails = $this->pricingService->createPricingDetailsForService($service);
@@ -256,7 +267,12 @@ final class RecurringBillingService
      */
     protected function calculatePeriodEnd(ArticleServiceStatus $service): Carbon
     {
-        $start = $service->next_billing_date->copy();
+        $next = $service->next_billing_date;
+        if ($next === null) {
+            throw new \RuntimeException("Cannot compute the period end for service {$service->id} without a next_billing_date.");
+        }
+
+        $start = $next->copy();
 
         // Use the enum's addToDate method which handles all frequencies
         return $service->billing_frequency->addToDate($start)->subDay();
