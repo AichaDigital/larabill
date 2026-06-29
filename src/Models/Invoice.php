@@ -724,7 +724,7 @@ class Invoice extends Model implements LegallyRetainable
             'snapshot_at'       => now()->toIso8601String(),
         ];
 
-        return Crypt::encryptString(json_encode($data));
+        return Crypt::encryptString(json_encode($data, JSON_THROW_ON_ERROR));
     }
 
     /**
@@ -760,7 +760,7 @@ class Invoice extends Model implements LegallyRetainable
             'snapshot_at'          => now()->toIso8601String(),
         ];
 
-        return Crypt::encryptString(json_encode($data));
+        return Crypt::encryptString(json_encode($data, JSON_THROW_ON_ERROR));
     }
 
     /**
@@ -793,7 +793,7 @@ class Invoice extends Model implements LegallyRetainable
             'snapshot_at'              => now()->toIso8601String(),
         ];
 
-        return Crypt::encryptString(json_encode($data));
+        return Crypt::encryptString(json_encode($data, JSON_THROW_ON_ERROR));
     }
 
     /**

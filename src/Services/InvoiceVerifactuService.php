@@ -76,6 +76,7 @@ class InvoiceVerifactuService
      */
     public function isRegistered(Invoice $invoice): bool
     {
+        // @phpstan-ignore argument.type (Eloquent JSON path operator, not a model column)
         return VerifactuInvoice::where('metadata->larabill_invoice_id', $invoice->id)->exists();
     }
 
@@ -87,6 +88,7 @@ class InvoiceVerifactuService
      */
     public function getVerifactuInvoice(Invoice $invoice): ?VerifactuInvoice
     {
+        // @phpstan-ignore argument.type (Eloquent JSON path operator, not a model column)
         return VerifactuInvoice::where('metadata->larabill_invoice_id', $invoice->id)->first();
     }
 

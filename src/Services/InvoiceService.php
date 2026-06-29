@@ -41,7 +41,7 @@ class InvoiceService
      * @param  array{
      *     billable_user_id: string,
      *     user_id?: string,
-     *     items: array<array{article_id: int, quantity: int, base_price: float}>,
+     *     items: array<array{article_id?: int|null, tax_group_id?: int|null, quantity?: int, base_price?: int|float, unit_price?: int|float, description?: string}>,
      *     type?: string,
      *     status?: string,
      *     due_date?: string|null,
@@ -152,7 +152,7 @@ class InvoiceService
             'snapshot_at'       => now()->toIso8601String(),
         ];
 
-        return Crypt::encryptString(json_encode($data));
+        return Crypt::encryptString(json_encode($data, JSON_THROW_ON_ERROR));
     }
 
     /**
@@ -178,7 +178,7 @@ class InvoiceService
             'snapshot_at'          => now()->toIso8601String(),
         ];
 
-        return Crypt::encryptString(json_encode($data));
+        return Crypt::encryptString(json_encode($data, JSON_THROW_ON_ERROR));
     }
 
     /**
@@ -203,7 +203,7 @@ class InvoiceService
             'snapshot_at'       => now()->toIso8601String(),
         ];
 
-        return Crypt::encryptString(json_encode($data));
+        return Crypt::encryptString(json_encode($data, JSON_THROW_ON_ERROR));
     }
 
     /**
@@ -280,7 +280,7 @@ class InvoiceService
      * @param  array{
      *     billable_user_id: string,
      *     user_id?: string,
-     *     items: array<array{article_id: int, quantity: int, base_price: float}>,
+     *     items: array<array{article_id?: int|null, tax_group_id?: int|null, quantity?: int, base_price?: int|float, unit_price?: int|float, description?: string}>,
      *     due_date?: string|null,
      *     payment_terms?: int|null,
      *     template_name?: string|null
@@ -363,9 +363,9 @@ class InvoiceService
 
             // Create new invoice from proforma data (ADR-003: billable_user_id)
             $invoiceData = [
-                'billable_user_id' => $proforma->billable_user_id,
-                'user_id'          => $proforma->user_id,
-                'items'            => $proforma->items->map(fn ($item) => [
+                'billable_user_id' => (string) $proforma->billable_user_id,
+                'user_id'          => (string) $proforma->user_id,
+                'items'            => $proforma->items->map(fn (InvoiceItem $item) => [
                     'article_id'  => $item->article_id,
                     'description' => $item->description,
                     'quantity'    => $item->quantity->unscaledValue(),

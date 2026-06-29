@@ -240,7 +240,8 @@ class BillingService
      */
     private function createInvoiceItem(Invoice $invoice, array $itemData): InvoiceItem
     {
-        $taxGroup = TaxGroup::find($itemData['tax_group_id'] ?? null);
+        $taxGroupId = isset($itemData['tax_group_id']) ? (int) $itemData['tax_group_id'] : null;
+        $taxGroup   = $taxGroupId !== null ? TaxGroup::find($taxGroupId) : null;
 
         $quantity  = (int) ($itemData['quantity']   ?? 1);
         $unitPrice = (int) ($itemData['unit_price'] ?? 0);

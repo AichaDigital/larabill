@@ -280,7 +280,7 @@ class RoiVerificationService
         ];
 
         $this->cacheService->storeRoiVerification(
-            $verification->user_id,
+            (string) $verification->user_id,
             $verification->vat_code,
             $verification->country_code,
             $cacheData
@@ -343,7 +343,7 @@ class RoiVerificationService
         foreach ($expiredVerifications as $verification) {
             // Remove from cache
             $cacheKey = $this->buildCacheKey(
-                $verification->user_id,
+                (string) $verification->user_id,
                 $verification->vat_code,
                 $verification->country_code
             );

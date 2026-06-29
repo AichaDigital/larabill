@@ -6,6 +6,21 @@ All notable changes to `larabill` will be documented in this file.
 
 ### Changed
 
+- **PHPStan raised to level 7 (AID-279).** Second of three steps toward level 8.
+  Fixed the 41-error delta with real type fixes rather than blanket ignores:
+  `JSON_THROW_ON_ERROR` on `json_encode()` feeding `Crypt::encryptString()`
+  (`Invoice`, `InvoiceService`, `DefaultPDFConnector`); `Closure`-typed cache
+  callbacks in `CacheService`; narrowed `Model::find()` calls that widened to
+  `Model|Collection` (`BillingService`, `GroupedPaymentService`,
+  `TaxCalculationService`); a typed query-object shape in
+  `InvoiceNumberingService` (plus a not-null guard so `createSeriesControl()`
+  cannot return null); `wherePivot()` for a pivot-column filter; `->get()` before
+  `pluck()` on aggregate aliases; explicit `string` casts for UUID ids and CLI
+  options; and removed two phantom non-column keys (`tax_amount`, `metadata`)
+  from `Invoice::create()` array literals. Two scoped, documented
+  `@phpstan-ignore` remain: an Eloquent JSON-path `where()` (×2) and a
+  pre-existing `AeatInvoiceValidator` debt (its `taxProfile` relation does not
+  exist on `Invoice` — tracked as a follow-up).
 - **PHPStan raised to level 6 (AID-277).** Added precise type annotations across
   `src/` — Eloquent relation generics (`HasMany<…, $this>`, `BelongsTo<…, $this>`),
   iterable value types, and missing return/parameter types — with no logic changes.

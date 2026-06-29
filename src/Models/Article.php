@@ -212,7 +212,8 @@ class Article extends Model
      */
     public function scopeRecurring(Builder $query): void
     {
-        $query->whereHas('activePrices', function ($q) {
+        $query->whereHas('activePrices', function ($q): void {
+            /** @var Builder<ArticlePrice> $q */
             $q->where('billing_frequency', '!=', BillingFrequency::ONE_TIME);
         });
     }
