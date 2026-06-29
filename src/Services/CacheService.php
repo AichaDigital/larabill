@@ -25,7 +25,7 @@ class CacheService
     /** @var array<string, int> */
     private array $ttl;
 
-    /** @var array<string, array<int, string>> */
+    /** @var array<string, string> */
     private array $tags;
 
     /**
@@ -202,10 +202,10 @@ class CacheService
             if ($this->supportsTags()) {
                 $tag = $this->getTagForKey($key);
 
-                return Cache::tags($tag)->remember($cacheKey, $ttl, $callback);
+                return Cache::tags($tag)->remember($cacheKey, $ttl, $callback(...));
             }
 
-            return Cache::remember($cacheKey, $ttl, $callback);
+            return Cache::remember($cacheKey, $ttl, $callback(...));
         } catch (\Exception $e) {
             Log::warning('Cache remember failed, executing callback directly', [
                 'key'    => $cacheKey,
@@ -234,10 +234,10 @@ class CacheService
             if ($this->supportsTags()) {
                 $tag = $this->getTagForKey($key);
 
-                return Cache::tags($tag)->rememberForever($cacheKey, $callback);
+                return Cache::tags($tag)->rememberForever($cacheKey, $callback(...));
             }
 
-            return Cache::rememberForever($cacheKey, $callback);
+            return Cache::rememberForever($cacheKey, $callback(...));
         } catch (\Exception $e) {
             Log::warning('Cache rememberForever failed, executing callback directly', [
                 'key'    => $cacheKey,

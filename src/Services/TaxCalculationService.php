@@ -93,8 +93,9 @@ class TaxCalculationService
             ->toScale(2, RoundingMode::HalfUp)
             ->unscaledValue();
 
+        $articleId  = isset($itemData['article_id']) ? (int) $itemData['article_id'] : null;
         $taxGroupId = $itemData['tax_group_id']
-            ?? Article::query()->find($itemData['article_id'] ?? null)?->tax_group_id;
+            ?? ($articleId !== null ? Article::query()->find($articleId)?->tax_group_id : null);
 
         /** @var TaxGroup|null $taxGroup */
         $taxGroup = TaxGroup::query()->with('taxRates')->find($taxGroupId);

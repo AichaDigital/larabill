@@ -89,7 +89,7 @@ class TaxGroupSeeder extends Seeder
                 $priority = $priorities[$index] ?? 0;
 
                 // Attach if not already attached
-                if (! $group->taxRates()->where('tax_rate_id', $taxRate->id)->exists()) {
+                if (! $group->taxRates()->wherePivot('tax_rate_id', $taxRate->id)->exists()) {
                     $group->taxRates()->attach($taxRate->id, ['priority' => $priority]);
                 }
             }

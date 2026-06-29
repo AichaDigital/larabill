@@ -42,7 +42,7 @@ final readonly class InvoiceItemMetadata
                 ? BillingDetails::fromArray($data['billing_details'])
                 : null,
             auditTrail: isset($data['audit_trail'])
-                ? array_map(fn (array $entry) => AuditEntry::fromArray($entry), $data['audit_trail'])
+                ? array_values(array_map(fn (array $entry) => AuditEntry::fromArray($entry), $data['audit_trail']))
                 : null,
             customData: isset($data['custom_data'])
                 ? CustomData::fromArray($data['custom_data'])

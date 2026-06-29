@@ -59,16 +59,18 @@ class InvoiceNumberingService
                 $control = $this->createSeriesControl($prefix, $serie, $fiscalYear, $userId);
             }
 
-            // Handle annual reset if configured
+            /** @var object{id: int, reset_annually: bool, fiscal_year: int, fiscal_year_start: string, fiscal_year_end: string, last_number: int, start_number: int, number_format: string} $control */
+
+            // Handle annual reset: when the stored fiscal year differs, the counter
+            // restarts from start_number. Computed locally — $control is a read-only
+            // query object; the reset is persisted by the update below ($fiscalYearData).
+            $lastNumber = $control->last_number;
             if ($control->reset_annually && $control->fiscal_year !== $fiscalYear) {
-                $control->last_number       = $control->start_number - 1;
-                $control->fiscal_year       = $fiscalYear;
-                $control->fiscal_year_start = $fiscalYearData['start']->toDateString();
-                $control->fiscal_year_end   = $fiscalYearData['end']->toDateString();
+                $lastNumber = $control->start_number - 1;
             }
 
             // Increment
-            $nextNumber = $control->last_number + 1;
+            $nextNumber = $lastNumber + 1;
 
             // Update control
             DB::table('invoice_series_control')
@@ -174,7 +176,13 @@ class InvoiceNumberingService
             'updated_at'        => now(),
         ]);
 
-        return DB::table('invoice_series_control')->find($id);
+        $control = DB::table('invoice_series_control')->find($id);
+
+        if (! is_object($control)) {
+            throw new \RuntimeException('Failed to read back the just-created invoice series control.');
+        }
+
+        return $control;
     }
 
     /**

@@ -80,9 +80,8 @@ final class ProcessRecurringBilling
      */
     public function asCommand(Command $command): int
     {
-        $date = $command->option('date')
-            ? Carbon::parse($command->option('date'))
-            : null;
+        $dateOption = $command->option('date');
+        $date       = is_string($dateOption) ? Carbon::parse($dateOption) : null;
 
         $dryRun = (bool) $command->option('dry-run');
 

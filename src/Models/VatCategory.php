@@ -647,11 +647,13 @@ class VatCategory extends Model
 
         $byType = static::selectRaw('category_type, COUNT(*) as count')
             ->groupBy('category_type')
+            ->get()
             ->pluck('count', 'category_type')
             ->toArray();
 
         $byCountry = static::selectRaw('country_code, COUNT(*) as count')
             ->groupBy('country_code')
+            ->get()
             ->pluck('count', 'country_code')
             ->toArray();
 

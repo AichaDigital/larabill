@@ -176,6 +176,7 @@ class InvoiceTemplate extends Model
             'templates_by_type' => static::active()
                 ->selectRaw('type, count(*) as count')
                 ->groupBy('type')
+                ->get()
                 ->pluck('count', 'type')
                 ->toArray(),
             'default_templates' => static::where('is_default', true)->count(),

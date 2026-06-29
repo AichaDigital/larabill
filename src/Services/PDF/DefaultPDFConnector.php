@@ -260,7 +260,7 @@ class DefaultPDFConnector implements PDFConnectorInterface
     {
         // For now, generate a simple hash-based QR code
         // In a real implementation, you would use a QR library like SimpleSoftwareIO/simple-qrcode
-        $jsonData = json_encode($data, JSON_UNESCAPED_UNICODE);
+        $jsonData = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
         $hash     = hash('sha256', $jsonData);
 
         // Create a simple QR-like string (this is a placeholder)

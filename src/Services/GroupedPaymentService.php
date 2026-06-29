@@ -115,7 +115,7 @@ class GroupedPaymentService
                 ->get();
 
             foreach ($pivotRows as $pivotRow) {
-                $invoice = Invoice::find($pivotRow->invoice_id);
+                $invoice = Invoice::find((string) $pivotRow->invoice_id);
                 if ($invoice === null) {
                     continue;
                 }

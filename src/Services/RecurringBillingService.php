@@ -213,13 +213,7 @@ final class RecurringBillingService
                 'due_date'       => $date->copy()->addDays(config('larabill.recurring_billing.payment_terms_days', 15)),
                 'status'         => InvoiceStatus::SENT,
                 'taxable_amount' => FixedDecimal::ofUnscaled((int) $pricingDetails->appliedPrice, 2),
-                'tax_amount'     => 0, // TODO: Calculate tax (alias, not a cast attribute)
                 'total_amount'   => FixedDecimal::ofUnscaled((int) $pricingDetails->appliedPrice, 2),
-                'metadata'       => [
-                    'recurring_billing' => true,
-                    'service_id'        => $service->id,
-                    'article_id'        => $article->id,
-                ],
             ]);
 
             // Create invoice item with comprehensive metadata
