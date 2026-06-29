@@ -4,6 +4,8 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+## [3.1.2] - 2026-06-29
+
 ### Changed
 
 - **PHPStan raised to level 8 — max meaningful level (AID-281).** Final step of
