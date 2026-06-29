@@ -4,13 +4,14 @@
 [![Latest Version](https://img.shields.io/packagist/v/aichadigital/larabill.svg?style=flat-square)](https://packagist.org/packages/aichadigital/larabill)
 [![Total Downloads](https://img.shields.io/packagist/dt/aichadigital/larabill.svg?style=flat-square)](https://packagist.org/packages/aichadigital/larabill)
 [![Tests](https://img.shields.io/github/actions/workflow/status/AichaDigital/larabill/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/AichaDigital/larabill/actions?query=workflow%3Arun-tests+branch%3Amain)
-[![PHPStan level 5](https://img.shields.io/badge/PHPStan-level%205-green.svg?style=flat-square&logo=php)](https://phpstan.org/)
+[![Code Coverage](https://img.shields.io/codecov/c/github/AichaDigital/larabill?style=flat-square&logo=codecov)](https://codecov.io/gh/AichaDigital/larabill)
+[![PHPStan level 6](https://img.shields.io/badge/PHPStan-level%206-green.svg?style=flat-square&logo=php)](https://phpstan.org/)
 [![PHP Version](https://img.shields.io/packagist/php-v/aichadigital/larabill.svg?style=flat-square&logo=php)](https://packagist.org/packages/aichadigital/larabill)
 [![Laravel Version](https://img.shields.io/badge/Laravel-12.x%20%7C%2013.x-red.svg?style=flat-square&logo=laravel)](https://laravel.com)
 [![License](https://img.shields.io/packagist/l/aichadigital/larabill.svg?style=flat-square)](https://packagist.org/packages/aichadigital/larabill)
 <!-- AI-BADGES:END -->
 
-> ⚠️ **DEVELOPMENT VERSION** — This package is under active development (`dev-main`). Schema upgrades between versions are not promised; use `migrate:fresh`.
+> ℹ️ **Schema upgrade policy** — Larabill does not promise in-place schema upgrades between versions. Install fresh and seed with `larabill:install` (or `migrate:fresh`) rather than migrating an existing schema across major versions. See [ADR-006](docs/ADR-006-uuid-first-no-agnostic.md).
 
 Larabill is a professional, **UUID-first** billing and invoicing package for Laravel applications. It provides comprehensive VAT verification, tax calculation for Spain/EU/worldwide, and flexible invoice generation with immutability protection. The consumer app's `users.id` MUST be UUID v7 char(36) — see [`docs/setup-uuid.md`](docs/setup-uuid.md) and [ADR-006](docs/ADR-006-uuid-first-no-agnostic.md).
 
@@ -25,8 +26,8 @@ Larabill is a professional, **UUID-first** billing and invoicing package for Lar
 - **EU Compliance**: Full support for EU B2B reverse charge and destination VAT rules
 
 ### Technical Excellence
-- **String UUID v7**: Ordered UUIDs for invoices and the consumer's `users.id` (ADR-002, ADR-006)
-- **Base-100 Integers**: Precise monetary calculations (no floating-point errors)
+- **String UUID v7**: Ordered UUIDs for invoices and the consumer's `users.id` (ADR-006)
+- **FixedDecimal money**: Precise monetary value objects backed by base-100 integers (no floating-point errors)
 - **Preflight check**: `larabill:install` aborts cleanly when `users.id` is not UUID-compatible
 - **Temporal Validity**: Fiscal configurations with `valid_from`/`valid_until` dates
 - **Invoice Immutability**: Protection against modifications after issuance
@@ -117,15 +118,16 @@ Configure your user model in `config/larabill.php`:
 Larabill separates company and customer fiscal data with temporal validity:
 
 ```
-CompanyFiscalConfig    → Company fiscal settings (one active at a time)
-CustomerFiscalData     → Customer fiscal data (historical per customer)
+CompanyFiscalConfig    → Issuer fiscal settings (one active at a time)
+UserTaxProfile         → Customer fiscal data, temporally versioned per user
 Invoice                → Immutable invoice with fiscal snapshot
 ```
 
 **Key principles**:
+- The customer is a `User` (ADR-003); businesses and sub-accounts are modelled with `parent_user_id`. The legacy `CustomerFiscalData` model was removed.
 - Company config changes apply from a specific date forward
-- Customer data changes are historical (never modify past records)
-- Invoices capture fiscal snapshot at creation time
+- `UserTaxProfile` records are temporally versioned (`valid_from`/`valid_until`) — never modify past records
+- Invoices capture a fiscal snapshot at creation time
 - Invoices are **absolutely immutable** once issued
 
 ### UUID Strategy
@@ -145,19 +147,20 @@ class Invoice extends Model
 $table->uuid('id')->primary();
 ```
 
-### Monetary Values (Base 100)
+### Monetary Values (FixedDecimal)
 
-**All monetary values use integers in base 100** to avoid floating-point errors:
+**Money is stored as base-100 integers and exposed as `FixedDecimal` value objects** (from `lara100`), so there are no floating-point errors. You assign the unscaled base-100 integer; reading the attribute returns a `FixedDecimal`:
 
 ```php
-// €12.34 stored as:
+// Assign the base-100 integer (€12.34 → 1234):
 $invoice->total_amount = 1234;
 
-// 21% IVA stored as:
-$taxRate->rate = 2100;
+// Reading the attribute returns a FixedDecimal value object
+// (base-100 backed, scale 2) — not a raw int:
+$money = $invoice->total_amount; // FixedDecimal
 ```
 
-Use the `Base100Int` cast from the `lara100` package.
+Invoice and invoice-item money attributes use the `FixedDecimalCast` (scale 2) from the `lara100` package. Note: query-builder access (`->value()`, `->sum()`, `->where()`) returns the raw integer, while Eloquent attribute access returns a `FixedDecimal`.
 
 ## 📖 Usage
 
@@ -169,15 +172,15 @@ use AichaDigital\Larabill\Services\BillingService;
 $billingService = app(BillingService::class);
 
 $invoice = $billingService->createInvoice([
-    'user_id' => $user->id,
+    'user_id' => $user->id, // UUID v7 of the customer (a User; ADR-003)
     'items' => [
         [
-            'description' => 'Professional Service',
-            'quantity' => 1,
-            'unit_price' => 10000, // €100.00 in base 100
-            'tax_rate' => 2100,    // 21% in base 100
-        ]
-    ]
+            'description'  => 'Professional Service',
+            'quantity'     => 100,           // base-100: 100 = 1.0 unit
+            'unit_price'   => 10000,         // base-100: 10000 = €100.00
+            'tax_group_id' => $taxGroup->id, // resolves the applicable VAT/IGIC/IPSI
+        ],
+    ],
 ]);
 ```
 
@@ -188,13 +191,19 @@ use AichaDigital\Larabill\Services\TaxCalculationService;
 
 $taxService = app(TaxCalculationService::class);
 
-// EU B2B reverse charge
-$result = $taxService->calculateTax(10000, 'ES', 'DE', isB2B: true);
-// Returns: tax_rate = 0 (reverse charge applies)
+// Calculate taxes for a single line. Amounts are base-100 integers. The
+// applicable rate (Spanish IVA, Canary IGIC, Ceuta/Melilla IPSI, EU reverse
+// charge or destination VAT) is resolved from the TaxGroup and the customer's
+// fiscal profile — not passed in directly.
+$result = $taxService->calculateForInvoiceItem([
+    'quantity'         => 100,           // base-100: 1.0 unit
+    'base_price'       => 10000,         // base-100: €100.00
+    'tax_group_id'     => $taxGroup->id,
+    'billable_user_id' => $user->id,     // optional: drives B2B / destination rules
+]);
 
-// EU B2C destination VAT
-$result = $taxService->calculateTax(10000, 'ES', 'FR', isB2B: false);
-// Returns: tax_rate = 2000 (20% French VAT)
+// $result keys (base-100 integers + breakdown):
+//   taxable_amount, total_tax_amount, total_amount, tax_group_id, taxes_applied
 ```
 
 ### VAT Verification
@@ -204,7 +213,7 @@ use AichaDigital\Larabill\Services\VatVerificationService;
 
 $vatService = app(VatVerificationService::class);
 
-$result = $vatService->verifyVatCode('ESB12345678', 'ES');
+$result = $vatService->verifyVatNumber('ESB12345678', 'ES');
 
 if ($result['is_valid']) {
     echo "Valid VAT for: " . $result['company_name'];
@@ -219,33 +228,35 @@ use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 // Get current active config
 $config = CompanyFiscalConfig::getActive();
 
-// Create new config (previous becomes inactive)
-$newConfig = CompanyFiscalConfig::create([
-    'tax_id' => 'ESB12345678',
-    'company_name' => 'Your Company S.L.',
-    'address' => 'Calle Test 123',
-    'city' => 'Madrid',
-    'postal_code' => '28001',
-    'country_code' => 'ES',
-    'is_oss' => true,
-    'valid_from' => now(),
+// Create new config (the previous active one is auto-closed)
+$newConfig = CompanyFiscalConfig::createNew([
+    'tax_id'        => 'ESB12345678',
+    'business_name' => 'Your Company S.L.',
+    'address'       => 'Calle Test 123',
+    'city'          => 'Madrid',
+    'zip_code'      => '28001',
+    'country_code'  => 'ES',
+    'is_oss'        => true,
+    'valid_from'    => now(),
 ]);
 ```
 
-### Customer Fiscal Data
+### User Tax Profile
+
+The customer is a `User` (ADR-003); their fiscal data lives in `UserTaxProfile`, temporally versioned. This replaces the removed `CustomerFiscalData` model.
 
 ```php
-use AichaDigital\Larabill\Models\CustomerFiscalData;
+use AichaDigital\Larabill\Models\UserTaxProfile;
 
-// Get current fiscal data for a customer
-$fiscalData = CustomerFiscalData::getActiveForUser($userId);
+// Get the active fiscal profile for a user
+$profile = UserTaxProfile::getActiveForOwner($user->id);
 
-// Create new fiscal data (historical record)
-$newData = CustomerFiscalData::createForUser($userId, [
-    'tax_id' => 'FR12345678901',
-    'business_name' => 'Client SARL',
+// Create a new profile (previous stays as history)
+$newProfile = UserTaxProfile::createForOwner($user->id, [
+    'fiscal_name'  => 'Client SARL',
+    'tax_id'       => 'FR12345678901',
     'country_code' => 'FR',
-    'is_business' => true,
+    'is_company'   => true,
 ]);
 ```
 
@@ -265,33 +276,38 @@ composer test-coverage
 vendor/bin/phpstan analyse
 ```
 
-**Current status (v0.8.0)**: 933 tests passing on SQLite + UUID-first contract demonstrated on MySQL 8.
+**Current status (v3.1.1)**: 1021 tests passing on SQLite, plus MySQL 8 integration tests (real column types and unique constraints) and fork-based concurrency tests. The UUID-first contract is demonstrated on MySQL 8.
 
 ## 📚 Documentation
 
 | Document | Description |
 |----------|-------------|
 | [ARCHITECTURE.md](docs/ARCHITECTURE.md) | Core architecture and domain model |
+| [setup-uuid.md](docs/setup-uuid.md) | UUID-first onboarding for the consumer app |
+| [ADR-006](docs/ADR-006-uuid-first-no-agnostic.md) | UUID-first decision (supersedes the agnostic id contract) |
+| [TAX_RATES_MIGRATION_GUIDE.md](docs/TAX_RATES_MIGRATION_GUIDE.md) | Tax rates migration guide |
 | [CHANGELOG.md](CHANGELOG.md) | Version history and breaking changes |
-| [TAX_SYSTEM_ANALYSIS.md](docs/TAX_SYSTEM_ANALYSIS_AND_RECOMMENDATIONS.md) | Tax system design decisions |
 
 For AI agents working with this package, see [.claude/project.md](.claude/project.md).
 
 ## 🗺️ Roadmap
 
-### v1.0.0 (Target: December 15, 2025)
-- ✅ Core invoice management
+### Shipped
+- ✅ Core invoice management (immutable records, UUID v7, sequential numbering, proforma)
 - ✅ Spanish tax system (IVA, IGIC, IPSI)
-- ✅ EU reverse charge (B2B)
-- ✅ Fiscal data with temporal validity
-- 🔄 VeriFACTU integration (Spain AEAT)
-- 🔄 WHMCS migration tools
+- ✅ EU reverse charge (B2B) and destination VAT
+- ✅ Fiscal data with temporal validity (`CompanyFiscalConfig`, `UserTaxProfile`)
+- ✅ `FixedDecimal` money type (base-100, no floating-point errors)
+- ✅ VeriFACTU integration (Spain AEAT) via `lara-verifactu`
+- ✅ Grouped payments
+- ✅ Legal-retention contract (`LegallyRetainable`) for GDPR tooling
 
-### v2.0.0 (Future)
-- Multi-tenancy support
+### Under consideration
 - Subscription billing
 - Payment gateway integration (Stripe, PayPal, Redsys)
 - Advanced reporting
+
+See the [CHANGELOG](CHANGELOG.md) for the full release history.
 
 ## 🤝 Contributing
 

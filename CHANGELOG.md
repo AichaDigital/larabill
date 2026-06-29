@@ -148,6 +148,11 @@ change: the columns were already `integer`/`json` base-100.
 
 ## [2.0.0] - 2026-06-23
 
+> **Note:** No `v2.0.0` git tag or GitHub release was ever cut. The work below
+> shipped to Packagist under **[3.0.0]** (tags jump `v1.0.0` → `v3.0.0`); this
+> section is retained for changelog continuity. Treat `[3.0.0]` as the release
+> that delivered it.
+
 Closes the **"no decimals in the database"** rule for the parallel money/rate
 systems that 1.0.0 (`FixedDecimal` migration, AID-237) left untouched. Two real
 `decimal` columns owned by the package are migrated to `integer` base-100 minor

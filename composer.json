@@ -1,6 +1,6 @@
 {
     "name": "aichadigital/larabill",
-    "description": "Professional billing & invoicing package for Laravel with UUID v7, VAT verification, EU compliance, and agnostic user models (UUID/ULID/Int)",
+    "description": "Professional billing & invoicing package for Laravel with UUID v7, VAT verification, tax calculation for Spain/EU/worldwide, and EU compliance",
     "keywords": [
         "laravel",
         "billing",
@@ -122,8 +122,7 @@
             }
         },
         "branch-alias": {
-            "dev-main": "0.10.x-dev",
-            "dev-refactor/agnostic": "0.1.x-dev"
+            "dev-main": "3.1.x-dev"
         }
     },
     "minimum-stability": "dev",
