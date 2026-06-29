@@ -25,12 +25,14 @@ use Illuminate\Support\Facades\DB;
  */
 class InvoiceService
 {
+    protected FiscalChangeDetector $fiscalChangeDetector;
+
     public function __construct(
         protected TaxCalculationService $taxCalculationService,
         protected ?FiscalVerificationContract $fiscalVerification = null,
-        protected ?FiscalChangeDetector $fiscalChangeDetector = null
+        ?FiscalChangeDetector $fiscalChangeDetector = null
     ) {
-        $this->fiscalChangeDetector ??= app(FiscalChangeDetector::class);
+        $this->fiscalChangeDetector = $fiscalChangeDetector ?? app(FiscalChangeDetector::class);
     }
 
     /**
@@ -128,7 +130,7 @@ class InvoiceService
                 $this->verifyInvoiceFiscally($invoice);
             }
 
-            return $invoice->fresh();
+            return $invoice->fresh() ?? $invoice;
         });
     }
 
@@ -243,7 +245,7 @@ class InvoiceService
     /**
      * Create an invoice item with tax calculation.
      *
-     * @param  array{article_id?: int, tax_group_id?: int|null, quantity?: int, base_price?: float, unit_price?: float, description?: string}  $itemData
+     * @param  array{article_id?: int|null, tax_group_id?: int|null, quantity?: int, base_price?: int|float, unit_price?: int|float, description?: string}  $itemData
      */
     protected function createInvoiceItem(Invoice $invoice, array $itemData): InvoiceItem
     {

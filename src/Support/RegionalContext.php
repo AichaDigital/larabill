@@ -129,6 +129,20 @@ class RegionalContext
     }
 
     /**
+     * Build a start-of-day Carbon for the given Y/M/D, asserting validity.
+     */
+    private static function startOfDayFor(int $year, int $month, int $day): Carbon
+    {
+        $date = Carbon::create($year, $month, $day);
+
+        if (! $date instanceof Carbon) {
+            throw new \InvalidArgumentException("Invalid date components: {$year}-{$month}-{$day}.");
+        }
+
+        return $date->startOfDay();
+    }
+
+    /**
      * Check if given date is within fiscal year
      */
     public static function isWithinFiscalYear(Carbon $date, int $fiscalYear): bool
@@ -136,7 +150,7 @@ class RegionalContext
         $startMonth = self::getFiscalYearStartMonth();
         $startDay   = self::getFiscalYearStartDay();
 
-        $fiscalStart = Carbon::create($fiscalYear, $startMonth, $startDay)->startOfDay();
+        $fiscalStart = self::startOfDayFor($fiscalYear, $startMonth, $startDay);
         $fiscalEnd   = $fiscalStart->copy()->addYear()->subDay()->endOfDay();
 
         return $date->between($fiscalStart, $fiscalEnd);
@@ -156,7 +170,7 @@ class RegionalContext
         }
 
         // Otherwise, check if date is before or after fiscal year start
-        $fiscalStart = Carbon::create($date->year, $startMonth, $startDay)->startOfDay();
+        $fiscalStart = self::startOfDayFor($date->year, $startMonth, $startDay);
 
         return $date->greaterThanOrEqualTo($fiscalStart) ? $date->year : $date->year - 1;
     }
@@ -166,11 +180,11 @@ class RegionalContext
      */
     public static function getFiscalYearStart(int $fiscalYear): Carbon
     {
-        return Carbon::create(
+        return self::startOfDayFor(
             $fiscalYear,
             self::getFiscalYearStartMonth(),
             self::getFiscalYearStartDay()
-        )->startOfDay();
+        );
     }
 
     /**

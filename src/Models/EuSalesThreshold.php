@@ -596,7 +596,13 @@ class EuSalesThreshold extends Model
     {
         $startDate = config('larabill.destination_vat.fiscal_year_start', '01-01');
 
-        return Carbon::create($this->fiscal_year, (int) substr($startDate, 0, 2), (int) substr($startDate, 3, 2));
+        $date = Carbon::create($this->fiscal_year, (int) substr($startDate, 0, 2), (int) substr($startDate, 3, 2));
+
+        if (! $date instanceof Carbon) {
+            throw new \RuntimeException("Invalid fiscal-year start date for fiscal year {$this->fiscal_year}.");
+        }
+
+        return $date;
     }
 
     /**

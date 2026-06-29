@@ -271,6 +271,10 @@ class ArticleServiceStatus extends Model
     {
         $currentDate = $this->next_billing_date ?? $this->started_at;
 
+        if ($currentDate === null) {
+            throw new \RuntimeException("Service {$this->id} has neither next_billing_date nor started_at to compute the next billing date.");
+        }
+
         return $this->billing_frequency->addToDate($currentDate);
     }
 

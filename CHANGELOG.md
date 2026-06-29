@@ -6,6 +6,18 @@ All notable changes to `larabill` will be documented in this file.
 
 ### Changed
 
+- **PHPStan raised to level 8 — max meaningful level (AID-281).** Final step of
+  the 6→7→8 climb. The 7→8 delta was 20 errors (`method.nonObject`,
+  `return.type`, `argument.type`, `property.nonObject`) — the read-side
+  nullsafety level. Fixed with real null guards, **no new ignores**: a
+  non-nullable `FiscalChangeDetector` property in `InvoiceService` (was
+  nullable-but-always-initialised); guards for nullable `next_billing_date` /
+  `customer` (`RecurringBillingService`) and `effective_price` /
+  `cancellation_type` (`ServiceLifecycleService`); `fresh() ?? $this` for fluent
+  methods returning `static|null` (`CountryVatRate`, `InvoiceService`); a
+  `Carbon::create()` null-assert helper in `RegionalContext` plus guards in
+  `EuSalesThreshold` / `ArticleServiceStatus`; and an `items` `@param` shape
+  aligned with `createInvoiceItem`. **larabill is now PHPStan level 8.**
 - **PHPStan raised to level 7 (AID-279).** Second of three steps toward level 8.
   Fixed the 41-error delta with real type fixes rather than blanket ignores:
   `JSON_THROW_ON_ERROR` on `json_encode()` feeding `Crypt::encryptString()`
