@@ -24,6 +24,9 @@ final class RecurringBillingFailed
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
+    /**
+     * @param  array<string, mixed>  $context
+     */
     public function __construct(
         public readonly ArticleServiceStatus $service,
         public readonly Throwable $exception,

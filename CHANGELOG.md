@@ -4,6 +4,16 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- **PHPStan raised to level 6 (AID-277).** Added precise type annotations across
+  `src/` — Eloquent relation generics (`HasMany<…, $this>`, `BelongsTo<…, $this>`),
+  iterable value types, and missing return/parameter types — with no logic changes.
+  First of three steps toward level 8 (6 → 7 → 8). One scoped, documented `ignoreError`
+  covers a larastan limitation propagating the generic `CacheService` wrapper's type
+  through `Cache::remember()`/`rememberForever()` (the public `callable` signature is
+  kept; not a real type hole).
+
 ## [3.1.1] - 2026-06-28
 
 ### Changed

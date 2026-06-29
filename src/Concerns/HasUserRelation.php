@@ -30,6 +30,7 @@ trait HasUserRelation
      */
     public function user(): BelongsTo
     {
+        /** @var class-string<Model> $userModel */
         $userModel = config('larabill.user_model', 'App\\Models\\User');
 
         return $this->belongsTo($userModel, 'user_id');

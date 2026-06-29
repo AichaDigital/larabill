@@ -13,6 +13,9 @@ namespace AichaDigital\Larabill\DataTransferObjects;
  */
 final readonly class InvoiceItemMetadata
 {
+    /**
+     * @param  list<AuditEntry>|null  $auditTrail
+     */
     public function __construct(
         public ?SourceReference $sourceReference = null,
         public ?PricingDetails $pricingDetails = null,
@@ -23,6 +26,8 @@ final readonly class InvoiceItemMetadata
 
     /**
      * Create from array.
+     *
+     * @param  array<string, mixed>  $data
      */
     public static function fromArray(array $data): self
     {
@@ -47,6 +52,8 @@ final readonly class InvoiceItemMetadata
 
     /**
      * Convert to array.
+     *
+     * @return array{source_reference: array<string, mixed>|null, pricing_details: array<string, mixed>|null, billing_details: array<string, mixed>|null, audit_trail: array<int, array<string, mixed>>|null, custom_data: array<string, mixed>|null}
      */
     public function toArray(): array
     {

@@ -12,12 +12,17 @@ namespace AichaDigital\Larabill\DataTransferObjects;
  */
 final readonly class CustomData
 {
+    /**
+     * @param  array<string, mixed>  $data
+     */
     public function __construct(
         public array $data = [],
     ) {}
 
     /**
      * Create from array.
+     *
+     * @param  array<string, mixed>  $data
      */
     public static function fromArray(array $data): self
     {
@@ -42,6 +47,8 @@ final readonly class CustomData
 
     /**
      * Convert to array.
+     *
+     * @return array<string, mixed>
      */
     public function toArray(): array
     {

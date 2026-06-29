@@ -12,6 +12,9 @@ namespace AichaDigital\Larabill\DataTransferObjects;
  */
 final readonly class SourceReference
 {
+    /**
+     * @param  array<string, mixed>|null  $additional
+     */
     public function __construct(
         public string $type,
         public ?int $articleId = null,
@@ -22,6 +25,8 @@ final readonly class SourceReference
 
     /**
      * Create from array.
+     *
+     * @param  array<string, mixed>  $data
      */
     public static function fromArray(array $data): self
     {
@@ -36,6 +41,8 @@ final readonly class SourceReference
 
     /**
      * Convert to array.
+     *
+     * @return array{type: string, article_id: int|null, service_status_id: int|null, instance_identifier: string|null, additional: array<string, mixed>|null}
      */
     public function toArray(): array
     {

@@ -35,6 +35,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class ArticlePrice extends Model
 {
+    /** @use HasFactory<ArticlePriceFactory> */
     use HasFactory;
 
     /**
@@ -69,6 +70,8 @@ class ArticlePrice extends Model
 
     /**
      * Get the article for this price.
+     *
+     * @return BelongsTo<Article, $this>
      */
     public function article(): BelongsTo
     {
@@ -77,6 +80,8 @@ class ArticlePrice extends Model
 
     /**
      * Scope to filter only active prices.
+     *
+     * @param  Builder<static>  $query
      */
     public function scopeActive(Builder $query): void
     {
@@ -85,6 +90,8 @@ class ArticlePrice extends Model
 
     /**
      * Scope to filter prices valid at a specific date.
+     *
+     * @param  Builder<static>  $query
      */
     public function scopeValidAt(Builder $query, Carbon $date): void
     {
@@ -100,6 +107,8 @@ class ArticlePrice extends Model
 
     /**
      * Scope to filter currently valid prices.
+     *
+     * @param  Builder<static>  $query
      */
     public function scopeCurrentlyValid(Builder $query): void
     {
@@ -116,6 +125,8 @@ class ArticlePrice extends Model
 
     /**
      * Scope to filter by billing frequency.
+     *
+     * @param  Builder<static>  $query
      */
     public function scopeForFrequency(Builder $query, BillingFrequency $frequency): void
     {
@@ -124,6 +135,8 @@ class ArticlePrice extends Model
 
     /**
      * Scope to filter by article.
+     *
+     * @param  Builder<static>  $query
      */
     public function scopeForArticle(Builder $query, int $articleId): void
     {
@@ -227,7 +240,7 @@ class ArticlePrice extends Model
     /**
      * Create a new factory instance for the model.
      */
-    protected static function newFactory()
+    protected static function newFactory(): ArticlePriceFactory
     {
         return ArticlePriceFactory::new();
     }

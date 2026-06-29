@@ -19,6 +19,8 @@ class LarabillInstallCommand extends Command
 
     /**
      * Orden correcto de migraciones para evitar errores de FK
+     *
+     * @var array<string, string>
      */
     protected array $migrationOrder = [
         // === BASE TABLES (no FK to other package tables) ===

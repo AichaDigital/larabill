@@ -29,14 +29,16 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int $rate Tax rate as base-100 integer (21% => 2100)
  * @property string|null $region Region/jurisdiction code (e.g., "ES", "IC", "US-MA", "US-MA-BOSTON")
  * @property TaxType $type Tax type enum (vat, sales_tax, gst, other)
- * @property array|null $special_conditions Additional metadata for special cases (IGIC, IPSI, exemptions)
+ * @property array<string, mixed>|null $special_conditions Additional metadata for special cases (IGIC, IPSI, exemptions)
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property Carbon|null $deleted_at
  */
 class TaxRate extends Model
 {
+    /** @use HasFactory<TaxRateFactory> */
     use HasFactory;
+
     use SoftDeletes;
 
     /**

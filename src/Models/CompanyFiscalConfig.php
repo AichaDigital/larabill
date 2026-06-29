@@ -40,7 +40,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class CompanyFiscalConfig extends Model
 {
+    /** @use HasFactory<CompanyFiscalConfigFactory> */
     use HasFactory;
+
     use SoftDeletes;
 
     /**
@@ -149,6 +151,8 @@ class CompanyFiscalConfig extends Model
 
     /**
      * Crea una nueva config cerrando la anterior.
+     *
+     * @param  array<string, mixed>  $attributes
      */
     public static function createNew(array $attributes): self
     {
@@ -162,6 +166,9 @@ class CompanyFiscalConfig extends Model
 
     /**
      * Scope: Configs activas.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeActive(Builder $query): Builder
     {
@@ -171,6 +178,9 @@ class CompanyFiscalConfig extends Model
 
     /**
      * Scope: Configs vigentes en una fecha.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeValidAt(Builder $query, Carbon $date): Builder
     {
@@ -183,6 +193,9 @@ class CompanyFiscalConfig extends Model
 
     /**
      * Scope: Configs por país.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeCountry(Builder $query, string $countryCode): Builder
     {
@@ -191,6 +204,9 @@ class CompanyFiscalConfig extends Model
 
     /**
      * Scope: Operadores OSS.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeOss(Builder $query): Builder
     {
@@ -199,6 +215,9 @@ class CompanyFiscalConfig extends Model
 
     /**
      * Scope: Operadores ROI.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
     public function scopeRoi(Builder $query): Builder
     {

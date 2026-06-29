@@ -171,9 +171,9 @@ class CommissionCalculationService
      * Get all active commissions grouped by level.
      *
      * @return array{
-     *     global: Collection,
-     *     product_group: Collection,
-     *     product: Collection
+     *     global: Collection<int, Commission>|Collection<int|string, mixed>,
+     *     product_group: Collection<int, Commission>|Collection<int|string, mixed>,
+     *     product: Collection<int, Commission>|Collection<int|string, mixed>
      * }
      */
     public function getActiveCommissions(): array
@@ -192,7 +192,7 @@ class CommissionCalculationService
      *
      * @return array{
      *     has_commission: bool,
-     *     commission: array|null,
+     *     commission: array{id: int|null, name: string|null, rate: float|null, type: int|null, level: int|null}|null,
      *     amount: float
      * }
      */

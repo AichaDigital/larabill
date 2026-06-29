@@ -37,8 +37,8 @@ use Illuminate\Support\Facades\Auth;
  * @property FixedDecimal|null $effective_price
  * @property int|null $current_override_id
  * @property string|null $external_reference
- * @property array|null $instance_data
- * @property array|null $metadata
+ * @property array<string, mixed>|null $instance_data
+ * @property array<string, mixed>|null $metadata
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read Article $article
@@ -46,6 +46,7 @@ use Illuminate\Support\Facades\Auth;
  */
 class ArticleServiceStatus extends Model
 {
+    /** @use HasFactory<ArticleServiceStatusFactory> */
     use HasFactory;
 
     /**
@@ -97,6 +98,8 @@ class ArticleServiceStatus extends Model
 
     /**
      * Get the article for this service status.
+     *
+     * @return BelongsTo<Article, $this>
      */
     public function article(): BelongsTo
     {
@@ -106,9 +109,12 @@ class ArticleServiceStatus extends Model
     /**
      * Get the customer for this service.
      * Note: Relationship is agnostic, uses configured user model.
+     *
+     * @return BelongsTo<Model, $this>
      */
     public function customer(): BelongsTo
     {
+        /** @var class-string<Model> $userModel */
         $userModel = config('larabill.user_model', 'App\\Models\\User');
 
         return $this->belongsTo($userModel, 'customer_id');
@@ -116,6 +122,8 @@ class ArticleServiceStatus extends Model
 
     /**
      * Get the current active price override.
+     *
+     * @return BelongsTo<ArticleOverride, $this>
      */
     public function currentOverride(): BelongsTo
     {
@@ -124,6 +132,8 @@ class ArticleServiceStatus extends Model
 
     /**
      * Scope to filter only active services.
+     *
+     * @param  Builder<ArticleServiceStatus>  $query
      */
     public function scopeActive(Builder $query): void
     {
@@ -132,6 +142,8 @@ class ArticleServiceStatus extends Model
 
     /**
      * Scope to filter services pending billing.
+     *
+     * @param  Builder<ArticleServiceStatus>  $query
      */
     public function scopePendingBilling(Builder $query): void
     {
@@ -141,6 +153,8 @@ class ArticleServiceStatus extends Model
 
     /**
      * Scope to filter services due for billing.
+     *
+     * @param  Builder<ArticleServiceStatus>  $query
      */
     public function scopeDueForBilling(Builder $query, ?Carbon $date = null): void
     {
@@ -153,6 +167,8 @@ class ArticleServiceStatus extends Model
 
     /**
      * Scope to filter by customer.
+     *
+     * @param  Builder<ArticleServiceStatus>  $query
      */
     public function scopeForCustomer(Builder $query, int|string $customerId): void
     {
@@ -161,6 +177,8 @@ class ArticleServiceStatus extends Model
 
     /**
      * Scope to filter by article.
+     *
+     * @param  Builder<ArticleServiceStatus>  $query
      */
     public function scopeForArticle(Builder $query, int $articleId): void
     {
@@ -169,6 +187,8 @@ class ArticleServiceStatus extends Model
 
     /**
      * Scope to filter by status.
+     *
+     * @param  Builder<ArticleServiceStatus>  $query
      */
     public function scopeWithStatus(Builder $query, ServiceStatus $status): void
     {
@@ -333,6 +353,8 @@ class ArticleServiceStatus extends Model
 
     /**
      * Create a new factory instance for the model.
+     *
+     * @return ArticleServiceStatusFactory
      */
     protected static function newFactory()
     {

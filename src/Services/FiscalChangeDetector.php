@@ -240,6 +240,8 @@ class FiscalChangeDetector
 
     /**
      * Format change summary for a config type.
+     *
+     * @param  array<string, mixed>  $changes
      */
     protected function formatChangeSummary(string $type, array $changes): string
     {

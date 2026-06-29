@@ -14,6 +14,10 @@ use Carbon\Carbon;
  */
 final readonly class AuditEntry
 {
+    /**
+     * @param  array<string, mixed>|null  $changes
+     * @param  array<string, mixed>|null  $metadata
+     */
     public function __construct(
         public Carbon $timestamp,
         public string $action,
@@ -26,6 +30,8 @@ final readonly class AuditEntry
 
     /**
      * Create from array.
+     *
+     * @param  array<string, mixed>  $data
      */
     public static function fromArray(array $data): self
     {
@@ -42,6 +48,8 @@ final readonly class AuditEntry
 
     /**
      * Convert to array.
+     *
+     * @return array{timestamp: string, action: string, user_id: string|null, user_name: string|null, changes: array<string, mixed>|null, reason: string|null, metadata: array<string, mixed>|null}
      */
     public function toArray(): array
     {

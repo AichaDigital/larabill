@@ -8,6 +8,7 @@ use AichaDigital\Larabill\Concerns\HasUserRelation;
 use AichaDigital\Larabill\Database\Factories\InvoiceSeriesControlFactory;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -30,7 +31,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $number_format Mustache template
  * @property bool $is_active
  * @property string|null $description
- * @property array|null $validation_rules
+ * @property array<string, mixed>|null $validation_rules
  * @property Carbon|null $last_used_at
  * @property int|string|null $user_id
  * @property Carbon $created_at
@@ -38,6 +39,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class InvoiceSeriesControl extends Model
 {
+    /** @use HasFactory<InvoiceSeriesControlFactory> */
     use HasFactory, HasUserRelation;
 
     protected $table = 'invoice_series_control';
@@ -82,9 +84,12 @@ class InvoiceSeriesControl extends Model
 
     /**
      * Get the user that owns this series control
+     *
+     * @return BelongsTo<Model, $this>
      */
     public function user(): BelongsTo
     {
+        /** @var class-string<Model> $userModel */
         $userModel = config('larabill.user_model', 'App\\Models\\User');
 
         return $this->belongsTo($userModel);
@@ -92,32 +97,44 @@ class InvoiceSeriesControl extends Model
 
     /**
      * Scope for active series only
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeActive($query)
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
     }
 
     /**
      * Scope for specific fiscal year
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeFiscalYear($query, int $year)
+    public function scopeFiscalYear(Builder $query, int $year): Builder
     {
         return $query->where('fiscal_year', $year);
     }
 
     /**
      * Scope for specific serie type
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeSerie($query, InvoiceSerieType $serie)
+    public function scopeSerie(Builder $query, InvoiceSerieType $serie): Builder
     {
         return $query->where('serie', $serie->value);
     }
 
     /**
      * Scope for specific prefix
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopePrefix($query, string $prefix)
+    public function scopePrefix(Builder $query, string $prefix): Builder
     {
         return $query->where('prefix', $prefix);
     }

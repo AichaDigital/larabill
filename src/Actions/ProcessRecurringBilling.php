@@ -61,7 +61,7 @@ final class ProcessRecurringBilling
      *
      * @param  Carbon|null  $date  Processing date (defaults to now)
      * @param  bool  $dryRun  If true, simulates without creating invoices
-     * @return array{processed: int, skipped: int, failed: int, invoices: array, errors: array}
+     * @return array{processed: int, skipped: int, failed: int, invoices: list<int|string>, errors: list<array<string, mixed>>}
      */
     public function handle(?Carbon $date = null, bool $dryRun = false): array
     {

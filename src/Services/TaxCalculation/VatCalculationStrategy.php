@@ -9,6 +9,10 @@ use AichaDigital\Larabill\Models\TaxGroup;
 
 class VatCalculationStrategy implements TaxCalculationStrategy
 {
+    /**
+     * @param  array<string, mixed>  $context
+     * @return array{total_tax_amount: int, taxes_applied: array<int, array<string, mixed>>}
+     */
     public function calculate(float $baseAmount, TaxGroup $taxGroup, array $context = []): array
     {
         $totalTaxAmount = 0;

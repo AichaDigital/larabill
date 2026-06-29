@@ -6,10 +6,12 @@ namespace AichaDigital\Larabill\Models;
 
 use AichaDigital\Lara100\Casts\FixedDecimalCast;
 use AichaDigital\Lara100\ValueObjects\FixedDecimal;
+use AichaDigital\Larabill\Database\Factories\CommissionFactory;
 use AichaDigital\Larabill\Enums\CommissionAppliesTo;
 use AichaDigital\Larabill\Enums\CommissionLevel;
 use AichaDigital\Larabill\Enums\CommissionType;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -40,13 +42,15 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property int|null $min_quantity Minimum quantity
  * @property string $name
  * @property string|null $description
- * @property array|null $metadata
+ * @property array<string, mixed>|null $metadata
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  */
 class Commission extends Model
 {
+    /** @use HasFactory<CommissionFactory> */
     use HasFactory;
+
     use SoftDeletes;
 
     /**
@@ -101,6 +105,8 @@ class Commission extends Model
 
     /**
      * Get the article (if level=product).
+     *
+     * @return BelongsTo<Article, $this>
      */
     public function article(): BelongsTo
     {
@@ -207,64 +213,88 @@ class Commission extends Model
 
     /**
      * Scope active commissions.
+     *
+     * @param  Builder<Commission>  $query
+     * @return Builder<Commission>
      */
-    public function scopeActive($query)
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
     }
 
     /**
      * Scope by level.
+     *
+     * @param  Builder<Commission>  $query
+     * @return Builder<Commission>
      */
-    public function scopeLevel($query, CommissionLevel $level)
+    public function scopeLevel(Builder $query, CommissionLevel $level): Builder
     {
         return $query->where('level', $level);
     }
 
     /**
      * Scope by level (alias for better readability).
+     *
+     * @param  Builder<Commission>  $query
+     * @return Builder<Commission>
      */
-    public function scopeForLevel($query, CommissionLevel $level)
+    public function scopeForLevel(Builder $query, CommissionLevel $level): Builder
     {
         return $query->where('level', $level);
     }
 
     /**
      * Scope by type.
+     *
+     * @param  Builder<Commission>  $query
+     * @return Builder<Commission>
      */
-    public function scopeForType($query, CommissionType $type)
+    public function scopeForType(Builder $query, CommissionType $type): Builder
     {
         return $query->where('type', $type);
     }
 
     /**
      * Scope for article.
+     *
+     * @param  Builder<Commission>  $query
+     * @return Builder<Commission>
      */
-    public function scopeForArticle($query, int $articleId)
+    public function scopeForArticle(Builder $query, int $articleId): Builder
     {
         return $query->where('level', CommissionLevel::PRODUCT)->where('article_id', $articleId);
     }
 
     /**
      * Scope for product group.
+     *
+     * @param  Builder<Commission>  $query
+     * @return Builder<Commission>
      */
-    public function scopeForProductGroup($query, string $productGroup)
+    public function scopeForProductGroup(Builder $query, string $productGroup): Builder
     {
         return $query->where('level', CommissionLevel::PRODUCT_GROUP)->where('product_group', $productGroup);
     }
 
     /**
      * Scope global commissions.
+     *
+     * @param  Builder<Commission>  $query
+     * @return Builder<Commission>
      */
-    public function scopeGlobal($query)
+    public function scopeGlobal(Builder $query): Builder
     {
         return $query->where('level', CommissionLevel::GLOBAL);
     }
 
     /**
      * Scope valid for date.
+     *
+     * @param  Builder<Commission>  $query
+     * @return Builder<Commission>
      */
-    public function scopeValidForDate($query, \DateTimeInterface $date)
+    public function scopeValidForDate(Builder $query, \DateTimeInterface $date): Builder
     {
         $carbonDate = Carbon::parse($date);
 
@@ -279,8 +309,11 @@ class Commission extends Model
      * Scope ordered by priority (product > product_group > global).
      * CommissionLevel: PRODUCT=2, PRODUCT_GROUP=1, GLOBAL=0
      * Order by level DESC puts PRODUCT first, then PRODUCT_GROUP, then GLOBAL
+     *
+     * @param  Builder<Commission>  $query
+     * @return Builder<Commission>
      */
-    public function scopeByPriority($query)
+    public function scopeByPriority(Builder $query): Builder
     {
         return $query->orderByDesc('level');
     }

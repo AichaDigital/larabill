@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Exceptions;
 
+use AichaDigital\Larabill\Models\CompanyFiscalConfig;
+use AichaDigital\Larabill\Models\UserTaxProfile;
 use Exception;
 use Illuminate\Support\Collection;
 
@@ -29,8 +31,12 @@ class FiscalIntegrityException extends Exception
 
     protected ?string $affectedUserId;
 
+    /** @var Collection<int, CompanyFiscalConfig>|Collection<int, UserTaxProfile>|Collection<int|string, mixed> */
     protected Collection $duplicateConfigs;
 
+    /**
+     * @param  Collection<int, CompanyFiscalConfig>|Collection<int, UserTaxProfile>|Collection<int|string, mixed>|null  $duplicateConfigs
+     */
     public function __construct(
         string $message,
         string $severity = self::SEVERITY_GLOBAL,
@@ -46,6 +52,8 @@ class FiscalIntegrityException extends Exception
 
     /**
      * Create exception for duplicate CompanyFiscalConfig.
+     *
+     * @param  Collection<int, CompanyFiscalConfig>  $configs
      */
     public static function duplicateCompanyConfig(Collection $configs): self
     {
@@ -61,6 +69,8 @@ class FiscalIntegrityException extends Exception
 
     /**
      * Create exception for duplicate UserTaxProfile.
+     *
+     * @param  Collection<int, UserTaxProfile>  $configs
      */
     public static function duplicateUserTaxProfile(string|int $userId, Collection $configs): self
     {
@@ -111,6 +121,8 @@ class FiscalIntegrityException extends Exception
 
     /**
      * Get the duplicate configurations that caused this exception.
+     *
+     * @return Collection<int, CompanyFiscalConfig>|Collection<int, UserTaxProfile>|Collection<int|string, mixed>
      */
     public function getDuplicateConfigs(): Collection
     {
@@ -119,6 +131,8 @@ class FiscalIntegrityException extends Exception
 
     /**
      * Get context array for logging.
+     *
+     * @return array{severity: string, affected_user_id: string|null, duplicate_config_ids: array<int, mixed>, duplicate_count: int}
      */
     public function context(): array
     {

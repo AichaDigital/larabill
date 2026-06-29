@@ -24,6 +24,8 @@ final class ProcessServiceExpiration
 
     /**
      * Handle the action
+     *
+     * @return array{success: true, expired: int}|array{success: false, expired: int, error: string}
      */
     public function handle(): array
     {

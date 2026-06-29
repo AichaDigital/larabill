@@ -11,6 +11,7 @@ use AichaDigital\Larabill\Database\Factories\InvoiceItemFactory;
 use AichaDigital\Larabill\Enums\ItemType;
 use AichaDigital\Larabill\Services\ModelMappingService;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -43,22 +44,25 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property FixedDecimal $unit_price Scale-2 FixedDecimal (€12.34 stored unscaled 1234)
  * @property FixedDecimal $taxable_amount Scale-2 FixedDecimal (€12.34 stored unscaled 1234)
  * @property FixedDecimal $total_tax_amount Scale-2 FixedDecimal - sum of all taxes
- * @property array $taxes_applied JSON snapshot of applied taxes (immutable)
+ * @property array<int, array{source_rate_id: int, name: string, rate: int, amount: int}> $taxes_applied JSON snapshot of applied taxes (immutable)
  * @property FixedDecimal $total_amount Scale-2 FixedDecimal (€12.34 stored unscaled 1234)
  * @property int $tax_rate Computed from taxes_applied (first tax rate or 0)
  * @property Carbon|null $service_date_from Service start date
  * @property Carbon|null $service_date_to Service end date
- * @property array|null $metadata
+ * @property array<string, mixed>|null $metadata
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
 class InvoiceItem extends Model
 {
+    /** @use HasFactory<InvoiceItemFactory> */
     use HasFactory;
 
     /**
      * The UUID columns for this model.
      * Including foreign key to enable proper UUID binary conversions in queries.
+     *
+     * @return list<string>
      */
     public function uuidColumns(): array
     {
@@ -188,24 +192,33 @@ class InvoiceItem extends Model
 
     /**
      * Scope for goods only
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeGoods($query)
+    public function scopeGoods(Builder $query): Builder
     {
         return $query->where('item_type', ItemType::GOOD->value);
     }
 
     /**
      * Scope for services only
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeServices($query)
+    public function scopeServices(Builder $query): Builder
     {
         return $query->where('item_type', ItemType::SERVICE->value);
     }
 
     /**
      * Scope for items with service dates
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeWithServiceDates($query)
+    public function scopeWithServiceDates(Builder $query): Builder
     {
         return $query->whereNotNull('service_date_from')
             ->whereNotNull('service_date_to');

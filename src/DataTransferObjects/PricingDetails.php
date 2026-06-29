@@ -12,6 +12,9 @@ namespace AichaDigital\Larabill\DataTransferObjects;
  */
 final readonly class PricingDetails
 {
+    /**
+     * @param  array<string, mixed>|null  $additional
+     */
     public function __construct(
         public float $basePrice,
         public float $appliedPrice,
@@ -24,6 +27,8 @@ final readonly class PricingDetails
 
     /**
      * Create from array.
+     *
+     * @param  array<string, mixed>  $data
      */
     public static function fromArray(array $data): self
     {
@@ -40,6 +45,8 @@ final readonly class PricingDetails
 
     /**
      * Convert to array.
+     *
+     * @return array{base_price: float, applied_price: float, pricing_rule: string|null, discount_amount: float|null, discount_percentage: float|null, override_id: int|null, additional: array<string, mixed>|null}
      */
     public function toArray(): array
     {
