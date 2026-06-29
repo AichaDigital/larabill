@@ -5,7 +5,7 @@
 [![Total Downloads](https://img.shields.io/packagist/dt/aichadigital/larabill.svg?style=flat-square)](https://packagist.org/packages/aichadigital/larabill)
 [![Tests](https://img.shields.io/github/actions/workflow/status/AichaDigital/larabill/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/AichaDigital/larabill/actions?query=workflow%3Arun-tests+branch%3Amain)
 [![Code Coverage](https://img.shields.io/codecov/c/github/AichaDigital/larabill?style=flat-square&logo=codecov)](https://codecov.io/gh/AichaDigital/larabill)
-[![PHPStan level 6](https://img.shields.io/badge/PHPStan-level%206-green.svg?style=flat-square&logo=php)](https://phpstan.org/)
+[![PHPStan level 8](https://img.shields.io/badge/PHPStan-level%208-brightgreen.svg?style=flat-square&logo=php)](https://phpstan.org/)
 [![PHP Version](https://img.shields.io/packagist/php-v/aichadigital/larabill.svg?style=flat-square&logo=php)](https://packagist.org/packages/aichadigital/larabill)
 [![Laravel Version](https://img.shields.io/badge/Laravel-12.x%20%7C%2013.x-red.svg?style=flat-square&logo=laravel)](https://laravel.com)
 [![License](https://img.shields.io/packagist/l/aichadigital/larabill.svg?style=flat-square)](https://packagist.org/packages/aichadigital/larabill)
