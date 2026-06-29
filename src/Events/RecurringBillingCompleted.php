@@ -24,7 +24,7 @@ final class RecurringBillingCompleted
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
     /**
-     * @param  array{processed: int, skipped: int, failed: int, invoices: array, errors: array}  $results
+     * @param  array{processed: int, skipped: int, failed: int, invoices: list<int|string>, errors: list<array<string, mixed>>}  $results
      */
     public function __construct(
         public readonly Carbon $billingDate,

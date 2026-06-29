@@ -26,8 +26,8 @@ use Spatie\Translatable\HasTranslations;
  *
  * @property int $id
  * @property string $code
- * @property array $name Name (translatable JSON)
- * @property array|null $description Description (translatable JSON)
+ * @property array<string, string> $name Name (translatable JSON)
+ * @property array<string, string>|null $description Description (translatable JSON)
  * @property ItemType $item_type
  * @property string|null $category
  * @property FixedDecimal|null $cost_price
@@ -35,7 +35,7 @@ use Spatie\Translatable\HasTranslations;
  * @property int|null $tax_group_id
  * @property int|null $unit_measure_id
  * @property bool $is_active
- * @property array|null $metadata
+ * @property array<string, mixed>|null $metadata
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
@@ -48,7 +48,9 @@ use Spatie\Translatable\HasTranslations;
  */
 class Article extends Model
 {
+    /** @use HasFactory<ArticleFactory> */
     use HasFactory;
+
     use HasTranslations;
     use SoftDeletes;
 
@@ -96,6 +98,8 @@ class Article extends Model
 
     /**
      * Get the tax group for this article.
+     *
+     * @return BelongsTo<TaxGroup, $this>
      */
     public function taxGroup(): BelongsTo
     {
@@ -104,6 +108,8 @@ class Article extends Model
 
     /**
      * Get the unit measure for this article.
+     *
+     * @return BelongsTo<UnitMeasure, $this>
      */
     public function unitMeasure(): BelongsTo
     {
@@ -112,6 +118,8 @@ class Article extends Model
 
     /**
      * Get all prices for this article.
+     *
+     * @return HasMany<ArticlePrice, $this>
      */
     public function prices(): HasMany
     {
@@ -120,6 +128,8 @@ class Article extends Model
 
     /**
      * Get currently active prices for this article.
+     *
+     * @return HasMany<ArticlePrice, $this>
      */
     public function activePrices(): HasMany
     {
@@ -137,6 +147,8 @@ class Article extends Model
 
     /**
      * Get all price overrides for this article.
+     *
+     * @return HasMany<ArticleOverride, $this>
      */
     public function overrides(): HasMany
     {
@@ -145,6 +157,8 @@ class Article extends Model
 
     /**
      * Get all service status records for this article.
+     *
+     * @return HasMany<ArticleServiceStatus, $this>
      */
     public function serviceStatuses(): HasMany
     {
@@ -163,6 +177,8 @@ class Article extends Model
 
     /**
      * Scope to filter only active articles.
+     *
+     * @param  Builder<Article>  $query
      */
     public function scopeActive(Builder $query): void
     {
@@ -171,6 +187,8 @@ class Article extends Model
 
     /**
      * Scope to filter only goods (products).
+     *
+     * @param  Builder<Article>  $query
      */
     public function scopeGoods(Builder $query): void
     {
@@ -179,6 +197,8 @@ class Article extends Model
 
     /**
      * Scope to filter only services.
+     *
+     * @param  Builder<Article>  $query
      */
     public function scopeServices(Builder $query): void
     {
@@ -187,6 +207,8 @@ class Article extends Model
 
     /**
      * Scope to filter articles that have recurring prices.
+     *
+     * @param  Builder<Article>  $query
      */
     public function scopeRecurring(Builder $query): void
     {
@@ -197,6 +219,8 @@ class Article extends Model
 
     /**
      * Scope to filter by category.
+     *
+     * @param  Builder<Article>  $query
      */
     public function scopeByCategory(Builder $query, string $category): void
     {
@@ -372,6 +396,8 @@ class Article extends Model
 
     /**
      * Create a new factory instance for the model.
+     *
+     * @return ArticleFactory
      */
     protected static function newFactory()
     {

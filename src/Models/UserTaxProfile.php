@@ -56,7 +56,9 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  */
 class UserTaxProfile extends Model implements LegallyRetainable
 {
+    /** @use HasFactory<UserTaxProfileFactory> */
     use HasFactory;
+
     use SoftDeletes;
 
     /**
@@ -168,6 +170,8 @@ class UserTaxProfile extends Model implements LegallyRetainable
 
     /**
      * Get the legal entity type.
+     *
+     * @return BelongsTo<LegalEntityType, $this>
      */
     public function legalEntityType(): BelongsTo
     {
@@ -311,6 +315,8 @@ class UserTaxProfile extends Model implements LegallyRetainable
 
     /**
      * Create new config for owner, closing previous one.
+     *
+     * @param  array<string, mixed>  $attributes
      */
     public static function createForOwner(string|int $ownerId, array $attributes): self
     {
@@ -326,6 +332,8 @@ class UserTaxProfile extends Model implements LegallyRetainable
      * Create new config for user.
      *
      * @deprecated Use createForOwner() instead.
+     *
+     * @param  array<string, mixed>  $attributes
      */
     public static function createForUser(string|int $userId, array $attributes): self
     {

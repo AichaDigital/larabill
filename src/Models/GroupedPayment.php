@@ -34,6 +34,7 @@ use Illuminate\Support\Carbon;
  */
 class GroupedPayment extends Model
 {
+    /** @use HasFactory<GroupedPaymentFactory> */
     use HasFactory, HasUuid;
 
     protected $fillable = [

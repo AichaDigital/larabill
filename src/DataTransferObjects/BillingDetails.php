@@ -14,6 +14,9 @@ use Carbon\Carbon;
  */
 final readonly class BillingDetails
 {
+    /**
+     * @param  array<string, mixed>|null  $additional
+     */
     public function __construct(
         public ?string $billingCycle = null,
         public ?Carbon $periodStart = null,
@@ -25,6 +28,8 @@ final readonly class BillingDetails
 
     /**
      * Create from array.
+     *
+     * @param  array<string, mixed>  $data
      */
     public static function fromArray(array $data): self
     {
@@ -40,6 +45,8 @@ final readonly class BillingDetails
 
     /**
      * Convert to array.
+     *
+     * @return array{billing_cycle: string|null, period_start: string|null, period_end: string|null, next_billing_date: string|null, billing_interval: int|null, additional: array<string, mixed>|null}
      */
     public function toArray(): array
     {

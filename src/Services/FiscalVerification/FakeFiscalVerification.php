@@ -28,11 +28,15 @@ class FakeFiscalVerification implements FiscalVerificationContract
 {
     /**
      * Fake verification responses.
+     *
+     * @var array<string, array<string, mixed>>
      */
     protected array $responses = [];
 
     /**
      * History of verification calls.
+     *
+     * @var array<int, array<string, mixed>>
      */
     protected array $history = [];
 

@@ -31,6 +31,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class ArticleOverride extends Model
 {
+    /** @use HasFactory<ArticleOverrideFactory> */
     use HasFactory;
 
     /**
@@ -63,6 +64,8 @@ class ArticleOverride extends Model
 
     /**
      * Get the article for this override.
+     *
+     * @return BelongsTo<Article, $this>
      */
     public function article(): BelongsTo
     {
@@ -72,9 +75,12 @@ class ArticleOverride extends Model
     /**
      * Get the customer for this override.
      * Note: Relationship is agnostic, uses configured user model.
+     *
+     * @return BelongsTo<Model, $this>
      */
     public function customer(): BelongsTo
     {
+        /** @var class-string<Model> $userModel */
         $userModel = config('larabill.user_model', 'App\\Models\\User');
 
         return $this->belongsTo($userModel, 'customer_id');
@@ -82,6 +88,8 @@ class ArticleOverride extends Model
 
     /**
      * Scope to filter only active overrides.
+     *
+     * @param  Builder<static>  $query
      */
     public function scopeActive(Builder $query): void
     {
@@ -90,6 +98,8 @@ class ArticleOverride extends Model
 
     /**
      * Scope to filter overrides valid at a specific date.
+     *
+     * @param  Builder<static>  $query
      */
     public function scopeValidAt(Builder $query, Carbon $date): void
     {
@@ -105,6 +115,8 @@ class ArticleOverride extends Model
 
     /**
      * Scope to filter by customer.
+     *
+     * @param  Builder<static>  $query
      */
     public function scopeForCustomer(Builder $query, int|string $customerId): void
     {
@@ -113,6 +125,8 @@ class ArticleOverride extends Model
 
     /**
      * Scope to filter by article.
+     *
+     * @param  Builder<static>  $query
      */
     public function scopeForArticle(Builder $query, int $articleId): void
     {
@@ -207,7 +221,7 @@ class ArticleOverride extends Model
     /**
      * Create a new factory instance for the model.
      */
-    protected static function newFactory()
+    protected static function newFactory(): ArticleOverrideFactory
     {
         return ArticleOverrideFactory::new();
     }

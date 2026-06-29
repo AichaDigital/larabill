@@ -42,7 +42,7 @@ final class RecurringBillingService
      *
      * @param  Carbon  $date  Processing date
      * @param  bool  $dryRun  If true, simulates without creating invoices
-     * @return array{processed: int, skipped: int, failed: int, invoices: array, errors: array}
+     * @return array{processed: int, skipped: int, failed: int, invoices: list<int|string>, errors: list<array<string, mixed>>}
      */
     public function processRecurringBilling(Carbon $date, bool $dryRun = false): array
     {
@@ -107,6 +107,8 @@ final class RecurringBillingService
      * Returns all active services with next_billing_date within the days_in_advance window.
      * Uses a conservative approach: fetches services within the global window + buffer
      * to account for article-specific overrides.
+     *
+     * @return Collection<int, ArticleServiceStatus>
      */
     protected function getServicesInBillingWindow(Carbon $date): Collection
     {
@@ -130,6 +132,8 @@ final class RecurringBillingService
      *
      * @deprecated Use getServicesInBillingWindow() and filter manually
      * @see getServicesInBillingWindow()
+     *
+     * @return Collection<int, ArticleServiceStatus>
      */
     protected function getServicesDueForBilling(Carbon $date): Collection
     {

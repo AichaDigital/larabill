@@ -44,6 +44,9 @@ class TaxCalculationService
 
     /**
      * Calcula los impuestos para un monto base usando la estrategia actual.
+     *
+     * @param  array<string, mixed>  $context
+     * @return array{total_tax_amount: int, taxes_applied: array<int, array<string, mixed>>}
      */
     public function calculate(float $baseAmount, TaxGroup $taxGroup, array $context = []): array
     {

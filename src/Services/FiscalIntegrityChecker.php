@@ -163,7 +163,7 @@ class FiscalIntegrityChecker
     /**
      * Get summary of current integrity status.
      *
-     * @return array{ok: bool, company_ok: bool, users_ok: bool, issues_count: int, affected_users: array}
+     * @return array{ok: bool, company_ok: bool, users_ok: bool, issues_count: int, affected_users: list<string>}
      */
     public function getStatus(): array
     {
@@ -225,8 +225,14 @@ class FiscalIntegrityChecker
 
         return new class($emails)
         {
+            /**
+             * @param  array<int, string>  $emails
+             */
             public function __construct(protected array $emails) {}
 
+            /**
+             * @return array<int, string>
+             */
             public function routeNotificationForMail(): array
             {
                 return $this->emails;

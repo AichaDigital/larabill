@@ -7,6 +7,7 @@ namespace AichaDigital\Larabill\Models;
 use AichaDigital\Larabill\Database\Factories\UnitMeasureFactory;
 use AichaDigital\Larabill\Enums\UnitMeasureCategory;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -29,9 +30,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 class UnitMeasure extends Model
 {
+    /** @use HasFactory<UnitMeasureFactory> */
     use HasFactory;
 
-    protected static function newFactory()
+    protected static function newFactory(): UnitMeasureFactory
     {
         return UnitMeasureFactory::new();
     }
@@ -63,6 +65,8 @@ class UnitMeasure extends Model
 
     /**
      * Get invoice items using this unit measure
+     *
+     * @return HasMany<InvoiceItem, $this>
      */
     public function invoiceItems(): HasMany
     {
@@ -71,24 +75,33 @@ class UnitMeasure extends Model
 
     /**
      * Scope for active units only
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeActive($query)
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);
     }
 
     /**
      * Scope for specific category
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeCategory($query, UnitMeasureCategory $category)
+    public function scopeCategory(Builder $query, UnitMeasureCategory $category): Builder
     {
         return $query->where('category', $category->value);
     }
 
     /**
      * Scope ordered by sort_order
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
      */
-    public function scopeOrdered($query)
+    public function scopeOrdered(Builder $query): Builder
     {
         return $query->orderBy('sort_order')->orderBy('name');
     }

@@ -187,6 +187,11 @@ class CacheService
 
     /**
      * Get or store a value in cache.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
      */
     public function remember(string $key, callable $callback, ?int $ttl = null): mixed
     {
@@ -215,6 +220,11 @@ class CacheService
 
     /**
      * Get or store a value in cache forever.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
      */
     public function rememberForever(string $key, callable $callback): mixed
     {

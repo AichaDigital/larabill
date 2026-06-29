@@ -242,6 +242,8 @@ class InvoiceService
 
     /**
      * Create an invoice item with tax calculation.
+     *
+     * @param  array{article_id?: int, tax_group_id?: int|null, quantity?: int, base_price?: float, unit_price?: float, description?: string}  $itemData
      */
     protected function createInvoiceItem(Invoice $invoice, array $itemData): InvoiceItem
     {

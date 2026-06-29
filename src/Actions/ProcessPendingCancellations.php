@@ -24,6 +24,8 @@ final class ProcessPendingCancellations
 
     /**
      * Handle the action
+     *
+     * @return array{success: true, cancelled: int}|array{success: false, cancelled: int, error: string}
      */
     public function handle(): array
     {

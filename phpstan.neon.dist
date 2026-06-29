@@ -2,7 +2,7 @@ includes:
     - phpstan-baseline.neon
 
 parameters:
-    level: 5
+    level: 6
     paths:
         - src
         - tests/Types
@@ -50,6 +50,15 @@ parameters:
                 - src/Models/Invoice.php
                 - src/Services/InvoiceService.php
                 - src/Services/Adapters/VerifactuAdapter.php
+        # Cache::remember()/rememberForever() are declared to take a Closure; our
+        # generic wrappers keep the flexible public signature (callable(): T) and
+        # correctly declare @return T. larastan cannot propagate T into the facade's
+        # TCacheValue template through a `callable`. Tool limitation on the inner
+        # call, not a real type hole — resolving it would require narrowing the
+        # public API to \Closure.
+        -
+            identifier: argument.templateType
+            path: src/Services/CacheService.php
 
     # Basic strict rules that are supported
     checkMissingCallableSignature: true

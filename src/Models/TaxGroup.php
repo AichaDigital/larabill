@@ -33,6 +33,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  */
 class TaxGroup extends Model
 {
+    /** @use HasFactory<TaxGroupFactory> */
     use HasFactory;
 
     /**

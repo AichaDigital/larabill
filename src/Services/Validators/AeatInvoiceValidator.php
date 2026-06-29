@@ -87,6 +87,9 @@ class AeatInvoiceValidator
 
     /**
      * Validate tax profile data.
+     *
+     * @param  array<string>  $errors
+     * @param  array<string>  $warnings
      */
     private function validateTaxProfile(Invoice $invoice, array &$errors, array &$warnings): void
     {
@@ -112,6 +115,9 @@ class AeatInvoiceValidator
 
     /**
      * Validate billable user data (ADR-003: User replaces Customer).
+     *
+     * @param  array<string>  $errors
+     * @param  array<string>  $warnings
      */
     private function validateBillableUser(Invoice $invoice, array &$errors, array &$warnings): void
     {
@@ -128,6 +134,9 @@ class AeatInvoiceValidator
 
     /**
      * Validate invoice amounts.
+     *
+     * @param  array<string>  $errors
+     * @param  array<string>  $warnings
      */
     private function validateAmounts(Invoice $invoice, array &$errors, array &$warnings): void
     {

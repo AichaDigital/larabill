@@ -87,6 +87,7 @@ use Illuminate\Support\Facades\Crypt;
  */
 class Invoice extends Model implements LegallyRetainable
 {
+    /** @use HasFactory<InvoiceFactory> */
     use HasFactory, HasUserRelation, HasUuid;
 
     /**
