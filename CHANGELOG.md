@@ -4,6 +4,8 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+## [3.1.3] - 2026-06-30
+
 ### Removed
 
 - **Removed the dead `AeatInvoiceValidator` (AID-280).** The class was never wired
