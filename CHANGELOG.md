@@ -4,6 +4,17 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+### Removed
+
+- **Removed the dead `AeatInvoiceValidator` (AID-280).** The class was never wired
+  (no service-provider registration, zero references in `src/` or tests), broken
+  at the root (it dereferenced a non-existent `Invoice::taxProfile` relation, so
+  `validate()` always returned invalid), and duplicated the live, wired
+  `InvoiceVerifactuService::validateForVerifactu()`. **Internal cleanup, not a
+  functional breaking change** — the class was unusable and undocumented. Also
+  drops its two `phpstan.neon.dist` ignore paths and its `phpstan-baseline.neon`
+  entry (no longer reachable).
+
 ## [3.1.2] - 2026-06-29
 
 ### Changed

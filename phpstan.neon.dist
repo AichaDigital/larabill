@@ -37,12 +37,10 @@ parameters:
             paths:
                 - src/Models/Invoice.php
                 - src/Services/InvoiceService.php
-                - src/Services/Validators/AeatInvoiceValidator.php
         -
             message: "#Access to an undefined property Illuminate\\\\Foundation\\\\Auth\\\\User::#"
             paths:
                 - src/Services/Adapters/VerifactuAdapter.php
-                - src/Services/Validators/AeatInvoiceValidator.php
         # Nullsafe operator warnings - these are intentional for nullable relationships
         -
             identifier: nullsafe.neverNull
