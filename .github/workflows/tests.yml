@@ -165,4 +165,4 @@ jobs:
           LARABILL_TEST_MYSQL_DATABASE: larabill_test
           LARABILL_TEST_MYSQL_USERNAME: root
           LARABILL_TEST_MYSQL_PASSWORD: root
-        run: vendor/bin/pest tests/Integration/Mysql/ --ci
+        run: vendor/bin/pest tests/Integration/Mysql/ tests/Integration/InstallMysql/ --ci

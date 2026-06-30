@@ -101,7 +101,7 @@ abstract class MysqlIntegrationTestCase extends Orchestra
         $this->artisan('migrate', ['--database' => 'testing'])->assertExitCode(0);
     }
 
-    private function createUsersTable(): void
+    protected function createUsersTable(): void
     {
         Schema::create('users', function (Blueprint $t): void {
             $t->uuid('id')->primary();
