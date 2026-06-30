@@ -17,7 +17,15 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  *
  * Represents an atomic tax rate definition in the configuration layer.
  * This is a "living" table that can be updated when tax laws change.
- * Tax rates are stored as base-100 integers (e.g., 21.50% => 2150).
+ * Tax rates are stored as base-100 integers of the percentage (e.g., 21.50% => 2150,
+ * 21% => 2100); VatCalculationStrategy divides by 10000 to obtain the multiplier
+ * fraction (2100 / 10000 = 0.21).
+ *
+ * NOTE: `rate` deliberately keeps a plain `integer` cast (NOT FixedDecimal). It is the
+ * fiscal-core rate consumed by VatCalculationStrategy, and its raw value is persisted in
+ * the immutable `taxes_applied` snapshot on invoice items. It was excluded from the
+ * FixedDecimal migration (AID-240/242/246) by design, not as debt — touching it would
+ * affect VAT calculation on every invoice. Reopen only with a concrete case.
  *
  * Examples:
  * - IVA General (Spain): rate=2100, region="ES", type=VAT
@@ -62,6 +70,9 @@ class TaxRate extends Model
     protected function casts(): array
     {
         return [
+            // Deliberately plain integer, NOT FixedDecimal — see class docblock
+            // (fiscal core, base-100 of the %, /10000 in VatCalculationStrategy;
+            // excluded from AID-240/242/246 by design, not debt).
             'rate'               => 'integer',
             'type'               => TaxType::class,
             'special_conditions' => 'array',
