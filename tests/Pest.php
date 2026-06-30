@@ -1,6 +1,7 @@
 <?php
 
 use AichaDigital\Lara100\ValueObjects\FixedDecimal;
+use AichaDigital\Larabill\Tests\Integration\InstallMysql\InstallCommandMysqlTestCase;
 use AichaDigital\Larabill\Tests\Integration\Mysql\MysqlIntegrationTestCase;
 use AichaDigital\Larabill\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -21,6 +22,12 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(MysqlIntegrationTestCase::class)
     ->in('Integration/Mysql');
+
+// Production install path (larabill:install publishes stubs in $migrationOrder
+// then migrate). Own dir + TestCase because it forces environment=production and
+// redirects database_path; see InstallCommandMysqlTestCase (AID-287).
+uses(InstallCommandMysqlTestCase::class)
+    ->in('Integration/InstallMysql');
 
 // Concurrency (fork) tests also need a real, committed MySQL connection — forked
 // children read parent-committed rows on their own connections, which SQLite
