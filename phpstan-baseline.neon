@@ -114,9 +114,3 @@ parameters:
 			identifier: argument.type
 			count: 1
 			path: src/Services/ServiceLifecycleService.php
-
-		-
-			message: '#^Access to an undefined property AichaDigital\\Larabill\\Models\\Invoice\:\:\$taxProfile\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Services/Validators/AeatInvoiceValidator.php
