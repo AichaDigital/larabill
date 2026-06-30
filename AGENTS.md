@@ -32,7 +32,9 @@ Rules:
 - This contract is enforced by `tests/Unit/Console/MigrationOrderConsistencyTest.php`.
   Run it after any migration change: `vendor/bin/pest tests/Unit/Console/MigrationOrderConsistencyTest.php`.
 - FK columns referencing users: **always** `MigrationHelper::userIdColumn($table, 'col')`.
-  Never `$table->foreignId('user_id')` — it breaks UUID compatibility.
+  Never `$table->foreignId('user_id')`, `foreignIdFor(User::class)`,
+  `unsignedBigInteger()`, `bigInteger()`, or any `int`/`ulid` fallback for user
+  FKs — Larabill deliberately targets UUID v7 `char(36)` users.
 - The `.php.stub` is a **derived artifact** of its `.php` (ADR-007): byte-for-byte identical,
   regenerated with `bin/sync-migration-stubs`. **Never edit a `.php.stub` by hand** — edit the
   `.php` and run the script. The guardrail enforces byte-identity; `LARABILL_KNOWN_SCHEMA_DIVERGENCES`
@@ -41,9 +43,15 @@ Rules:
 ## Other hard rules
 
 - **UUID-first (ADR-006).** Consumer `users.id` MUST be UUID v7 `char(36)`. bigint and
-  ULID are out of scope. Never reintroduce `larabill.user_id_type` / `int` / `ulid`.
-- **Money is Base-100 integers** (`12.34 € → 1234`), cast via `Base100Int` from `lara100`.
-  Never float/decimal.
+  ULID are out of scope. Never reintroduce `larabill.user_id_type` / `int` / `ulid`,
+  auto-detection, compatibility switches, or temporary integer fallbacks. User-model
+  agnostic means `config('larabill.user_model')`, not primary-key-type agnostic.
+  If a test or fixture exposes an integer-user assumption, fix the test setup to UUID;
+  do not make Larabill support integer user IDs again.
+- **Money is `FixedDecimal` over base-100 integer columns** (`12.34 € → 1234`), cast via
+  `FixedDecimalCast:2` from `lara100` (AID-237). Never float/decimal. The DB column stays
+  `integer`; the cast materializes the `FixedDecimal` value object. (`tax_rates.rate` is
+  the one deliberate exception — a plain `integer` fiscal-core rate; see `CLAUDE.md`.)
 - **Issued invoices are immutable.** Do not edit anything with status ≠ `draft`.
 - **Tests are agnostic about the user model:** use `config('larabill.user_model')` and the
   `TestCase::USER_UUID_1/2/3` constants — never hardcode `User::class` or `'user_id' => 1`.
