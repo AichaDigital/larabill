@@ -40,7 +40,7 @@ uses(MysqlIntegrationTestCase::class)
 // any non-Mysql integration test that should use the SQLite TestCase.
 uses(TestCase::class)
     ->use(RefreshDatabase::class)
-    ->in('Feature', 'Unit', 'Integration/VatVerificationIntegrationTest.php');
+    ->in('Feature', 'Unit');
 
 // Alias an expectation name used in some tests (typo): toBeGreaterThanOrEqualTo
 expect()->extend('toBeGreaterThanOrEqualTo', function ($expected) {
