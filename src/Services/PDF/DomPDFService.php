@@ -247,7 +247,9 @@ class DomPDFService
     protected function isReverseCharge(Invoice $invoice): bool
     {
         // Reverse charge (inversión del sujeto pasivo) is the immutable ROI flag.
-        return $invoice->is_roi_taxed;
+        // Cast: an in-memory invoice with the attribute unset yields null (Eloquent
+        // skips the boolean cast on an absent key), which would violate `: bool`.
+        return (bool) $invoice->is_roi_taxed;
     }
 
     /**
