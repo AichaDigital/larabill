@@ -20,7 +20,6 @@ Larabill is a professional, **UUID-first** billing and invoicing package for Lar
 ### Core Functionality
 - **Invoice Management**: UUID-based IDs, sequential numbering, proforma invoices, immutable records
 - **Tax Calculation**: Spanish (IVA), Canary Islands (IGIC), Ceuta/Melilla (IPSI), EU reverse charge, worldwide
-- **VAT/Tax Code Verification**: Integration with AbstractAPI and APILayer for real-time validation
 - **Fiscal Data Management**: Company and customer fiscal configurations with temporal validity
 - **PDF Generation**: Built-in invoice PDF generation using DomPDF
 - **EU Compliance**: Full support for EU B2B reverse charge and destination VAT rules
@@ -84,12 +83,6 @@ php artisan db:seed --class="AichaDigital\Larabill\Database\Seeders\TaxRatesSeed
 Add these to your `.env` file:
 
 ```env
-# Tax Code Verification APIs
-LARABILL_ABSTRACTAPI_KEY="your_abstractapi_key"
-LARABILL_APILAYER_KEY="your_apilayer_key"
-LARABILL_VAT_PREFERRED_API="abstractapi"
-LARABILL_VAT_CACHE_DAYS=30
-
 # Invoice Numbering
 LARABILL_INVOICE_PREFIX="FAC"
 LARABILL_PROFORMA_PREFIX="PRO"
