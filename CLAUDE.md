@@ -69,7 +69,7 @@ Hay un bug conocido "table already exists" con SQLite in-memory en PHP 8.4 local
 - Asumir que `composer test` (suite SQLite) demuestra el contrato real → SQLite no preserva índices compuestos ni longitudes char(36) reales. El contrato se demuestra en `tests/Integration/Mysql/` contra MySQL 8.
 - Hardcodear `'user_id' => 1` (o cualquier int) en fixtures de test → usar las constantes `TestCase::USER_UUID_1/2/3`.
 
-## Estado actual (2026-06-30)
+## Estado actual (2026-07-02)
 
 - Tag actual: **v3.1.3** (Packagist); `main` limpio, `[Unreleased]` vacío. **PHPStan level 8** (máximo). Cadena reciente:
   - **v3.1.3** (2026-06-30) — **AID-280**: eliminado el `AeatInvoiceValidator` muerto (sin refs, relación rota, duplicado por `InvoiceVerifactuService::validateForVerifactu()`).
@@ -83,6 +83,8 @@ Hay un bug conocido "table already exists" con SQLite in-memory en PHP 8.4 local
 - **Dependencias notables:** `lara-verifactu ^1.0` (estable), `lara-privacy-core ^1.0`, `lara100 ^2.0` (FixedDecimal — AID-237), `lararoi ^0.5`, `dompdf/dompdf ^3.1`.
 - Bot de dependencias: **Renovate self-hosted** (`renovate.tabratino.com`). Ver paraguas para el protocolo de transición.
 - **Contrato vigente:** UUID-first total (ADR-006). `users.id` debe ser UUID v7 char(36); el `larabill:install` aborta con mensaje accionable si no lo es. La superficie agnóstica (`int`/`ulid`, `larabill.user_id_type`, `LARABILL_USER_ID_TYPE`, flag CLI `--user-id-type=`) fue retirada en v0.8.0.
-- **Migraciones (ADR-007):** `.php` = fuente de verdad, `.php.stub` = artefacto derivado byte-exacto (`bin/sync-migration-stubs`); `$migrationOrder` 1:1 con los stubs, validado por `MigrationOrderConsistencyTest`. Constantes de fixture: `tests/TestCase::USER_UUID_1/2/3`.
+- **Migraciones (ADR-007 + ADR-010):** `.php` = fuente de verdad, `.php.stub` = artefacto derivado byte-exacto (`bin/sync-migration-stubs`); `$migrationOrder` 1:1 con los stubs, validado por `MigrationOrderConsistencyTest`. Constantes de fixture: `tests/TestCase::USER_UUID_1/2/3`.
+- **Publishing de stubs: se MANTIENE (AID-302 → ADR-010, 2026-07-02).** El refactor a «0 stubs» (esquema package-managed, como laratickets AID-290) queda **RECHAZADO/aplazado**: sería breaking para consumidores ya instalados sin beneficio correctivo (la deuda técnica ya estaba cerrada). Reconsiderar solo en una versión mayor breaking con plan de migración explícito — criterios de reapertura en `docs/ADR-010-keep-migration-stub-publishing.md`. AID-302 describía el estado v0.8.3 (6 divergencias) ya superado por ADR-007.
+- **Deuda de divergencia `.php`↔`.stub`: ENTERAMENTE SALDADA.** Los 3 follow-ups de ADR-007 cerrados: (1) test de instalación productiva en MySQL (`tests/Integration/InstallMysql/InstallCommandSchemaTest.php`, AID-287) valida `larabill:install → stubs → migrate` con FKs íntegras; (2) auditoría del resto del stack (barrido umbrella AID-298…303); (3) el histórico fillable huérfano `tax_group_id` en `InvoiceItem` verificado **inexistente** en v3.1.3 — no se persiste en el item por diseño (snapshot inmutable en `taxes_applied`/`total_tax_amount`; `tax_group_id` es columna solo en `articles` + input de `TaxCalculationService`).
 - **Tests:** SQLite (`composer test`) + MySQL Integration (`tests/Integration/Mysql/`). CI matriz PHP 8.3+8.4 × L12+L13 + job MySQL 8. PHP 8.4 local: bug "table already exists" → usar PHP 8.3 o confiar en CI.
 - **Onboarding consumidor:** `docs/setup-uuid.md` es la guía canónica.
