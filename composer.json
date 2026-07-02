@@ -1,6 +1,6 @@
 {
     "name": "aichadigital/larabill",
-    "description": "Professional billing & invoicing package for Laravel with UUID v7, VAT verification, tax calculation for Spain/EU/worldwide, and EU compliance",
+    "description": "Professional billing & invoicing package for Laravel with UUID v7, tax calculation for Spain/EU/worldwide, and EU compliance",
     "keywords": [
         "laravel",
         "billing",
@@ -30,7 +30,6 @@
         "aichadigital/lara-privacy-core": "^1.0",
         "aichadigital/lara-verifactu": "^1.0",
         "aichadigital/lara100": "^2.0",
-        "aichadigital/lararoi": "^0.5",
         "dompdf/dompdf": "^3.1",
         "illuminate/contracts": "^12.0||^13.0",
         "illuminate/database": "^12.0||^13.0",
