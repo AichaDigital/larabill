@@ -7,7 +7,7 @@ Entry point para Claude Code en este paquete. Hereda del paraguas `~/development
 Larabill es el **núcleo de facturación** del ecosistema Larafactu (AichaDigital):
 
 - Facturas inmutables con UUID v7 (string char 36, no binario — ADR-006 consolida el estándar)
-- Cálculo fiscal (España, UE, mundial) y verificación VAT vía `lararoi`
+- Cálculo fiscal (España, UE, mundial); larabill NO verifica VAT/NIF — es responsabilidad de la app consumidora vía `lararoi` (ver AID-309)
 - Datos fiscales temporales (emisor `CompanyFiscalConfig` + receptor `UserTaxProfile`)
 - Pricing por frecuencia (`Article` + `ArticlePrice`, ADR-004)
 - Cumplimiento VeriFACTU (vía `lara-verifactu`)

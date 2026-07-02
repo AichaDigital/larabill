@@ -13,7 +13,7 @@
 
 > ℹ️ **Schema upgrade policy** — Larabill does not promise in-place schema upgrades between versions. Install fresh and seed with `larabill:install` (or `migrate:fresh`) rather than migrating an existing schema across major versions. See [ADR-006](docs/ADR-006-uuid-first-no-agnostic.md).
 
-Larabill is a professional, **UUID-first** billing and invoicing package for Laravel applications. It provides comprehensive VAT verification, tax calculation for Spain/EU/worldwide, and flexible invoice generation with immutability protection. The consumer app's `users.id` MUST be UUID v7 char(36) — see [`docs/setup-uuid.md`](docs/setup-uuid.md) and [ADR-006](docs/ADR-006-uuid-first-no-agnostic.md).
+Larabill is a professional, **UUID-first** billing and invoicing package for Laravel applications. It provides tax calculation for Spain/EU/worldwide, and flexible invoice generation with immutability protection. The consumer app's `users.id` MUST be UUID v7 char(36) — see [`docs/setup-uuid.md`](docs/setup-uuid.md) and [ADR-006](docs/ADR-006-uuid-first-no-agnostic.md).
 
 ## 🎯 Features
 
@@ -204,20 +204,6 @@ $result = $taxService->calculateForInvoiceItem([
 
 // $result keys (base-100 integers + breakdown):
 //   taxable_amount, total_tax_amount, total_amount, tax_group_id, taxes_applied
-```
-
-### VAT Verification
-
-```php
-use AichaDigital\Larabill\Services\VatVerificationService;
-
-$vatService = app(VatVerificationService::class);
-
-$result = $vatService->verifyVatNumber('ESB12345678', 'ES');
-
-if ($result['is_valid']) {
-    echo "Valid VAT for: " . $result['company_name'];
-}
 ```
 
 ### Company Fiscal Configuration
