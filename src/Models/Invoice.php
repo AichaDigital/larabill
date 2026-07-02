@@ -910,7 +910,9 @@ class Invoice extends Model implements LegallyRetainable
      */
     public function isReverseCharge(): bool
     {
-        return $this->is_roi_taxed;
+        // Cast: an in-memory invoice with the attribute unset yields null (Eloquent
+        // skips the boolean cast on an absent key), which would violate `: bool`.
+        return (bool) $this->is_roi_taxed;
     }
 
     /**

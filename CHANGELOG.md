@@ -4,6 +4,20 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`isReverseCharge()` no longer returns `null` for an in-memory invoice with
+  `is_roi_taxed` unset (AID-294).** Both `DomPDFService::isReverseCharge()` and
+  `Invoice::isReverseCharge()` returned the `is_roi_taxed` column directly under a
+  `: bool` return type. The column is `boolean default(false)` in the schema, but
+  Eloquent skips the boolean cast on an absent key, so a fresh in-memory `Invoice`
+  (never persisted, attribute unset) yielded `null` and raised
+  `TypeError: Return value must be of type bool, null returned` — surfaced when
+  generating a PDF for an invoice built without an explicit `is_roi_taxed`. Both
+  methods now cast to `(bool)`, degrading a missing flag to a domestic (non-ROI)
+  invoice and matching the sibling `isExemptInvoice()`. The robustness lives in
+  the package; consumers no longer need to pre-fill the column.
+
 ## [3.1.3] - 2026-06-30
 
 ### Removed

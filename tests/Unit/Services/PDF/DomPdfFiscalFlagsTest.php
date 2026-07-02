@@ -35,6 +35,17 @@ it('detects reverse charge from is_roi_taxed', function () {
         ->and(callDomProtected($svc, 'isReverseCharge', $domestic))->toBeFalse();
 });
 
+it('treats a missing is_roi_taxed as not reverse charge (AID-294)', function () {
+    $svc = new DomPDFService;
+
+    // A fresh in-memory invoice never had is_roi_taxed set: Eloquent skips the
+    // boolean cast on an absent key and returns null, which violated the `: bool`
+    // return type with a TypeError instead of degrading to a domestic invoice.
+    $invoice = new Invoice;
+
+    expect(callDomProtected($svc, 'isReverseCharge', $invoice))->toBeFalse();
+});
+
 it('detects VAT exemption from the userTaxProfile snapshot', function () {
     $svc = new DomPDFService;
 
