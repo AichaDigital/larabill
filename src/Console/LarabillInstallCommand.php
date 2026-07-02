@@ -45,13 +45,10 @@ class LarabillInstallCommand extends Command
         '017' => 'create_article_overrides_table',
         '018' => 'create_article_service_status_table',
         '019' => 'create_commissions_table',
-        '020' => 'create_vat_verifications_table',
         '021' => 'create_invoice_templates_table',
         '022' => 'create_company_template_settings_table',
         // === ROI/VAT ===
         '023' => 'create_eu_sales_thresholds_table',
-        '024' => 'create_roi_queries_table',
-        '025' => 'create_user_roi_verifications_table',
         // === ALTERATIONS (after creating tables) ===
         '026' => 'add_fiscal_relations_to_invoices',
         '027' => 'drop_fiscal_settings_table',

@@ -33,9 +33,6 @@ describe('Larabill fresh install on MySQL — UUID-first contract (ADR-006)', fu
         expect($this->getMysqlColumnType('user_tax_profiles', 'owner_user_id'))->toBe($expectedType);
         expect($this->getMysqlColumnLength('user_tax_profiles', 'owner_user_id'))->toBe($expectedLength);
 
-        expect($this->getMysqlColumnType('roi_queries', 'user_id'))->toBe($expectedType);
-        expect($this->getMysqlColumnLength('roi_queries', 'user_id'))->toBe($expectedLength);
-
         // ─────────────────────────────────────────────────────────────────────
         // 2. Composite UNIQUE indexes exist with customer_id at position 0.
         // ─────────────────────────────────────────────────────────────────────
