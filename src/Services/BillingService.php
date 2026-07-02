@@ -17,23 +17,19 @@ use Illuminate\Support\Facades\DB;
 /**
  * Billing Service
  *
- * Handles invoice creation and management with ROI verification and optional immutability.
+ * Handles invoice creation and management with optional immutability.
  */
 class BillingService
 {
     private TaxCalculationService $taxCalculationService;
 
-    private RoiVerificationService $roiVerificationService;
-
     /**
      * Constructor.
      */
     public function __construct(
-        ?TaxCalculationService $taxCalculationService = null,
-        ?RoiVerificationService $roiVerificationService = null
+        ?TaxCalculationService $taxCalculationService = null
     ) {
-        $this->taxCalculationService  = $taxCalculationService  ?? app(TaxCalculationService::class);
-        $this->roiVerificationService = $roiVerificationService ?? app(RoiVerificationService::class);
+        $this->taxCalculationService = $taxCalculationService ?? app(TaxCalculationService::class);
     }
 
     /**
