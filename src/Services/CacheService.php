@@ -34,9 +34,8 @@ class CacheService
      * @var array<string, int>
      */
     private static array $entryCounts = [
-        'roi_verifications' => 0,
-        'vat_rates'         => 0,
-        'company_configs'   => 0,
+        'vat_rates'       => 0,
+        'company_configs' => 0,
     ];
 
     /**
@@ -326,11 +325,11 @@ class CacheService
      */
     private function getTtlForKey(string $key): int
     {
-        // Extract key type from key (e.g., 'roi_verification:123' -> 'roi_verification')
+        // Extract key type from key (e.g., 'vat_rate:123' -> 'vat_rate')
         $keyParts = explode(':', $key);
         $keyType  = $keyParts[0] ?? 'default';
 
-        // Remove prefix if present (e.g., 'larabill_test:roi_verification:123' -> 'roi_verification:123')
+        // Remove prefix if present (e.g., 'larabill_test:vat_rate:123' -> 'vat_rate:123')
         if (str_starts_with($keyType, $this->prefix)) {
             $keyParts = explode(':', $key, 2);
             $keyType  = explode(':', $keyParts[1] ?? 'default')[0] ?? 'default';
@@ -347,7 +346,7 @@ class CacheService
      */
     private function getTagForKey(string $key): string
     {
-        // Extract key type from key (e.g., 'roi_verification:123' -> 'roi_verification')
+        // Extract key type from key (e.g., 'vat_rate:123' -> 'vat_rate')
         $keyParts = explode(':', $key);
         $keyType  = $keyParts[0] ?? 'default';
 
@@ -368,70 +367,6 @@ class CacheService
     public function getDriver(): string
     {
         return $this->driver;
-    }
-
-    /**
-     * Store ROI verification data.
-     *
-     * @param  array<string, mixed>  $data
-     */
-    public function storeRoiVerification(string $userId, string $vatNumber, string $countryCode, array $data): bool
-    {
-        $key = $this->getRoiVerificationKey($userId, $vatNumber, $countryCode);
-
-        $result = $this->put($key, $data);
-
-        // Increment counter for testing
-        if ($result) {
-            self::$entryCounts['roi_verifications']++;
-        }
-
-        return $result;
-    }
-
-    /**
-     * Get ROI verification data.
-     *
-     * @return array<string, mixed>|null
-     */
-    public function getRoiVerification(string $userId, string $vatNumber, string $countryCode): ?array
-    {
-        $key = $this->getRoiVerificationKey($userId, $vatNumber, $countryCode);
-
-        return $this->get($key);
-    }
-
-    /**
-     * Check if ROI verification exists.
-     */
-    public function hasRoiVerification(string $userId, string $vatNumber, string $countryCode): bool
-    {
-        // For testing, use the internal counter
-        if (self::$entryCounts['roi_verifications'] === 0) {
-            return false;
-        }
-
-        $key = $this->getRoiVerificationKey($userId, $vatNumber, $countryCode);
-
-        return $this->has($key);
-    }
-
-    /**
-     * Remove ROI verification data.
-     */
-    public function removeRoiVerification(string $userId, string $vatNumber, string $countryCode): bool
-    {
-        $key = $this->getRoiVerificationKey($userId, $vatNumber, $countryCode);
-
-        return $this->forget($key);
-    }
-
-    /**
-     * Get ROI verification cache key.
-     */
-    public function getRoiVerificationKey(string $userId, string $vatNumber, string $countryCode): string
-    {
-        return $this->buildCacheKey("roi_verification:{$userId}:{$vatNumber}:{$countryCode}");
     }
 
     /**
@@ -579,9 +514,8 @@ class CacheService
     public function getKeyPatterns(): array
     {
         return [
-            'roi_verification' => $this->prefix.':roi_verification:*',
-            'vat_rates'        => $this->prefix.':vat_rates:*',
-            'company_config'   => $this->prefix.':company_config:*',
+            'vat_rates'      => $this->prefix.':vat_rates:*',
+            'company_config' => $this->prefix.':company_config:*',
         ];
     }
 
@@ -713,23 +647,20 @@ class CacheService
         try {
             // For testing purposes, we'll count actual entries
             // In production, this would use Redis SCAN or similar
-            $roiCount           = $this->countRoiVerifications();
             $vatRatesCount      = $this->hasVatRates() ? 1 : 0;
             $companyConfigCount = $this->countCompanyConfigs();
 
             $entryTypes = [
-                'roi_verifications' => $roiCount,
-                'vat_rates'         => $vatRatesCount,
-                'company_configs'   => $companyConfigCount,
+                'vat_rates'       => $vatRatesCount,
+                'company_configs' => $companyConfigCount,
             ];
 
             $stats['total_entries'] = array_sum($entryTypes);
             $stats['entry_types']   = $entryTypes;
 
             // Add individual counts for easier access
-            $stats['roi_verifications'] = $entryTypes['roi_verifications'];
-            $stats['vat_rates']         = $entryTypes['vat_rates'];
-            $stats['company_configs']   = $entryTypes['company_configs'];
+            $stats['vat_rates']       = $entryTypes['vat_rates'];
+            $stats['company_configs'] = $entryTypes['company_configs'];
         } catch (\Exception $e) {
             Log::warning('Failed to get cache statistics', [
                 'error' => $e->getMessage(),
@@ -754,32 +685,11 @@ class CacheService
     }
 
     /**
-     * Count ROI verifications in cache.
-     */
-    private function countRoiVerifications(): int
-    {
-        return self::$entryCounts['roi_verifications'];
-    }
-
-    /**
      * Count company configs in cache.
      */
     private function countCompanyConfigs(): int
     {
         return self::$entryCounts['company_configs'];
-    }
-
-    /**
-     * Flush ROI verification cache.
-     */
-    public function flushRoiVerificationCache(): bool
-    {
-        // Reset counter
-        self::$entryCounts['roi_verifications'] = 0;
-
-        // In a real implementation, this would clear all roi_verification:* keys
-        // For testing, we'll just reset the counter
-        return true;
     }
 
     /**
@@ -789,9 +699,8 @@ class CacheService
     {
         // Reset all counters
         self::$entryCounts = [
-            'roi_verifications' => 0,
-            'vat_rates'         => 0,
-            'company_configs'   => 0,
+            'vat_rates'       => 0,
+            'company_configs' => 0,
         ];
 
         // Clear actual cache entries
@@ -806,9 +715,8 @@ class CacheService
     public static function resetCounters(): void
     {
         self::$entryCounts = [
-            'roi_verifications' => 0,
-            'vat_rates'         => 0,
-            'company_configs'   => 0,
+            'vat_rates'       => 0,
+            'company_configs' => 0,
         ];
     }
 }
