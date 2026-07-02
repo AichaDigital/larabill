@@ -4,6 +4,25 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+### Removed — BREAKING
+
+- **Removed larabill's VAT/ROI verification layer (AID-309).** Deleted the
+  `VatVerification`, `RoiQuery`, `UserRoiVerification` models and their tables
+  (`vat_verifications`, `roi_queries`, `user_roi_verifications`), the
+  `VatVerificationService`, `RoiVerificationService` and `VatApiIntegrationService`
+  services, the ROI surface of `CacheService`, and the (unused) `aichadigital/lararoi`
+  dependency. This layer was **dead** — no live billing-flow consumer; reverse-charge
+  is driven by the `is_roi_taxed` input flag. Intra-community VAT/NIF verification is
+  the domain of the `lararoi` package; a consuming application that needs it should use
+  `lararoi` directly and pass `is_roi_taxed` to larabill.
+  **This is a breaking change (v4.0.0):** the three tables and the model/service classes
+  are gone. No down/drop migration is generated — an app that installed a prior version
+  keeps its (empty, inert) tables and may drop them manually. `RoiQuery`'s ROI-query
+  legal-retention log is removed **without substitution**; larabill's fiscal retention
+  remains `LegallyRetainable` on `Invoice`/`UserTaxProfile` (ADR-008). An invoice-linked
+  VIES-consultation proof, if ever needed, is a new feature — not a resurrection of this
+  layer.
+
 ### Fixed
 
 - **`isReverseCharge()` no longer returns `null` for an in-memory invoice with
