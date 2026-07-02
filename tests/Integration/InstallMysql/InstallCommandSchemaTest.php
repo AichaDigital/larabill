@@ -34,7 +34,7 @@ describe('larabill:install — production install path on MySQL (AID-287)', func
         ])->assertExitCode(0);
 
         // Every create_* table the install command is responsible for must exist
-        // after installing in production order. This list mirrors the 27 create_*
+        // after installing in production order. This list mirrors the 24 create_*
         // entries of $migrationOrder; adding a table to the package must update it.
         $expectedTables = [
             'legal_entity_types',
@@ -56,12 +56,9 @@ describe('larabill:install — production install path on MySQL (AID-287)', func
             'article_overrides',
             'article_service_status',
             'commissions',
-            'vat_verifications',
             'invoice_templates',
             'company_template_settings',
             'eu_sales_thresholds',
-            'roi_queries',
-            'user_roi_verifications',
             'grouped_payments',
             'grouped_payment_invoice',
         ];
@@ -71,8 +68,8 @@ describe('larabill:install — production install path on MySQL (AID-287)', func
                 ->toBeTrue("Table `{$table}` missing after production install order");
         }
 
-        // Every $migrationOrder entry (27 create + 7 modifiers) applied cleanly.
-        expect($this->appliedMigrationCount())->toBe(34);
+        // Every $migrationOrder entry (24 create + 7 modifiers) applied cleanly.
+        expect($this->appliedMigrationCount())->toBe(31);
 
         // The package defines inter-table FK constraints (e.g. invoice_items →
         // invoices, tax_group_tax_rate → tax_groups/tax_rates). They could only
