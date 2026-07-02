@@ -68,11 +68,12 @@ Rejected: a thin convenience wrapper over `lararoi` in larabill (option B) — i
 - **`src/Console/LarabillInstallCommand.php`** — remove the 3 `$migrationOrder` entries (`020` vat_verifications, `024` roi_queries, `025` user_roi_verifications). Leave the numbering gaps (the consistency test does not require contiguous keys); do not renumber. The remaining entries stay 1:1 with the stubs.
 - **`src/Services/ModelMappingService.php`** — remove `use VatVerification` + the `'vat_verification' => VatVerification::class` mapping.
 - **`src/Services/BillingService.php`** — remove the dead `RoiVerificationService` constructor injection + property.
-- **`src/Services/CacheService.php`** — remove the 7 now-orphaned ROI methods (`storeRoiVerification`, `getRoiVerification`, `hasRoiVerification`, `removeRoiVerification`, `getRoiVerificationKey`, `countRoiVerifications`, `flushRoiVerificationCache`). Keep generic cache, VAT-rate and company-config methods.
+- **`src/Services/CacheService.php`** — remove the **entire** ROI surface, not only the 7 public methods (`storeRoiVerification`, `getRoiVerification`, `hasRoiVerification`, `removeRoiVerification`, `getRoiVerificationKey`, `countRoiVerifications`, `flushRoiVerificationCache`) but also the internal references: the `'roi_verifications'` key in every `$entryCounts` init/reset (~lines 37, 792, 809), the stats wiring (`countRoiVerifications()` call + `'roi_verifications'` stat, ~lines 716, 721, 730), the `'roi_verification'` pattern-map entry (~line 582), and the ROI example strings in the generic key-type comments (~lines 329, 333, 350). Keep generic cache, VAT-rate and company-config methods. `CacheService` itself stays (used by `DestinationVatService`).
 - **`tests/Unit/Services/CacheServiceTest.php`** — drop the ROI-cache assertions; keep generic + VAT rates + company config.
-- **`config/larabill.php`** — remove `models.vat_verification`, `field_mappings.vat_verification`, and the `vat_apis` section.
+- **`config/larabill.php`** — remove `models.vat_verification` (~line 94), `field_mappings.vat_verification` (~line 102), and the `vat_apis` section (~line 19). Note: there is **no** `roi_verification` config section (`RoiVerificationService` read a `config('larabill.roi_verification', [])` default that never existed) — nothing to remove there.
 - **`tests/Pest.php`** — remove `Integration/VatVerificationIntegrationTest.php` from the `->in(...)` list (line ~43).
-- **`tests/Integration/InstallMysql/InstallCommandSchemaTest.php`** — remove `vat_verifications`, `roi_queries`, `user_roi_verifications` from the expected-tables list.
+- **`tests/Integration/InstallMysql/InstallCommandSchemaTest.php`** — remove `vat_verifications`, `roi_queries`, `user_roi_verifications` from the expected-tables list (~lines 59, 63, 64).
+- **`tests/Integration/Mysql/FreshInstallTest.php`** — remove the `roi_queries.user_id` UUID column-type assertions (~lines 36–37); check for and remove any `user_roi_verifications` assertion too.
 - **`CLAUDE.md`** (local, line ~10) — reframe the "verificación VAT vía lararoi" line: larabill does **no** VAT verification; it is the consumer's responsibility via lararoi.
 - **`README.md`** — remove the `### VAT Verification` section (usage example of the deleted `VatVerificationService`, ~line 209) and drop "comprehensive VAT verification" from the intro (~line 16).
 - **`SCHEMA_REQUIREMENTS.md`** — remove the `vat_verifications`, `roi_queries`, `user_roi_verifications` rows from the schema and migration-order tables.
@@ -80,7 +81,7 @@ Rejected: a thin convenience wrapper over `lararoi` in larabill (option B) — i
 
 ### Do NOT touch
 
-`is_roi_taxed` (the real reverse-charge input), `Invoice`, `EuSalesThresholdService`, `DestinationVatService`, `CountryVatRate`, `VatCategory`, and `CacheService`'s generic methods. `CacheService` itself stays (used by `DestinationVatService`).
+`is_roi_taxed` (the real reverse-charge input) and the reverse-charge logic, `Invoice`, `EuSalesThresholdService`, `DestinationVatService`, `CountryVatRate`, `VatCategory`, **`CompanyFiscalConfig::is_roi`** (the *issuer's* OSS/ROI-registration status — a different field, not a verification result), the **ADR-008 `LegallyRetainable`** retention mechanism on `Invoice`/`UserTaxProfile`, and `CacheService`'s generic methods. `CacheService` itself stays (used by `DestinationVatService`).
 
 ## Versioning & breaking change
 
@@ -89,6 +90,24 @@ Removing public models, services, tables, config keys and a dependency is **brea
 - **No `down`/drop migration is generated.** A consumer that already installed v3.1.x keeps its (empty, inert) `vat_verifications` / `roi_queries` / `user_roi_verifications` tables; their data is not touched. They may drop them manually if desired.
 - CHANGELOG documents: verification is no longer provided by larabill; consumers who need intra-community VAT verification should use `lararoi` directly.
 - If a real consumer of v3.1.3 exists that relied on these tables, the major bump + breaking note is the contract signal.
+
+## Adversarial verification (2026-07-02)
+
+Three independent adversarial reviewers were tasked to REFUTE the design's pillars before planning. None overturned the deletion:
+
+- **Liveness (is the layer really dead?) → CONFIRMED-DEAD.** Closed island: `VatApiIntegrationService` → only `VatVerificationService` → only `RoiVerificationService` → a `BillingService` constructor property no method invokes. Every `is_roi_taxed` occurrence in `src/` is a read; the only writer is the test factory. `is_roi` on `CompanyFiscalConfig`/`InvoiceService` is a **different** field (issuer OSS/ROI-registration status), not a verification result.
+- **Breakage → external SAFE.** No sibling imports the doomed classes (the `lararoi` name hits are a namespace collision, not a dependency; lararoi does not know larabill exists). No sibling requires `aichadigital/larabill` → the v4.0.0 major breaks no constraint. No surviving migration FKs into the three doomed tables.
+- **lararoi coverage → GAPS-FOUND, none blocking.** lararoi is NOT a strict superset. It covers/improves multi-provider verification (official VIES vs 3rd-party proxies), TTL cache, per-country syntax validation (26 EU states) and the exception model. It does NOT cover: per-user ROI state (gap B — a non-loss: VAT validity is a property of the number, not the asker), query statistics/batch/force-refresh (gap 7 — trivial or dead, e.g. `checkApiRateLimit` was a `rand()` mock), and the legal-retention query log (gap C — see below). The return-shape mismatch (lararoi **throws** on total failure instead of returning an `all_apis_failed` flag) is **moot under this design**: larabill writes no adapter and never calls lararoi, so there is no shape to reconcile — a point in favour of Option A over the rejected wrapper (Option B).
+
+## Gap C — RoiQuery removed deliberately, NOT substituted
+
+`RoiQuery` was a legal-retention audit log of ROI queries (7-year hold). lararoi has no equivalent (its single `vat_verifications` table is a mutable cache). This capability is **removed, not replaced** — a deliberate product decision:
+
+- It was **dead**: never wired to the issuance flow, never linked to an invoice, never captured the VIES `requestIdentifier` (the official consultation proof number — which neither package captures).
+- larabill's **real** fiscal retention is `LegallyRetainable` on `Invoice`/`UserTaxProfile` (ADR-008), untouched by this work.
+- Keeping `RoiQuery` would preserve an *apparent* legal promise, not an effective capability.
+
+If an invoice-linked VIES-consultation legal proof is ever wanted, it is a **new feature with its own design** (likely outside larabill, or in lara-verifactu) — **not** a resurrection of this dead layer. AID-309 does not carry it forward as technical debt.
 
 ## Out of scope (follow-ups)
 
