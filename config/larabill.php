@@ -79,7 +79,7 @@ return [
         'customer'              => Customer::class,
     ],
 
-    // Field mappings for custom field names
+    // Field name overrides for consumer models (e.g. 'tax_id' => 'nif')
     'field_mappings' => [
         //
     ],

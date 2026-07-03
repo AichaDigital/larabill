@@ -33,12 +33,12 @@ class BillingService
     }
 
     /**
-     * Create a new invoice with optional ROI verification and immutability.
+     * Create a new invoice with optional immutability.
      *
      * Uses database transaction for atomicity.
      *
      * @param  array<string, mixed>  $invoiceData  Invoice data
-     * @param  array<string, mixed>  $options  Additional options (roi_verification, make_immutable)
+     * @param  array<string, mixed>  $options  Additional options (make_immutable)
      * @return Invoice Created invoice model
      */
     public function createInvoice(array $invoiceData, array $options = []): Invoice
