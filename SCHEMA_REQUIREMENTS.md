@@ -148,7 +148,6 @@ Company/issuer fiscal configurations.
 | `invoice_series_control` | Sequence control per serie/year |
 | `invoice_templates` | PDF template definitions |
 | `company_template_settings` | Company-specific template configs |
-| `vat_verifications` | EU VAT verification results (lararoi integration) |
 | `commissions` | Commission tracking |
 
 ---
@@ -180,12 +179,9 @@ As of v0.6.x, the package contains these migration files:
 | `create_article_overrides_table` | `article_overrides` | articles, users |
 | `create_article_service_status_table` | `article_service_status` | articles, users |
 | `create_commissions_table` | `commissions` | invoices, users |
-| `create_vat_verifications_table` | `vat_verifications` | None |
 | `create_invoice_templates_table` | `invoice_templates` | None |
 | `create_company_template_settings_table` | `company_template_settings` | invoice_templates |
 | `create_eu_sales_thresholds_table` | `eu_sales_thresholds` | users |
-| `create_roi_queries_table` | `roi_queries` | users |
-| `create_user_roi_verifications_table` | `user_roi_verifications` | users |
 
 ### Consumer-Only Stubs (.php.stub — published via larabill:install)
 
