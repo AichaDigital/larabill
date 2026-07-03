@@ -7,29 +7,12 @@ use AichaDigital\Larabill\Models\CustomerFiscalData;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\InvoiceItem;
 use AichaDigital\Larabill\Models\TaxRate;
-use AichaDigital\Larabill\Models\VatVerification;
 use App\Models\User;
 
 return [
     // User model class (used by relationships and factories).
     // The model's `id` column MUST be UUID v7 char(36). See docs/setup-uuid.md.
     'user_model' => env('LARABILL_USER_MODEL', User::class),
-
-    // VAT verification API settings
-    'vat_apis' => [
-        'abstractapi' => [
-            'key'     => env('LARABILL_ABSTRACTAPI_KEY'),
-            'url'     => env('LARABILL_ABSTRACTAPI_URL', 'https://vat.abstractapi.com/v1/validate/'),
-            'timeout' => env('LARABILL_ABSTRACTAPI_TIMEOUT', 10),
-        ],
-        'apilayer' => [
-            'key'     => env('LARABILL_APILAYER_KEY'),
-            'url'     => env('LARABILL_APILAYER_URL', 'http://apilayer.net/api/validate'),
-            'timeout' => env('LARABILL_APILAYER_TIMEOUT', 10),
-        ],
-        'preferred_api'       => env('LARABILL_VAT_PREFERRED_API', 'abstractapi'), // 'abstractapi' | 'apilayer'
-        'cache_duration_days' => env('LARABILL_VAT_CACHE_DAYS', 30), // How long to cache VAT verification results
-    ],
 
     // Regional configuration (v0.3.3+)
     'region' => [
@@ -91,7 +74,6 @@ return [
         'invoice'               => Invoice::class,
         'invoice_item'          => InvoiceItem::class,
         'tax_rate'              => TaxRate::class,
-        'vat_verification'      => VatVerification::class,
         'company_fiscal_config' => CompanyFiscalConfig::class,
         'customer_fiscal_data'  => CustomerFiscalData::class,
         'customer'              => Customer::class,
@@ -99,9 +81,7 @@ return [
 
     // Field mappings for custom field names
     'field_mappings' => [
-        'vat_verification' => [
-            // 'vat_code' => 'tax_number',
-        ],
+        //
     ],
 
     // PDF generation settings

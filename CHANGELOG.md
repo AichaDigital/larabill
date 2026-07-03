@@ -4,6 +4,40 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **Thin VAT/NIF verification bridge (AID-309).** New `AichaDigital\Larabill\Actions\VerifyVatNumber`
+  action exposes a single named seam — `VerifyVatNumber::run($vatNumber, $countryCode)` —
+  that delegates verbatim to `lararoi`'s `VatVerificationServiceInterface` and returns
+  its canonical result array unchanged. Pass the VAT number **without** the country
+  prefix. No tracking, no input normalization, no output mapping. The bridge is **not**
+  wired into invoice issuance: reverse charge is still decided by the `is_roi_taxed`
+  flag, never by a live lookup.
+
+### Changed
+
+- **Activated the `aichadigital/lararoi` dependency (`^0.5` → `^1.0`) (AID-309).** The
+  dependency was declared but never imported; larabill now consumes lararoi's stable
+  v1.0 contract through the bridge above. lararoi is the single owner of the
+  intra-community VAT/NIF verification domain; larabill is a consumer.
+- **`lararoi` adds an `ext-soap` platform requirement** (its VIES SOAP provider). The
+  consumer environment / CI must have the SOAP extension enabled.
+
+### Removed
+
+- **BREAKING: removed larabill's duplicated VAT/ROI verification layer (AID-309).**
+  Deleted the models `VatVerification`, `RoiQuery`, `UserRoiVerification`; the services
+  `VatVerificationService`, `RoiVerificationService`, `VatApiIntegrationService`; the
+  tables `vat_verifications`, `roi_queries`, `user_roi_verifications` (migrations +
+  stubs, with their `$migrationOrder` entries); the orphaned ROI cache surface in
+  `CacheService`; and the unused `RoiVerificationService` injection in `BillingService`.
+  This code duplicated the domain that now lives in `lararoi` and was never wired into
+  billing. The `LARABILL_ABSTRACTAPI_KEY` / `LARABILL_APILAYER_KEY` /
+  `LARABILL_VAT_PREFERRED_API` / `LARABILL_VAT_CACHE_DAYS` config keys are gone —
+  provider/cache configuration now lives in lararoi (`lararoi-config`). Consumers that
+  imported these classes or relied on the `vat_verifications` table must switch to the
+  `VerifyVatNumber` bridge and lararoi's schema.
+
 ### Fixed
 
 - **`isReverseCharge()` no longer returns `null` for an in-memory invoice with

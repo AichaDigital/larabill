@@ -13,14 +13,14 @@
 
 > ℹ️ **Schema upgrade policy** — Larabill does not promise in-place schema upgrades between versions. Install fresh and seed with `larabill:install` (or `migrate:fresh`) rather than migrating an existing schema across major versions. See [ADR-006](docs/ADR-006-uuid-first-no-agnostic.md).
 
-Larabill is a professional, **UUID-first** billing and invoicing package for Laravel applications. It provides comprehensive VAT verification, tax calculation for Spain/EU/worldwide, and flexible invoice generation with immutability protection. The consumer app's `users.id` MUST be UUID v7 char(36) — see [`docs/setup-uuid.md`](docs/setup-uuid.md) and [ADR-006](docs/ADR-006-uuid-first-no-agnostic.md).
+Larabill is a professional, **UUID-first** billing and invoicing package for Laravel applications. It provides tax calculation for Spain/EU/worldwide and flexible invoice generation with immutability protection, plus an optional thin bridge to intra-community VAT/NIF verification (delegated to the [`lararoi`](https://github.com/aichadigital/lararoi) package). The consumer app's `users.id` MUST be UUID v7 char(36) — see [`docs/setup-uuid.md`](docs/setup-uuid.md) and [ADR-006](docs/ADR-006-uuid-first-no-agnostic.md).
 
 ## 🎯 Features
 
 ### Core Functionality
 - **Invoice Management**: UUID-based IDs, sequential numbering, proforma invoices, immutable records
 - **Tax Calculation**: Spanish (IVA), Canary Islands (IGIC), Ceuta/Melilla (IPSI), EU reverse charge, worldwide
-- **VAT/Tax Code Verification**: Integration with AbstractAPI and APILayer for real-time validation
+- **VAT/NIF Verification (optional)**: thin bridge that delegates to the `lararoi` package (VIES and other providers). Not wired into invoice issuance — reverse charge is driven by the `is_roi_taxed` flag
 - **Fiscal Data Management**: Company and customer fiscal configurations with temporal validity
 - **PDF Generation**: Built-in invoice PDF generation using DomPDF
 - **EU Compliance**: Full support for EU B2B reverse charge and destination VAT rules
@@ -84,12 +84,6 @@ php artisan db:seed --class="AichaDigital\Larabill\Database\Seeders\TaxRatesSeed
 Add these to your `.env` file:
 
 ```env
-# Tax Code Verification APIs
-LARABILL_ABSTRACTAPI_KEY="your_abstractapi_key"
-LARABILL_APILAYER_KEY="your_apilayer_key"
-LARABILL_VAT_PREFERRED_API="abstractapi"
-LARABILL_VAT_CACHE_DAYS=30
-
 # Invoice Numbering
 LARABILL_INVOICE_PREFIX="FAC"
 LARABILL_PROFORMA_PREFIX="PRO"
@@ -206,19 +200,22 @@ $result = $taxService->calculateForInvoiceItem([
 //   taxable_amount, total_tax_amount, total_amount, tax_group_id, taxes_applied
 ```
 
-### VAT Verification
+### VAT/NIF Verification (optional bridge to lararoi)
+
+Intra-community VAT/NIF verification is owned by the [`lararoi`](https://github.com/aichadigital/lararoi) package. Larabill exposes a single thin bridge action that delegates to lararoi's contract and returns its canonical result unchanged:
 
 ```php
-use AichaDigital\Larabill\Services\VatVerificationService;
+use AichaDigital\Larabill\Actions\VerifyVatNumber;
 
-$vatService = app(VatVerificationService::class);
-
-$result = $vatService->verifyVatNumber('ESB12345678', 'ES');
+// Pass the VAT number WITHOUT the country prefix ("B12345678", not "ESB12345678").
+$result = VerifyVatNumber::run('B12345678', 'ES');
 
 if ($result['is_valid']) {
-    echo "Valid VAT for: " . $result['company_name'];
+    echo 'Valid VAT for: '.$result['company_name'];
 }
 ```
+
+Providers (VIES, isvat, vatlayer, …), caching and optional tracking are configured in lararoi, not here — publish its config with `php artisan vendor:publish --tag="lararoi-config"`. This bridge is **not** wired into invoice issuance: reverse charge is decided by the invoice's `is_roi_taxed` flag, never by a live lookup.
 
 ### Company Fiscal Configuration
 
@@ -276,7 +273,7 @@ composer test-coverage
 vendor/bin/phpstan analyse
 ```
 
-**Current status (v3.1.1)**: 1021 tests passing on SQLite, plus MySQL 8 integration tests (real column types and unique constraints) and fork-based concurrency tests. The UUID-first contract is demonstrated on MySQL 8.
+**Current status (v3.1.3)**: 928 tests passing on SQLite, plus MySQL 8 integration tests (real column types and unique constraints) and fork-based concurrency tests. The UUID-first contract is demonstrated on MySQL 8.
 
 ## 📚 Documentation
 

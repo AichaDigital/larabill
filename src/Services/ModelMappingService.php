@@ -9,7 +9,6 @@ use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\InvoiceItem;
 use AichaDigital\Larabill\Models\TaxRate;
 use AichaDigital\Larabill\Models\UserTaxProfile;
-use AichaDigital\Larabill\Models\VatVerification;
 use AichaDigital\Larabill\Tests\Models\User;
 use Illuminate\Database\Eloquent\Model;
 
@@ -31,7 +30,6 @@ class ModelMappingService
             'invoice'                => Invoice::class,
             'invoice_item'           => InvoiceItem::class,
             'tax_rate'               => TaxRate::class,
-            'vat_verification'       => VatVerification::class,
             'company_fiscal_config'  => CompanyFiscalConfig::class,
             'user_tax_profile'       => UserTaxProfile::class,
         ];
