@@ -4,6 +4,15 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+## [4.0.0] - 2026-07-03
+
+> ⚠️ **BREAKING RELEASE.** larabill no longer ships its own VAT/ROI verification
+> layer — that domain now lives entirely in the `aichadigital/lararoi` package.
+> If your app imported `VatVerificationService` / the `VatVerification` model, or
+> read the `vat_verifications` / `roi_queries` / `user_roi_verifications` tables,
+> you must migrate — see **[docs/UPGRADE-4.0.md](docs/UPGRADE-4.0.md)**. Consumers
+> that bill through the `is_roi_taxed` flag (the normal path) are unaffected.
+
 ### Added
 
 - **Thin VAT/NIF verification bridge (AID-309).** New `AichaDigital\Larabill\Actions\VerifyVatNumber`
