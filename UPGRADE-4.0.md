@@ -79,19 +79,41 @@ log (`roi_verification_queries`) — see lararoi's `docs/integration.md`.
 ### 5. Existing databases coming from 3.x
 
 A database that already ran larabill 3.x's migrations still carries the legacy
-tables. What happens on `php artisan migrate` after the upgrade:
+tables.
 
-- **`vat_verifications` self-heals (lararoi >= 1.0.3, required by larabill
-  4.0.1).** lararoi ships a preflight migration that drops the legacy table —
-  a disposable, TTL-bound VIES cache — together with its orphaned ledger row
-  (`2024_12_01_000007_create_vat_verifications_table`), but ONLY when that
-  ledger row proves the table is larabill's. lararoi then creates its
-  canonical `roi_vat_verifications` fresh. No manual step.
-- **If the preflight aborts instead**, a `vat_verifications` table exists but
-  the ledger row above is missing, so lararoi refuses to claim it. If the
-  table belongs to another part of your application, rename or back it up
-  first; if it is a leftover you own, drop it (and any stale ledger rows) and
-  re-run `php artisan migrate`.
+**Before the first `php artisan migrate` after the upgrade, export the legacy
+cache.** Its rows are TTL-bound VIES cache, but they may hold residual
+evidence value (raw VIES responses under `response_data`, verification
+timestamps) and the preflight drop is one-way:
+
+```bash
+# add your usual --host/--user/--password options
+mysqldump --single-transaction --quick --skip-lock-tables \
+  <database> vat_verifications > vat_verifications-pre-lararoi.sql
+```
+
+What happens on `php artisan migrate`:
+
+- **`vat_verifications` self-heals (lararoi >= 1.0.4, required by larabill
+  4.0.2).** lararoi ships a preflight migration that drops the legacy table
+  together with its orphaned ledger row
+  (`2024_12_01_000007_create_vat_verifications_table`) — but ONLY under
+  DOUBLE proof: the physical index fingerprint (the UNIQUE composite
+  `(vat_code, country_code)` without the plain one — the shape only
+  larabill 3.x produced) AND that ledger row. A ledger row alone never
+  costs a table. lararoi then creates its canonical `roi_vat_verifications`
+  fresh. No manual step.
+- **If the preflight aborts instead**, either proof is missing (schema-dump
+  pruned ledgers, repaired tables, a homonymous table owned by your app), so
+  lararoi refuses to claim the table. If it belongs to another part of your
+  application, RENAME it (a backup alone does not clear the abort — the
+  preflight still sees `vat_verifications`), then re-run
+  `php artisan migrate`; never use the hatch below for a table your app
+  owns. If you have VERIFIED it is the legacy larabill cache and exported it
+  (see above), set `LARAROI_ASSUME_LEGACY_VAT_TABLE=true` (config
+  `lararoi.upgrade.assume_legacy_vat_table`) for that one deploy — an
+  explicit operator decision that lets the preflight claim the table. Never
+  leave the flag enabled permanently.
 - **`roi_queries` and `user_roi_verifications` are inert zombies.** They
   collide with nothing — larabill and lararoi both ignore them. Export any
   verification history you want to keep, then drop them and clean their
@@ -100,6 +122,8 @@ tables. What happens on `php artisan migrate` after the upgrade:
   ```sql
   DROP TABLE IF EXISTS roi_queries;
   DROP TABLE IF EXISTS user_roi_verifications;
+  -- "migrations" below = YOUR configured migrations table
+  -- (config database.migrations.table; only the name differs if customized)
   DELETE FROM migrations WHERE migration IN (
       '2026_02_16_000004_create_roi_queries_table',
       '2026_02_16_000005_create_user_roi_verifications_table'
