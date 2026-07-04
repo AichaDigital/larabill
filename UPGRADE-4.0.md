@@ -70,10 +70,41 @@ php artisan vendor:publish --tag="lararoi-config"
 
 ### 4. If you read the removed tables
 
-`vat_verifications`, `roi_queries` and `user_roi_verifications` no longer exist.
-lararoi owns its own `roi_*` schema (run `php artisan migrate` after installing
+`vat_verifications`, `roi_queries` and `user_roi_verifications` are no longer
+managed by larabill (their migration files left the package with 4.0). lararoi
+owns its own `roi_*` schema (run `php artisan migrate` after installing
 lararoi). If you stored verification history, migrate it to lararoi's tracking
 log (`roi_verification_queries`) — see lararoi's `docs/integration.md`.
+
+### 5. Existing databases coming from 3.x
+
+A database that already ran larabill 3.x's migrations still carries the legacy
+tables. What happens on `php artisan migrate` after the upgrade:
+
+- **`vat_verifications` self-heals (lararoi >= 1.0.3, required by larabill
+  4.0.1).** lararoi ships a preflight migration that drops the legacy table —
+  a disposable, TTL-bound VIES cache — together with its orphaned ledger row
+  (`2024_12_01_000007_create_vat_verifications_table`), but ONLY when that
+  ledger row proves the table is larabill's. lararoi then creates its
+  canonical `roi_vat_verifications` fresh. No manual step.
+- **If the preflight aborts instead**, a `vat_verifications` table exists but
+  the ledger row above is missing, so lararoi refuses to claim it. If the
+  table belongs to another part of your application, rename or back it up
+  first; if it is a leftover you own, drop it (and any stale ledger rows) and
+  re-run `php artisan migrate`.
+- **`roi_queries` and `user_roi_verifications` are inert zombies.** They
+  collide with nothing — larabill and lararoi both ignore them. Export any
+  verification history you want to keep, then drop them and clean their
+  ledger rows at your convenience:
+
+  ```sql
+  DROP TABLE IF EXISTS roi_queries;
+  DROP TABLE IF EXISTS user_roi_verifications;
+  DELETE FROM migrations WHERE migration IN (
+      '2026_02_16_000004_create_roi_queries_table',
+      '2026_02_16_000005_create_user_roi_verifications_table'
+  );
+  ```
 
 ## Notes
 

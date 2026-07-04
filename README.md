@@ -13,7 +13,7 @@
 
 > ℹ️ **Schema upgrade policy** — Larabill does not promise in-place schema upgrades between versions. Install fresh and seed with `larabill:install` (or `migrate:fresh`) rather than migrating an existing schema across major versions. See [ADR-006](docs/ADR-006-uuid-first-no-agnostic.md).
 
-> ⚠️ **Upgrading from 3.x?** 4.0 removes larabill's own VAT/ROI verification layer — that domain is now owned by [`lararoi`](https://github.com/aichadigital/lararoi) and consumed via a thin bridge. Most consumers (who bill through `is_roi_taxed`) are unaffected. See the [4.0 upgrade guide](docs/UPGRADE-4.0.md).
+> ⚠️ **Upgrading from 3.x?** 4.0 removes larabill's own VAT/ROI verification layer — that domain is now owned by [`lararoi`](https://github.com/aichadigital/lararoi) and consumed via a thin bridge. Most consumers (who bill through `is_roi_taxed`) are unaffected. See the [4.0 upgrade guide](UPGRADE-4.0.md).
 
 Larabill is a professional, **UUID-first** billing and invoicing package for Laravel applications. It provides tax calculation for Spain/EU/worldwide and flexible invoice generation with immutability protection, plus an optional thin bridge to intra-community VAT/NIF verification (delegated to the [`lararoi`](https://github.com/aichadigital/lararoi) package). The consumer app's `users.id` MUST be UUID v7 char(36) — see [`docs/setup-uuid.md`](docs/setup-uuid.md) and [ADR-006](docs/ADR-006-uuid-first-no-agnostic.md).
 
@@ -285,7 +285,7 @@ vendor/bin/phpstan analyse
 | [setup-uuid.md](docs/setup-uuid.md) | UUID-first onboarding for the consumer app |
 | [ADR-006](docs/ADR-006-uuid-first-no-agnostic.md) | UUID-first decision (supersedes the agnostic id contract) |
 | [TAX_RATES_MIGRATION_GUIDE.md](docs/TAX_RATES_MIGRATION_GUIDE.md) | Tax rates migration guide |
-| [UPGRADE-4.0.md](docs/UPGRADE-4.0.md) | Upgrade guide: larabill 3.x → 4.0 (VAT verification bridge) |
+| [UPGRADE-4.0.md](UPGRADE-4.0.md) | Upgrade guide: larabill 3.x → 4.0 (VAT verification bridge) |
 | [CHANGELOG.md](CHANGELOG.md) | Version history and breaking changes |
 
 For AI agents working with this package, see [.claude/project.md](.claude/project.md).

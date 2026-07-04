@@ -4,13 +4,22 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+## [4.0.1] - 2026-07-04
+
+### Fixed
+- `UPGRADE-4.0.md` now ships in the dist (AID-324): moved from `docs/` — which `.gitattributes` export-ignores — to the repo root, so consumers actually receive the upgrade guide the README and CHANGELOG point to.
+- The guide gains an "Existing databases coming from 3.x" section: the legacy `vat_verifications` table self-heals through lararoi's ledger-proven preflight migration (>= 1.0.3); the inert `roi_queries` / `user_roi_verifications` leftovers get documented cleanup SQL.
+
+### Changed
+- `aichadigital/lararoi` constraint raised to `^1.0.3` so the upgrade preflight is guaranteed present.
+
 ## [4.0.0] - 2026-07-03
 
 > ⚠️ **BREAKING RELEASE.** larabill no longer ships its own VAT/ROI verification
 > layer — that domain now lives entirely in the `aichadigital/lararoi` package.
 > If your app imported `VatVerificationService` / the `VatVerification` model, or
 > read the `vat_verifications` / `roi_queries` / `user_roi_verifications` tables,
-> you must migrate — see **[docs/UPGRADE-4.0.md](docs/UPGRADE-4.0.md)**. Consumers
+> you must migrate — see **[UPGRADE-4.0.md](UPGRADE-4.0.md)**. Consumers
 > that bill through the `is_roi_taxed` flag (the normal path) are unaffected.
 
 ### Added
