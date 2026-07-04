@@ -4,6 +4,14 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+## [4.0.2] - 2026-07-04
+
+### Fixed
+- `UPGRADE-4.0.md` reflects the hardened lararoi v1.0.4 preflight (AID-325): the legacy `vat_verifications` self-heal now demands DOUBLE proof (physical index fingerprint + larabill ledger row — a ledger row alone never costs a table), the abort path documents the operator escape hatch (`LARAROI_ASSUME_LEGACY_VAT_TABLE` / `lararoi.upgrade.assume_legacy_vat_table`, one deploy only, after verification), and a pre-migrate `mysqldump` export of the legacy cache is now an explicit step — its rows may hold residual evidence value (raw VIES responses) and the drop is one-way.
+
+### Changed
+- `aichadigital/lararoi` constraint raised to `^1.0.4` so the double-proof preflight is guaranteed.
+
 ## [4.0.1] - 2026-07-04
 
 ### Fixed
