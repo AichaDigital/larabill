@@ -9,6 +9,7 @@ use AichaDigital\Larabill\Models\ArticleOverride;
 use AichaDigital\Larabill\Models\ArticlePrice;
 use AichaDigital\Larabill\Models\ArticleServiceStatus;
 use AichaDigital\Larabill\Models\Invoice;
+use AichaDigital\Larabill\Models\InvoiceSeriesControl;
 use AichaDigital\Larabill\Services\PricingService;
 use AichaDigital\Larabill\Services\RecurringBillingService;
 use Carbon\Carbon;
@@ -22,6 +23,33 @@ beforeEach(function () {
 });
 
 describe('RecurringBillingService basic processing', function () {
+    it('derives invoice numbering from the shared series control on the global scope', function () {
+        // AID-390 PR2: recurring invoices must use the hardened counter, on
+        // the GLOBAL issuer scope — never scoped by the billed customer.
+        $customer = $this->userModel::factory()->create();
+        $article  = Article::factory()->monthly(2900)->create();
+
+        ArticleServiceStatus::factory()->create([
+            'customer_id'       => $customer->id,
+            'article_id'        => $article->id,
+            'billing_frequency' => BillingFrequency::MONTHLY,
+            'status'            => ServiceStatus::ACTIVE,
+            'next_billing_date' => now()->addDays(7),
+            'effective_price'   => cents(2900),
+        ]);
+
+        $results = $this->service->processRecurringBilling(now());
+
+        $invoice = Invoice::findOrFail($results['invoices'][0]);
+        expect($invoice->fiscal_number)->toBe('FAC-'.now()->year.'-000001')
+            ->and($invoice->series_number)->toBe(1);
+
+        $controls = InvoiceSeriesControl::where('prefix', 'FAC')->get();
+        expect($controls)->toHaveCount(1)
+            ->and($controls->first()->user_id)->toBe(InvoiceSeriesControl::GLOBAL_SCOPE)
+            ->and($controls->first()->last_number)->toBe(1);
+    });
+
     it('processes recurring billing for services due', function () {
         $customer = $this->userModel::factory()->create();
         $article  = Article::factory()

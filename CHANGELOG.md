@@ -5,6 +5,16 @@ All notable changes to `larabill` will be documented in this file.
 ## [Unreleased]
 
 ### Fixed
+- **All live emission paths now derive their numbering from `InvoiceNumberingService`** (AID-390 PR2) — `fiscal_number`, `prefix`, `series_number` and `fiscal_year` come atomically from the SAME `InvoiceNumber`, on the global issuer scope. This retires two broken generators: `InvoiceService` produced `fiscal_number` with `rand(1, 9999)` (non-correlative, collision-prone, and inconsistent with its own `prefix` column), and `BillingService` used a non-atomic cache counter that reset on `cache:clear`. `RecurringBillingService` drops its private MAX+1 variant.
+- Continuity seed: when a series control is created for the first time, its counter starts from the highest `series_number` already issued for that serie + fiscal year, so databases with invoices emitted by the legacy paths never reuse a number (a gap is acceptable; a duplicate never is).
+
+### Deprecated
+- `BillingService` as a whole (superseded by `InvoiceService` + `InvoiceNumberingService`; it now delegates its numbering but is removal-targeted for the AID-307 breaking major). The README quick-start now documents `InvoiceService`.
+
+### Removed
+- `BillingService::generateInvoiceNumber()` / `getSequenceNumber()` (cache-counter numbering, deprecated since 2026-02-15 with removal target v0.7.0), the duplicated `getTempSeriesNumber()` in `BillingService` and `InvoiceService`, and the dead float-typed `BillingService::calculateSubtotal()`.
+
+### Fixed (PR1 — hardening)
 - `InvoiceNumberingService` is now race-safe on the FIRST use of a series (AID-390): the creation of the `invoice_series_control` row recovers from the unique-constraint race (catch + locked re-read) and the numbering transaction retries on gap-lock deadlocks. Before, two concurrent first emitters could fork the correlative sequence.
 - The issuer scope of a series is exact and never NULL: a `null` scope is normalized to the `InvoiceSeriesControl::GLOBAL_SCOPE` sentinel (`00000000-0000-0000-0000-000000000000`), so the `unique(prefix, serie, fiscal_year, user_id)` index always applies — NULL values never collide in MySQL/SQLite unique indexes. A new data migration collapses pre-existing duplicate NULL-scope controls (keeping the highest counter, so no issued number is ever reused) and backfills the sentinel.
 

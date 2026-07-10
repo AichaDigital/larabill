@@ -27,12 +27,16 @@ class InvoiceService
 {
     protected FiscalChangeDetector $fiscalChangeDetector;
 
+    protected InvoiceNumberingService $invoiceNumbering;
+
     public function __construct(
         protected TaxCalculationService $taxCalculationService,
         protected ?FiscalVerificationContract $fiscalVerification = null,
-        ?FiscalChangeDetector $fiscalChangeDetector = null
+        ?FiscalChangeDetector $fiscalChangeDetector = null,
+        ?InvoiceNumberingService $invoiceNumbering = null
     ) {
         $this->fiscalChangeDetector = $fiscalChangeDetector ?? app(FiscalChangeDetector::class);
+        $this->invoiceNumbering     = $invoiceNumbering     ?? app(InvoiceNumberingService::class);
     }
 
     /**
@@ -82,13 +86,20 @@ class InvoiceService
             // user_id = owner of invoice (issuer), defaults to billable_user's parent or self
             $userId = $invoiceData['user_id'] ?? $billableUser->parent_user_id ?? $billableUser->id;
 
-            // Create invoice record with atomic series numbering
+            // Atomic correlative numbering from the single owner (AID-390):
+            // fiscal_number, prefix, series_number and fiscal_year all derive
+            // from the SAME InvoiceNumber, on the global issuer scope.
+            $number = $this->invoiceNumbering->generateNumber(
+                $invoiceType === 'proforma' ? 'PRO' : 'FAC',
+                $serie
+            );
+
             $invoice = Invoice::create([
-                'fiscal_number'             => $this->generateInvoiceNumber($invoiceType),
-                'prefix'                    => $invoiceType === 'proforma' ? 'PRO' : 'FAC',
+                'fiscal_number'             => $number->formatted,
+                'prefix'                    => $number->prefix,
                 'serie'                     => $serie,
-                'series_number'             => $this->getTempSeriesNumber((string) $serie, now()->year),
-                'fiscal_year'               => now()->year,
+                'series_number'             => $number->seriesNumber,
+                'fiscal_year'               => $number->fiscalYear,
                 'invoice_date'              => now()->toDateString(),
                 'issued_at'                 => now(),
                 'status'                    => $status,
@@ -421,32 +432,6 @@ class InvoiceService
     public function getProformaFiscalChanges(Invoice $proforma): array
     {
         return $this->fiscalChangeDetector->detectChanges($proforma);
-    }
-
-    /**
-     * Generate invoice number.
-     */
-    protected function generateInvoiceNumber(string $type): string
-    {
-        // TODO: Implement proper numbering service
-        return strtoupper($type).'-'.now()->year.'-'.str_pad((string) rand(1, 9999), 4, '0', STR_PAD_LEFT);
-    }
-
-    /**
-     * Get temporary series number.
-     *
-     * Uses pessimistic locking to prevent race conditions.
-     */
-    protected function getTempSeriesNumber(string $serie, int $year): int
-    {
-        // TODO: Implement proper series tracking
-        // Uses lockForUpdate() within the outer transaction for atomicity
-        $maxNumber = Invoice::where('serie', $serie)
-            ->where('fiscal_year', $year)
-            ->lockForUpdate()
-            ->max('series_number');
-
-        return ($maxNumber ?? 0) + 1;
     }
 
     /**

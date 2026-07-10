@@ -163,22 +163,26 @@ Invoice and invoice-item money attributes use the `FixedDecimalCast` (scale 2) f
 ### Creating an Invoice
 
 ```php
-use AichaDigital\Larabill\Services\BillingService;
+use AichaDigital\Larabill\Services\InvoiceService;
 
-$billingService = app(BillingService::class);
+$invoiceService = app(InvoiceService::class);
 
-$invoice = $billingService->createInvoice([
-    'user_id' => $user->id, // UUID v7 of the customer (a User; ADR-003)
+$invoice = $invoiceService->createInvoice([
+    'billable_user_id' => $user->id, // UUID v7 of the billed customer (ADR-003)
     'items' => [
         [
             'description'  => 'Professional Service',
             'quantity'     => 100,           // base-100: 100 = 1.0 unit
-            'unit_price'   => 10000,         // base-100: 10000 = €100.00
+            'base_price'   => 10000,         // base-100: 10000 = €100.00
             'tax_group_id' => $taxGroup->id, // resolves the applicable VAT/IGIC/IPSI
         ],
     ],
 ]);
 ```
+
+Invoice numbers are correlative per series (`invoice_series_control`, EU/RD 1619/2012): `fiscal_number`, `prefix`, `series_number` and `fiscal_year` all derive atomically from `InvoiceNumberingService`. An active `CompanyFiscalConfig` must exist — `createInvoice()` snapshots the issuer's fiscal data and refuses to emit without it.
+
+> **Deprecated:** the former `BillingService` quick-start path still works (it now delegates its numbering to the same series control) but is removal-targeted for the next breaking major — use `InvoiceService`.
 
 ### Tax Calculation
 

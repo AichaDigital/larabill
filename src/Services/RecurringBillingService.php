@@ -9,6 +9,7 @@ use AichaDigital\Larabill\DataTransferObjects\BillingDetails;
 use AichaDigital\Larabill\DataTransferObjects\InvoiceItemMetadata;
 use AichaDigital\Larabill\DataTransferObjects\SourceReference;
 use AichaDigital\Larabill\Enums\BillingFrequency;
+use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Events\RecurringBillingCompleted;
 use AichaDigital\Larabill\Events\RecurringBillingFailed;
@@ -33,9 +34,14 @@ use Illuminate\Support\Facades\Log;
  */
 final class RecurringBillingService
 {
+    protected InvoiceNumberingService $invoiceNumbering;
+
     public function __construct(
-        protected PricingService $pricingService
-    ) {}
+        protected PricingService $pricingService,
+        ?InvoiceNumberingService $invoiceNumbering = null
+    ) {
+        $this->invoiceNumbering = $invoiceNumbering ?? app(InvoiceNumberingService::class);
+    }
 
     /**
      * Process recurring billing for services due on given date
@@ -303,32 +309,26 @@ final class RecurringBillingService
     /**
      * Generate invoice number
      *
-     * Uses lockForUpdate() to prevent race conditions when called within a transaction.
-     * TODO: Use proper InvoiceSeriesControl for correlative numbering
+     * Delegates to the single numbering owner (AID-390): fiscal_number,
+     * prefix, series_number and fiscal_year all derive from the SAME
+     * InvoiceNumber, on the GLOBAL issuer scope — recurring invoices are
+     * never scoped by the billed customer (ADR-003).
      *
      * @return array{fiscal_number: string, prefix: string, serie: int, series_number: int, fiscal_year: int}
      */
     protected function generateInvoiceNumber(): array
     {
-        // For now, use simple sequential numbering
-        // In production, this should use InvoiceSeriesControl
-        // Uses lockForUpdate() for pessimistic locking within transaction
-        $lastInvoice = Invoice::query()
-            ->where('serie', 1) // Regular invoices
-            ->lockForUpdate()
-            ->orderByDesc('series_number')
-            ->first();
-
-        $seriesNumber = ($lastInvoice->series_number ?? 0) + 1;
-        $fiscalYear   = now()->year;
-        $fiscalNumber = sprintf('FAC-%d-%06d', $fiscalYear, $seriesNumber);
+        $number = $this->invoiceNumbering->generateNumber(
+            'FAC',
+            InvoiceSerieType::INVOICE->value
+        );
 
         return [
-            'fiscal_number' => $fiscalNumber,
-            'prefix'        => 'FAC',
-            'serie'         => 1,
-            'series_number' => $seriesNumber,
-            'fiscal_year'   => $fiscalYear,
+            'fiscal_number' => $number->formatted,
+            'prefix'        => $number->prefix,
+            'serie'         => InvoiceSerieType::INVOICE->value,
+            'series_number' => $number->seriesNumber,
+            'fiscal_year'   => $number->fiscalYear,
         ];
     }
 }
