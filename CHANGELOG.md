@@ -4,6 +4,17 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- `InvoiceNumberingService` is now race-safe on the FIRST use of a series (AID-390): the creation of the `invoice_series_control` row recovers from the unique-constraint race (catch + locked re-read) and the numbering transaction retries on gap-lock deadlocks. Before, two concurrent first emitters could fork the correlative sequence.
+- The issuer scope of a series is exact and never NULL: a `null` scope is normalized to the `InvoiceSeriesControl::GLOBAL_SCOPE` sentinel (`00000000-0000-0000-0000-000000000000`), so the `unique(prefix, serie, fiscal_year, user_id)` index always applies — NULL values never collide in MySQL/SQLite unique indexes. A new data migration collapses pre-existing duplicate NULL-scope controls (keeping the highest counter, so no issued number is ever reused) and backfills the sentinel.
+
+### Changed
+- **Behavior:** a user-scoped `generateNumber()` call no longer falls back to the global series control (`whereNull()->orWhere()` retired): global and user-scoped sequences are fully independent. The scope parameter is the ISSUER, never the billed customer (ADR-003).
+- `InvoiceNumberingService` reads/writes `invoice_series_control` through the `InvoiceSeriesControl` model (casts and events restored) instead of raw `DB::table()`.
+
+### Tests
+- Fork-based concurrency proof (`tests/Concurrency/InvoiceNumberingConcurrencyTest.php`, gated `RUN_CONCURRENCY_IT=1` + MySQL): 6 OS processes on a non-existent series converge to ONE control and a strict 1..N sequence; steady-state increments continue without duplicates. Sensitivity verified: the test FAILS against the pre-hardening implementation.
+
 ## [4.0.2] - 2026-07-04
 
 ### Fixed

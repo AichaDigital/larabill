@@ -8,6 +8,7 @@ use AichaDigital\Larabill\Tests\Models\TestUser;
 use AichaDigital\Larabill\Tests\TestCase;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
@@ -73,12 +74,23 @@ it('can belong to a user', function () {
         ->and($control->user->id)->toBe($this->user->id);
 });
 
-it('can have null user_id', function () {
-    $control = InvoiceSeriesControl::factory()->create([
-        'user_id' => null,
+it('defaults user_id to the global-scope sentinel', function () {
+    // NULL is retired as a scope (it never collides in a unique index, AID-390):
+    // rows created without an explicit issuer belong to the global series.
+    $control = InvoiceSeriesControl::create([
+        'prefix'            => 'DEF',
+        'serie'             => InvoiceSerieType::INVOICE->value,
+        'fiscal_year'       => now()->year,
+        'fiscal_year_start' => now()->startOfYear(),
+        'fiscal_year_end'   => now()->endOfYear(),
+        'last_number'       => 0,
+        'start_number'      => 1,
+        'reset_annually'    => true,
+        'number_format'     => '{{PREFIX}}-{{YEAR}}-{{NUMBER}}',
+        'is_active'         => true,
     ]);
 
-    expect($control->user_id)->toBeNull();
+    expect($control->user_id)->toBe('00000000-0000-0000-0000-000000000000');
 });
 
 it('can scope active series only', function () {
@@ -230,11 +242,15 @@ it('can chain multiple scopes', function () {
         'fiscal_year' => 2024,
         'is_active'   => true,
     ]);
+    // Distinct issuer scope: two rows for the same (prefix, serie, fiscal_year)
+    // are only legal on different scopes now that the sentinel closed the
+    // NULL hole in the unique index (AID-390).
     InvoiceSeriesControl::factory()->create([
         'prefix'      => 'INV',
         'serie'       => InvoiceSerieType::INVOICE,
         'fiscal_year' => 2024,
         'is_active'   => false,
+        'user_id'     => (string) Str::uuid(),
     ]);
 
     $controls = InvoiceSeriesControl::active()

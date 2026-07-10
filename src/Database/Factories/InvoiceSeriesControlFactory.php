@@ -35,7 +35,7 @@ class InvoiceSeriesControlFactory extends Factory
             'description'       => $this->faker->sentence(),
             'validation_rules'  => null,
             'last_used_at'      => null,
-            'user_id'           => null,
+            'user_id'           => InvoiceSeriesControl::GLOBAL_SCOPE,
         ];
     }
 
@@ -54,7 +54,7 @@ class InvoiceSeriesControlFactory extends Factory
         ]);
     }
 
-    public function withUser(int $userId): static
+    public function withUser(int|string $userId): static
     {
         return $this->state(fn (array $attributes) => [
             'user_id' => $userId,
