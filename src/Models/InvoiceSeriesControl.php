@@ -33,7 +33,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $description
  * @property array<string, mixed>|null $validation_rules
  * @property Carbon|null $last_used_at
- * @property int|string|null $user_id
+ * @property string $user_id Issuer scope: a user UUID or GLOBAL_SCOPE
  * @property Carbon $created_at
  * @property Carbon $updated_at
  */
@@ -42,7 +42,24 @@ class InvoiceSeriesControl extends Model
     /** @use HasFactory<InvoiceSeriesControlFactory> */
     use HasFactory, HasUserRelation;
 
+    /**
+     * Issuer-scope sentinel for the global (single-issuer) series.
+     *
+     * Stored instead of NULL: NULL values never collide in a MySQL/SQLite
+     * unique index, so concurrent first uses of a series could create
+     * duplicate control rows and fork the correlative numbering (AID-390).
+     * Legacy NULL rows are backfilled to this value by migration.
+     */
+    public const GLOBAL_SCOPE = '00000000-0000-0000-0000-000000000000';
+
     protected $table = 'invoice_series_control';
+
+    /**
+     * @var array<string, mixed>
+     */
+    protected $attributes = [
+        'user_id' => self::GLOBAL_SCOPE,
+    ];
 
     protected $fillable = [
         'prefix',

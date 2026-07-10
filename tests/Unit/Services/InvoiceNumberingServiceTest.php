@@ -194,13 +194,34 @@ describe('InvoiceNumberingService', function () {
         config(['larabill.fiscal_year.start_day' => 1]);
     });
 
+    it('persists the global-scope sentinel instead of NULL on first use', function () {
+        // The sentinel is a persisted contract (existing rows are backfilled to it):
+        // pin the literal here so an accidental constant change fails loudly.
+        $this->service->generateNumber('FAC', InvoiceSerieType::INVOICE->value);
+
+        expect(InvoiceSeriesControl::whereNull('user_id')->count())->toBe(0)
+            ->and(InvoiceSeriesControl::where('user_id', '00000000-0000-0000-0000-000000000000')->count())->toBe(1);
+    });
+
+    it('keeps global and user-scoped sequences independent for the same series', function () {
+        $userId = (string) Str::uuid();
+
+        $this->service->generateNumber('FAC', InvoiceSerieType::INVOICE->value);
+        $scoped1 = $this->service->generateNumber('FAC', InvoiceSerieType::INVOICE->value, $userId);
+        $global2 = $this->service->generateNumber('FAC', InvoiceSerieType::INVOICE->value);
+
+        expect(InvoiceSeriesControl::count())->toBe(2)
+            ->and($scoped1->seriesNumber)->toBe(1)
+            ->and($global2->seriesNumber)->toBe(2);
+    });
+
     it('a factory-created series formats numbers without literal placeholders', function () {
-        // The factory applies its own default number_format (the case under test).
+        // The factory applies its own default number_format (the case under test)
+        // and the global-scope sentinel as user_id, so the service finds this row.
         InvoiceSeriesControl::factory()->create([
             'prefix'      => 'FAC',
             'serie'       => InvoiceSerieType::INVOICE->value,
             'fiscal_year' => now()->year,
-            'user_id'     => null,
         ]);
 
         $number = (string) $this->service->generateNumber('FAC', InvoiceSerieType::INVOICE->value);

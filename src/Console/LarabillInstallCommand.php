@@ -60,6 +60,8 @@ class LarabillInstallCommand extends Command
         // === GROUPED PAYMENTS (AID-30) ===
         '033' => 'create_grouped_payments_table',
         '034' => 'create_grouped_payment_invoice_table',
+        // === NUMBERING HARDENING (AID-390) ===
+        '035' => 'backfill_invoice_series_control_global_scope',
     ];
 
     public function handle(): int

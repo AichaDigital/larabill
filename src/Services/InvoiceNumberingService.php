@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services;
 
+use AichaDigital\Larabill\Models\InvoiceSeriesControl;
 use AichaDigital\Larabill\Support\RegionalContext;
 use AichaDigital\Larabill\ValueObjects\InvoiceNumber;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -20,6 +23,14 @@ use Illuminate\Support\Facades\DB;
  * - Per-serie and per-fiscal-year sequences
  * - Customizable number formats (Mustache templates)
  * - Fiscal year calculations based on regional config
+ *
+ * AID-390 hardening:
+ * - First use of a series is race-safe: creation recovers from the unique
+ *   constraint when a concurrent transaction wins, and the transaction is
+ *   retried on deadlock (gap-lock contention on the empty range).
+ * - The issuer scope is exact: a NULL scope is normalized to
+ *   InvoiceSeriesControl::GLOBAL_SCOPE so the unique index always applies
+ *   (NULL never collides in MySQL/SQLite unique indexes).
  */
 class InvoiceNumberingService
 {
@@ -27,62 +38,43 @@ class InvoiceNumberingService
      * Generate next fiscal invoice number
      *
      * Uses database transaction with pessimistic lock to ensure atomicity.
-     * Creates series control on first use.
+     * Creates series control on first use (idempotently under concurrency).
      *
      * @param  string  $prefix  User customizable prefix (FAC, PRO, RECT, etc.)
      * @param  int  $serie  InvoiceSerieType enum value (0=proforma, 1=invoice, 2=rectificative)
-     * @param  int|string|null  $userId  Optional user ID for multi-tenant
+     * @param  int|string|null  $userId  ISSUER scope for multi-issuer setups
+     *                                   (null = global issuer series). Never
+     *                                   the billed customer (see ADR-003:
+     *                                   customers are billable_user_id).
      * @return InvoiceNumber Invoice number value object (string-castable for backward compat)
      */
     public function generateNumber(string $prefix, int $serie, int|string|null $userId = null): InvoiceNumber
     {
-        return DB::transaction(function () use ($prefix, $serie, $userId) {
+        $scopeId = $this->normalizeScope($userId);
+
+        return DB::transaction(function () use ($prefix, $serie, $userId, $scopeId) {
             $fiscalYearData = $this->getCurrentFiscalYearData();
             $fiscalYear     = $fiscalYearData['year'];
 
-            // Lock for update to prevent race conditions
-            $control = DB::table('invoice_series_control')
-                ->where('prefix', $prefix)
-                ->where('serie', $serie)
-                ->where('fiscal_year', $fiscalYear)
-                ->where(function ($query) use ($userId) {
-                    $query->whereNull('user_id');
-                    if ($userId !== null) {
-                        $query->orWhere('user_id', $userId);
-                    }
-                })
-                ->lockForUpdate() // Acquire pessimistic lock
-                ->first();
-
-            // Create control if doesn't exist
-            if (! $control) {
-                $control = $this->createSeriesControl($prefix, $serie, $fiscalYear, $userId);
-            }
-
-            /** @var object{id: int, reset_annually: bool, fiscal_year: int, fiscal_year_start: string, fiscal_year_end: string, last_number: int, start_number: int, number_format: string} $control */
+            $control = $this->getOrCreateControlForUpdate($prefix, $serie, $fiscalYear, $scopeId);
 
             // Handle annual reset: when the stored fiscal year differs, the counter
-            // restarts from start_number. Computed locally — $control is a read-only
-            // query object; the reset is persisted by the update below ($fiscalYearData).
+            // restarts from start_number. Computed locally; the reset is persisted
+            // by the update below ($fiscalYearData).
             $lastNumber = $control->last_number;
             if ($control->reset_annually && $control->fiscal_year !== $fiscalYear) {
                 $lastNumber = $control->start_number - 1;
             }
 
-            // Increment
             $nextNumber = $lastNumber + 1;
 
-            // Update control
-            DB::table('invoice_series_control')
-                ->where('id', $control->id)
-                ->update([
-                    'last_number'       => $nextNumber,
-                    'fiscal_year'       => $fiscalYear,
-                    'fiscal_year_start' => $fiscalYearData['start']->toDateString(),
-                    'fiscal_year_end'   => $fiscalYearData['end']->toDateString(),
-                    'last_used_at'      => now(),
-                    'updated_at'        => now(),
-                ]);
+            $control->update([
+                'last_number'       => $nextNumber,
+                'fiscal_year'       => $fiscalYear,
+                'fiscal_year_start' => $fiscalYearData['start']->toDateString(),
+                'fiscal_year_end'   => $fiscalYearData['end']->toDateString(),
+                'last_used_at'      => now(),
+            ]);
 
             // Format number
             $formatted = $this->formatNumber(
@@ -99,7 +91,73 @@ class InvoiceNumberingService
                 fiscalYear: $fiscalYear,
                 seriesNumber: $nextNumber,
             );
-        });
+        }, 3);
+    }
+
+    /**
+     * Normalize the issuer scope: NULL means the global issuer series and is
+     * stored as the GLOBAL_SCOPE sentinel so the unique index always bites.
+     */
+    protected function normalizeScope(int|string|null $userId): string
+    {
+        return $userId === null
+            ? InvoiceSeriesControl::GLOBAL_SCOPE
+            : (string) $userId;
+    }
+
+    /**
+     * Read the series control under a pessimistic lock, creating it on first
+     * use. Safe under concurrency: if a concurrent transaction wins the
+     * creation race, the unique violation is caught and the winner's row is
+     * re-read (the duplicate-key check blocks until the winner commits, so
+     * the re-read sees it). Gap-lock deadlocks on the empty range abort the
+     * whole transaction, which DB::transaction() retries.
+     */
+    protected function getOrCreateControlForUpdate(
+        string $prefix,
+        int $serie,
+        int $fiscalYear,
+        string $scopeId
+    ): InvoiceSeriesControl {
+        $control = $this->lockedControlQuery($prefix, $serie, $fiscalYear, $scopeId)->first();
+
+        if ($control !== null) {
+            return $control;
+        }
+
+        try {
+            return $this->createSeriesControl($prefix, $serie, $fiscalYear, $scopeId);
+        } catch (UniqueConstraintViolationException) {
+            // Lost the creation race to a concurrent transaction.
+        }
+
+        $control = $this->lockedControlQuery($prefix, $serie, $fiscalYear, $scopeId)->first();
+
+        if ($control === null) {
+            throw new \RuntimeException('Failed to create or read back the invoice series control.');
+        }
+
+        return $control;
+    }
+
+    /**
+     * Locked lookup for one exact series scope. The scope match is exact on
+     * purpose: global and user-scoped series are independent sequences.
+     *
+     * @return Builder<InvoiceSeriesControl>
+     */
+    protected function lockedControlQuery(
+        string $prefix,
+        int $serie,
+        int $fiscalYear,
+        string $scopeId
+    ): Builder {
+        return InvoiceSeriesControl::query()
+            ->where('prefix', $prefix)
+            ->where('serie', $serie)
+            ->where('fiscal_year', $fiscalYear)
+            ->where('user_id', $scopeId)
+            ->lockForUpdate();
     }
 
     /**
@@ -116,7 +174,7 @@ class InvoiceNumberingService
      * @param  string  $prefix  Prefix
      * @param  int  $fiscalYear  Fiscal year
      * @param  int  $number  Correlative number
-     * @param  int|string|null  $userId  Optional user ID
+     * @param  int|string|null  $userId  Optional issuer scope (as provided by the caller)
      * @return string Formatted number
      */
     protected function formatNumber(
@@ -147,18 +205,17 @@ class InvoiceNumberingService
      * @param  string  $prefix  Prefix
      * @param  int  $serie  Serie type
      * @param  int  $fiscalYear  Fiscal year
-     * @param  int|string|null  $userId  Optional user ID
-     * @return object Series control record
+     * @param  string  $scopeId  Normalized issuer scope (user UUID or GLOBAL_SCOPE)
      */
     protected function createSeriesControl(
         string $prefix,
         int $serie,
         int $fiscalYear,
-        int|string|null $userId = null
-    ): object {
+        string $scopeId
+    ): InvoiceSeriesControl {
         $fiscalYearData = $this->getCurrentFiscalYearData();
 
-        $id = DB::table('invoice_series_control')->insertGetId([
+        return InvoiceSeriesControl::create([
             'prefix'            => $prefix,
             'serie'             => $serie,
             'fiscal_year'       => $fiscalYear,
@@ -171,18 +228,8 @@ class InvoiceNumberingService
             'is_active'         => true,
             'description'       => "Auto-created series control for {$prefix} serie {$serie}",
             'validation_rules'  => null,
-            'user_id'           => $userId,
-            'created_at'        => now(),
-            'updated_at'        => now(),
+            'user_id'           => $scopeId,
         ]);
-
-        $control = DB::table('invoice_series_control')->find($id);
-
-        if (! is_object($control)) {
-            throw new \RuntimeException('Failed to read back the just-created invoice series control.');
-        }
-
-        return $control;
     }
 
     /**
