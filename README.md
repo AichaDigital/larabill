@@ -11,7 +11,7 @@
 [![License](https://img.shields.io/packagist/l/aichadigital/larabill.svg?style=flat-square)](https://packagist.org/packages/aichadigital/larabill)
 <!-- AI-BADGES:END -->
 
-> ℹ️ **Schema upgrade policy** — Larabill does not promise in-place schema upgrades between versions. Install fresh and seed with `larabill:install` (or `migrate:fresh`) rather than migrating an existing schema across major versions. See [ADR-006](docs/ADR-006-uuid-first-no-agnostic.md).
+> ℹ️ **Schema upgrade policy (stable versions = respect for data)** — since 1.0, larabill treats your database as a contract: schema changes ship WITH their upgrade path. Every release that touches tables includes a data-aware migration (existing rows are transformed, never discarded), and breaking majors ship an `UPGRADE-X.md` guide in the dist. To upgrade an existing install: `composer update aichadigital/larabill`, re-run `php artisan larabill:install --no-migrate` (idempotent — it publishes only the NEW migrations, skipping the ones you already have), then `php artisan migrate`. Never use `migrate:fresh` on a database with real data.
 
 > ⚠️ **Upgrading from 3.x?** 4.0 removes larabill's own VAT/ROI verification layer — that domain is now owned by [`lararoi`](https://github.com/aichadigital/lararoi) and consumed via a thin bridge. Most consumers (who bill through `is_roi_taxed`) are unaffected. See the [4.0 upgrade guide](UPGRADE-4.0.md).
 

@@ -4,6 +4,9 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- README schema-upgrade policy note rewritten (AID-398, «stable versions = respect for data»): in-place upgrades are supported and documented — `composer update` + idempotent `larabill:install` re-run (publishes only the NEW migrations, never overwrites the consumer's config) + `migrate`. The previous note recommending fresh installs / `migrate:fresh` across versions is retired; every schema-touching release ships a data-aware migration (see the AID-390 backfill as the canonical example).
+
 ## [4.1.0] - 2026-07-10
 
 ### Fixed
