@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
+use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\InvoiceSeriesControl;
 use AichaDigital\Larabill\Services\InvoiceNumberingService;
+use AichaDigital\Larabill\Tests\TestCase;
 use AichaDigital\Larabill\ValueObjects\InvoiceNumber;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -192,6 +194,23 @@ describe('InvoiceNumberingService', function () {
         // Reset config
         config(['larabill.fiscal_year.start_month' => 1]);
         config(['larabill.fiscal_year.start_day' => 1]);
+    });
+
+    it('seeds a new control from the highest already-issued series_number', function () {
+        // Invoices issued by the legacy numbering paths (rand()/cache/MAX+1,
+        // AID-390) predate any control row: the counter must CONTINUE from
+        // them, never reuse an already-issued number.
+        Invoice::factory()->create([
+            'serie'         => InvoiceSerieType::INVOICE->value,
+            'series_number' => 41,
+            'fiscal_year'   => now()->year,
+            'user_id'       => TestCase::USER_UUID_1,
+        ]);
+
+        $number = $this->service->generateNumber('FAC', InvoiceSerieType::INVOICE->value);
+
+        expect($number->seriesNumber)->toBe(42)
+            ->and((string) $number)->toContain('000042');
     });
 
     it('persists the global-scope sentinel instead of NULL on first use', function () {

@@ -18,18 +18,27 @@ use Illuminate\Support\Facades\DB;
  * Billing Service
  *
  * Handles invoice creation and management with optional immutability.
+ *
+ * @deprecated AID-390 — superseded by InvoiceService (fiscal snapshots,
+ *             ADR-003 billable_user_id) and InvoiceNumberingService. It now
+ *             delegates its numbering to the shared series control, but the
+ *             whole class is removal-targeted for the AID-307 breaking major.
  */
 class BillingService
 {
     private TaxCalculationService $taxCalculationService;
 
+    private InvoiceNumberingService $invoiceNumbering;
+
     /**
      * Constructor.
      */
     public function __construct(
-        ?TaxCalculationService $taxCalculationService = null
+        ?TaxCalculationService $taxCalculationService = null,
+        ?InvoiceNumberingService $invoiceNumbering = null
     ) {
         $this->taxCalculationService = $taxCalculationService ?? app(TaxCalculationService::class);
+        $this->invoiceNumbering      = $invoiceNumbering      ?? app(InvoiceNumberingService::class);
     }
 
     /**
@@ -50,17 +59,24 @@ class BillingService
             $makeImmutable = $options['make_immutable'] ?? false;
 
             // Create invoice record first, without totals
-            // TODO v0.3.3: Refactor to use InvoiceNumberingService + new fiscal fields
             $invoiceType = $invoiceData['type'] ?? 'invoice';
             $serie       = $invoiceType === 'proforma' ? InvoiceSerieType::PROFORMA->value : InvoiceSerieType::INVOICE->value;
             $status      = isset($invoiceData['status']) ? $this->mapStatusToEnum($invoiceData['status']) : InvoiceStatus::DRAFT->value;
 
+            // Atomic correlative numbering from the single owner (AID-390):
+            // fiscal_number, prefix, series_number and fiscal_year all derive
+            // from the SAME InvoiceNumber, on the global issuer scope.
+            $number = $this->invoiceNumbering->generateNumber(
+                $invoiceType === 'proforma' ? 'PRO' : 'FAC',
+                $serie
+            );
+
             $invoice = Invoice::create([
-                'fiscal_number'    => $this->generateInvoiceNumber($invoiceType, $options),
-                'prefix'           => $invoiceType === 'proforma' ? 'PRO' : 'FAC',
+                'fiscal_number'    => $number->formatted,
+                'prefix'           => $number->prefix,
                 'serie'            => $serie,
-                'series_number'    => $this->getTempSeriesNumber($serie, now()->year),
-                'fiscal_year'      => now()->year,
+                'series_number'    => $number->seriesNumber,
+                'fiscal_year'      => $number->fiscalYear,
                 'invoice_date'     => now()->toDateString(),
                 'issued_at'        => now(),
                 'status'           => $status,
@@ -161,74 +177,6 @@ class BillingService
     }
 
     /**
-     * Generate a sequential invoice number with optional annual reset and configurable format.
-     *
-     * @deprecated 2026-02-15 Removal target: v0.7.0. Use InvoiceNumberingService::generateNumber() instead.
-     * @see InvoiceNumberingService::generateNumber()
-     *
-     * @param  string  $type  Invoice type (invoice, proforma)
-     * @param  array<string, mixed>  $options  Generation options
-     * @return string Generated invoice number
-     */
-    private function generateInvoiceNumber(string $type = 'invoice', array $options = []): string
-    {
-        $prefix      = $type === 'proforma' ? 'PRO' : 'FAC';
-        $format      = $options['number_format'] ?? 'simple'; // 'simple' or 'detailed'
-        $annualReset = $options['annual_reset']  ?? false;
-
-        // Get current year for annual reset
-        $currentYear = date('Y');
-
-        if ($format === 'detailed') {
-            // Format: YYYYMMDDHHMMNN (year, month, day, hour, minute, sequential number)
-            $timestamp = date('YmdHi');
-            $sequence  = $this->getSequenceNumber($type, $annualReset, $currentYear);
-            $number    = sprintf('%s-%s%02d', $prefix, $timestamp, $sequence);
-        } else {
-            // Simple format: PREFIX-XXXX
-            $sequence = $this->getSequenceNumber($type, $annualReset, $currentYear);
-            $number   = sprintf('%s-%04d', $prefix, $sequence);
-        }
-
-        return $number;
-    }
-
-    /**
-     * Get sequence number with optional annual reset.
-     *
-     * @deprecated 2026-02-15 Removal target: v0.7.0. Use InvoiceNumberingService::generateNumber() instead.
-     * @see InvoiceNumberingService::generateNumber()
-     */
-    private function getSequenceNumber(string $type, bool $annualReset, string $currentYear): int
-    {
-        $cacheKey = "invoice_counter_{$type}_".($annualReset ? $currentYear : 'global');
-
-        // Get current counter from cache or start from 1
-        $counter = cache()->get($cacheKey, 1);
-
-        // Increment and store
-        $newCounter = $counter + 1;
-        cache()->put($cacheKey, $newCounter, now()->addYear());
-
-        return $newCounter;
-    }
-
-    /**
-     * Calculate subtotal from items.
-     *
-     * @param  array<int, array<string, mixed>>  $items
-     */
-    private function calculateSubtotal(array $items): float
-    {
-        $subtotal = 0;
-        foreach ($items as $item) {
-            $subtotal += ($item['quantity'] ?? 1) * ($item['unit_price'] ?? 0);
-        }
-
-        return $subtotal;
-    }
-
-    /**
      * Create an invoice item.
      * TODO v0.3.3: Update to use item_type, unit_measure_id, tax_category_id, service dates
      *
@@ -316,27 +264,5 @@ class BillingService
             'cancelled' => InvoiceStatus::CANCELLED->value,
             default     => InvoiceStatus::DRAFT->value,
         };
-    }
-
-    /**
-     * Get temporary unique series number (until InvoiceNumberingService is integrated).
-     *
-     * @deprecated 2026-02-15 Removal target: v0.7.0. Use InvoiceNumberingService::generateNumber() instead.
-     * @see InvoiceNumberingService::generateNumber()
-     *
-     * @param  int  $serie  Serie type
-     * @param  int  $fiscalYear  Fiscal year
-     * @return int Temporary series number
-     */
-    private function getTempSeriesNumber(int $serie, int $fiscalYear): int
-    {
-        // Get max series_number for this serie + fiscal_year combination
-        // Uses lockForUpdate() within the outer transaction for atomicity
-        $maxNumber = Invoice::where('serie', $serie)
-            ->where('fiscal_year', $fiscalYear)
-            ->lockForUpdate()
-            ->max('series_number');
-
-        return ($maxNumber ?? 0) + 1;
     }
 }
