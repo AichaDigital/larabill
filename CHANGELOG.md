@@ -4,6 +4,9 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+### Tests
+- **`LarabillInstallCommandTest` no longer publishes stubs into the shared testbench skeleton `database_path` (AID-419).** The install test now redirects `database_path()` to a per-test temp dir (`app()->useDatabasePath()`), the same isolation the MySQL install path already uses (`InstallCommandMysqlTestCase`, AID-287). Fixes a pre-existing `pest --parallel` race: `larabill:install` published its stubs into the physically shared `vendor/orchestra/testbench-core/laravel/database/migrations/` dir and deleted them in teardown, so a concurrent worker running `RefreshDatabase` could `require()` a migration file mid-write/mid-delete and throw `FileNotFoundException` on a rotating victim test (~1 in 2-3 local `composer test-parallel` runs; CI unaffected — it runs `pest --ci` sequentially). No package surface, schema or runtime change.
+
 ## [5.0.0] - 2026-07-11
 
 ### Changed
