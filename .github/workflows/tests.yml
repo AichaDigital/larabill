@@ -166,3 +166,17 @@ jobs:
           LARABILL_TEST_MYSQL_USERNAME: root
           LARABILL_TEST_MYSQL_PASSWORD: root
         run: vendor/bin/pest tests/Integration/Mysql/ tests/Integration/InstallMysql/ tests/Integration/UpgradePath/ --ci
+
+      # AID-436: the fork-based concurrency proof of the numbering invariant
+      # (AID-390) must run on every push, not only on demand — a regression in
+      # the series locking would otherwise sail through a green CI. Same MySQL
+      # service; pcntl is already in the PHP extensions above.
+      - name: Execute concurrency proof (fork-based numbering, Pest)
+        env:
+          LARABILL_TEST_MYSQL_HOST: 127.0.0.1
+          LARABILL_TEST_MYSQL_PORT: "3306"
+          LARABILL_TEST_MYSQL_DATABASE: larabill_test
+          LARABILL_TEST_MYSQL_USERNAME: root
+          LARABILL_TEST_MYSQL_PASSWORD: root
+          RUN_CONCURRENCY_IT: "1"
+        run: vendor/bin/pest tests/Concurrency/ --ci
