@@ -67,6 +67,8 @@ class LarabillInstallCommand extends Command
         '035' => 'backfill_invoice_series_control_global_scope',
         // === FISCAL SERIES SEPARATION (AID-307) ===
         '036' => 'replace_invoices_series_unique_index',
+        // === SERIES WIDTH TO THE AEAT LIMIT (AID-429) ===
+        '037' => 'widen_invoices_prefix_to_aeat_limit',
     ];
 
     public function handle(): int

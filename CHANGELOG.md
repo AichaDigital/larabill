@@ -4,6 +4,14 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+## [6.1.0] - 2026-07-11
+
+**Ships migrations: yes** — upgrade with the standard ritual: `composer update aichadigital/larabill` + `php artisan larabill:install` (idempotent, publishes only the new migration) + `php artisan migrate`. The migration is data-safe by construction (columns only widen; no row is touched, no value can be truncated).
+
+### Changed
+- **The fiscal series width now matches the norm instead of an artificial cap (AID-429).** `invoices.prefix` and `invoice_series_control.prefix` widen from `varchar(10)` to `varchar(50)`, and `InvoiceSeriesResolver` validates against the same 50-char contract. The ceiling is derived, not invented: the AEAT VERI*FACTU schema types `NumSerieFactura` as `TextoIDFacturaType` `maxLength=60`, and larabill composes that field as `prefix . series_number` (raw unpadded correlative, worst case 10 digits), so the series literal may legitimately use up to 60 − 10 = 50 characters. The old 10-char cap rejected legitimate per-installation series names (e.g. `RECT-CASTRIS`). MySQL width proof added to the fresh-install integration test.
+- **STABILITY.md rule 2 generalized:** the versioned upgrade ritual (idempotent `larabill:install` re-run + `migrate`, upgrade-path test, explicit CHANGELOG upgrade note) is now stated for EVERY release that ships migrations — major or minor — with the minor-eligibility criterion spelled out (additive or provably data-safe DDL only). This release is the first minor exercising that path under the stability contract.
+
 ## [6.0.0] - 2026-07-11
 
 ### Removed
