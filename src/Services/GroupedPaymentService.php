@@ -18,6 +18,9 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
+ */
 class GroupedPaymentService
 {
     /** @param list<string> $invoiceIds */

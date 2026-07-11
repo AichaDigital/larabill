@@ -8,6 +8,9 @@ use AichaDigital\Larabill\Enums\UnitMeasureCategory;
 use AichaDigital\Larabill\Models\UnitMeasure;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @internal Implementation detail — may change without a major version (AID-413).
+ */
 class UnitMeasureFactory extends Factory
 {
     protected $model = UnitMeasure::class;

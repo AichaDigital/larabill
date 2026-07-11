@@ -8,6 +8,8 @@ namespace AichaDigital\Larabill\Enums;
  * Setting Type Enum
  *
  * Represents the type of company template setting.
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 enum SettingType: int
 {

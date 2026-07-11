@@ -9,6 +9,8 @@ namespace AichaDigital\Larabill\Enums;
  *
  * Represents different types of taxes supported by the system.
  * This enum is agnostic to regional implementations.
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 enum TaxType: int
 {

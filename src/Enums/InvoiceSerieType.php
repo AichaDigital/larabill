@@ -14,6 +14,8 @@ namespace AichaDigital\Larabill\Enums;
  * @method bool requiresCorrelation() Check if requires correlative numbering
  * @method string defaultPrefix() Get default prefix for this type
  * @method static array<int, string> toArray() Get all cases as [value => label] array
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 enum InvoiceSerieType: int
 {

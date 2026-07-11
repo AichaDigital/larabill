@@ -13,6 +13,8 @@ use Illuminate\Database\Seeder;
  *
  * Seeds common tax rates from different regions.
  * These are examples - users should create their own tax rates.
+ *
+ * @internal Implementation detail — may change without a major version (AID-413).
  */
 class TaxRateSeeder extends Seeder
 {

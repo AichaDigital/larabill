@@ -8,6 +8,8 @@ namespace AichaDigital\Larabill\Enums;
  * Commission Type Enum
  *
  * Represents how the commission amount is calculated.
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 enum CommissionType: int
 {

@@ -7,6 +7,9 @@ namespace AichaDigital\Larabill\Listeners;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\LaraVerifactu\Events\InvoiceRegisteredEvent;
 
+/**
+ * @internal Implementation detail — may change without a major version (AID-413).
+ */
 class SyncLarabillInvoiceVerification
 {
     public function handle(InvoiceRegisteredEvent $event): void

@@ -20,6 +20,8 @@ use Illuminate\Support\Facades\Log;
  * Service Lifecycle Management
  *
  * Handles activation, suspension, cancellation, and expiration of services
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 final class ServiceLifecycleService
 {

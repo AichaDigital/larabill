@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  * Example: 21.50% is stored as 2150, 12.34% as 1234
  *
  * @extends Factory<VatCategory>
+ *
+ * @internal Implementation detail — may change without a major version (AID-413).
  */
 class VatCategoryFactory extends Factory
 {

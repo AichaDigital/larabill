@@ -7,6 +7,9 @@ namespace AichaDigital\Larabill\Services\TaxCalculation;
 use AichaDigital\Larabill\Contracts\Services\TaxCalculation\TaxCalculationStrategy;
 use AichaDigital\Larabill\Models\TaxGroup;
 
+/**
+ * @internal Implementation detail — may change without a major version (AID-413).
+ */
 class VatCalculationStrategy implements TaxCalculationStrategy
 {
     /**

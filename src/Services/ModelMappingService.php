@@ -16,6 +16,8 @@ use Illuminate\Database\Eloquent\Model;
  * ModelMappingService
  *
  * Handles dynamic model mapping and field mapping for agnostic package usage.
+ *
+ * @internal Implementation detail — may change without a major version (AID-413).
  */
 class ModelMappingService
 {

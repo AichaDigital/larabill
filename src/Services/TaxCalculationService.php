@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\App;
  * Tax Calculation Service
  *
  * Orquesta el cálculo de impuestos delegando a una estrategia específica.
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class TaxCalculationService
 {

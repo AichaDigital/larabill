@@ -22,6 +22,8 @@ use Illuminate\Support\Facades\DB;
  *
  * Modern service with encrypted snapshots and fiscal verification integration.
  * Uses CompanyFiscalConfig for issuer data and UserTaxProfile for customer data (ADR-003).
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class InvoiceService
 {

@@ -32,6 +32,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read Article $article
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class ArticlePrice extends Model
 {

@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Log;
  *
  * Provides cache functionality that is agnostic to the underlying driver.
  * Supports both file and Redis cache drivers with automatic fallback.
+ *
+ * @internal Implementation detail — may change without a major version (AID-413).
  */
 class CacheService
 {

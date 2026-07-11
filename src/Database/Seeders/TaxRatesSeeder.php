@@ -13,6 +13,8 @@ use Illuminate\Database\Seeder;
  *
  * Seeds comprehensive tax rates for Spain, EU countries, and special territories.
  * Uses the enhanced tax_rates structure with Laravel SoftDeletes.
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class TaxRatesSeeder extends Seeder
 {

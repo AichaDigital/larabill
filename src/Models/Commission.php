@@ -45,6 +45,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property array<string, mixed>|null $metadata
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class Commission extends Model
 {

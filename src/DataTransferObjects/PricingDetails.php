@@ -9,6 +9,8 @@ namespace AichaDigital\Larabill\DataTransferObjects;
  *
  * Represents detailed pricing information for an invoice item.
  * This includes base price, applied price, discounts, and pricing rules.
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 final readonly class PricingDetails
 {

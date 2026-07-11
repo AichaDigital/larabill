@@ -32,6 +32,8 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $last_updated
  * @property int|null $parent_category_id
  * @property int $sort_order
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class VatCategory extends Model
 {

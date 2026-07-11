@@ -9,6 +9,8 @@ namespace AichaDigital\Larabill\DataTransferObjects;
  *
  * Represents custom metadata for flexible extension.
  * Can be used to store any additional information specific to the application.
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 final readonly class CustomData
 {

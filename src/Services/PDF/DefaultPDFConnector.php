@@ -15,6 +15,8 @@ use AichaDigital\Larabill\Models\Invoice;
  * This connector provides basic QR generation without external dependencies.
  * It's suitable for internal use, testing, and as a fallback when external
  * connectors are not available.
+ *
+ * @internal Implementation detail — may change without a major version (AID-413).
  */
 class DefaultPDFConnector implements PDFConnectorInterface
 {

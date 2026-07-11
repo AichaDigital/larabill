@@ -9,6 +9,8 @@ namespace AichaDigital\Larabill\DataTransferObjects;
  *
  * Represents the source reference information for an invoice item.
  * This DTO stores the origin of the invoice item (article, service, etc.).
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 final readonly class SourceReference
 {

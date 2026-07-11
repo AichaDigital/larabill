@@ -22,6 +22,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property bool $is_default
  * @property bool $is_active
  * @property array<string, mixed>|null $settings
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class InvoiceTemplate extends Model
 {

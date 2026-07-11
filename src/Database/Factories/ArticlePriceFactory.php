@@ -11,6 +11,9 @@ use AichaDigital\Larabill\Models\ArticlePrice;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @internal Implementation detail — may change without a major version (AID-413).
+ */
 class ArticlePriceFactory extends Factory
 {
     /**

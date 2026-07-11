@@ -18,6 +18,8 @@ use Illuminate\Support\Str;
  *
  * Migration:
  *   $table->uuid('id')->primary();
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 trait HasUuid
 {

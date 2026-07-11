@@ -12,6 +12,8 @@ use Exception;
  * but critical fiscal configuration has changed since proforma creation.
  *
  * @see ADR-001 Gestión de proformas con cambio fiscal
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class FiscalConfigChangedException extends Exception
 {

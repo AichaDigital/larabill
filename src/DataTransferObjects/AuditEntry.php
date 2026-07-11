@@ -11,6 +11,8 @@ use Carbon\Carbon;
  *
  * Represents a single audit trail entry.
  * Used to track changes and actions performed on invoice items.
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 final readonly class AuditEntry
 {

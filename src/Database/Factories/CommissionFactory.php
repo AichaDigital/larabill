@@ -14,6 +14,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
  * @extends Factory<Commission>
+ *
+ * @internal Implementation detail — may change without a major version (AID-413).
  */
 class CommissionFactory extends Factory
 {

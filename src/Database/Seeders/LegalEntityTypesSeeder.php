@@ -13,6 +13,8 @@ use Illuminate\Database\Seeder;
  * Creates the catalog of legal entity types used in Spain
  * with translations for Spanish and English.
  * Codes are in English for OpenSource compatibility.
+ *
+ * @internal Implementation detail — may change without a major version (AID-413).
  */
 class LegalEntityTypesSeeder extends Seeder
 {

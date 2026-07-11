@@ -16,6 +16,8 @@ use AichaDigital\Larabill\Models\UserTaxProfile;
  * when significant fiscal changes have occurred.
  *
  * @see ADR-001 Gestión de proformas con cambio fiscal
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class FiscalChangeDetector
 {

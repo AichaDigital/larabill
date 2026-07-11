@@ -6,6 +6,9 @@ namespace AichaDigital\Larabill\Contracts\Services\TaxCalculation;
 
 use AichaDigital\Larabill\Models\TaxGroup;
 
+/**
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
+ */
 interface TaxCalculationStrategy
 {
     /**

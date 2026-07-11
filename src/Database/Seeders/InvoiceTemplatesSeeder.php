@@ -9,6 +9,8 @@ use Illuminate\Database\Seeder;
 
 /**
  * Seeder for invoice templates
+ *
+ * @internal Implementation detail — may change without a major version (AID-413).
  */
 class InvoiceTemplatesSeeder extends Seeder
 {

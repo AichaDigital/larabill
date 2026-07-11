@@ -19,6 +19,9 @@ use Illuminate\Support\Facades\Event;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
 
+/**
+ * @internal Implementation detail — may change without a major version (AID-413).
+ */
 class LarabillServiceProvider extends PackageServiceProvider
 {
     /**

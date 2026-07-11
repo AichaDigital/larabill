@@ -32,6 +32,8 @@ use Illuminate\Support\Facades\DB;
  * - The issuer scope is exact: a NULL scope is normalized to
  *   InvoiceSeriesControl::GLOBAL_SCOPE so the unique index always applies
  *   (NULL never collides in MySQL/SQLite unique indexes).
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class InvoiceNumberingService
 {

@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Log;
  *
  * This service handles the selection of appropriate PDF connectors,
  * fallback mechanisms, and PDF generation with QR codes.
+ *
+ * @internal Implementation detail — may change without a major version (AID-413).
  */
 class PDFService
 {

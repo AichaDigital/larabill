@@ -15,6 +15,8 @@ namespace AichaDigital\Larabill\Enums;
  * // Get options for select inputs
  * $options = ItemType::toArray();
  * ```
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 enum ItemType: int
 {

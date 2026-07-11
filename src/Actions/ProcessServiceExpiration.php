@@ -13,6 +13,8 @@ use Lorisleiva\Actions\Concerns\AsAction;
  * Process expired services
  *
  * Runs as: Command, Job, or direct call
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 final class ProcessServiceExpiration
 {

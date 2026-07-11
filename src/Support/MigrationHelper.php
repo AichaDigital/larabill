@@ -16,6 +16,8 @@ use Illuminate\Database\Schema\Blueprint;
  * `larabill:install` command runs a preflight check and aborts otherwise.
  *
  * See: docs/ADR-006-uuid-first-no-agnostic.md, docs/setup-uuid.md
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class MigrationHelper
 {

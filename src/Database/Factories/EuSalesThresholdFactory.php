@@ -16,6 +16,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  * per country code, matching the model's storage contract (AID-240).
  *
  * @extends Factory<EuSalesThreshold>
+ *
+ * @internal Implementation detail — may change without a major version (AID-413).
  */
 class EuSalesThresholdFactory extends Factory
 {

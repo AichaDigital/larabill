@@ -19,6 +19,8 @@ use Illuminate\Support\Facades\View;
  *
  * This service handles PDF generation using DomPDF with different templates
  * for various invoice types (fiscal, proforma, etc.)
+ *
+ * @internal Implementation detail — may change without a major version (AID-413).
  */
 class DomPDFService
 {

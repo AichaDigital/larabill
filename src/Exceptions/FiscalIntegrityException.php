@@ -20,6 +20,8 @@ use Illuminate\Support\Collection;
  * - ATOMIC: UserTaxProfile has duplicates → blocks invoicing for THAT user
  *
  * @see ADR-001 for architectural decisions
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class FiscalIntegrityException extends Exception
 {

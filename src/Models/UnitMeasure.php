@@ -27,6 +27,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $sort_order
  * @property Carbon $created_at
  * @property Carbon $updated_at
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class UnitMeasure extends Model
 {

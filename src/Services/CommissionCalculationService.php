@@ -17,6 +17,8 @@ use Illuminate\Support\Collection;
  * - Priority: product > product_group > global
  * - Supports percentage and fixed-amount commissions
  * - Validates amount and quantity thresholds
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class CommissionCalculationService
 {

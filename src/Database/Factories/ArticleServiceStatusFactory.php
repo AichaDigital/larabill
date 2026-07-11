@@ -13,6 +13,9 @@ use AichaDigital\Larabill\Models\ArticleOverride;
 use AichaDigital\Larabill\Models\ArticleServiceStatus;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @internal Implementation detail — may change without a major version (AID-413).
+ */
 class ArticleServiceStatusFactory extends Factory
 {
     /**
