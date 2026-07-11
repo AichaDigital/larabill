@@ -13,6 +13,8 @@ use Illuminate\Database\Seeder;
  *
  * Seeds example tax groups showing how to combine multiple tax rates.
  * These are examples - users should create their own tax groups.
+ *
+ * @internal Implementation detail — may change without a major version (AID-413).
  */
 class TaxGroupSeeder extends Seeder
 {

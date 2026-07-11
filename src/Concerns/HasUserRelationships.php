@@ -50,6 +50,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @see ADR-005 for authorization moved to application
  *
  * @phpstan-require-extends Model
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 trait HasUserRelationships
 {

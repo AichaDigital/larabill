@@ -8,6 +8,8 @@ namespace AichaDigital\Larabill\Enums;
  * Relationship Type Enum
  *
  * Represents the type of relationship between a Customer and a User.
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 enum RelationshipType: int
 {

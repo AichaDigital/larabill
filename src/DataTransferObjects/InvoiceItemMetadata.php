@@ -10,6 +10,8 @@ namespace AichaDigital\Larabill\DataTransferObjects;
  * Main metadata structure for invoice items.
  * This DTO aggregates all other metadata DTOs and provides a unified
  * interface for accessing invoice item metadata.
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 final readonly class InvoiceItemMetadata
 {

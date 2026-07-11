@@ -15,6 +15,8 @@ use AichaDigital\Larabill\Models\ArticleServiceStatus;
  *
  * Handles pricing calculations for articles including customer overrides and discounts.
  * This service centralizes all pricing logic to ensure consistency across the application.
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class PricingService
 {

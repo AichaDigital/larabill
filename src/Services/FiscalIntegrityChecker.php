@@ -21,6 +21,8 @@ use Illuminate\Support\Facades\Notification;
  * - Multiple active UserTaxProfile for same user (CRITICAL ATOMIC)
  *
  * @see ADR-001 for architectural decisions
+ *
+ * @internal Implementation detail — may change without a major version (AID-413).
  */
 class FiscalIntegrityChecker
 {

@@ -14,6 +14,8 @@ namespace AichaDigital\Larabill\Contracts\Services;
  * - Spain: aichadigital/lara-verifactu
  * - France: aichadigital/lara-chorus-pro (example)
  * - Italy: aichadigital/lara-sdi (example)
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 interface FiscalVerificationContract
 {

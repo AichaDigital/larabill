@@ -8,6 +8,8 @@ namespace AichaDigital\Larabill\Enums;
  * Setting Scope Enum
  *
  * Represents the scope at which a setting applies.
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 enum SettingScope: int
 {

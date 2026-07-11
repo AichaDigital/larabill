@@ -19,6 +19,8 @@ use Illuminate\Support\Facades\Log;
  * for intra-EU transactions.
  *
  * @note Refactored in ADR-001 to use CompanyFiscalConfig instead of FiscalSettings
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class DestinationVatService
 {

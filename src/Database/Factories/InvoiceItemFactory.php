@@ -20,6 +20,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  * internally consistent FixedDecimal values (cents) with exact HalfUp arithmetic.
  *
  * @extends Factory<InvoiceItem>
+ *
+ * @internal Implementation detail — may change without a major version (AID-413).
  */
 class InvoiceItemFactory extends Factory
 {

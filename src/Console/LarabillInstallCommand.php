@@ -9,6 +9,9 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 
+/**
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
+ */
 class LarabillInstallCommand extends Command
 {
     protected $signature = 'larabill:install

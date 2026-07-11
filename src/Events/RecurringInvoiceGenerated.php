@@ -19,6 +19,8 @@ use Illuminate\Queue\SerializesModels;
  * - Trigger external integrations (accounting systems)
  * - Log invoice creation for monitoring
  * - Update external CRM systems
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 final class RecurringInvoiceGenerated
 {

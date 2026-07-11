@@ -8,6 +8,8 @@ namespace AichaDigital\Larabill;
  * Larabill Main Class
  *
  * Professional billing and invoicing module for Laravel.
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class Larabill
 {

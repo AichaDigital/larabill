@@ -11,6 +11,8 @@ use AichaDigital\Larabill\Models\Invoice;
  *
  * This interface provides a standard way to integrate with external tax agencies
  * or use local QR generation for invoices.
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 interface PDFConnectorInterface
 {

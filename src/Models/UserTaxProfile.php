@@ -53,6 +53,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  *
  * @see ADR-003 for initial architecture
  * @see ADR-004 for authorization changes (user_id -> owner_user_id, shared profiles)
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class UserTaxProfile extends Model implements LegallyRetainable
 {

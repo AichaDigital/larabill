@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Log;
  * - Sending customer notifications
  * - Logging invoice creation
  * - Triggering external integrations
+ *
+ * @internal Implementation detail — may change without a major version (AID-413).
  */
 final class SendInvoiceNotification
 {

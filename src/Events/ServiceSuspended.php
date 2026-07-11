@@ -10,6 +10,8 @@ use Illuminate\Queue\SerializesModels;
 
 /**
  * Dispatched when a service is suspended
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 final class ServiceSuspended
 {

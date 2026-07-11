@@ -31,6 +31,8 @@ use Illuminate\Support\Carbon;
  * @property string|null $reversed_by
  * @property string|null $reverse_reason
  * @property string|null $notes
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class GroupedPayment extends Model
 {

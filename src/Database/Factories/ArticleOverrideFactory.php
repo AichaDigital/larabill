@@ -10,6 +10,9 @@ use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticleOverride;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @internal Implementation detail — may change without a major version (AID-413).
+ */
 class ArticleOverrideFactory extends Factory
 {
     /**

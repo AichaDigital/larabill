@@ -10,6 +10,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
  * @extends Factory<InvoiceSeriesControl>
+ *
+ * @internal Implementation detail — may change without a major version (AID-413).
  */
 class InvoiceSeriesControlFactory extends Factory
 {

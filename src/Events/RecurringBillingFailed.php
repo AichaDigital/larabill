@@ -19,6 +19,8 @@ use Throwable;
  * - Create support tickets automatically
  * - Log errors for debugging
  * - Implement retry strategies
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 final class RecurringBillingFailed
 {

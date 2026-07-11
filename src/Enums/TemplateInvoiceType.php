@@ -9,6 +9,8 @@ namespace AichaDigital\Larabill\Enums;
  *
  * Represents the type of invoice for template/settings purposes.
  * Different from InvoiceSerieType which is fiscal quality.
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 enum TemplateInvoiceType: int
 {

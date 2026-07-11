@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Log;
  *
  * Service to integrate Larabill invoices with Lara-Verifactu (AEAT/TicketBAI).
  * Handles conversion from Larabill base100 format to Verifactu decimal format.
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class InvoiceVerifactuService
 {

@@ -8,6 +8,8 @@ namespace AichaDigital\Larabill\Enums;
  * Commission Applies To Enum
  *
  * Represents the base amount on which the commission is calculated.
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 enum CommissionAppliesTo: int
 {

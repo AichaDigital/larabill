@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Enums;
 
+/**
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
+ */
 enum CancellationType: int
 {
     case IMMEDIATE     = 0;

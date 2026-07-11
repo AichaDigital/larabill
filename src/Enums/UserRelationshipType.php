@@ -13,6 +13,8 @@ namespace AichaDigital\Larabill\Enums;
  * - DELEGATED: Client of a User (delegated billing)
  *
  * @see ADR-003 for architectural decisions
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 enum UserRelationshipType: int
 {

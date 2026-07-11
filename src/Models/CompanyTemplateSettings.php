@@ -25,6 +25,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|int|null $client_id
  * @property string $value
  * @property bool $is_active
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class CompanyTemplateSettings extends Model
 {

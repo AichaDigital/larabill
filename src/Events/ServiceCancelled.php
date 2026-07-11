@@ -11,6 +11,8 @@ use Illuminate\Queue\SerializesModels;
 
 /**
  * Dispatched when a service cancellation is requested
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 final class ServiceCancelled
 {

@@ -36,6 +36,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $user_id Issuer scope: a user UUID or GLOBAL_SCOPE
  * @property Carbon $created_at
  * @property Carbon $updated_at
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class InvoiceSeriesControl extends Model
 {

@@ -23,6 +23,8 @@ use Illuminate\Support\Facades\DB;
  *             ADR-003 billable_user_id) and InvoiceNumberingService. It now
  *             delegates its numbering to the shared series control, but the
  *             whole class is removal-targeted for the AID-307 breaking major.
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class BillingService
 {

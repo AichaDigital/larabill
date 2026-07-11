@@ -19,6 +19,8 @@ use Illuminate\Notifications\Notification;
  * Uses queue if available, falls back to sync if not configured.
  *
  * @see ADR-001 for architectural decisions
+ *
+ * @internal Implementation detail — may change without a major version (AID-413).
  */
 class FiscalIntegrityAlert extends Notification implements ShouldQueue
 {

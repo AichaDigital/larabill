@@ -19,6 +19,8 @@ use Illuminate\Validation\ValidationException;
  * per-tax-rate breakdowns (AEAT Desglose), not per-line-item rows.
  *
  * @see https://github.com/AichaDigital/lara-verifactu
+ *
+ * @internal Implementation detail — may change without a major version (AID-413).
  */
 class VerifactuAdapter
 {

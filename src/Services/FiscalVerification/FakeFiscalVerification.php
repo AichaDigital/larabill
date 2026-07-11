@@ -23,6 +23,8 @@ use AichaDigital\Larabill\Contracts\Services\FiscalVerificationContract;
  *
  * $this->app->instance(FiscalVerificationContract::class, $fake);
  * ```
+ *
+ * @internal Implementation detail — may change without a major version (AID-413).
  */
 class FakeFiscalVerification implements FiscalVerificationContract
 {

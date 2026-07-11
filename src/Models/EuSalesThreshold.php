@@ -31,6 +31,8 @@ use Illuminate\Support\Carbon;
  * @property array<string, int>|null $breakdown_by_country Raw integer cents per country
  * @property string $currency
  * @property Carbon|null $last_updated
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class EuSalesThreshold extends Model
 {

@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
  * @extends Factory<LegalEntityType>
+ *
+ * @internal Implementation detail — may change without a major version (AID-413).
  */
 class LegalEntityTypeFactory extends Factory
 {

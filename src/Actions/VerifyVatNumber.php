@@ -22,6 +22,8 @@ use Lorisleiva\Actions\Concerns\AsAction;
  * `is_roi_taxed` input flag on the invoice, not by a live VIES lookup.
  *
  * Runs as: direct call — `VerifyVatNumber::run($vatNumber, $countryCode)`.
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 final class VerifyVatNumber
 {

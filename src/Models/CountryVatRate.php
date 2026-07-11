@@ -29,6 +29,8 @@ use Illuminate\Support\Collection;
  * @property string $data_source
  * @property bool $is_active
  * @property string|null $notes
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class CountryVatRate extends Model
 {

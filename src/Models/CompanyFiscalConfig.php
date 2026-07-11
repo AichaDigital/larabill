@@ -37,6 +37,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
  * @property Carbon $created_at
  * @property Carbon $updated_at
  * @property Carbon|null $deleted_at
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class CompanyFiscalConfig extends Model
 {

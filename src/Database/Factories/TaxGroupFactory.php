@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
  * @extends Factory<TaxGroup>
+ *
+ * @internal Implementation detail — may change without a major version (AID-413).
  */
 class TaxGroupFactory extends Factory
 {

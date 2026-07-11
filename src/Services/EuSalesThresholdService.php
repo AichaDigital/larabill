@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Log;
  * for companies that need to register in OSS (One Stop Shop).
  *
  * @note Refactored in ADR-001 to use CompanyFiscalConfig instead of FiscalSettings
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class EuSalesThresholdService
 {

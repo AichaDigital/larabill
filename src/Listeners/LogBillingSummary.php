@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Log;
  * - Sending summary reports to administrators
  * - Monitoring billing process health
  * - Triggering post-processing workflows
+ *
+ * @internal Implementation detail — may change without a major version (AID-413).
  */
 final class LogBillingSummary
 {

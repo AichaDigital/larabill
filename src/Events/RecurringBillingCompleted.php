@@ -18,6 +18,8 @@ use Illuminate\Queue\SerializesModels;
  * - Monitor billing process health
  * - Trigger post-processing workflows
  * - Update billing dashboards
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 final class RecurringBillingCompleted
 {

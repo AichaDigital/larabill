@@ -45,6 +45,8 @@ use Spatie\Translatable\HasTranslations;
  * @property-read \Illuminate\Database\Eloquent\Collection|ArticleOverride[] $overrides
  * @property-read \Illuminate\Database\Eloquent\Collection|ArticleServiceStatus[] $serviceStatuses
  * @property-read \Illuminate\Database\Eloquent\Collection|InvoiceItem[] $invoiceItems
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class Article extends Model
 {

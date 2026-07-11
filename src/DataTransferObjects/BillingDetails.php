@@ -11,6 +11,8 @@ use Carbon\Carbon;
  *
  * Represents billing cycle and period information for recurring services.
  * This DTO stores temporal information about the billing period.
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 final readonly class BillingDetails
 {

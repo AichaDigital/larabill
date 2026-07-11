@@ -31,6 +31,8 @@ use Spatie\Translatable\HasTranslations;
  * @property array<string, mixed>|null $metadata
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class LegalEntityType extends Model
 {

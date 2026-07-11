@@ -11,6 +11,8 @@ use Carbon\Carbon;
  *
  * Represents all possible billing frequencies for articles and services.
  * Integer values are ordered by period length for logical sorting.
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 enum BillingFrequency: int
 {

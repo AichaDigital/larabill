@@ -27,6 +27,8 @@ use Lorisleiva\Actions\Concerns\AsAction;
  * Direct call:
  *   ProcessRecurringBilling::run();
  *   ProcessRecurringBilling::run(now(), true); // dry-run
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 final class ProcessRecurringBilling
 {

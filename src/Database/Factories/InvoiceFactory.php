@@ -18,6 +18,8 @@ use Illuminate\Database\Eloquent\Factories\Factory;
  * Example: €12.34 is stored as 1234, €1.00 as 100
  *
  * @extends Factory<Invoice>
+ *
+ * @internal Implementation detail — may change without a major version (AID-413).
  */
 class InvoiceFactory extends Factory
 {

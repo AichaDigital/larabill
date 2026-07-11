@@ -31,6 +31,8 @@ use Illuminate\Support\Facades\Log;
  * - Generating invoices with proper periods
  * - Respecting days_in_advance configuration
  * - Using addMonths/addYears for temporal calculations
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 final class RecurringBillingService
 {

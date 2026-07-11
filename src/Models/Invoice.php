@@ -84,6 +84,8 @@ use Illuminate\Support\Facades\Crypt;
  * @property string|null $template_name
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class Invoice extends Model implements LegallyRetainable
 {

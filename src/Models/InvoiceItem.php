@@ -52,6 +52,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property array<string, mixed>|null $metadata
  * @property Carbon $created_at
  * @property Carbon $updated_at
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class InvoiceItem extends Model
 {

@@ -43,6 +43,8 @@ use Illuminate\Support\Facades\Auth;
  * @property \Illuminate\Support\Carbon|null $updated_at
  * @property-read Article $article
  * @property-read ArticleOverride|null $currentOverride
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class ArticleServiceStatus extends Model
 {

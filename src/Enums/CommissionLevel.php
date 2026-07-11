@@ -9,6 +9,8 @@ namespace AichaDigital\Larabill\Enums;
  *
  * Represents the level/scope at which a commission is applied.
  * Priority: product > product_group > global
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 enum CommissionLevel: int
 {

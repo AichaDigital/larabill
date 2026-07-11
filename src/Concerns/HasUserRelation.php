@@ -17,6 +17,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *
  * Usage:
  *   use HasUserRelation;
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 trait HasUserRelation
 {

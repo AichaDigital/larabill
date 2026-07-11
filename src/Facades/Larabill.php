@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Facade;
 
 /**
  * @see \AichaDigital\Larabill\Larabill
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class Larabill extends Facade
 {

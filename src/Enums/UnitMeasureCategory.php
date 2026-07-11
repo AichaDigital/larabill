@@ -15,6 +15,8 @@ namespace AichaDigital\Larabill\Enums;
  * // Get options for select inputs
  * $options = UnitMeasureCategory::toArray();
  * ```
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 enum UnitMeasureCategory: int
 {

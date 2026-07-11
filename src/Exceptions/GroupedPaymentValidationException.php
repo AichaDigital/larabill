@@ -6,6 +6,9 @@ namespace AichaDigital\Larabill\Exceptions;
 
 use Exception;
 
+/**
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
+ */
 class GroupedPaymentValidationException extends Exception
 {
     public static function emptyInvoiceList(): self

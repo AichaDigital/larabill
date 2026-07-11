@@ -9,6 +9,8 @@ namespace AichaDigital\Larabill\ValueObjects;
  *
  * Immutable representation of a generated invoice number with its components.
  * Use __toString() for backward compatibility where a string was expected.
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 readonly class InvoiceNumber
 {

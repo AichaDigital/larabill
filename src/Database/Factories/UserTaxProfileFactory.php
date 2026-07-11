@@ -18,6 +18,8 @@ use Illuminate\Support\Str;
  * @extends Factory<UserTaxProfile>
  *
  * @see ADR-004 for authorization changes
+ *
+ * @internal Implementation detail — may change without a major version (AID-413).
  */
 class UserTaxProfileFactory extends Factory
 {

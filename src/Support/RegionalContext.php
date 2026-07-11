@@ -13,6 +13,8 @@ use Carbon\Carbon;
  * based on config/larabill.php configuration.
  *
  * v0.3.3: Added for global tax system support and fiscal compliance
+ *
+ * @internal Implementation detail — may change without a major version (AID-413).
  */
 class RegionalContext
 {

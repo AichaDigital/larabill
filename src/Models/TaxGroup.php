@@ -30,6 +30,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
  * @property string|null $description Optional description
  * @property Carbon $created_at
  * @property Carbon $updated_at
+ *
+ * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 class TaxGroup extends Model
 {

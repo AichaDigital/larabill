@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Log;
  * - Alerting administrators
  * - Creating support tickets
  * - Implementing retry strategies
+ *
+ * @internal Implementation detail — may change without a major version (AID-413).
  */
 final class AlertBillingFailure
 {

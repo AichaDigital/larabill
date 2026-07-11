@@ -13,6 +13,9 @@ use AichaDigital\Larabill\Models\TaxGroup;
 use AichaDigital\Larabill\Models\UnitMeasure;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
+/**
+ * @internal Implementation detail — may change without a major version (AID-413).
+ */
 class ArticleFactory extends Factory
 {
     /**

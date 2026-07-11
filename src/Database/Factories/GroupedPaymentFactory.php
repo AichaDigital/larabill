@@ -10,7 +10,11 @@ use AichaDigital\Larabill\Models\GroupedPayment;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
-/** @extends Factory<GroupedPayment> */
+/**
+ * @extends Factory<GroupedPayment>
+ *
+ * @internal Implementation detail — may change without a major version (AID-413).
+ */
 class GroupedPaymentFactory extends Factory
 {
     protected $model = GroupedPayment::class;
