@@ -62,9 +62,10 @@ class VerifactuAdapter
         $recipientCountry = $customerData['country_code'] ?? 'ES';
 
         return [
-            // InvoiceSerieType is int-backed; cast to string for the verifactu
-            // ?string serie contract (raw int breaks getSerie() during XML build).
-            'serie'              => $invoice->serie === null ? null : (string) $invoice->serie->value,
+            // The AEAT NumSerieFactura series component is the real fiscal
+            // series (invoices.prefix), NOT the fiscal type (AID-307). The type
+            // travels separately as TipoFactura (F1/F2/R1) via mapInvoiceType().
+            'serie'              => $invoice->prefix,
             'number'             => (string) $invoice->series_number,
             'issue_datetime'     => $invoice->issued_at ?? $invoice->invoice_date,
             'type'               => self::mapInvoiceType($invoice, $isSimplified),
@@ -146,7 +147,10 @@ class VerifactuAdapter
         $issueDate = $rectified->issued_at ?? $rectified->invoice_date;
 
         return [[
-            'number'     => ($rectified->serie->value ?? '').$rectified->series_number,
+            // NumSerieFactura the rectified invoice was registered with:
+            // real series (prefix) + correlative number (AID-307), matching how
+            // lara-verifactu concatenates getSerie().getNumber().
+            'number'     => $rectified->prefix.$rectified->series_number,
             'issue_date' => $issueDate->format('Y-m-d'),
         ]];
     }

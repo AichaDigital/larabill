@@ -38,11 +38,15 @@ final class RecurringBillingService
 {
     protected InvoiceNumberingService $invoiceNumbering;
 
+    protected InvoiceSeriesResolver $seriesResolver;
+
     public function __construct(
         protected PricingService $pricingService,
-        ?InvoiceNumberingService $invoiceNumbering = null
+        ?InvoiceNumberingService $invoiceNumbering = null,
+        ?InvoiceSeriesResolver $seriesResolver = null
     ) {
         $this->invoiceNumbering = $invoiceNumbering ?? app(InvoiceNumberingService::class);
+        $this->seriesResolver   = $seriesResolver   ?? app(InvoiceSeriesResolver::class);
     }
 
     /**
@@ -321,7 +325,7 @@ final class RecurringBillingService
     protected function generateInvoiceNumber(): array
     {
         $number = $this->invoiceNumbering->generateNumber(
-            'FAC',
+            $this->seriesResolver->resolve(InvoiceSerieType::INVOICE),
             InvoiceSerieType::INVOICE->value
         );
 
