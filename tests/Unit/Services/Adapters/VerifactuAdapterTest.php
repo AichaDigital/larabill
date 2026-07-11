@@ -131,7 +131,9 @@ describe('VerifactuAdapter::toVerifactuInvoice', function () {
 
         $data = VerifactuAdapter::toVerifactuInvoice($rectificative);
 
-        $expectedNumber = $original->serie->value.$original->series_number;
+        // NumSerieFactura = real series (prefix) + correlative number (AID-307),
+        // matching how lara-verifactu concatenates getSerie().getNumber().
+        $expectedNumber = $original->prefix.$original->series_number;
 
         expect($data['metadata']['rectified_invoices'])->toHaveCount(1)
             ->and($data['metadata']['rectified_invoices'][0]['number'])->toBe((string) $expectedNumber)
@@ -165,15 +167,16 @@ describe('VerifactuAdapter::toVerifactuInvoice', function () {
         expect($data)->not->toHaveKey('operation_key');
     });
 
-    it('emits serie as a string so it satisfies the verifactu getSerie() ?string contract', function () {
-        // InvoiceSerieType is an int-backed enum; emitting ->value raw produced an
-        // int serie that broke VerifactuInvoice::getSerie() (typed ?string) during
-        // XML build. The adapter must cast it to a string.
-        $invoice = makeVerifactuSourceInvoice();
+    it('emits the real fiscal series (prefix) as serie, not the fiscal type (AID-307)', function () {
+        // The AEAT NumSerieFactura series component is the real fiscal series
+        // (invoices.prefix), a string. The fiscal type travels separately as
+        // TipoFactura. Before AID-307 the adapter wrongly sent the int-backed
+        // InvoiceSerieType value as the series.
+        $invoice = makeVerifactuSourceInvoice(['prefix' => 'ARB']);
 
         $data = VerifactuAdapter::toVerifactuInvoice($invoice);
 
-        expect($data['serie'])->toBeString();
+        expect($data['serie'])->toBeString()->toBe('ARB');
     });
 });
 

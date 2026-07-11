@@ -32,15 +32,19 @@ class BillingService
 
     private InvoiceNumberingService $invoiceNumbering;
 
+    private InvoiceSeriesResolver $seriesResolver;
+
     /**
      * Constructor.
      */
     public function __construct(
         ?TaxCalculationService $taxCalculationService = null,
-        ?InvoiceNumberingService $invoiceNumbering = null
+        ?InvoiceNumberingService $invoiceNumbering = null,
+        ?InvoiceSeriesResolver $seriesResolver = null
     ) {
         $this->taxCalculationService = $taxCalculationService ?? app(TaxCalculationService::class);
         $this->invoiceNumbering      = $invoiceNumbering      ?? app(InvoiceNumberingService::class);
+        $this->seriesResolver        = $seriesResolver        ?? app(InvoiceSeriesResolver::class);
     }
 
     /**
@@ -62,16 +66,18 @@ class BillingService
 
             // Create invoice record first, without totals
             $invoiceType = $invoiceData['type'] ?? 'invoice';
-            $serie       = $invoiceType === 'proforma' ? InvoiceSerieType::PROFORMA->value : InvoiceSerieType::INVOICE->value;
+            $serieType   = $invoiceType === 'proforma' ? InvoiceSerieType::PROFORMA : InvoiceSerieType::INVOICE;
+            $serie       = $serieType->value;
             $status      = isset($invoiceData['status']) ? $this->mapStatusToEnum($invoiceData['status']) : InvoiceStatus::DRAFT->value;
+
+            // Resolve the real fiscal series (AID-307): default for the type, or
+            // an explicit series the caller opted into for multi-series issuing.
+            $series = $this->seriesResolver->resolve($serieType, $invoiceData['series'] ?? null);
 
             // Atomic correlative numbering from the single owner (AID-390):
             // fiscal_number, prefix, series_number and fiscal_year all derive
             // from the SAME InvoiceNumber, on the global issuer scope.
-            $number = $this->invoiceNumbering->generateNumber(
-                $invoiceType === 'proforma' ? 'PRO' : 'FAC',
-                $serie
-            );
+            $number = $this->invoiceNumbering->generateNumber($series, $serie);
 
             $invoice = Invoice::create([
                 'fiscal_number'    => $number->formatted,

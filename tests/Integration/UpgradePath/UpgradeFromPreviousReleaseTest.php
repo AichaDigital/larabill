@@ -32,10 +32,12 @@ use Illuminate\Support\Str;
  *      data correctly, HEAD models read base-written rows, numbering stays
  *      continuous, and a brand-new invoice can be issued.
  *
- * The initial manifest (base 4.0.2) makes the AID-390 backfill the migration
- * under test: the seeded duplicate NULL-scope series controls MUST collapse
- * to the highest counter and the sentinel scope — a real data migration
- * exercised on day one, not a trivially-green harness.
+ * For v5.0.0 the manifest base is 4.1.0, so the migration under test is the
+ * AID-307 invoices unique-index swap (036): the seeded FAC data survives, and
+ * post-upgrade two real series of the same fiscal type and number coexist —
+ * which the old (serie, series_number, fiscal_year) key would have rejected.
+ * The AID-390 backfill is now part of the base (shipped in 4.1.0), so it runs
+ * before the seed and is no longer the migration under test.
  *
  * MySQL-gated like tests/Integration/Mysql (skips without LARABILL_TEST_MYSQL_*).
  */
@@ -139,15 +141,15 @@ it('upgrades a populated previous-release database to HEAD preserving consumer d
         }
     }
 
-    // The AID-390 scenario: duplicate NULL-scope controls for the SAME logical
-    // series (the pre-4.1.0 unique index never fired for NULL scopes).
-    foreach ([7, 3] as $lastNumber) {
-        DB::table('invoice_series_control')->insert([
-            'prefix'            => 'FAC', 'serie' => InvoiceSerieType::INVOICE->value, 'fiscal_year' => 2026,
-            'fiscal_year_start' => '2026-01-01', 'fiscal_year_end' => '2026-12-31',
-            'last_number'       => $lastNumber, 'user_id' => null, 'created_at' => $now, 'updated_at' => $now,
-        ]);
-    }
+    // A v4.1.0 database already carries the sentinel-scoped series control
+    // (the AID-390 backfill is in the base). Seed one FAC control at the
+    // highest issued number so numbering continuity is verifiable post-upgrade.
+    DB::table('invoice_series_control')->insert([
+        'prefix'            => 'FAC', 'serie' => InvoiceSerieType::INVOICE->value, 'fiscal_year' => 2026,
+        'fiscal_year_start' => '2026-01-01', 'fiscal_year_end' => '2026-12-31',
+        'last_number'       => 3, 'user_id' => InvoiceSeriesControl::GLOBAL_SCOPE,
+        'created_at'        => $now, 'updated_at' => $now,
+    ]);
 
     DB::table('eu_sales_thresholds')->insert([
         'user_id'              => LARABILL_UPGRADE_USER_ISSUER, 'fiscal_year' => 2026, 'total_amount' => 500000,
@@ -169,23 +171,35 @@ it('upgrades a populated previous-release database to HEAD preserving consumer d
     sort($expectedNewLedgerNames);
     expect($newlyRan)->toBe($expectedNewLedgerNames);
 
-    // Invariant 2 — zero data loss (only the EXPECTED series-control collapse).
+    // Invariant 2 — zero data loss: an index swap touches no rows.
     expect(DB::table('invoices')->count())->toBe(3)
         ->and(DB::table('invoice_items')->count())->toBe(4)
         ->and(DB::table('articles')->count())->toBe(2)
         ->and(DB::table('article_prices')->count())->toBe(3)
         ->and(DB::table('company_fiscal_configs')->count())->toBe(1)
         ->and(DB::table('user_tax_profiles')->count())->toBe(1)
+        ->and(DB::table('invoice_series_control')->count())->toBe(1)
         ->and(DB::table('eu_sales_thresholds')->count())->toBe(1);
 
-    // Invariant 3 — AID-390 backfill did its real work: duplicates collapsed
-    // to the HIGHEST counter (an issued number is never reused) and the NULL
-    // scope became the sentinel.
-    $controls = DB::table('invoice_series_control')->get();
-    expect($controls)->toHaveCount(1)
-        ->and((int) $controls[0]->last_number)->toBe(7)
-        ->and($controls[0]->user_id)->toBe(InvoiceSeriesControl::GLOBAL_SCOPE)
-        ->and(DB::table('invoice_series_control')->whereNull('user_id')->count())->toBe(0);
+    // Invariant 3 — the AID-307 index swap landed and changed behaviour: a
+    // second real series with the SAME fiscal type and number as a legacy FAC
+    // invoice now coexists (the old key would have rejected it), while an exact
+    // duplicate under the new key is still refused.
+    expect($this->getUniqueIndexColumns('invoices', 'invoices_prefix_serie_series_number_fiscal_year_unique'))
+        ->toBe(['prefix', 'serie', 'series_number', 'fiscal_year'])
+        ->and($this->getUniqueIndexColumns('invoices', 'invoices_serie_series_number_fiscal_year_unique'))
+        ->toBe([]);
+
+    DB::table('invoices')->insert([
+        'id'             => (string) Str::orderedUuid(),
+        'fiscal_number'  => 'EXPORT-2026-000001',
+        'prefix'         => 'EXPORT', 'serie' => InvoiceSerieType::INVOICE->value, 'series_number' => 1, 'fiscal_year' => 2026,
+        'invoice_date'   => '2026-03-01', 'issued_at' => $now,
+        'user_id'        => LARABILL_UPGRADE_USER_ISSUER,
+        'taxable_amount' => 10000, 'total_tax_amount' => 2100, 'total_amount' => 12100,
+        'created_at'     => $now, 'updated_at' => $now,
+    ]);
+    expect(DB::table('invoices')->count())->toBe(4);
 
     // Invariant 5 — HEAD models read base-written rows with materialized casts.
     $invoice = Invoice::query()->findOrFail($legacyInvoiceIds[1]);
@@ -214,12 +228,13 @@ it('upgrades a populated previous-release database to HEAD preserving consumer d
         ->and($article->prices()->count())->toBe(2)
         ->and($article->getDefaultPrice())->toBe(2500.0);
 
-    // Invariant 4 — numbering continuity: the collapsed control keeps counting.
-    $control = InvoiceSeriesControl::query()->firstOrFail();
-    expect($control->getNextNumber())->toBe(8);
+    // Invariant 4 — numbering continuity: the seeded FAC control keeps counting
+    // from its highest issued number (3 → next 4).
+    $control = InvoiceSeriesControl::query()->where('prefix', 'FAC')->firstOrFail();
+    expect($control->getNextNumber())->toBe(4);
 
     $number = app(InvoiceNumberingService::class)->generateNumber('FAC', InvoiceSerieType::INVOICE->value);
-    expect($number->seriesNumber)->toBe(8)
+    expect($number->seriesNumber)->toBe(4)
         ->and($number->prefix)->toBe('FAC')
         ->and($number->fiscalYear)->toBe(2026);
 
@@ -241,7 +256,8 @@ it('upgrades a populated previous-release database to HEAD preserving consumer d
     expect($newInvoice->exists)->toBeTrue()
         ->and($newInvoice->company_fiscal_config_id)->toBe($configId)
         ->and($newInvoice->user_tax_profile_id)->toBe($profileId)
-        ->and(DB::table('invoices')->count())->toBe(4);
+        // 3 legacy FAC + 1 EXPORT (invariant 3) + this new FAC = 5.
+        ->and(DB::table('invoices')->count())->toBe(5);
 
     // Invariant 9 — the upgrade is idempotent (AID-398 re-run contract).
     $this->artisan('migrate', ['--database' => 'testing'])->assertExitCode(0);

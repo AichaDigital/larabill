@@ -68,9 +68,10 @@ describe('larabill:install — production install path on MySQL (AID-287)', func
                 ->toBeTrue("Table `{$table}` missing after production install order");
         }
 
-        // Every $migrationOrder entry (24 create + 7 modifiers + 1 data
-        // backfill, AID-390) applied cleanly.
-        expect($this->appliedMigrationCount())->toBe(32);
+        // Every $migrationOrder entry (24 create + 8 modifiers + 1 data
+        // backfill, AID-390) applied cleanly. AID-307 adds the invoices
+        // series unique-index swap.
+        expect($this->appliedMigrationCount())->toBe(33);
 
         // The package defines inter-table FK constraints (e.g. invoice_items →
         // invoices, tax_group_tax_rate → tax_groups/tax_rates). They could only

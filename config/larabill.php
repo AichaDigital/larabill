@@ -61,6 +61,20 @@ return [
 
     // Invoice numbering configuration
     'invoice_numbering' => [
+        // Fiscal series (the AEAT NumSerieFactura series component) per fiscal
+        // type. Resolved by InvoiceSeriesResolver (AID-307). A consumer may
+        // also pass an explicit series per invoice to run multiple series for
+        // the same fiscal type (RD 1619/2012 art. 6). Keys match
+        // InvoiceSerieType::label().
+        'series' => [
+            'invoice'       => env('LARABILL_SERIES_INVOICE', 'FAC'),
+            'proforma'      => env('LARABILL_SERIES_PROFORMA', 'PRO'),
+            'rectificative' => env('LARABILL_SERIES_RECTIFICATIVE', 'RECT'),
+            'simplified'    => env('LARABILL_SERIES_SIMPLIFIED', 'TIK'),
+        ],
+
+        // Legacy prefix keys — kept as a resolver fallback so a v4 consumer
+        // that upgrades without re-publishing this config keeps working.
         'proforma_prefix'         => 'PRO',
         'invoice_prefix'          => 'FAC',
         'suffix_format'           => 'Y', // 'Y' for yearly reset, 'N' for continuous numeric

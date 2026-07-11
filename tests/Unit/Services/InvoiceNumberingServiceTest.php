@@ -57,6 +57,31 @@ describe('InvoiceNumberingService', function () {
         expect(InvoiceSeriesControl::count())->toBe(2); // FAC and PRO
     });
 
+    it('seeds continuity independently per real series (AID-307)', function () {
+        // A legacy FAC invoice at number 5 (same fiscal type INVOICE) must NOT
+        // bleed into a different series: the seed is scoped by prefix.
+        DB::table('invoices')->insert([
+            'id'             => (string) Str::orderedUuid(),
+            'fiscal_number'  => 'FAC-'.now()->year.'-000005',
+            'prefix'         => 'FAC',
+            'serie'          => InvoiceSerieType::INVOICE->value,
+            'series_number'  => 5,
+            'fiscal_year'    => now()->year,
+            'invoice_date'   => now()->toDateString(),
+            'user_id'        => TestCase::USER_UUID_1,
+            'created_at'     => now(),
+            'updated_at'     => now(),
+        ]);
+
+        // A brand-new series starts fresh (its own MAX is 0), not from FAC's 5.
+        $export = $this->service->generateNumber('EXPORT', InvoiceSerieType::INVOICE->value);
+        expect($export->seriesNumber)->toBe(1);
+
+        // FAC still continues from its own highest issued number.
+        $fac = $this->service->generateNumber('FAC', InvoiceSerieType::INVOICE->value);
+        expect($fac->seriesNumber)->toBe(6);
+    });
+
     it('maintains separate sequences per fiscal year', function () {
         // Mock current fiscal year
         $fiscalYear = now()->year;

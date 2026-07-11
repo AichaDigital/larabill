@@ -31,14 +31,18 @@ class InvoiceService
 
     protected InvoiceNumberingService $invoiceNumbering;
 
+    protected InvoiceSeriesResolver $seriesResolver;
+
     public function __construct(
         protected TaxCalculationService $taxCalculationService,
         protected ?FiscalVerificationContract $fiscalVerification = null,
         ?FiscalChangeDetector $fiscalChangeDetector = null,
-        ?InvoiceNumberingService $invoiceNumbering = null
+        ?InvoiceNumberingService $invoiceNumbering = null,
+        ?InvoiceSeriesResolver $seriesResolver = null
     ) {
         $this->fiscalChangeDetector = $fiscalChangeDetector ?? app(FiscalChangeDetector::class);
         $this->invoiceNumbering     = $invoiceNumbering     ?? app(InvoiceNumberingService::class);
+        $this->seriesResolver       = $seriesResolver       ?? app(InvoiceSeriesResolver::class);
     }
 
     /**
@@ -51,6 +55,7 @@ class InvoiceService
      *     user_id?: string,
      *     items: array<array{article_id?: int|null, tax_group_id?: int|null, quantity?: int, base_price?: int|float, unit_price?: int|float, description?: string}>,
      *     type?: string,
+     *     series?: string,
      *     status?: string,
      *     due_date?: string|null,
      *     payment_terms?: int|null,
@@ -82,19 +87,22 @@ class InvoiceService
 
             // Determine invoice type and serie
             $invoiceType = $invoiceData['type'] ?? 'invoice';
-            $serie       = $invoiceType === 'proforma' ? InvoiceSerieType::PROFORMA->value : InvoiceSerieType::INVOICE->value;
+            $serieType   = $invoiceType === 'proforma' ? InvoiceSerieType::PROFORMA : InvoiceSerieType::INVOICE;
+            $serie       = $serieType->value;
             $status      = isset($invoiceData['status']) ? $this->mapStatusToEnum($invoiceData['status']) : InvoiceStatus::DRAFT->value;
 
             // user_id = owner of invoice (issuer), defaults to billable_user's parent or self
             $userId = $invoiceData['user_id'] ?? $billableUser->parent_user_id ?? $billableUser->id;
 
+            // Resolve the real fiscal series (AID-307): the default for this
+            // fiscal type, or an explicit series the caller opted into to run
+            // multiple series for the same type (RD 1619/2012 art. 6).
+            $series = $this->seriesResolver->resolve($serieType, $invoiceData['series'] ?? null);
+
             // Atomic correlative numbering from the single owner (AID-390):
             // fiscal_number, prefix, series_number and fiscal_year all derive
             // from the SAME InvoiceNumber, on the global issuer scope.
-            $number = $this->invoiceNumbering->generateNumber(
-                $invoiceType === 'proforma' ? 'PRO' : 'FAC',
-                $serie
-            );
+            $number = $this->invoiceNumbering->generateNumber($series, $serie);
 
             $invoice = Invoice::create([
                 'fiscal_number'             => $number->formatted,

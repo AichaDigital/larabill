@@ -220,9 +220,12 @@ class InvoiceNumberingService
 
         // Continuity seed (AID-390): invoices issued by the legacy numbering
         // paths (rand()/cache/MAX+1) predate any control row. The counter
-        // must CONTINUE from the highest issued series_number for this serie
-        // and fiscal year — a gap is acceptable, a reused number never is.
+        // must CONTINUE from the highest issued series_number for this
+        // series/serie and fiscal year — a gap is acceptable, a reused number
+        // never is. Scoped by prefix (AID-307) so each real series counts
+        // independently, matching the invoices unique key.
         $issuedMax = (int) Invoice::query()
+            ->where('prefix', $prefix)
             ->where('serie', $serie)
             ->where('fiscal_year', $fiscalYear)
             ->max('series_number');
