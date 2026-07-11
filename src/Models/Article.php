@@ -327,6 +327,8 @@ class Article extends Model
 
     /**
      * Get the default price (ONE_TIME or first available).
+     *
+     * @api Amber-band contract operation (AID-407): consumers call it only behind an app-side port.
      */
     public function getDefaultPrice(): ?float
     {

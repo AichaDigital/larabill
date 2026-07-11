@@ -137,6 +137,8 @@ class CompanyFiscalConfig extends Model
 
     /**
      * Obtiene la config vigente en una fecha específica.
+     *
+     * @api Amber-band contract operation (AID-407): consumers call it only behind an app-side port.
      */
     public static function getValidAt(Carbon $date): ?self
     {
@@ -151,6 +153,8 @@ class CompanyFiscalConfig extends Model
 
     /**
      * Crea una nueva config cerrando la anterior.
+     *
+     * @api Amber-band contract operation (AID-407): consumers call it only behind an app-side port.
      *
      * @param  array<string, mixed>  $attributes
      */

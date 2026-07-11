@@ -316,6 +316,8 @@ class UserTaxProfile extends Model implements LegallyRetainable
     /**
      * Create new config for owner, closing previous one.
      *
+     * @api Amber-band contract operation (AID-407): consumers call it only behind an app-side port.
+     *
      * @param  array<string, mixed>  $attributes
      */
     public static function createForOwner(string|int $ownerId, array $attributes): self

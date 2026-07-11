@@ -1,0 +1,71 @@
+#!/usr/bin/env bash
+#
+# sync-contract-snapshots — the ONLY sanctioned path to regenerate the
+# contract golden-master snapshots (tests/Contract/snapshots/*.json).
+#
+# The ModelContractSnapshotTest fails CI whenever the public surface of the
+# contract models (columns, casts, relations, scopes, methods) drifts from
+# the committed snapshots (AID-412, boundary spec §4.2). A legitimate contract
+# change therefore goes through this script, which:
+#
+#   1. Regenerates the snapshots (LARABILL_REGENERATE_CONTRACT=1).
+#   2. If they changed, REQUIRES a non-empty `## [Unreleased]` CHANGELOG
+#      section — otherwise it reverts the regeneration and exits 1.
+#
+# SemVer guidance for the CHANGELOG entry:
+#   - Added columns/casts/relations/scopes/methods  → at least MINOR.
+#   - Removed surface or changed signatures/casts   → MAJOR (+ UPGRADE guide).
+#
+# Usage:  bin/sync-contract-snapshots
+# Exit:   0 in-sync or regenerated with CHANGELOG entry; 1 otherwise.
+
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+SNAPSHOTS_REL="tests/Contract/snapshots"
+CHANGELOG="${ROOT}/CHANGELOG.md"
+
+cd "${ROOT}"
+
+if [[ ! -x vendor/bin/pest ]]; then
+    echo "ERROR: vendor/bin/pest not found — run 'composer install' first." >&2
+    exit 1
+fi
+
+# --- 1. Regenerate ---------------------------------------------------------
+
+echo "Regenerating contract snapshots..."
+LARABILL_REGENERATE_CONTRACT=1 vendor/bin/pest tests/Unit/Contract >/dev/null
+
+if [[ -z "$(git status --porcelain -- "${SNAPSHOTS_REL}")" ]]; then
+    echo "Contract snapshots already in sync — nothing to do."
+    exit 0
+fi
+
+# --- 2. Contract changed: require a CHANGELOG [Unreleased] entry ------------
+
+unreleased_bullets="$(awk '/^## \[Unreleased\]/{found=1; next} /^## \[/{if (found) exit} found' "${CHANGELOG}" | grep -c '^- ' || true)"
+
+if [[ "${unreleased_bullets}" -eq 0 ]]; then
+    echo "" >&2
+    echo "ERROR: the contract surface changed but CHANGELOG.md has no entry under '## [Unreleased]'." >&2
+    echo "" >&2
+    echo "A contract change is a semver event for every consumer:" >&2
+    echo "  - Added columns/casts/relations/scopes/methods  -> at least MINOR." >&2
+    echo "  - Removed surface or changed signatures/casts   -> MAJOR (+ UPGRADE guide in the dist)." >&2
+    echo "" >&2
+    echo "Add the CHANGELOG entry first, then re-run bin/sync-contract-snapshots." >&2
+    echo "The regenerated snapshots have been reverted." >&2
+    git restore -- "${SNAPSHOTS_REL}" 2>/dev/null || true
+    git clean -fdq -- "${SNAPSHOTS_REL}" 2>/dev/null || true
+    exit 1
+fi
+
+echo ""
+echo "Contract snapshots regenerated:"
+git --no-pager diff --stat -- "${SNAPSHOTS_REL}"
+git status --porcelain -- "${SNAPSHOTS_REL}" | grep '^??' | sed 's/^?? /  new: /' || true
+echo ""
+echo "Review the diff (git diff ${SNAPSHOTS_REL}) and commit the snapshots"
+echo "TOGETHER with the code change and its CHANGELOG entry."
+exit 0

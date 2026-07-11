@@ -1,0 +1,523 @@
+{
+    "class": "AichaDigital\\Larabill\\Models\\Invoice",
+    "table": "invoices",
+    "primaryKey": {
+        "incrementing": false,
+        "name": "id",
+        "type": "string"
+    },
+    "interfaces": [
+        "AichaDigital\\LaraPrivacyCore\\Contracts\\LegallyRetainable"
+    ],
+    "traits": [
+        "AichaDigital\\Larabill\\Concerns\\HasUserRelation",
+        "AichaDigital\\Larabill\\Concerns\\HasUuid",
+        "Illuminate\\Database\\Eloquent\\Factories\\HasFactory"
+    ],
+    "constants": [],
+    "publicProperties": [],
+    "defaultAttributes": [],
+    "fillable": [
+        "billable_user_id",
+        "company_fiscal_config_id",
+        "converted_at",
+        "converted_invoice_id",
+        "customer_snapshot",
+        "due_date",
+        "fiscal_number",
+        "fiscal_snapshot",
+        "fiscal_verification_hash",
+        "fiscal_verification_id",
+        "fiscal_verification_metadata",
+        "fiscal_verification_qr",
+        "fiscal_verified_at",
+        "fiscal_year",
+        "immutable_at",
+        "invoice_date",
+        "is_immutable",
+        "is_roi_taxed",
+        "issued_at",
+        "issuer_snapshot",
+        "notes",
+        "paid_at",
+        "payment_terms",
+        "prefix",
+        "proforma_id",
+        "rectifies_invoice_id",
+        "serie",
+        "series_number",
+        "service_date",
+        "status",
+        "taxable_amount",
+        "template_name",
+        "total_amount",
+        "total_tax_amount",
+        "user_id",
+        "user_tax_profile_id"
+    ],
+    "hidden": [],
+    "visible": [],
+    "appends": [],
+    "with": [],
+    "casts": {
+        "due_date": "date",
+        "fiscal_verification_metadata": "array",
+        "fiscal_verified_at": "datetime",
+        "fiscal_year": "integer",
+        "immutable_at": "datetime",
+        "invoice_date": "date",
+        "is_immutable": "boolean",
+        "is_roi_taxed": "boolean",
+        "issued_at": "datetime",
+        "paid_at": "datetime",
+        "serie": "AichaDigital\\Larabill\\Enums\\InvoiceSerieType",
+        "service_date": "date",
+        "status": "AichaDigital\\Larabill\\Enums\\InvoiceStatus",
+        "taxable_amount": "AichaDigital\\Lara100\\Casts\\FixedDecimalCast:2",
+        "total_amount": "AichaDigital\\Lara100\\Casts\\FixedDecimalCast:2",
+        "total_tax_amount": "AichaDigital\\Lara100\\Casts\\FixedDecimalCast:2"
+    },
+    "relations": {
+        "billableUser": {
+            "foreignKey": "billable_user_id",
+            "ownerKey": "id",
+            "related": "<configured>",
+            "type": "BelongsTo",
+            "withTrashed": false
+        },
+        "companyFiscalConfig": {
+            "foreignKey": "company_fiscal_config_id",
+            "ownerKey": "id",
+            "related": "AichaDigital\\Larabill\\Models\\CompanyFiscalConfig",
+            "type": "BelongsTo",
+            "withTrashed": true
+        },
+        "convertedInvoices": {
+            "foreignKey": "proforma_id",
+            "localKey": "id",
+            "related": "AichaDigital\\Larabill\\Models\\Invoice",
+            "type": "HasMany",
+            "withTrashed": false
+        },
+        "groupedPayments": {
+            "foreignPivotKey": "invoice_id",
+            "pivotTable": "grouped_payment_invoice",
+            "related": "AichaDigital\\Larabill\\Models\\GroupedPayment",
+            "relatedPivotKey": "grouped_payment_id",
+            "type": "BelongsToMany",
+            "withTrashed": false
+        },
+        "items": {
+            "foreignKey": "invoice_id",
+            "localKey": "id",
+            "related": "AichaDigital\\Larabill\\Models\\InvoiceItem",
+            "type": "HasMany",
+            "withTrashed": false
+        },
+        "proforma": {
+            "foreignKey": "proforma_id",
+            "ownerKey": "id",
+            "related": "AichaDigital\\Larabill\\Models\\Invoice",
+            "type": "BelongsTo",
+            "withTrashed": false
+        },
+        "rectificatives": {
+            "foreignKey": "rectifies_invoice_id",
+            "localKey": "id",
+            "related": "AichaDigital\\Larabill\\Models\\Invoice",
+            "type": "HasMany",
+            "withTrashed": false
+        },
+        "rectifiesInvoice": {
+            "foreignKey": "rectifies_invoice_id",
+            "ownerKey": "id",
+            "related": "AichaDigital\\Larabill\\Models\\Invoice",
+            "type": "BelongsTo",
+            "withTrashed": false
+        },
+        "user": {
+            "foreignKey": "user_id",
+            "ownerKey": "id",
+            "related": "<configured>",
+            "type": "BelongsTo",
+            "withTrashed": false
+        },
+        "userTaxProfile": {
+            "foreignKey": "user_tax_profile_id",
+            "ownerKey": "id",
+            "related": "AichaDigital\\Larabill\\Models\\UserTaxProfile",
+            "type": "BelongsTo",
+            "withTrashed": true
+        }
+    },
+    "scopes": {
+        "scopeFinal": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        },
+        "scopeFiscalYear": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                },
+                {
+                    "name": "year",
+                    "type": "int",
+                    "variadic": false
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        },
+        "scopeProformas": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        },
+        "scopeRectificatives": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        },
+        "scopeSerie": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                },
+                {
+                    "name": "serie",
+                    "type": "AichaDigital\\Larabill\\Enums\\InvoiceSerieType",
+                    "variadic": false
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        },
+        "scopeStatus": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                },
+                {
+                    "name": "status",
+                    "type": "AichaDigital\\Larabill\\Enums\\InvoiceStatus",
+                    "variadic": false
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        }
+    },
+    "methods": {
+        "calculateTotals": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "self",
+            "static": false
+        },
+        "casts": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "array",
+            "static": false
+        },
+        "generatePDF": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "array",
+            "static": false
+        },
+        "getCompanyFiscalSnapshot": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "?AichaDigital\\Larabill\\Models\\CompanyFiscalConfig",
+            "static": false
+        },
+        "getCustomerSnapshotData": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "?array",
+            "static": false
+        },
+        "getFiscalSnapshotData": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "?array",
+            "static": false
+        },
+        "getIncrementing": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "bool",
+            "static": false
+        },
+        "getInvoiceType": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "string",
+            "static": false
+        },
+        "getIssuerSnapshotData": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "?array",
+            "static": false
+        },
+        "getKeyType": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "string",
+            "static": false
+        },
+        "getPDFPath": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "?string",
+            "static": false
+        },
+        "getPDFUrl": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "?string",
+            "static": false
+        },
+        "getRouteKey": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "mixed",
+            "static": false
+        },
+        "getUserTaxProfileSnapshot": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "?AichaDigital\\Larabill\\Models\\UserTaxProfile",
+            "static": false
+        },
+        "hasEncryptedSnapshots": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "bool",
+            "static": false
+        },
+        "hasFiscalSnapshots": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "includeEncrypted",
+                    "type": "bool",
+                    "variadic": false,
+                    "default": "false"
+                }
+            ],
+            "returnType": "bool",
+            "static": false
+        },
+        "isDraft": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "bool",
+            "static": false
+        },
+        "isFiscallyVerified": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "bool",
+            "static": false
+        },
+        "isReverseCharge": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "bool",
+            "static": false
+        },
+        "makeImmutable": {
+            "api": true,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "void",
+            "static": false
+        },
+        "markAsPaidViaGroupedPayment": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "paidAt",
+                    "type": "DateTimeInterface",
+                    "variadic": false
+                }
+            ],
+            "returnType": "void",
+            "static": false
+        },
+        "regenerateEncryptedSnapshots": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "void",
+            "static": false
+        },
+        "requiresVAT": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "bool",
+            "static": false
+        },
+        "resolveRouteBinding": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "value",
+                    "type": null,
+                    "variadic": false
+                },
+                {
+                    "name": "field",
+                    "type": null,
+                    "variadic": false,
+                    "default": "NULL"
+                }
+            ],
+            "returnType": null,
+            "static": false
+        },
+        "restoreStateViaGroupedPaymentReversal": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "status",
+                    "type": "AichaDigital\\Larabill\\Enums\\InvoiceStatus",
+                    "variadic": false
+                },
+                {
+                    "name": "paidAt",
+                    "type": "?DateTimeInterface",
+                    "variadic": false
+                }
+            ],
+            "returnType": "void",
+            "static": false
+        },
+        "retainedUntil": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "?DateTimeInterface",
+            "static": false
+        },
+        "shouldIncludeQR": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "bool",
+            "static": false
+        },
+        "snapshotFiscalConfigs": {
+            "api": true,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "generateEncrypted",
+                    "type": "bool",
+                    "variadic": false,
+                    "default": "true"
+                }
+            ],
+            "returnType": "void",
+            "static": false
+        },
+        "update": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "attributes",
+                    "type": "array",
+                    "variadic": false,
+                    "default": "array (\n)"
+                },
+                {
+                    "name": "options",
+                    "type": "array",
+                    "variadic": false,
+                    "default": "array (\n)"
+                }
+            ],
+            "returnType": "bool",
+            "static": false
+        },
+        "uuidColumn": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "string",
+            "static": false
+        },
+        "uuidColumns": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "array",
+            "static": false
+        }
+    }
+}

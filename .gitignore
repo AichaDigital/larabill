@@ -62,6 +62,8 @@ infection.log.summary
 /bin/*
 !/bin/tag-release
 !/bin/sync-migration-stubs
+!/bin/sync-contract-snapshots
+!/bin/sync-upgrade-manifest
 
 # Session/temporary documentation (do not track)
 SESSION_*.md

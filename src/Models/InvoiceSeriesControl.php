@@ -160,6 +160,8 @@ class InvoiceSeriesControl extends Model
      * Get next available number
      * IMPORTANT: This method should NOT be used directly.
      * Use InvoiceNumberingService::generateNumber() with DB locks.
+     *
+     * @api Amber-band contract operation (AID-407): consumers call it only behind an app-side port.
      */
     public function getNextNumber(): int
     {

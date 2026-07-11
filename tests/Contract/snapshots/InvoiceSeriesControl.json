@@ -1,0 +1,140 @@
+{
+    "class": "AichaDigital\\Larabill\\Models\\InvoiceSeriesControl",
+    "table": "invoice_series_control",
+    "primaryKey": {
+        "incrementing": true,
+        "name": "id",
+        "type": "int"
+    },
+    "interfaces": [],
+    "traits": [
+        "AichaDigital\\Larabill\\Concerns\\HasUserRelation",
+        "Illuminate\\Database\\Eloquent\\Factories\\HasFactory"
+    ],
+    "constants": {
+        "GLOBAL_SCOPE": "00000000-0000-0000-0000-000000000000"
+    },
+    "publicProperties": [],
+    "defaultAttributes": {
+        "user_id": "00000000-0000-0000-0000-000000000000"
+    },
+    "fillable": [
+        "description",
+        "fiscal_year",
+        "fiscal_year_end",
+        "fiscal_year_start",
+        "is_active",
+        "last_number",
+        "last_used_at",
+        "number_format",
+        "prefix",
+        "reset_annually",
+        "serie",
+        "start_number",
+        "user_id",
+        "validation_rules"
+    ],
+    "hidden": [],
+    "visible": [],
+    "appends": [],
+    "with": [],
+    "casts": {
+        "fiscal_year": "integer",
+        "fiscal_year_end": "date",
+        "fiscal_year_start": "date",
+        "is_active": "boolean",
+        "last_number": "integer",
+        "last_used_at": "datetime",
+        "reset_annually": "boolean",
+        "serie": "AichaDigital\\Larabill\\Enums\\InvoiceSerieType",
+        "start_number": "integer",
+        "validation_rules": "array"
+    },
+    "relations": {
+        "user": {
+            "foreignKey": "user_id",
+            "ownerKey": "id",
+            "related": "<configured>",
+            "type": "BelongsTo",
+            "withTrashed": false
+        }
+    },
+    "scopes": {
+        "scopeActive": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        },
+        "scopeFiscalYear": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                },
+                {
+                    "name": "year",
+                    "type": "int",
+                    "variadic": false
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        },
+        "scopePrefix": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                },
+                {
+                    "name": "prefix",
+                    "type": "string",
+                    "variadic": false
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        },
+        "scopeSerie": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                },
+                {
+                    "name": "serie",
+                    "type": "AichaDigital\\Larabill\\Enums\\InvoiceSerieType",
+                    "variadic": false
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        }
+    },
+    "methods": {
+        "getNextNumber": {
+            "api": true,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "int",
+            "static": false
+        }
+    }
+}

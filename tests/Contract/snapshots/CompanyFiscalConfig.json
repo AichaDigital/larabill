@@ -1,0 +1,203 @@
+{
+    "class": "AichaDigital\\Larabill\\Models\\CompanyFiscalConfig",
+    "table": "company_fiscal_configs",
+    "primaryKey": {
+        "incrementing": true,
+        "name": "id",
+        "type": "int"
+    },
+    "interfaces": [],
+    "traits": [
+        "Illuminate\\Database\\Eloquent\\Factories\\HasFactory",
+        "Illuminate\\Database\\Eloquent\\SoftDeletes"
+    ],
+    "constants": [],
+    "publicProperties": [],
+    "defaultAttributes": [],
+    "fillable": [
+        "address",
+        "business_name",
+        "city",
+        "country_code",
+        "currency",
+        "fiscal_year_start",
+        "is_active",
+        "is_oss",
+        "is_roi",
+        "legal_entity_type",
+        "notes",
+        "state",
+        "tax_id",
+        "valid_from",
+        "valid_until",
+        "zip_code"
+    ],
+    "hidden": [],
+    "visible": [],
+    "appends": [],
+    "with": [],
+    "casts": {
+        "created_at": "datetime",
+        "deleted_at": "datetime",
+        "is_active": "boolean",
+        "is_oss": "boolean",
+        "is_roi": "boolean",
+        "updated_at": "datetime",
+        "valid_from": "date",
+        "valid_until": "date"
+    },
+    "relations": [],
+    "scopes": {
+        "scopeActive": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        },
+        "scopeCountry": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                },
+                {
+                    "name": "countryCode",
+                    "type": "string",
+                    "variadic": false
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        },
+        "scopeOss": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        },
+        "scopeRoi": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        },
+        "scopeValidAt": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                },
+                {
+                    "name": "date",
+                    "type": "Carbon\\Carbon",
+                    "variadic": false
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        }
+    },
+    "methods": {
+        "createNew": {
+            "api": true,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "attributes",
+                    "type": "array",
+                    "variadic": false
+                }
+            ],
+            "returnType": "self",
+            "static": true
+        },
+        "getActive": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "?self",
+            "static": true
+        },
+        "getFullAddressAttribute": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "string",
+            "static": false
+        },
+        "getFullFiscalIdentityAttribute": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "string",
+            "static": false
+        },
+        "getValidAt": {
+            "api": true,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "date",
+                    "type": "Carbon\\Carbon",
+                    "variadic": false
+                }
+            ],
+            "returnType": "?self",
+            "static": true
+        },
+        "getValidityRangeAttribute": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "string",
+            "static": false
+        },
+        "isCurrentlyActive": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "bool",
+            "static": false
+        },
+        "wasValidAt": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "date",
+                    "type": "Carbon\\Carbon",
+                    "variadic": false
+                }
+            ],
+            "returnType": "bool",
+            "static": false
+        }
+    }
+}

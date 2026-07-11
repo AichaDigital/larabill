@@ -232,6 +232,8 @@ class Invoice extends Model implements LegallyRetainable
 
     /**
      * Make the invoice immutable.
+     *
+     * @api Amber-band contract operation (AID-407): consumers call it only behind an app-side port.
      */
     public function makeImmutable(): void
     {
@@ -657,6 +659,8 @@ class Invoice extends Model implements LegallyRetainable
      * - Encrypted snapshots for complete audit trail
      *
      * Called automatically on invoice creation (boot::creating).
+     *
+     * @api Amber-band contract operation (AID-407): consumers call it only behind an app-side port.
      *
      * @param  bool  $generateEncrypted  Whether to generate encrypted snapshots (default: true)
      */

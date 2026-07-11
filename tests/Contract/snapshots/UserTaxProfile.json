@@ -1,0 +1,385 @@
+{
+    "class": "AichaDigital\\Larabill\\Models\\UserTaxProfile",
+    "table": "user_tax_profiles",
+    "primaryKey": {
+        "incrementing": true,
+        "name": "id",
+        "type": "int"
+    },
+    "interfaces": [
+        "AichaDigital\\LaraPrivacyCore\\Contracts\\LegallyRetainable"
+    ],
+    "traits": [
+        "Illuminate\\Database\\Eloquent\\Factories\\HasFactory",
+        "Illuminate\\Database\\Eloquent\\SoftDeletes"
+    ],
+    "constants": [],
+    "publicProperties": [],
+    "defaultAttributes": [],
+    "fillable": [
+        "address",
+        "city",
+        "country_code",
+        "fiscal_name",
+        "is_active",
+        "is_company",
+        "is_eu_vat_registered",
+        "is_exempt_vat",
+        "legal_entity_type_code",
+        "notes",
+        "owner_user_id",
+        "state",
+        "tax_id",
+        "valid_from",
+        "valid_until",
+        "zip_code"
+    ],
+    "hidden": [],
+    "visible": [],
+    "appends": [],
+    "with": [],
+    "casts": {
+        "created_at": "datetime",
+        "deleted_at": "datetime",
+        "is_active": "boolean",
+        "is_company": "boolean",
+        "is_eu_vat_registered": "boolean",
+        "is_exempt_vat": "boolean",
+        "updated_at": "datetime",
+        "valid_from": "date",
+        "valid_until": "date"
+    },
+    "relations": {
+        "invoices": {
+            "foreignKey": "user_tax_profile_id",
+            "localKey": "id",
+            "related": "AichaDigital\\Larabill\\Models\\Invoice",
+            "type": "HasMany",
+            "withTrashed": false
+        },
+        "legalEntityType": {
+            "foreignKey": "legal_entity_type_code",
+            "ownerKey": "code",
+            "related": "AichaDigital\\Larabill\\Models\\LegalEntityType",
+            "type": "BelongsTo",
+            "withTrashed": false
+        },
+        "linkedUsers": {
+            "foreignKey": "current_tax_profile_id",
+            "localKey": "id",
+            "related": "<configured>",
+            "type": "HasMany",
+            "withTrashed": false
+        },
+        "owner": {
+            "foreignKey": "owner_user_id",
+            "ownerKey": "id",
+            "related": "<configured>",
+            "type": "BelongsTo",
+            "withTrashed": false
+        },
+        "user": {
+            "foreignKey": "owner_user_id",
+            "ownerKey": "id",
+            "related": "<configured>",
+            "type": "BelongsTo",
+            "withTrashed": false
+        }
+    },
+    "scopes": {
+        "scopeActive": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        },
+        "scopeCompanies": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        },
+        "scopeEuVatRegistered": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        },
+        "scopeForOwner": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                },
+                {
+                    "name": "ownerId",
+                    "type": "string|int",
+                    "variadic": false
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        },
+        "scopeForUser": {
+            "api": false,
+            "deprecated": true,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                },
+                {
+                    "name": "userId",
+                    "type": "string|int",
+                    "variadic": false
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        },
+        "scopeIndividuals": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        },
+        "scopeValidAt": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                },
+                {
+                    "name": "date",
+                    "type": "Carbon\\Carbon",
+                    "variadic": false
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        },
+        "scopeVatExempt": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        }
+    },
+    "methods": {
+        "createForOwner": {
+            "api": true,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "ownerId",
+                    "type": "string|int",
+                    "variadic": false
+                },
+                {
+                    "name": "attributes",
+                    "type": "array",
+                    "variadic": false
+                }
+            ],
+            "returnType": "self",
+            "static": true
+        },
+        "createForUser": {
+            "api": false,
+            "deprecated": true,
+            "parameters": [
+                {
+                    "name": "userId",
+                    "type": "string|int",
+                    "variadic": false
+                },
+                {
+                    "name": "attributes",
+                    "type": "array",
+                    "variadic": false
+                }
+            ],
+            "returnType": "self",
+            "static": true
+        },
+        "getActiveForOwner": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "ownerId",
+                    "type": "string|int",
+                    "variadic": false
+                }
+            ],
+            "returnType": "?self",
+            "static": true
+        },
+        "getActiveForUser": {
+            "api": false,
+            "deprecated": true,
+            "parameters": [
+                {
+                    "name": "userId",
+                    "type": "string|int",
+                    "variadic": false
+                }
+            ],
+            "returnType": "?self",
+            "static": true
+        },
+        "getFullAddressAttribute": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "string",
+            "static": false
+        },
+        "getFullFiscalIdentityAttribute": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "string",
+            "static": false
+        },
+        "getUserIdAttribute": {
+            "api": false,
+            "deprecated": true,
+            "parameters": [],
+            "returnType": "string|int|null",
+            "static": false
+        },
+        "getValidForOwnerAt": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "ownerId",
+                    "type": "string|int",
+                    "variadic": false
+                },
+                {
+                    "name": "date",
+                    "type": "Carbon\\Carbon",
+                    "variadic": false
+                }
+            ],
+            "returnType": "?self",
+            "static": true
+        },
+        "getValidForUserAt": {
+            "api": false,
+            "deprecated": true,
+            "parameters": [
+                {
+                    "name": "userId",
+                    "type": "string|int",
+                    "variadic": false
+                },
+                {
+                    "name": "date",
+                    "type": "Carbon\\Carbon",
+                    "variadic": false
+                }
+            ],
+            "returnType": "?self",
+            "static": true
+        },
+        "getValidityRangeAttribute": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "string",
+            "static": false
+        },
+        "isCurrentlyActive": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "bool",
+            "static": false
+        },
+        "requiresVAT": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "bool",
+            "static": false
+        },
+        "retainedUntil": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "?DateTimeInterface",
+            "static": false
+        },
+        "setUserIdAttribute": {
+            "api": false,
+            "deprecated": true,
+            "parameters": [
+                {
+                    "name": "value",
+                    "type": "string|int",
+                    "variadic": false
+                }
+            ],
+            "returnType": "void",
+            "static": false
+        },
+        "wasValidAt": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "date",
+                    "type": "Carbon\\Carbon",
+                    "variadic": false
+                }
+            ],
+            "returnType": "bool",
+            "static": false
+        }
+    }
+}

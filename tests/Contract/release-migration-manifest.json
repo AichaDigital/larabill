@@ -1,0 +1,166 @@
+{
+    "release": "4.1.0",
+    "upgrade_base": "4.0.2",
+    "migrations": [
+        {
+            "name": "2024_12_01_000000_create_tax_rates_table.php",
+            "sha256": "a8bad15ca2a579a60823a8bbf71bc6026474ce149db2e9f815505c66106ebeed",
+            "in_base": true
+        },
+        {
+            "name": "2024_12_01_000001_create_tax_groups_table.php",
+            "sha256": "a822eefb2569ec6f847a30b9b8f33a68ff0a4aad915083a5073add8e0c5df154",
+            "in_base": true
+        },
+        {
+            "name": "2024_12_01_000002_create_invoice_series_control_table.php",
+            "sha256": "12e6567f4fbd9cecc34b1692703e827fca0464e3b750f56ffff0a0f259d9238e",
+            "in_base": true
+        },
+        {
+            "name": "2024_12_01_000002_create_tax_categories_table.php",
+            "sha256": "a452a959fd68cb3f53ffc839dda30807ec356f15e460579a8aa2fe1a5fc201e6",
+            "in_base": true
+        },
+        {
+            "name": "2024_12_01_000002_create_tax_group_tax_rate_table.php",
+            "sha256": "d1f86b48ce0a31f7485fb666cecd7159856f5315cc3dae3bfe3103d48fa9c780",
+            "in_base": true
+        },
+        {
+            "name": "2024_12_01_000003_create_invoices_table.php",
+            "sha256": "babf6fdfb6cf539121147f8658e5022bf4392b297672e3cd5166546d0c66f091",
+            "in_base": true
+        },
+        {
+            "name": "2024_12_01_000009_create_company_fiscal_configs_table.php",
+            "sha256": "2dd7f70d3488b1eeb7630cf925b5d9fa10fa6fccf2085e27568cdb8918262bb4",
+            "in_base": true
+        },
+        {
+            "name": "2024_12_01_000011_add_fiscal_relations_to_invoices.php",
+            "sha256": "4a52bdeadf36aa72950f065b48557753ad2d95e4479750cb950beb30c10c401c",
+            "in_base": true
+        },
+        {
+            "name": "2024_12_01_000012_drop_fiscal_settings_table.php",
+            "sha256": "41ef30abaca953b4a6c5582e98a9f31b95a13a1d7604f4afb1c5c76e9a68ce41",
+            "in_base": true
+        },
+        {
+            "name": "2024_12_01_0003_create_unit_measures_table.php",
+            "sha256": "e86486ac7cf9c3b0d6dfda51e286f3b7333e3d9b861451b62f46db598f2372b1",
+            "in_base": true
+        },
+        {
+            "name": "2024_12_01_0004_create_invoice_items_table.php",
+            "sha256": "472adad9f3086c92bced545faccb26eae8d8d564b17e9c5865177aa0fb643f05",
+            "in_base": true
+        },
+        {
+            "name": "2025_01_04_190001_create_invoice_templates_table.php",
+            "sha256": "6fc05163f65665ae2ea3b8d5ff49080034e7536cfb1bbcb7d2446ec5495b1b24",
+            "in_base": true
+        },
+        {
+            "name": "2025_01_04_190002_create_company_template_settings_table.php",
+            "sha256": "746f7ddc79e9d9029ff25aafd7249b2776a7562f98d2983454514a84061a54fa",
+            "in_base": true
+        },
+        {
+            "name": "2025_01_20_000001_create_articles_table.php",
+            "sha256": "cae58e223890c7b68fda7134fc8aab6e38876ce7f57829ddaae7b352c17d7b56",
+            "in_base": true
+        },
+        {
+            "name": "2025_01_20_000002_create_article_overrides_table.php",
+            "sha256": "4be2b0956fb99a41683f7580dbc051d2b2ab21eef810201b5251cb16a4d9964a",
+            "in_base": true
+        },
+        {
+            "name": "2025_01_20_000003_create_article_service_status_table.php",
+            "sha256": "6f25ba3eaf6bcef07ae7ab2f551d2357c62b02f1dd72fe6ae30ed74d07b8a060",
+            "in_base": true
+        },
+        {
+            "name": "2025_01_20_000004_create_article_prices_table.php",
+            "sha256": "599359d91dd5031d3b66f84a82b001425ae54d72730b3ffe8463d42c7aa3d45f",
+            "in_base": true
+        },
+        {
+            "name": "2025_01_25_000001_create_legal_entity_types_table.php",
+            "sha256": "34498cd6c0c6fc4faeea809cbec841273c982522d1e87cbc556847d1a1d2dc35",
+            "in_base": true
+        },
+        {
+            "name": "2025_01_25_000006_create_commissions_table.php",
+            "sha256": "12483394bf6d95f7f6a732fad08d3f71961f4f5ae5cfd438ce0bda52eb05e7aa",
+            "in_base": true
+        },
+        {
+            "name": "2025_01_25_000007_add_v040_fields_to_invoices_table.php",
+            "sha256": "a006e473ad9308a18058e4af413f0ead2ad849e37a0b04dc231792849562d459",
+            "in_base": true
+        },
+        {
+            "name": "2025_01_25_000008_add_converted_fields_to_invoices_table.php",
+            "sha256": "9e0d58ec65e62473ffbcb55b335c6820d02c65cb6fa8e4ed29730f1a60dea086",
+            "in_base": true
+        },
+        {
+            "name": "2025_01_27_000001_create_user_tax_profiles_table.php",
+            "sha256": "9649febbfaac0c3f1296db936726484ce10348ea5eea6093a982f2db1b267eb4",
+            "in_base": true
+        },
+        {
+            "name": "2025_01_28_000001_add_invoices_foreign_keys.php",
+            "sha256": "16ab21e342e9098336c50670a6c65ea69c2ddb707b90863df8378fa5d0b1c68c",
+            "in_base": true
+        },
+        {
+            "name": "2025_12_20_000001_make_articles_translatable.php",
+            "sha256": "bcc9d238e074ddf51de45404e6b1baa9eb39e3a15fc316fd86c1b317e161af40",
+            "in_base": true
+        },
+        {
+            "name": "2026_02_16_000001_create_country_vat_rates_table.php",
+            "sha256": "67b98b313a518b1bd2898d791b5baba3749a981cae695989d61a37598cb8e177",
+            "in_base": true
+        },
+        {
+            "name": "2026_02_16_000002_create_vat_categories_table.php",
+            "sha256": "bf7c79ad710830e3317010c303c734011a9f8adbce12dec0a21ef0d1af297e46",
+            "in_base": true
+        },
+        {
+            "name": "2026_02_16_000003_create_eu_sales_thresholds_table.php",
+            "sha256": "349564bc1465448627b2cf0bd690869889e786ec5273e430f95bac662c1b17c0",
+            "in_base": true
+        },
+        {
+            "name": "2026_02_16_000006_create_user_tax_infos_table.php",
+            "sha256": "b1f75d64669e92d1ea2f48eab2ef8461be4b828baee66340e07593916dbdd633",
+            "in_base": true
+        },
+        {
+            "name": "2026_06_05_000001_add_article_id_to_invoice_items_table.php",
+            "sha256": "fb2088a8250936469a68472e40b7275f339dc51d560a1c7d58799e35c548fafd",
+            "in_base": true
+        },
+        {
+            "name": "2026_06_27_000001_create_grouped_payments_table.php",
+            "sha256": "fe5d9a4c12da11e6c73a72356833794ee99706601f42749fdbfaf177ac0a0637",
+            "in_base": true
+        },
+        {
+            "name": "2026_06_27_000002_create_grouped_payment_invoice_table.php",
+            "sha256": "e9eb47bb17fbaad37989286672ae8d308ee5419d2f7af81f822f8cb843803b8a",
+            "in_base": true
+        },
+        {
+            "name": "2026_07_10_000001_backfill_invoice_series_control_global_scope.php",
+            "sha256": "9928c9fd00220595de96f8f1a82807d55f51f3c2473d12e4f1c90eded53ae84a",
+            "in_base": false
+        }
+    ]
+}

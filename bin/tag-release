@@ -59,6 +59,38 @@ fi
 
 echo "CHANGELOG.md contains entry for ${VERSION}."
 
+# --- Contract preflight (AID-412) ---
+# A release must never ship with the contract snapshots out of sync or with a
+# stale upgrade manifest: the snapshots gate silent surface drift, and the
+# manifest feeds the shipped-migration immutability + upgrade-path tests.
+
+if [[ ! -x "${SCRIPT_DIR}/vendor/bin/pest" ]]; then
+    echo "ERROR: vendor/bin/pest not found — run 'composer install' before tagging."
+    exit 1
+fi
+
+echo "Running contract preflight (tests/Unit/Contract)..."
+
+if ! "${SCRIPT_DIR}/vendor/bin/pest" tests/Unit/Contract >/dev/null 2>&1; then
+    echo "ERROR: contract tests failed. The snapshots or the release manifest are out of sync."
+    echo "Run 'vendor/bin/pest tests/Unit/Contract' to see the failure; regenerate via"
+    echo "bin/sync-contract-snapshots (snapshots) or bin/sync-upgrade-manifest (manifest),"
+    echo "review the diff, and commit BEFORE tagging."
+    exit 1
+fi
+
+echo "Refreshing the upgrade manifest for ${VERSION}..."
+php "${SCRIPT_DIR}/bin/sync-upgrade-manifest"
+
+if [[ -n "$(git status --porcelain -- tests/Contract/release-migration-manifest.json)" ]]; then
+    echo "ERROR: the upgrade manifest changed for this release."
+    echo "Review 'git diff tests/Contract/release-migration-manifest.json' and commit it,"
+    echo "then re-run bin/tag-release ${VERSION}."
+    exit 1
+fi
+
+echo "Contract preflight passed."
+
 # --- Create tag ---
 
 echo "Creating annotated tag ${TAG}..."
