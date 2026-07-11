@@ -10,7 +10,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * Trait for User models that participate in the Larabill billing system.
@@ -82,33 +81,6 @@ trait HasUserRelationships
     public function ownedTaxProfiles(): HasMany
     {
         return $this->hasMany(UserTaxProfile::class, 'owner_user_id');
-    }
-
-    /**
-     * Get all tax profiles for this user (backwards compatible).
-     *
-     * @deprecated Use ownedTaxProfiles() for profiles owned by user,
-     *             or currentTaxProfile() for the active profile.
-     *
-     * @return HasMany<UserTaxProfile, $this>
-     */
-    public function taxProfiles(): HasMany
-    {
-        return $this->ownedTaxProfiles();
-    }
-
-    /**
-     * Get the currently active tax profile (backwards compatible).
-     *
-     * @deprecated Use currentTaxProfile() relationship instead.
-     *
-     * @return HasOne<UserTaxProfile, $this>
-     */
-    public function activeTaxProfile(): HasOne
-    {
-        return $this->hasOne(UserTaxProfile::class, 'owner_user_id')
-            ->where('is_active', true)
-            ->whereNull('valid_until');
     }
 
     // ========================================
@@ -232,18 +204,5 @@ trait HasUserRelationships
     public function scopeWithCurrentTaxProfile($query)
     {
         return $query->with(['currentTaxProfile']);
-    }
-
-    /**
-     * Scope: With active tax profile loaded (backwards compatible).
-     *
-     * @deprecated Use scopeWithCurrentTaxProfile() instead.
-     *
-     * @param  Builder<static>  $query
-     * @return Builder<static>
-     */
-    public function scopeWithActiveTaxProfile($query)
-    {
-        return $this->scopeWithCurrentTaxProfile($query);
     }
 }

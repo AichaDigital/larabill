@@ -140,20 +140,6 @@ final class RecurringBillingService
     }
 
     /**
-     * Get services that are due for billing on given date (DEPRECATED)
-     *
-     * @deprecated Use getServicesInBillingWindow() and filter manually
-     * @see getServicesInBillingWindow()
-     *
-     * @return Collection<int, ArticleServiceStatus>
-     */
-    protected function getServicesDueForBilling(Carbon $date): Collection
-    {
-        return $this->getServicesInBillingWindow($date)
-            ->filter(fn ($service) => $this->shouldGenerateInvoice($service, $date));
-    }
-
-    /**
      * Check if invoice should be generated based on days_in_advance
      *
      * Uses ArticlePrice-specific days_in_advance if set, otherwise uses global config

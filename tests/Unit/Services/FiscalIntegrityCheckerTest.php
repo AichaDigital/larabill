@@ -37,7 +37,7 @@ function createActiveUserProfilesWithoutEvents(string $userId, int $count): Coll
 {
     return UserTaxProfile::withoutEvents(function () use ($userId, $count) {
         return collect(range(1, $count))->map(function () use ($userId) {
-            return UserTaxProfile::factory()->active()->forUser($userId)->create();
+            return UserTaxProfile::factory()->active()->forOwner($userId)->create();
         });
     });
 }
@@ -114,7 +114,7 @@ it('passes user integrity when no profiles exist', function () {
 });
 
 it('passes user integrity with single active profile', function () {
-    UserTaxProfile::factory()->active()->forUser('user-123')->create();
+    UserTaxProfile::factory()->active()->forOwner('user-123')->create();
 
     $exception = $this->checker->checkUserIntegrity('user-123');
 
@@ -122,8 +122,8 @@ it('passes user integrity with single active profile', function () {
 });
 
 it('passes user integrity with multiple profiles for different users', function () {
-    UserTaxProfile::factory()->active()->forUser('user-1')->create();
-    UserTaxProfile::factory()->active()->forUser('user-2')->create();
+    UserTaxProfile::factory()->active()->forOwner('user-1')->create();
+    UserTaxProfile::factory()->active()->forOwner('user-2')->create();
 
     expect($this->checker->checkUserIntegrity('user-1'))->toBeNull()
         ->and($this->checker->checkUserIntegrity('user-2'))->toBeNull();
@@ -131,10 +131,10 @@ it('passes user integrity with multiple profiles for different users', function 
 
 it('passes user integrity with historical profiles', function () {
     UserTaxProfile::withoutEvents(function () {
-        UserTaxProfile::factory()->historical()->forUser('user-123')->create();
-        UserTaxProfile::factory()->historical()->forUser('user-123')->create();
+        UserTaxProfile::factory()->historical()->forOwner('user-123')->create();
+        UserTaxProfile::factory()->historical()->forOwner('user-123')->create();
     });
-    UserTaxProfile::factory()->active()->forUser('user-123')->create();
+    UserTaxProfile::factory()->active()->forOwner('user-123')->create();
 
     $exception = $this->checker->checkUserIntegrity('user-123');
 
@@ -160,8 +160,8 @@ it('fails user integrity with multiple active profiles for same user', function 
 // =============================================================================
 
 it('returns empty array when no user integrity issues', function () {
-    UserTaxProfile::factory()->active()->forUser('user-1')->create();
-    UserTaxProfile::factory()->active()->forUser('user-2')->create();
+    UserTaxProfile::factory()->active()->forOwner('user-1')->create();
+    UserTaxProfile::factory()->active()->forOwner('user-2')->create();
 
     $issues = $this->checker->checkAllUsersIntegrity();
 
@@ -173,7 +173,7 @@ it('returns all users with duplicate profiles', function () {
     createActiveUserProfilesWithoutEvents('user-1', 2);
 
     // User 2 is OK
-    UserTaxProfile::factory()->active()->forUser('user-2')->create();
+    UserTaxProfile::factory()->active()->forOwner('user-2')->create();
 
     // User 3 has duplicate (bypass events)
     createActiveUserProfilesWithoutEvents('user-3', 3);
@@ -210,7 +210,7 @@ it('blocks invoicing with multiple active company configs', function () {
 
 it('allows invoicing user when both company and user are valid', function () {
     CompanyFiscalConfig::factory()->active()->create();
-    UserTaxProfile::factory()->active()->forUser('user-123')->create();
+    UserTaxProfile::factory()->active()->forOwner('user-123')->create();
 
     expect($this->checker->canInvoiceUser('user-123'))->toBeTrue();
 });
@@ -218,7 +218,7 @@ it('allows invoicing user when both company and user are valid', function () {
 it('blocks invoicing user when company has integrity issue', function () {
     // Bypass model events for company
     createActiveCompanyConfigsWithoutEvents(2);
-    UserTaxProfile::factory()->active()->forUser('user-123')->create();
+    UserTaxProfile::factory()->active()->forOwner('user-123')->create();
 
     expect($this->checker->canInvoiceUser('user-123'))->toBeFalse();
 });
@@ -294,7 +294,7 @@ it('returns all issues in checkAll', function () {
 
 it('returns null company and empty users when all valid', function () {
     CompanyFiscalConfig::factory()->active()->create();
-    UserTaxProfile::factory()->active()->forUser('user-1')->create();
+    UserTaxProfile::factory()->active()->forOwner('user-1')->create();
 
     $result = $this->checker->checkAll();
 
@@ -308,7 +308,7 @@ it('returns null company and empty users when all valid', function () {
 
 it('returns ok status when no issues', function () {
     CompanyFiscalConfig::factory()->active()->create();
-    UserTaxProfile::factory()->active()->forUser('user-1')->create();
+    UserTaxProfile::factory()->active()->forOwner('user-1')->create();
 
     $status = $this->checker->getStatus();
 
@@ -417,12 +417,12 @@ it('model automatically closes previous active config on create', function () {
 
 it('model automatically closes previous user profile on create', function () {
     // First profile - created normally
-    $first = UserTaxProfile::factory()->active()->forUser('user-test')->create();
+    $first = UserTaxProfile::factory()->active()->forOwner('user-test')->create();
     expect($first->is_active)->toBeTrue();
     expect($first->valid_until)->toBeNull();
 
     // Second profile - should auto-close the first
-    $second = UserTaxProfile::factory()->active()->forUser('user-test')->create();
+    $second = UserTaxProfile::factory()->active()->forOwner('user-test')->create();
 
     // Refresh from DB
     $first->refresh();

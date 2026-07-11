@@ -27,13 +27,13 @@ beforeEach(function () {
 
     // Create initial tax profile
     $this->taxProfile = UserTaxProfile::factory()->create([
-        'user_id'      => $this->user->id,
-        'fiscal_name'  => 'Original Customer',
-        'tax_id'       => '12345678A',
-        'country_code' => 'ES',
-        'is_active'    => true,
-        'valid_from'   => now()->subYear(),
-        'valid_until'  => null,
+        'owner_user_id' => $this->user->id,
+        'fiscal_name'   => 'Original Customer',
+        'tax_id'        => '12345678A',
+        'country_code'  => 'ES',
+        'is_active'     => true,
+        'valid_from'    => now()->subYear(),
+        'valid_until'   => null,
     ]);
 });
 
@@ -193,13 +193,13 @@ it('detects user tax profile changed to new record', function () {
 
     // Create new profile for user (closes old one)
     $newProfile = UserTaxProfile::factory()->create([
-        'user_id'      => $this->user->id,
-        'fiscal_name'  => 'New Customer Name',
-        'tax_id'       => '12345678A', // Same tax_id
-        'country_code' => 'ES',
-        'is_active'    => true,
-        'valid_from'   => now(),
-        'valid_until'  => null,
+        'owner_user_id'      => $this->user->id,
+        'fiscal_name'        => 'New Customer Name',
+        'tax_id'             => '12345678A', // Same tax_id
+        'country_code'       => 'ES',
+        'is_active'          => true,
+        'valid_from'         => now(),
+        'valid_until'        => null,
     ]);
 
     $changes = $this->detector->detectChanges($proforma);
@@ -222,13 +222,13 @@ it('detects critical change when user tax_id changes', function () {
 
     // Create new profile with different tax_id (CRITICAL)
     UserTaxProfile::factory()->create([
-        'user_id'      => $this->user->id,
-        'fiscal_name'  => 'Customer',
-        'tax_id'       => '99999999Z', // Different tax_id = CRITICAL
-        'country_code' => 'ES',
-        'is_active'    => true,
-        'valid_from'   => now(),
-        'valid_until'  => null,
+        'owner_user_id'      => $this->user->id,
+        'fiscal_name'        => 'Customer',
+        'tax_id'             => '99999999Z', // Different tax_id = CRITICAL
+        'country_code'       => 'ES',
+        'is_active'          => true,
+        'valid_from'         => now(),
+        'valid_until'        => null,
     ]);
 
     $changes = $this->detector->detectChanges($proforma);
@@ -250,14 +250,14 @@ it('detects critical change when user becomes EU VAT registered', function () {
 
     // Create new profile with EU VAT registration (CRITICAL - affects reverse charge)
     UserTaxProfile::factory()->create([
-        'user_id'              => $this->user->id,
-        'fiscal_name'          => 'Customer',
-        'tax_id'               => '12345678A',
-        'country_code'         => 'ES',
-        'is_eu_vat_registered' => true, // Now registered = CRITICAL
-        'is_active'            => true,
-        'valid_from'           => now(),
-        'valid_until'          => null,
+        'owner_user_id'              => $this->user->id,
+        'fiscal_name'                => 'Customer',
+        'tax_id'                     => '12345678A',
+        'country_code'               => 'ES',
+        'is_eu_vat_registered'       => true, // Now registered = CRITICAL
+        'is_active'                  => true,
+        'valid_from'                 => now(),
+        'valid_until'                => null,
     ]);
 
     $changes = $this->detector->detectChanges($proforma);
@@ -289,13 +289,13 @@ it('detects both company and user changes', function () {
 
     // Create new user profile
     UserTaxProfile::factory()->create([
-        'user_id'      => $this->user->id,
-        'fiscal_name'  => 'New Customer Name',
-        'tax_id'       => '12345678A',
-        'country_code' => 'ES',
-        'is_active'    => true,
-        'valid_from'   => now(),
-        'valid_until'  => null,
+        'owner_user_id'      => $this->user->id,
+        'fiscal_name'        => 'New Customer Name',
+        'tax_id'             => '12345678A',
+        'country_code'       => 'ES',
+        'is_active'          => true,
+        'valid_from'         => now(),
+        'valid_until'        => null,
     ]);
 
     $changes = $this->detector->detectChanges($proforma);

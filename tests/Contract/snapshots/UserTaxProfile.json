@@ -77,13 +77,6 @@
             "related": "<configured>",
             "type": "BelongsTo",
             "withTrashed": false
-        },
-        "user": {
-            "foreignKey": "owner_user_id",
-            "ownerKey": "id",
-            "related": "<configured>",
-            "type": "BelongsTo",
-            "withTrashed": false
         }
     },
     "scopes": {
@@ -137,24 +130,6 @@
                 },
                 {
                     "name": "ownerId",
-                    "type": "string|int",
-                    "variadic": false
-                }
-            ],
-            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
-            "static": false
-        },
-        "scopeForUser": {
-            "api": false,
-            "deprecated": true,
-            "parameters": [
-                {
-                    "name": "query",
-                    "type": "Illuminate\\Database\\Eloquent\\Builder",
-                    "variadic": false
-                },
-                {
-                    "name": "userId",
                     "type": "string|int",
                     "variadic": false
                 }
@@ -226,43 +201,12 @@
             "returnType": "self",
             "static": true
         },
-        "createForUser": {
-            "api": false,
-            "deprecated": true,
-            "parameters": [
-                {
-                    "name": "userId",
-                    "type": "string|int",
-                    "variadic": false
-                },
-                {
-                    "name": "attributes",
-                    "type": "array",
-                    "variadic": false
-                }
-            ],
-            "returnType": "self",
-            "static": true
-        },
         "getActiveForOwner": {
             "api": false,
             "deprecated": false,
             "parameters": [
                 {
                     "name": "ownerId",
-                    "type": "string|int",
-                    "variadic": false
-                }
-            ],
-            "returnType": "?self",
-            "static": true
-        },
-        "getActiveForUser": {
-            "api": false,
-            "deprecated": true,
-            "parameters": [
-                {
-                    "name": "userId",
                     "type": "string|int",
                     "variadic": false
                 }
@@ -284,37 +228,12 @@
             "returnType": "string",
             "static": false
         },
-        "getUserIdAttribute": {
-            "api": false,
-            "deprecated": true,
-            "parameters": [],
-            "returnType": "string|int|null",
-            "static": false
-        },
         "getValidForOwnerAt": {
             "api": false,
             "deprecated": false,
             "parameters": [
                 {
                     "name": "ownerId",
-                    "type": "string|int",
-                    "variadic": false
-                },
-                {
-                    "name": "date",
-                    "type": "Carbon\\Carbon",
-                    "variadic": false
-                }
-            ],
-            "returnType": "?self",
-            "static": true
-        },
-        "getValidForUserAt": {
-            "api": false,
-            "deprecated": true,
-            "parameters": [
-                {
-                    "name": "userId",
                     "type": "string|int",
                     "variadic": false
                 },
@@ -353,19 +272,6 @@
             "deprecated": false,
             "parameters": [],
             "returnType": "?DateTimeInterface",
-            "static": false
-        },
-        "setUserIdAttribute": {
-            "api": false,
-            "deprecated": true,
-            "parameters": [
-                {
-                    "name": "value",
-                    "type": "string|int",
-                    "variadic": false
-                }
-            ],
-            "returnType": "void",
             "static": false
         },
         "wasValidAt": {

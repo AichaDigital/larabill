@@ -4,6 +4,18 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+## [6.0.0] - 2026-07-11
+
+### Removed
+- **BREAKING (AID-423) — `BillingService` removed.** The class was `@deprecated` since v4.1.0 (AID-390) and survived v5.0.0 only as an adapted caller. Migrate to `InvoiceService::createInvoice()` (fiscal snapshots, ADR-003 `billable_user_id`, `InvoiceNumberingService` numbering) — see **UPGRADE-6.0.md** for the 1:1 mapping. No schema or data change: this release ships **zero migrations**.
+- **BREAKING (AID-423) — the `user_id` compatibility shims of `UserTaxProfile` removed** (deprecated aliases from the ADR-003→ADR-004 owner rename): `user()` relation (use `owner()`), `user_id` attribute accessor/mutator (use `owner_user_id`), `UserTaxProfile::getActiveForUser()` (use `getActiveForOwner()`), `UserTaxProfile::getValidForUserAt()` (use `getValidForOwnerAt()`), `UserTaxProfile::createForUser()` (use `createForOwner()`), and the `forUser()` scope (use `forOwner()`).
+- **BREAKING (AID-423) — the deprecated aliases of `HasUserRelationships` removed:** `taxProfiles()` (use `ownedTaxProfiles()`), `activeTaxProfile()` (use the `currentTaxProfile()` relation) and the `withActiveTaxProfile()` scope (use `withCurrentTaxProfile()`).
+- `UserTaxProfileFactory::forUser()` (use `forOwner()`; the factory is `@internal` surface).
+- `RecurringBillingService::getServicesDueForBilling()` — dead `protected` method on a `final` class with zero callers (not consumer-reachable; listed for completeness).
+
+### Added
+- **`STABILITY.md` — the package's stability contract, effective from v6.0.0.** larabill is closed as a stable product: breaking changes only enter with a qualified, documented usage imperative; every future major must be auto-upgradeable from the previous one (data-aware migrations + idempotent `larabill:install` re-run + upgrade-path test, per AID-398); new deprecations live through at least one full major before removal. v6.0.0 removes the last known deprecated surface — after it the roadmap carries **no known breaking change**.
+
 ### Tests
 - **`LarabillInstallCommandTest` no longer publishes stubs into the shared testbench skeleton `database_path` (AID-419).** The install test now redirects `database_path()` to a per-test temp dir (`app()->useDatabasePath()`), the same isolation the MySQL install path already uses (`InstallCommandMysqlTestCase`, AID-287). Fixes a pre-existing `pest --parallel` race: `larabill:install` published its stubs into the physically shared `vendor/orchestra/testbench-core/laravel/database/migrations/` dir and deleted them in teardown, so a concurrent worker running `RefreshDatabase` could `require()` a migration file mid-write/mid-delete and throw `FileNotFoundException` on a rotating victim test (~1 in 2-3 local `composer test-parallel` runs; CI unaffected — it runs `pest --ci` sequentially). No package surface, schema or runtime change.
 

@@ -216,42 +216,6 @@ class UserTaxProfile extends Model implements LegallyRetainable
     }
 
     // ========================================
-    // BACKWARDS COMPATIBILITY (ADR-003 -> ADR-004)
-    // ========================================
-
-    /**
-     * Get the owner user (backwards compatible alias).
-     *
-     * @deprecated Use owner() instead. Will be removed in v2.0.
-     *
-     * @return BelongsTo<Model, $this>
-     */
-    public function user(): BelongsTo
-    {
-        return $this->owner();
-    }
-
-    /**
-     * Get user_id attribute (backwards compatible).
-     *
-     * @deprecated Use owner_user_id instead. Will be removed in v2.0.
-     */
-    public function getUserIdAttribute(): string|int|null
-    {
-        return $this->owner_user_id;
-    }
-
-    /**
-     * Set user_id attribute (backwards compatible).
-     *
-     * @deprecated Use owner_user_id instead. Will be removed in v2.0.
-     */
-    public function setUserIdAttribute(string|int $value): void
-    {
-        $this->attributes['owner_user_id'] = $value;
-    }
-
-    // ========================================
     // STATIC QUERY METHODS
     // ========================================
 
@@ -281,16 +245,6 @@ class UserTaxProfile extends Model implements LegallyRetainable
     }
 
     /**
-     * Get active config for a user (by their current_tax_profile_id).
-     *
-     * @deprecated Use User->currentTaxProfile relationship instead.
-     */
-    public static function getActiveForUser(string|int $userId): ?self
-    {
-        return static::getActiveForOwner($userId);
-    }
-
-    /**
      * Get config valid for an owner at a specific date.
      */
     public static function getValidForOwnerAt(string|int $ownerId, Carbon $date): ?self
@@ -303,16 +257,6 @@ class UserTaxProfile extends Model implements LegallyRetainable
             })
             ->orderBy('valid_from', 'desc')
             ->first();
-    }
-
-    /**
-     * Get config valid for a user at a specific date.
-     *
-     * @deprecated Use getValidForOwnerAt() instead.
-     */
-    public static function getValidForUserAt(string|int $userId, Carbon $date): ?self
-    {
-        return static::getValidForOwnerAt($userId, $date);
     }
 
     /**
@@ -332,18 +276,6 @@ class UserTaxProfile extends Model implements LegallyRetainable
         return static::create($attributes);
     }
 
-    /**
-     * Create new config for user.
-     *
-     * @deprecated Use createForOwner() instead.
-     *
-     * @param  array<string, mixed>  $attributes
-     */
-    public static function createForUser(string|int $userId, array $attributes): self
-    {
-        return static::createForOwner($userId, $attributes);
-    }
-
     // ========================================
     // SCOPES
     // ========================================
@@ -357,19 +289,6 @@ class UserTaxProfile extends Model implements LegallyRetainable
     public function scopeForOwner(Builder $query, string|int $ownerId): Builder
     {
         return $query->where('owner_user_id', $ownerId);
-    }
-
-    /**
-     * Scope: Configs for a user.
-     *
-     * @deprecated Use scopeForOwner() instead.
-     *
-     * @param  Builder<static>  $query
-     * @return Builder<static>
-     */
-    public function scopeForUser(Builder $query, string|int $userId): Builder
-    {
-        return $this->scopeForOwner($query, $userId);
     }
 
     /**
