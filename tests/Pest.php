@@ -35,6 +35,12 @@ uses(InstallCommandMysqlTestCase::class)
 uses(MysqlIntegrationTestCase::class)
     ->in('Concurrency');
 
+// Upgrade-path contract tests (AID-412/AID-398): migrate the previous-release
+// migration set, seed base-shaped data, migrate to HEAD, assert invariants.
+// Same MySQL env gating as Integration/Mysql.
+uses(MysqlIntegrationTestCase::class)
+    ->in('Integration/UpgradePath');
+
 // NOTE: 'Integration' is NOT used as a recursive path here because Pest rejects
 // rebinding a folder once any subpath has been bound. Add explicit paths for
 // any non-Mysql integration test that should use the SQLite TestCase.
