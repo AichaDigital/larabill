@@ -1,6 +1,6 @@
 {
-    "release": "4.1.0",
-    "upgrade_base": "4.0.2",
+    "release": "5.0.0",
+    "upgrade_base": "4.1.0",
     "migrations": [
         {
             "name": "2024_12_01_000000_create_tax_rates_table.php",
@@ -160,6 +160,11 @@
         {
             "name": "2026_07_10_000001_backfill_invoice_series_control_global_scope.php",
             "sha256": "9928c9fd00220595de96f8f1a82807d55f51f3c2473d12e4f1c90eded53ae84a",
+            "in_base": true
+        },
+        {
+            "name": "2026_07_11_000001_replace_invoices_series_unique_index.php",
+            "sha256": "22986e4956c9184069579575bf2adae1b7761eaab60b0f50a9c703d4fb351f39",
             "in_base": false
         }
     ]

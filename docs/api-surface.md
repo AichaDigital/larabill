@@ -36,7 +36,7 @@
 
 ### Services split
 
-- **`@api` (13):** `InvoiceService`, `InvoiceNumberingService`, `InvoiceVerifactuService`, `TaxCalculationService`, `FiscalChangeDetector` (real consumer usage), `RecurringBillingService`, `ServiceLifecycleService`, `GroupedPaymentService`, `PricingService`, `EuSalesThresholdService`, `DestinationVatService`, `CommissionCalculationService` (consumer-orchestrated domain), `BillingService` (`@api` + `@deprecated`).
+- **`@api` (14):** `InvoiceService`, `InvoiceNumberingService`, `InvoiceSeriesResolver` (AID-307 — the single source of the fiscal series), `InvoiceVerifactuService`, `TaxCalculationService`, `FiscalChangeDetector` (real consumer usage), `RecurringBillingService`, `ServiceLifecycleService`, `GroupedPaymentService`, `PricingService`, `EuSalesThresholdService`, `DestinationVatService`, `CommissionCalculationService` (consumer-orchestrated domain), `BillingService` (`@api` + `@deprecated`).
 - **`@internal` (9):** `FiscalIntegrityChecker` (creating-hook mechanism; its public exception is the contract), `ModelMappingService` (the config keys are public, not the resolver), `CacheService`, `PDFService`/`DomPDFService`/`DefaultPDFConnector` (public surface is `Invoice::generatePDF()` + `PDFConnectorInterface`), `VerifactuAdapter`, `FakeFiscalVerification` (test double; promotable), `VatCalculationStrategy` (default implementation — the contract is the API).
 
 ## Notes / candidates recorded here (not acted on in AID-413)
