@@ -75,7 +75,6 @@ php artisan vendor:publish --tag="larabill-migrations"
 php artisan migrate
 
 # Seed default data
-php artisan db:seed --class="AichaDigital\Larabill\Database\Seeders\TaxCategoriesSeeder"
 php artisan db:seed --class="AichaDigital\Larabill\Database\Seeders\TaxRatesSeeder"
 ```
 
