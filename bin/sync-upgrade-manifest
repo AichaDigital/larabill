@@ -1,0 +1,139 @@
+#!/usr/bin/env php
+<?php
+
+declare(strict_types=1);
+
+/*
+ * sync-upgrade-manifest — regenerate tests/Contract/release-migration-manifest.json
+ * for the upgrade-path contract tests (AID-412, boundary spec §4.2 / AID-398).
+ *
+ * The manifest records every shipped package migration (name + sha256) and
+ * whether it already existed in the UPGRADE BASE (the release before the one
+ * being cut). Two tests consume it:
+ *
+ *   - ShippedMigrationImmutabilityTest (always on): every manifest entry must
+ *     exist at HEAD byte-identical — a shipped migration is never renamed,
+ *     edited or deleted (consumers already ran it by name).
+ *   - UpgradeFromPreviousReleaseTest (MySQL-gated): migrates the in_base set,
+ *     seeds base-shaped data, migrates to HEAD and asserts invariants.
+ *
+ * Regeneration happens at RELEASE time (bin/tag-release preflight): release =
+ * the newest `## [X.Y.Z]` CHANGELOG heading; base = the newest git tag
+ * strictly below v<release>. A stale manifest is safe (the upgrade test just
+ * covers a longer path); a deleted or edited shipped migration is NOT — this
+ * script refuses to regenerate over one.
+ *
+ * Usage:  php bin/sync-upgrade-manifest [<base-tag>]
+ *         (base-tag defaults to the newest tag below v<release>; make sure
+ *         tags are available locally: git fetch --tags)
+ * Exit:   0 on success; 1 on refusal or missing prerequisites.
+ */
+
+$root = dirname(__DIR__);
+$migrationsDir = $root.'/database/migrations';
+$manifestPath = $root.'/tests/Contract/release-migration-manifest.json';
+
+// --- Release version: newest `## [X.Y.Z]` heading in the CHANGELOG ---------
+
+$changelog = (string) file_get_contents($root.'/CHANGELOG.md');
+
+if (! preg_match('/^## \[(\d+\.\d+\.\d+)\]/m', $changelog, $matches)) {
+    fwrite(STDERR, "ERROR: no `## [X.Y.Z]` release heading found in CHANGELOG.md\n");
+    exit(1);
+}
+
+$release = $matches[1];
+
+// --- Base tag: newest tag strictly below v<release> (or argv override) -----
+
+if (isset($argv[1]) && $argv[1] !== '') {
+    $baseTag = $argv[1];
+} else {
+    exec('git -C '.escapeshellarg($root)." tag --list 'v*'", $tags, $exitCode);
+
+    if ($exitCode !== 0) {
+        fwrite(STDERR, "ERROR: could not list git tags\n");
+        exit(1);
+    }
+
+    $candidates = array_filter($tags, static fn (string $tag): bool => version_compare(ltrim($tag, 'v'), $release, '<'));
+    usort($candidates, static fn (string $a, string $b): int => version_compare(ltrim($b, 'v'), ltrim($a, 'v')));
+    $baseTag = $candidates[0] ?? null;
+
+    if ($baseTag === null) {
+        fwrite(STDERR, "ERROR: no git tag below v{$release} found (run `git fetch --tags`?)\n");
+        exit(1);
+    }
+}
+
+exec('git -C '.escapeshellarg($root).' ls-tree -r --name-only '.escapeshellarg($baseTag).' -- database/migrations', $baseFiles, $exitCode);
+
+if ($exitCode !== 0) {
+    fwrite(STDERR, "ERROR: git ls-tree failed for {$baseTag} (run `git fetch --tags`?)\n");
+    exit(1);
+}
+
+$baseNames = array_map('basename', array_filter($baseFiles, static fn (string $file): bool => str_ends_with($file, '.php')));
+
+// --- Ratchet: never regenerate over a deleted/edited shipped migration -----
+
+$headFiles = glob($migrationsDir.'/*.php') ?: [];
+$headByName = [];
+
+foreach ($headFiles as $file) {
+    $headByName[basename($file)] = hash_file('sha256', $file);
+}
+
+if (is_file($manifestPath)) {
+    /** @var array{migrations?: array<int, array{name: string, sha256: string}>} $previous */
+    $previous = json_decode((string) file_get_contents($manifestPath), true) ?: [];
+    $violations = [];
+
+    foreach ($previous['migrations'] ?? [] as $entry) {
+        if (! isset($headByName[$entry['name']])) {
+            $violations[] = "{$entry['name']} (deleted or renamed)";
+        } elseif ($headByName[$entry['name']] !== $entry['sha256']) {
+            $violations[] = "{$entry['name']} (content changed)";
+        }
+    }
+
+    if ($violations !== []) {
+        fwrite(STDERR, "ERROR: shipped migrations are immutable — consumers already ran them by name.\n");
+        fwrite(STDERR, "Refusing to regenerate the manifest over:\n  - ".implode("\n  - ", $violations)."\n");
+        fwrite(STDERR, "Restore the original file and ship the change as a NEW migration (AID-398).\n");
+        exit(1);
+    }
+}
+
+// --- Write the manifest -----------------------------------------------------
+
+ksort($headByName);
+
+$migrations = [];
+
+foreach ($headByName as $name => $sha256) {
+    $migrations[] = [
+        'name' => $name,
+        'sha256' => $sha256,
+        'in_base' => in_array($name, $baseNames, true),
+    ];
+}
+
+$manifest = [
+    'release' => $release,
+    'upgrade_base' => ltrim($baseTag, 'v'),
+    'migrations' => $migrations,
+];
+
+$json = json_encode($manifest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)."\n";
+
+$changed = ! is_file($manifestPath) || (string) file_get_contents($manifestPath) !== $json;
+file_put_contents($manifestPath, $json);
+
+$inBase = count(array_filter($migrations, static fn (array $entry): bool => $entry['in_base']));
+$new = count($migrations) - $inBase;
+
+echo 'Manifest '.($changed ? 'updated' : 'unchanged').": release {$release}, upgrade base {$baseTag} ";
+echo "({$inBase} base migrations, {$new} new since base).\n";
+
+exit(0);
