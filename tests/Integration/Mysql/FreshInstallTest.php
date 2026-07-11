@@ -43,6 +43,14 @@ describe('Larabill fresh install on MySQL — UUID-first contract (ADR-006)', fu
             ->toBe(['customer_id', 'article_id', 'instance_identifier']);
 
         // ─────────────────────────────────────────────────────────────────────
+        // 2b. Fiscal series width matches the AEAT-derived contract (AID-429):
+        //     varchar(50) = NumSerieFactura maxLength (60) − 10-digit correlative.
+        //     Only MySQL proves real column widths — SQLite ignores them.
+        // ─────────────────────────────────────────────────────────────────────
+        expect($this->getMysqlColumnLength('invoices', 'prefix'))->toBe(50);
+        expect($this->getMysqlColumnLength('invoice_series_control', 'prefix'))->toBe(50);
+
+        // ─────────────────────────────────────────────────────────────────────
         // 3. Smoke: insert + uniqueness enforcement with a UUID v7 customer_id.
         // ─────────────────────────────────────────────────────────────────────
         $articleId = DB::table('articles')->insertGetId([

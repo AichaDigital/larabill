@@ -1,6 +1,6 @@
 {
-    "release": "6.0.0",
-    "upgrade_base": "5.0.0",
+    "release": "6.1.0",
+    "upgrade_base": "6.0.0",
     "migrations": [
         {
             "name": "2024_12_01_000000_create_tax_rates_table.php",
@@ -166,6 +166,11 @@
             "name": "2026_07_11_000001_replace_invoices_series_unique_index.php",
             "sha256": "22986e4956c9184069579575bf2adae1b7761eaab60b0f50a9c703d4fb351f39",
             "in_base": true
+        },
+        {
+            "name": "2026_07_11_120000_widen_invoices_prefix_to_aeat_limit.php",
+            "sha256": "aab8b7d000419b5f00d799454339c23e6bf95e3d8a5c6a97263a57d572e457b7",
+            "in_base": false
         }
     ]
 }

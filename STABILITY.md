@@ -6,7 +6,7 @@
 
 1. **No breaking change without a qualified usage imperative.** A breaking change (SemVer major) only enters when a real, documented consumer case makes the current behaviour untenable — a fiscal/legal requirement, a data-integrity defect, or a demonstrated production blocker. "Cleaner API", naming preferences and speculative flexibility do **not** qualify. The qualifying case is recorded in the CHANGELOG entry and the tracking issue.
 
-2. **Every major is auto-upgradeable from the previous major.** A consumer on `N.x` reaches `N+1.0` with, at most:
+2. **Every release that ships migrations — major OR minor — follows the same versioned upgrade ritual.** A consumer reaches any newer version with, at most:
 
    ```bash
    composer update aichadigital/larabill
@@ -14,13 +14,14 @@
    php artisan migrate
    ```
 
-   plus the mechanical code changes listed in the release's `UPGRADE-X.0.md`. Concretely, every schema- or data-touching release ships, in the same PR (policy AID-398):
+   This is the ONE upgrade mechanism of the package; no release may require a different one. Concretely, every schema- or data-touching release ships, in the same PR (policy AID-398):
 
-   - a migration that handles **existing data** (backfill/transform), never fresh-install-only;
+   - a migration that handles **existing data** (backfill/transform, or provably data-safe DDL such as widening a column), never fresh-install-only;
    - an upgrade-path test that seeds the previous release's state, runs the migration and asserts invariants (`tests/Integration/UpgradePath/`);
-   - `UPGRADE-X.0.md` in the dist root and a **BREAKING** CHANGELOG entry.
+   - a CHANGELOG entry that states **"Ships migrations: yes"** with the explicit upgrade steps for that release;
+   - for majors additionally: `UPGRADE-X.0.md` in the dist root and a **BREAKING** CHANGELOG entry.
 
-   `migrate:fresh` is never part of an upgrade path. Skipping majors is not supported: upgrade sequentially (5.x → 6.0 → 7.0).
+   Minor releases may ship schema changes only when they are **additive or provably data-safe** (new tables/columns/indexes, widened columns); anything that can lose data, reject existing rows or change persisted semantics is a major. `migrate:fresh` is never part of an upgrade path. Skipping majors is not supported: upgrade sequentially (5.x → 6.0 → 7.0); minors within a line may be skipped (the installer publishes every pending migration by name).
 
 3. **Deprecation before removal, one full major apart.** Public surface (`@api`) is never removed in the release that deprecates it: it is marked `@deprecated` with its replacement in major `N`, and removed no earlier than major `N+1`. Deprecated surface keeps working until removed.
 

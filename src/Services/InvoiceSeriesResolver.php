@@ -24,22 +24,31 @@ use InvalidArgumentException;
  *      that upgrades without re-publishing its config keeps working.
  *   4. The type's built-in default prefix (FAC/PRO/TIK/RECT).
  *
- * The series must be a non-empty string of at most 10 characters (the width of
- * the `prefix` column). An explicitly requested series that is too long fails
- * loud; an empty request falls through to configuration.
+ * The series must be a non-empty string of at most 50 characters — the width
+ * of the `prefix` column, derived from the norm (AID-429): the AEAT VERI*FACTU
+ * schema types NumSerieFactura as TextoIDFacturaType maxLength=60, and larabill
+ * composes that field as `prefix . series_number` (raw unpadded correlative,
+ * worst case 10 digits), so the series literal may use up to 60 − 10 = 50. An
+ * explicitly requested series that is too long fails loud; an empty request
+ * falls through to configuration.
  *
  * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 final class InvoiceSeriesResolver
 {
-    private const MAX_LENGTH = 10;
+    /**
+     * AEAT NumSerieFactura maxLength (60, XSD TextoIDFacturaType) minus the
+     * 10-digit worst-case unpadded correlative the adapter appends. Must stay
+     * in sync with the `prefix` column width (widen_invoices_prefix migration).
+     */
+    private const MAX_LENGTH = 50;
 
     /**
      * Resolve the fiscal series identifier for a fiscal type.
      *
      * @param  string|null  $requested  Optional explicit series chosen by the caller.
      *
-     * @throws InvalidArgumentException When an explicitly requested series exceeds 10 characters.
+     * @throws InvalidArgumentException When an explicitly requested series exceeds 50 characters (AID-429).
      */
     public function resolve(InvoiceSerieType $type, ?string $requested = null): string
     {

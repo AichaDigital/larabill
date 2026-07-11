@@ -71,7 +71,20 @@ it('falls back to the enum default when neither series map nor legacy key exists
         ->and($this->resolver->resolve(InvoiceSerieType::RECTIFICATIVE))->toBe('RECT');
 });
 
+it('accepts a series exactly at the AEAT-derived 50-char limit (AID-429)', function () {
+    // 50 = NumSerieFactura maxLength (60, XSD TextoIDFacturaType) − 10-digit
+    // worst-case unpadded correlative appended by the adapter.
+    $atLimit = str_repeat('S', 50);
+
+    expect($this->resolver->resolve(InvoiceSerieType::INVOICE, $atLimit))->toBe($atLimit);
+});
+
 it('rejects an explicitly requested series longer than the column width', function () {
-    expect(fn () => $this->resolver->resolve(InvoiceSerieType::INVOICE, 'THIS-IS-WAY-TOO-LONG'))
+    expect(fn () => $this->resolver->resolve(InvoiceSerieType::INVOICE, str_repeat('S', 51)))
         ->toThrow(InvalidArgumentException::class);
+});
+
+it('accepts real-world multi-word series literals the old 10-char cap rejected', function () {
+    // The AID-429 motivating case: per-installation rectificative series.
+    expect($this->resolver->resolve(InvoiceSerieType::RECTIFICATIVE, 'RECT-CASTRIS'))->toBe('RECT-CASTRIS');
 });
