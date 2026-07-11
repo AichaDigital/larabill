@@ -1,6 +1,6 @@
 {
-    "release": "5.0.0",
-    "upgrade_base": "4.1.0",
+    "release": "6.0.0",
+    "upgrade_base": "5.0.0",
     "migrations": [
         {
             "name": "2024_12_01_000000_create_tax_rates_table.php",
@@ -165,7 +165,7 @@
         {
             "name": "2026_07_11_000001_replace_invoices_series_unique_index.php",
             "sha256": "22986e4956c9184069579575bf2adae1b7761eaab60b0f50a9c703d4fb351f39",
-            "in_base": false
+            "in_base": true
         }
     ]
 }
