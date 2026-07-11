@@ -6,17 +6,30 @@ use AichaDigital\Larabill\Console\LarabillInstallCommand;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 
-// Clean up published migration files after each test.
-// When --force tests run publishMigrationsInOrder(), migration files are copied
-// to database_path('migrations'). Laravel's default migrator includes this path,
-// so subsequent tests with RefreshDatabase would load migrations from BOTH
-// the package path (ServiceProvider) AND database_path, causing "table already exists".
+// AID-419: `larabill:install --force` publishes the `.php.stub` files as real
+// migrations into database_path('migrations'). Under testbench that resolves to
+// the SHARED skeleton dir vendor/orchestra/testbench-core/laravel/database/
+// migrations/, physically shared across all `pest --parallel` worker processes.
+// Any other worker running RefreshDatabase globs that dir and require()s a file
+// this test is mid-writing or mid-deleting -> intermittent FileNotFoundException
+// on a rotating victim test.
+//
+// Redirect database_path() to a per-test temp dir so this test never writes into
+// the shared skeleton. The skeleton then stays immutable for the whole run and
+// every concurrent read of it is safe. Same isolation the MySQL install path
+// uses (InstallCommandMysqlTestCase, AID-287). Also subsumes the old "table
+// already exists" cleanup: a fresh empty temp dir per test can never leak
+// published migrations into a later test's RefreshDatabase.
+beforeEach(function () {
+    $tmp = sys_get_temp_dir().'/larabill_install_'.uniqid('', true);
+    File::ensureDirectoryExists($tmp.'/migrations');
+    app()->useDatabasePath($tmp);
+});
+
 afterEach(function () {
-    $targetPath = database_path('migrations');
-    if (File::isDirectory($targetPath)) {
-        foreach (File::glob("{$targetPath}/*.php") as $file) {
-            File::delete($file);
-        }
+    $base = database_path();
+    if (str_contains($base, 'larabill_install_') && File::isDirectory($base)) {
+        File::deleteDirectory($base);
     }
 });
 
