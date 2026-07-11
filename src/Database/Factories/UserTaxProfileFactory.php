@@ -183,16 +183,6 @@ class UserTaxProfileFactory extends Factory
     }
 
     /**
-     * Config for a specific owner user.
-     *
-     * @deprecated Use forOwner() instead. Will be removed in v2.0.
-     */
-    public function forUser(string|int $userId): self
-    {
-        return $this->forOwner($userId);
-    }
-
-    /**
      * Config for a specific owner user (ADR-004).
      *
      * The owner is the user who can edit this tax profile.

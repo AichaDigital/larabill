@@ -7,7 +7,7 @@
 - **`@api`** — supported public surface. Consumers may depend on it; changes follow semver (added surface → at least minor; removed surface or changed signatures/semantics → major, with an UPGRADE guide in the dist). The contract snapshots (`tests/Contract/snapshots/`, AID-412) additionally freeze the full surface of the seven contract models.
 - **`@internal`** — implementation detail. May change in any release without notice. Consumers depending on it do so at their own risk.
 
-`@deprecated` composes with either tag: a deprecated public class keeps its `@api` until the announced removal major (e.g. `BillingService`, removal targeted for AID-307).
+`@deprecated` composes with either tag: a deprecated public class keeps its `@api` until the announced removal major (precedent: `BillingService` — deprecated in v4.1.0/AID-390, kept `@api` through v5.x, removed in v6.0.0/AID-423). Per STABILITY.md, a deprecation lives through at least one full major before removal.
 
 ## Guiding principle
 
@@ -36,7 +36,7 @@
 
 ### Services split
 
-- **`@api` (14):** `InvoiceService`, `InvoiceNumberingService`, `InvoiceSeriesResolver` (AID-307 — the single source of the fiscal series), `InvoiceVerifactuService`, `TaxCalculationService`, `FiscalChangeDetector` (real consumer usage), `RecurringBillingService`, `ServiceLifecycleService`, `GroupedPaymentService`, `PricingService`, `EuSalesThresholdService`, `DestinationVatService`, `CommissionCalculationService` (consumer-orchestrated domain), `BillingService` (`@api` + `@deprecated`).
+- **`@api` (13):** `InvoiceService`, `InvoiceNumberingService`, `InvoiceSeriesResolver` (AID-307 — the single source of the fiscal series), `InvoiceVerifactuService`, `TaxCalculationService`, `FiscalChangeDetector` (real consumer usage), `RecurringBillingService`, `ServiceLifecycleService`, `GroupedPaymentService`, `PricingService`, `EuSalesThresholdService`, `DestinationVatService`, `CommissionCalculationService` (consumer-orchestrated domain). (`BillingService`, formerly `@api` + `@deprecated`, was removed in v6.0.0/AID-423.)
 - **`@internal` (9):** `FiscalIntegrityChecker` (creating-hook mechanism; its public exception is the contract), `ModelMappingService` (the config keys are public, not the resolver), `CacheService`, `PDFService`/`DomPDFService`/`DefaultPDFConnector` (public surface is `Invoice::generatePDF()` + `PDFConnectorInterface`), `VerifactuAdapter`, `FakeFiscalVerification` (test double; promotable), `VatCalculationStrategy` (default implementation — the contract is the API).
 
 ## Notes / candidates recorded here (not acted on in AID-413)
