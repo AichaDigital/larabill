@@ -1,0 +1,178 @@
+{
+    "class": "AichaDigital\\Larabill\\Models\\ArticlePrice",
+    "table": "article_prices",
+    "primaryKey": {
+        "incrementing": true,
+        "name": "id",
+        "type": "int"
+    },
+    "interfaces": [],
+    "traits": [
+        "Illuminate\\Database\\Eloquent\\Factories\\HasFactory"
+    ],
+    "constants": [],
+    "publicProperties": [],
+    "defaultAttributes": [],
+    "fillable": [
+        "article_id",
+        "billing_days_in_advance",
+        "billing_frequency",
+        "is_active",
+        "price",
+        "valid_from",
+        "valid_to"
+    ],
+    "hidden": [],
+    "visible": [],
+    "appends": [],
+    "with": [],
+    "casts": {
+        "billing_days_in_advance": "integer",
+        "billing_frequency": "AichaDigital\\Larabill\\Enums\\BillingFrequency",
+        "is_active": "boolean",
+        "price": "AichaDigital\\Lara100\\Casts\\FixedDecimalCast:2",
+        "valid_from": "date",
+        "valid_to": "date"
+    },
+    "relations": {
+        "article": {
+            "foreignKey": "article_id",
+            "ownerKey": "id",
+            "related": "AichaDigital\\Larabill\\Models\\Article",
+            "type": "BelongsTo",
+            "withTrashed": false
+        }
+    },
+    "scopes": {
+        "scopeActive": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                }
+            ],
+            "returnType": "void",
+            "static": false
+        },
+        "scopeCurrentlyValid": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                }
+            ],
+            "returnType": "void",
+            "static": false
+        },
+        "scopeForArticle": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                },
+                {
+                    "name": "articleId",
+                    "type": "int",
+                    "variadic": false
+                }
+            ],
+            "returnType": "void",
+            "static": false
+        },
+        "scopeForFrequency": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                },
+                {
+                    "name": "frequency",
+                    "type": "AichaDigital\\Larabill\\Enums\\BillingFrequency",
+                    "variadic": false
+                }
+            ],
+            "returnType": "void",
+            "static": false
+        },
+        "scopeValidAt": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                },
+                {
+                    "name": "date",
+                    "type": "Carbon\\Carbon",
+                    "variadic": false
+                }
+            ],
+            "returnType": "void",
+            "static": false
+        }
+    },
+    "methods": {
+        "daysUntilExpiration": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "?int",
+            "static": false
+        },
+        "getMonthlyEquivalent": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "?float",
+            "static": false
+        },
+        "getYearlyEquivalent": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "?float",
+            "static": false
+        },
+        "isCurrentlyValid": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "bool",
+            "static": false
+        },
+        "isExpired": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "bool",
+            "static": false
+        },
+        "isValidAt": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "date",
+                    "type": "Carbon\\Carbon",
+                    "variadic": false
+                }
+            ],
+            "returnType": "bool",
+            "static": false
+        }
+    }
+}

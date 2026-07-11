@@ -1,0 +1,536 @@
+{
+    "class": "AichaDigital\\Larabill\\Models\\EuSalesThreshold",
+    "table": "eu_sales_thresholds",
+    "primaryKey": {
+        "incrementing": true,
+        "name": "id",
+        "type": "int"
+    },
+    "interfaces": [],
+    "traits": [
+        "AichaDigital\\Larabill\\Concerns\\HasUserRelation"
+    ],
+    "constants": [],
+    "publicProperties": [],
+    "defaultAttributes": [],
+    "fillable": [
+        "breakdown_by_country",
+        "currency",
+        "exceeded_at",
+        "fiscal_year",
+        "last_updated",
+        "notification_sent",
+        "threshold_amount",
+        "threshold_exceeded",
+        "total_amount",
+        "user_id"
+    ],
+    "hidden": [],
+    "visible": [],
+    "appends": [],
+    "with": [],
+    "casts": {
+        "breakdown_by_country": "array",
+        "exceeded_at": "datetime",
+        "last_updated": "datetime",
+        "notification_sent": "boolean",
+        "threshold_amount": "AichaDigital\\Lara100\\Casts\\FixedDecimalCast:2",
+        "threshold_exceeded": "boolean",
+        "total_amount": "AichaDigital\\Lara100\\Casts\\FixedDecimalCast:2"
+    },
+    "relations": {
+        "user": {
+            "foreignKey": "user_id",
+            "ownerKey": "id",
+            "related": "<configured>",
+            "type": "BelongsTo",
+            "withTrashed": false
+        }
+    },
+    "scopes": {
+        "scopeByFiscalYear": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                },
+                {
+                    "name": "fiscalYear",
+                    "type": "int",
+                    "variadic": false
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        },
+        "scopeByUser": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                },
+                {
+                    "name": "userId",
+                    "type": "string|int",
+                    "variadic": false
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        },
+        "scopeCloseToThreshold": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                },
+                {
+                    "name": "percentage",
+                    "type": "float",
+                    "variadic": false,
+                    "default": "90.0"
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        },
+        "scopeCurrentFiscalYear": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        },
+        "scopeExceeded": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        },
+        "scopeNeedsNotification": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        },
+        "scopeThresholdExceeded": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        }
+    },
+    "methods": {
+        "addAmount": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "amount",
+                    "type": "AichaDigital\\Lara100\\ValueObjects\\FixedDecimal",
+                    "variadic": false
+                }
+            ],
+            "returnType": "self",
+            "static": false
+        },
+        "addSalesAmount": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "countryCode",
+                    "type": "string",
+                    "variadic": false
+                },
+                {
+                    "name": "amount",
+                    "type": "AichaDigital\\Lara100\\ValueObjects\\FixedDecimal",
+                    "variadic": false
+                }
+            ],
+            "returnType": "self",
+            "static": false
+        },
+        "addSalesForCountry": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "countryCode",
+                    "type": "string",
+                    "variadic": false
+                },
+                {
+                    "name": "amount",
+                    "type": "AichaDigital\\Lara100\\ValueObjects\\FixedDecimal",
+                    "variadic": false
+                }
+            ],
+            "returnType": "self",
+            "static": false
+        },
+        "calculateTotal": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "AichaDigital\\Lara100\\ValueObjects\\FixedDecimal",
+            "static": false
+        },
+        "casts": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "array",
+            "static": false
+        },
+        "checkThreshold": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "bool",
+            "static": false
+        },
+        "companyNeedsThresholdMonitoring": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "companyId",
+                    "type": "string",
+                    "variadic": false
+                },
+                {
+                    "name": "fiscalYear",
+                    "type": "?int",
+                    "variadic": false,
+                    "default": "NULL"
+                }
+            ],
+            "returnType": "bool",
+            "static": true
+        },
+        "findByUserAndYear": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "userId",
+                    "type": "string|int",
+                    "variadic": false
+                },
+                {
+                    "name": "fiscalYear",
+                    "type": "?int",
+                    "variadic": false,
+                    "default": "NULL"
+                }
+            ],
+            "returnType": "?self",
+            "static": true
+        },
+        "getBreakdownByCountryAttribute": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "value",
+                    "type": null,
+                    "variadic": false
+                }
+            ],
+            "returnType": "array",
+            "static": false
+        },
+        "getCompaniesExceedingThreshold": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "fiscalYear",
+                    "type": "?int",
+                    "variadic": false,
+                    "default": "NULL"
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Collection",
+            "static": true
+        },
+        "getCompaniesNeedingNotification": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "fiscalYear",
+                    "type": "?int",
+                    "variadic": false,
+                    "default": "NULL"
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Collection",
+            "static": true
+        },
+        "getCountriesWithSales": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "array",
+            "static": false
+        },
+        "getDefaultCurrency": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "string",
+            "static": true
+        },
+        "getDefaultThreshold": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "int",
+            "static": true
+        },
+        "getFiscalYearEndDate": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "Illuminate\\Support\\Carbon",
+            "static": false
+        },
+        "getFiscalYearStartDate": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "Illuminate\\Support\\Carbon",
+            "static": false
+        },
+        "getOrCreateForUser": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "userId",
+                    "type": "string|int",
+                    "variadic": false
+                },
+                {
+                    "name": "fiscalYear",
+                    "type": "?int",
+                    "variadic": false,
+                    "default": "NULL"
+                }
+            ],
+            "returnType": "self",
+            "static": true
+        },
+        "getRemainingThresholdAmount": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "AichaDigital\\Lara100\\ValueObjects\\FixedDecimal",
+            "static": false
+        },
+        "getSalesAmountByCountry": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "countryCode",
+                    "type": "string",
+                    "variadic": false
+                }
+            ],
+            "returnType": "AichaDigital\\Lara100\\ValueObjects\\FixedDecimal",
+            "static": false
+        },
+        "getSalesForCountry": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "countryCode",
+                    "type": "string",
+                    "variadic": false
+                }
+            ],
+            "returnType": "AichaDigital\\Lara100\\ValueObjects\\FixedDecimal",
+            "static": false
+        },
+        "getSalesGrowthByCompany": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "companyId",
+                    "type": "string",
+                    "variadic": false
+                },
+                {
+                    "name": "fiscalYear",
+                    "type": "int",
+                    "variadic": false
+                }
+            ],
+            "returnType": "array",
+            "static": true
+        },
+        "getThresholdPercentage": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "float",
+            "static": false
+        },
+        "getThresholdStatistics": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "fiscalYear",
+                    "type": "int",
+                    "variadic": false
+                }
+            ],
+            "returnType": "array",
+            "static": true
+        },
+        "getTopCountriesBySales": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "fiscalYear",
+                    "type": "int",
+                    "variadic": false
+                },
+                {
+                    "name": "limit",
+                    "type": "int",
+                    "variadic": false,
+                    "default": "5"
+                }
+            ],
+            "returnType": "array",
+            "static": true
+        },
+        "getTopCountriesBySalesForInstance": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "limit",
+                    "type": "int",
+                    "variadic": false,
+                    "default": "10"
+                }
+            ],
+            "returnType": "array",
+            "static": false
+        },
+        "isCloseToThreshold": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "percentage",
+                    "type": "float",
+                    "variadic": false,
+                    "default": "90.0"
+                }
+            ],
+            "returnType": "bool",
+            "static": false
+        },
+        "isThresholdExceeded": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "bool",
+            "static": false
+        },
+        "isWithinFiscalYear": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "date",
+                    "type": "Carbon\\Carbon",
+                    "variadic": false
+                }
+            ],
+            "returnType": "bool",
+            "static": false
+        },
+        "markNotificationSent": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "self",
+            "static": false
+        },
+        "markThresholdExceeded": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "self",
+            "static": false
+        },
+        "resetForNewYear": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "newFiscalYear",
+                    "type": "int",
+                    "variadic": false
+                }
+            ],
+            "returnType": "self",
+            "static": false
+        },
+        "resetSalesAmounts": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "self",
+            "static": false
+        }
+    }
+}

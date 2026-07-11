@@ -1,0 +1,296 @@
+{
+    "class": "AichaDigital\\Larabill\\Models\\Article",
+    "table": "articles",
+    "primaryKey": {
+        "incrementing": true,
+        "name": "id",
+        "type": "int"
+    },
+    "interfaces": [],
+    "traits": [
+        "Illuminate\\Database\\Eloquent\\Factories\\HasFactory",
+        "Illuminate\\Database\\Eloquent\\SoftDeletes",
+        "Spatie\\Translatable\\HasTranslations"
+    ],
+    "constants": [],
+    "publicProperties": {
+        "translatable": [
+            "description",
+            "name"
+        ]
+    },
+    "defaultAttributes": [],
+    "fillable": [
+        "category",
+        "code",
+        "cost_price",
+        "description",
+        "is_active",
+        "item_type",
+        "metadata",
+        "name",
+        "subscription_type",
+        "tax_group_id",
+        "unit_measure_id"
+    ],
+    "hidden": [],
+    "visible": [],
+    "appends": [],
+    "with": [],
+    "casts": {
+        "cost_price": "AichaDigital\\Lara100\\Casts\\FixedDecimalCast:2",
+        "is_active": "boolean",
+        "item_type": "AichaDigital\\Larabill\\Enums\\ItemType",
+        "metadata": "array"
+    },
+    "relations": {
+        "activePrices": {
+            "foreignKey": "article_id",
+            "localKey": "id",
+            "related": "AichaDigital\\Larabill\\Models\\ArticlePrice",
+            "type": "HasMany",
+            "withTrashed": false
+        },
+        "invoiceItems": {
+            "foreignKey": "article_id",
+            "localKey": "id",
+            "related": "AichaDigital\\Larabill\\Models\\InvoiceItem",
+            "type": "HasMany",
+            "withTrashed": false
+        },
+        "overrides": {
+            "foreignKey": "article_id",
+            "localKey": "id",
+            "related": "AichaDigital\\Larabill\\Models\\ArticleOverride",
+            "type": "HasMany",
+            "withTrashed": false
+        },
+        "prices": {
+            "foreignKey": "article_id",
+            "localKey": "id",
+            "related": "AichaDigital\\Larabill\\Models\\ArticlePrice",
+            "type": "HasMany",
+            "withTrashed": false
+        },
+        "serviceStatuses": {
+            "foreignKey": "article_id",
+            "localKey": "id",
+            "related": "AichaDigital\\Larabill\\Models\\ArticleServiceStatus",
+            "type": "HasMany",
+            "withTrashed": false
+        },
+        "taxGroup": {
+            "foreignKey": "tax_group_id",
+            "ownerKey": "id",
+            "related": "AichaDigital\\Larabill\\Models\\TaxGroup",
+            "type": "BelongsTo",
+            "withTrashed": false
+        },
+        "unitMeasure": {
+            "foreignKey": "unit_measure_id",
+            "ownerKey": "id",
+            "related": "AichaDigital\\Larabill\\Models\\UnitMeasure",
+            "type": "BelongsTo",
+            "withTrashed": false
+        }
+    },
+    "scopes": {
+        "scopeActive": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                }
+            ],
+            "returnType": "void",
+            "static": false
+        },
+        "scopeByCategory": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                },
+                {
+                    "name": "category",
+                    "type": "string",
+                    "variadic": false
+                }
+            ],
+            "returnType": "void",
+            "static": false
+        },
+        "scopeGoods": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                }
+            ],
+            "returnType": "void",
+            "static": false
+        },
+        "scopeRecurring": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                }
+            ],
+            "returnType": "void",
+            "static": false
+        },
+        "scopeServices": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                }
+            ],
+            "returnType": "void",
+            "static": false
+        }
+    },
+    "methods": {
+        "getActiveOverrideFor": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "customerId",
+                    "type": "string|int",
+                    "variadic": false
+                }
+            ],
+            "returnType": "?AichaDigital\\Larabill\\Models\\ArticleOverride",
+            "static": false
+        },
+        "getAvailableFrequencies": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "Illuminate\\Support\\Collection",
+            "static": false
+        },
+        "getBillingDaysInAdvanceFor": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "frequency",
+                    "type": "AichaDigital\\Larabill\\Enums\\BillingFrequency",
+                    "variadic": false
+                }
+            ],
+            "returnType": "?int",
+            "static": false
+        },
+        "getDefaultPrice": {
+            "api": true,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "?float",
+            "static": false
+        },
+        "getEffectivePriceFor": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "customerId",
+                    "type": "string|int|null",
+                    "variadic": false
+                },
+                {
+                    "name": "frequency",
+                    "type": "AichaDigital\\Larabill\\Enums\\BillingFrequency",
+                    "variadic": false
+                }
+            ],
+            "returnType": "?float",
+            "static": false
+        },
+        "getPriceFor": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "frequency",
+                    "type": "AichaDigital\\Larabill\\Enums\\BillingFrequency",
+                    "variadic": false
+                }
+            ],
+            "returnType": "?float",
+            "static": false
+        },
+        "hasActiveOverrideFor": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "customerId",
+                    "type": "string|int",
+                    "variadic": false
+                }
+            ],
+            "returnType": "bool",
+            "static": false
+        },
+        "isGood": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "bool",
+            "static": false
+        },
+        "isRecurring": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "bool",
+            "static": false
+        },
+        "isService": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "bool",
+            "static": false
+        },
+        "requiresInstanceIdentifier": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "bool",
+            "static": false
+        },
+        "validateInstanceIdentifier": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "identifier",
+                    "type": "?string",
+                    "variadic": false
+                }
+            ],
+            "returnType": "bool",
+            "static": false
+        }
+    }
+}
