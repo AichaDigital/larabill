@@ -11,9 +11,11 @@
 [![License](https://img.shields.io/packagist/l/aichadigital/larabill.svg?style=flat-square)](https://packagist.org/packages/aichadigital/larabill)
 <!-- AI-BADGES:END -->
 
+> 🔒 **Stability contract (effective from v6.0.0)** — larabill is a closed, stable product governed by [STABILITY.md](STABILITY.md): breaking changes only enter with a qualified, documented usage imperative; every major is auto-upgradeable from the previous one; deprecations live through at least one full major before removal. As of 6.0 the deprecated backlog is empty and there is **no known future breaking change**.
+
 > ℹ️ **Schema upgrade policy (stable versions = respect for data)** — since 1.0, larabill treats your database as a contract: schema changes ship WITH their upgrade path. Every release that touches tables includes a data-aware migration (existing rows are transformed, never discarded), and breaking majors ship an `UPGRADE-X.md` guide in the dist. To upgrade an existing install: `composer update aichadigital/larabill`, re-run `php artisan larabill:install --no-migrate` (idempotent — it publishes only the NEW migrations, skipping the ones you already have), then `php artisan migrate`. Never use `migrate:fresh` on a database with real data.
 
-> ⚠️ **Upgrading from 3.x?** 4.0 removes larabill's own VAT/ROI verification layer — that domain is now owned by [`lararoi`](https://github.com/aichadigital/lararoi) and consumed via a thin bridge. Most consumers (who bill through `is_roi_taxed`) are unaffected. See the [4.0 upgrade guide](UPGRADE-4.0.md).
+> ⚠️ **Upgrading?** Follow the guides sequentially: [UPGRADE-4.0.md](UPGRADE-4.0.md) (3.x → 4.0, VAT verification moves to [`lararoi`](https://github.com/aichadigital/lararoi)), [UPGRADE-5.0.md](UPGRADE-5.0.md) (4.x → 5.0, real fiscal series separated from the fiscal type) and [UPGRADE-6.0.md](UPGRADE-6.0.md) (5.x → 6.0, deprecated surface removed — zero migrations).
 
 Larabill is a professional, **UUID-first** billing and invoicing package for Laravel applications. It provides tax calculation for Spain/EU/worldwide and flexible invoice generation with immutability protection, plus an optional thin bridge to intra-community VAT/NIF verification (delegated to the [`lararoi`](https://github.com/aichadigital/lararoi) package). The consumer app's `users.id` MUST be UUID v7 char(36) — see [`docs/setup-uuid.md`](docs/setup-uuid.md) and [ADR-006](docs/ADR-006-uuid-first-no-agnostic.md).
 
@@ -181,7 +183,7 @@ $invoice = $invoiceService->createInvoice([
 
 Invoice numbers are correlative per series (`invoice_series_control`, EU/RD 1619/2012): `fiscal_number`, `prefix`, `series_number` and `fiscal_year` all derive atomically from `InvoiceNumberingService`. An active `CompanyFiscalConfig` must exist — `createInvoice()` snapshots the issuer's fiscal data and refuses to emit without it.
 
-> **Deprecated:** the former `BillingService` quick-start path still works (it now delegates its numbering to the same series control) but is removal-targeted for the next breaking major — use `InvoiceService`.
+> **Removed in 6.0:** the former `BillingService` quick-start path is gone — `InvoiceService` is the emission path. See [UPGRADE-6.0.md](UPGRADE-6.0.md) for the 1:1 mapping.
 
 ### Tax Calculation
 
@@ -288,7 +290,10 @@ vendor/bin/phpstan analyse
 | [setup-uuid.md](docs/setup-uuid.md) | UUID-first onboarding for the consumer app |
 | [ADR-006](docs/ADR-006-uuid-first-no-agnostic.md) | UUID-first decision (supersedes the agnostic id contract) |
 | [TAX_RATES_MIGRATION_GUIDE.md](docs/TAX_RATES_MIGRATION_GUIDE.md) | Tax rates migration guide |
+| [STABILITY.md](STABILITY.md) | Stability contract: how larabill evolves from v6.0.0 |
 | [UPGRADE-4.0.md](UPGRADE-4.0.md) | Upgrade guide: larabill 3.x → 4.0 (VAT verification bridge) |
+| [UPGRADE-5.0.md](UPGRADE-5.0.md) | Upgrade guide: larabill 4.x → 5.0 (fiscal series vs fiscal type) |
+| [UPGRADE-6.0.md](UPGRADE-6.0.md) | Upgrade guide: larabill 5.x → 6.0 (deprecated surface removed) |
 | [CHANGELOG.md](CHANGELOG.md) | Version history and breaking changes |
 
 For AI agents working with this package, see [.claude/project.md](.claude/project.md).
