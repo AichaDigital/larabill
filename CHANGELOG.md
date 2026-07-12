@@ -4,6 +4,9 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- **PDF internals (AID-391):** the DomPDF rendering engine is now injectable into `PDFService` (third constructor argument; previously hard-wired, impossible to substitute in tests) and `DomPDFService::savePDF()` writes through the `File` facade (`ensureDirectoryExists` + `put`) instead of raw `mkdir`/`file_put_contents`. No behavior change; both `@internal`/additive.
+
 ## [6.1.0] - 2026-07-11
 
 **Ships migrations: yes** — upgrade with the standard ritual: `composer update aichadigital/larabill` + `php artisan larabill:install` (idempotent, publishes only the new migration) + `php artisan migrate`. The migration is data-safe by construction (columns only widen; no row is touched, no value can be truncated).

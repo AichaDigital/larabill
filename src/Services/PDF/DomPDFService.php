@@ -11,6 +11,7 @@ use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\InvoiceTemplate;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\View;
 
@@ -395,19 +396,17 @@ class DomPDFService
     {
         $filename = 'invoice_'.$invoice->id.'_'.$invoice->type.'.pdf';
 
-        // Use temp directory for testing, storage for production
+        // Use temp directory for testing, storage for production (AID-391:
+        // filesystem writes go through the File facade, never raw mkdir/
+        // file_put_contents — fakeable and consistent with the framework).
         if (! $this->isProductionEnvironment() || ! function_exists('storage_path')) {
             $pdfPath = sys_get_temp_dir().'/'.$filename;
         } else {
             $pdfPath = storage_path('app/invoices/'.$filename);
-            // Ensure directory exists
-            $directory = dirname($pdfPath);
-            if (! is_dir($directory)) {
-                mkdir($directory, 0755, true);
-            }
+            File::ensureDirectoryExists(dirname($pdfPath), 0755);
         }
 
-        file_put_contents($pdfPath, $pdfContent);
+        File::put($pdfPath, $pdfContent);
 
         return $pdfPath;
     }
