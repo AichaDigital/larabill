@@ -4,6 +4,10 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+## [6.3.0] - 2026-07-12
+
+**Ships migrations: yes** — upgrade with the standard ritual: `composer update aichadigital/larabill` + `php artisan larabill:install` (idempotent, publishes only the new migration) + `php artisan migrate`. The migration is a guarded one-way data cleanup (no schema change): it deletes only the phantom `proforma-simple` template row, and only when no override blade resolves for it.
+
 ### Added
 - **COMPLIANCE — the six PDF templates print «Fecha de operación» when the operation date differs from the expedition date (AID-442).** RD 1619/2012 art. 6.1.f requires the invoice to show the date the documented operations were carried out (or the advance payment received) ONLY when it differs from the expedition date. The row prints the formatted `service_date` only when it is set and falls on a different day than `invoice_date` — with equal or missing dates every PDF renders exactly as before. The visibility rule lives in `DomPDFService::prepareTemplateData()` (new `operation_date` template key, `@internal` surface), keeping the blades dumb: no proforma special-casing in any template (the proforma date-alignment on conversion is a separate concern, tracked in AID-444). Regression dataset renders all six templates in the differing, equal-day and null scenarios.
 
