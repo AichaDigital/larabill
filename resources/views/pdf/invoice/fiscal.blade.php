@@ -162,7 +162,7 @@
         <div class="invoice-info">
             <div class="invoice-title">FACTURA</div>
             <div><strong>Número:</strong> {{ $invoice->number }}</div>
-            <div><strong>Fecha:</strong> {{ $invoice->created_at ? $invoice->created_at->format('d/m/Y') : now()->format('d/m/Y') }}</div>
+            <div><strong>Fecha de expedición:</strong> {{ $invoice->invoice_date->format('d/m/Y') }}</div>
             <div><strong>Estado:</strong> {{ $invoice->status?->label() }}</div>
         </div>
     </div>
