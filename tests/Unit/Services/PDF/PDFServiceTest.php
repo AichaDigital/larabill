@@ -5,8 +5,11 @@ use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Services\PDF\DefaultPDFConnector;
+use AichaDigital\Larabill\Services\PDF\DomPDFService;
 use AichaDigital\Larabill\Services\PDF\PDFService;
 use AichaDigital\Larabill\Tests\TestCase;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Str;
 
 beforeEach(function () {
     $this->pdfService = new PDFService;
@@ -14,6 +17,33 @@ beforeEach(function () {
 
 it('can be instantiated', function () {
     expect($this->pdfService)->toBeInstanceOf(PDFService::class);
+});
+
+it('accepts an injected DomPDF engine instead of hard-wiring one (AID-391)', function () {
+    $engine = new class([]) extends DomPDFService {};
+
+    $service = new PDFService([], null, $engine);
+
+    expect($service->getDomPDFService())->toBe($engine);
+});
+
+it('persists PDFs through the File facade (AID-391)', function () {
+    $engine = new DomPDFService([]);
+
+    $invoice     = new Invoice;
+    $invoice->id = (string) Str::uuid7();
+
+    $save = new ReflectionMethod($engine, 'savePDF');
+    $save->setAccessible(true);
+
+    // Testing environment → the temp-dir branch; the write itself goes
+    // through File::put either way.
+    $path = $save->invoke($engine, $invoice, '%PDF-fake-content');
+
+    expect(File::exists($path))->toBeTrue()
+        ->and(File::get($path))->toBe('%PDF-fake-content');
+
+    File::delete($path);
 });
 
 it('can get available connectors', function () {
