@@ -292,6 +292,7 @@ class DomPDFService
             'notes'             => $this->getInvoiceNotes($invoice),
             'payment_terms'     => $this->getPaymentTerms($invoice),
             'template_settings' => $this->getTemplateSettings($invoice),
+            'operation_date'    => $this->getOperationDate($invoice),
         ];
 
         // Add QR data if included
@@ -300,6 +301,29 @@ class DomPDFService
         }
 
         return $data;
+    }
+
+    /**
+     * Get the operation date to print, or null when the row must not appear.
+     *
+     * RD 1619/2012 art. 6.1.f (AID-442): the invoice must show the date the
+     * documented operations were carried out ONLY when it differs from the
+     * expedition date (`invoice_date`, AID-439). The visibility rule lives
+     * here so the templates stay dumb — with equal or missing dates they
+     * render exactly as before.
+     *
+     * @param  Invoice  $invoice  The invoice
+     * @return string|null Formatted operation date, or null to omit the row
+     */
+    protected function getOperationDate(Invoice $invoice): ?string
+    {
+        if ($invoice->service_date === null || $invoice->invoice_date === null) {
+            return null;
+        }
+
+        return $invoice->service_date->isSameDay($invoice->invoice_date)
+            ? null
+            : $invoice->service_date->format('d/m/Y');
     }
 
     /**
