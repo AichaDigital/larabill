@@ -4,6 +4,9 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **The EU OSS sales threshold no longer attributes amounts to a fabricated owner nor to the wrong fiscal year (AID-391).** `EuSalesThresholdService` fell back to `config('larabill.company.id', '1')` — a key that does not exist and a value that is not a UUID — silently corrupting the threshold ledger whenever an invoice reached it without `user_id`; it now fails loud with the new typed `MissingInvoiceOwnerException`. The `fiscal_year` fallback used `date('Y')` (PHP TZ, natural year), ignoring `LARABILL_FISCAL_START_MONTH`; it now derives from `RegionalContext::getFiscalYear(now())` — the same source the numbering uses.
+
 ## [6.1.0] - 2026-07-11
 
 **Ships migrations: yes** — upgrade with the standard ritual: `composer update aichadigital/larabill` + `php artisan larabill:install` (idempotent, publishes only the new migration) + `php artisan migrate`. The migration is data-safe by construction (columns only widen; no row is touched, no value can be truncated).
