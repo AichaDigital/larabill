@@ -69,6 +69,8 @@ class LarabillInstallCommand extends Command
         '036' => 'replace_invoices_series_unique_index',
         // === SERIES WIDTH TO THE AEAT LIMIT (AID-429) ===
         '037' => 'widen_invoices_prefix_to_aeat_limit',
+        // === PHANTOM TEMPLATE CLEANUP (AID-450) ===
+        '038' => 'remove_phantom_proforma_simple_invoice_template',
     ];
 
     public function handle(): int
