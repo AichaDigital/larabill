@@ -4,6 +4,9 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **The EU OSS sales threshold no longer attributes amounts to a fabricated owner nor to the wrong fiscal year (AID-391).** `EuSalesThresholdService` fell back to `config('larabill.company.id', '1')` — a key that does not exist and a value that is not a UUID — silently corrupting the threshold ledger whenever an invoice reached it without `user_id`; it now fails loud with the new typed `MissingInvoiceOwnerException`. The `fiscal_year` fallback used `date('Y')` (PHP TZ, natural year), ignoring `LARABILL_FISCAL_START_MONTH`; it now derives from `RegionalContext::getFiscalYear(now())` — the same source the numbering uses.
+
 ### Changed
 - **PDF internals (AID-391):** the DomPDF rendering engine is now injectable into `PDFService` (third constructor argument; previously hard-wired, impossible to substitute in tests) and `DomPDFService::savePDF()` writes through the `File` facade (`ensureDirectoryExists` + `put`) instead of raw `mkdir`/`file_put_contents`. No behavior change; both `@internal`/additive.
 

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use AichaDigital\Larabill\Exceptions\MissingInvoiceOwnerException;
 use AichaDigital\Larabill\Models\EuSalesThreshold;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\UserTaxProfile;
@@ -164,5 +165,65 @@ describe('EuSalesThresholdService', function () {
         $noProfile = new Invoice;
         $noProfile->setRelation('userTaxProfile', null);
         expect($isEuSale->invoke($service, $noProfile))->toBeFalse();
+    });
+
+    it('accumulates under the invoice owner and the invoice fiscal year (AID-391)', function () {
+        $service = new EuSalesThresholdService;
+        $ownerId = Str::uuid()->toString();
+
+        $invoice = new Invoice([
+            'user_id'        => $ownerId,
+            'fiscal_year'    => 2025,
+            'taxable_amount' => cents(10000),
+        ]);
+        $invoice->setRelation('userTaxProfile', UserTaxProfile::factory()->make(['country_code' => 'FR']));
+
+        $service->processInvoice($invoice);
+
+        $row = EuSalesThreshold::where('user_id', $ownerId)->where('fiscal_year', 2025)->first();
+        expect($row)->not->toBeNull()
+            ->and($row->total_amount->unscaledValue())->toBe(10000);
+    });
+
+    it('falls back to the REGIONAL fiscal year, honouring a non-January start (AID-391)', function () {
+        // Sensitivity: fiscal year starts in July and "today" is March 2026 —
+        // the old date('Y') fallback would attribute to 2026; the fiscal year
+        // is still 2025. Exercised with fiscal_year null (unsaved row shape).
+        config(['larabill.fiscal_year.start_month' => 7]);
+        $this->travelTo('2026-03-15');
+
+        $service = new EuSalesThresholdService;
+        $ownerId = Str::uuid()->toString();
+
+        $invoice = new Invoice([
+            'user_id'        => $ownerId,
+            'fiscal_year'    => null,
+            'taxable_amount' => cents(5000),
+        ]);
+        $invoice->setRelation('userTaxProfile', UserTaxProfile::factory()->make(['country_code' => 'DE']));
+
+        $service->processInvoice($invoice);
+        $this->travelBack();
+
+        expect(EuSalesThreshold::where('user_id', $ownerId)->where('fiscal_year', 2025)->exists())->toBeTrue()
+            ->and(EuSalesThreshold::where('user_id', $ownerId)->where('fiscal_year', 2026)->exists())->toBeFalse();
+    });
+
+    it('fails loud when the invoice has no owner instead of attributing to a fabricated one (AID-391)', function () {
+        // The old fallback was config('larabill.company.id', '1') — a key that
+        // does not exist and a non-UUID value: silent threshold-ledger corruption.
+        $service = new EuSalesThresholdService;
+
+        $invoice = new Invoice([
+            'user_id'        => null,
+            'fiscal_year'    => 2026,
+            'taxable_amount' => cents(10000),
+        ]);
+        $invoice->setRelation('userTaxProfile', UserTaxProfile::factory()->make(['country_code' => 'FR']));
+
+        expect(fn () => $service->processInvoice($invoice))
+            ->toThrow(MissingInvoiceOwnerException::class);
+
+        expect(EuSalesThreshold::count())->toBe(0);
     });
 });

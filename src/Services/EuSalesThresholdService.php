@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Services;
 
 use AichaDigital\Lara100\ValueObjects\FixedDecimal;
+use AichaDigital\Larabill\Exceptions\MissingInvoiceOwnerException;
 use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\EuSalesThreshold;
 use AichaDigital\Larabill\Models\Invoice;
+use AichaDigital\Larabill\Support\RegionalContext;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -53,8 +55,8 @@ class EuSalesThresholdService
             return;
         }
 
-        $userId     = (string) ($invoice->user_id ?? config('larabill.company.id', '1'));
-        $fiscalYear = (int) ($invoice->fiscal_year ?? date('Y'));
+        $userId     = $this->thresholdOwner($invoice);
+        $fiscalYear = (int) ($invoice->fiscal_year ?? RegionalContext::getFiscalYear(now()));
 
         $threshold = EuSalesThreshold::getOrCreateForUser($userId, $fiscalYear);
         $threshold->addAmount($invoice->taxable_amount);
@@ -84,8 +86,8 @@ class EuSalesThresholdService
             return;
         }
 
-        $userId     = (string) ($invoice->user_id ?? config('larabill.company.id', '1'));
-        $fiscalYear = (int) ($invoice->fiscal_year ?? date('Y'));
+        $userId     = $this->thresholdOwner($invoice);
+        $fiscalYear = (int) ($invoice->fiscal_year ?? RegionalContext::getFiscalYear(now()));
 
         $threshold = EuSalesThreshold::getOrCreateForUser($userId, $fiscalYear);
         $threshold->addAmount($invoice->taxable_amount->negated());
@@ -99,6 +101,28 @@ class EuSalesThresholdService
     /**
      * Check if an invoice represents a sale to EU customer.
      */
+    /**
+     * The owner (issuer scope) the threshold amounts are attributed to.
+     *
+     * The schema declares invoices.user_id NOT NULL, so a null here is a
+     * corrupt/unsaved row: fail loud instead of attributing OSS threshold
+     * amounts to a fabricated fallback owner (AID-391 — the old fallback was
+     * config('larabill.company.id', '1'): a key that does not exist and a
+     * value that is not a UUID; silent ledger corruption).
+     *
+     * @throws MissingInvoiceOwnerException
+     */
+    private function thresholdOwner(Invoice $invoice): string
+    {
+        $userId = (string) ($invoice->user_id ?? '');
+
+        if ($userId === '') {
+            throw MissingInvoiceOwnerException::forInvoice($invoice);
+        }
+
+        return $userId;
+    }
+
     private function isEuSale(Invoice $invoice): bool
     {
         // The recipient's fiscal country lives in the immutable UserTaxProfile
