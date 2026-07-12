@@ -80,21 +80,6 @@ class InvoiceTemplatesSeeder extends Seeder
                     'show_payment_terms' => true,
                 ],
             ],
-            [
-                'name'          => 'simple',
-                'display_name'  => 'Plantilla Simple',
-                'type'          => 'proforma',
-                'template_path' => 'larabill::pdf.invoice.proforma-simple',
-                'description'   => 'Plantilla simple para proformas rápidas',
-                'is_default'    => false,
-                'is_active'     => true,
-                'settings'      => [
-                    'show_qr'            => false,
-                    'show_legal_notes'   => false,
-                    'show_payment_terms' => false,
-                ],
-            ],
-
             // Reverse Charge templates
             [
                 'name'          => 'default',

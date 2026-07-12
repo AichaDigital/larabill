@@ -171,6 +171,11 @@
             "name": "2026_07_11_120000_widen_invoices_prefix_to_aeat_limit.php",
             "sha256": "aab8b7d000419b5f00d799454339c23e6bf95e3d8a5c6a97263a57d572e457b7",
             "in_base": true
+        },
+        {
+            "name": "2026_07_12_000001_remove_phantom_proforma_simple_invoice_template.php",
+            "sha256": "9a64bc1577a6bcf0c0673e189e7c0a3d0d891f021748f3558d47c15a2a03cc72",
+            "in_base": false
         }
     ]
 }
