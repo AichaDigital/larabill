@@ -70,8 +70,9 @@ describe('larabill:install — production install path on MySQL (AID-287)', func
 
         // Every $migrationOrder entry (24 create + 8 modifiers + 1 data
         // backfill, AID-390) applied cleanly. AID-307 adds the invoices
-        // series unique-index swap; AID-429 adds the prefix widening.
-        expect($this->appliedMigrationCount())->toBe(34);
+        // series unique-index swap; AID-429 adds the prefix widening;
+        // AID-450 adds the phantom-template cleanup.
+        expect($this->appliedMigrationCount())->toBe(35);
 
         // The package defines inter-table FK constraints (e.g. invoice_items →
         // invoices, tax_group_tax_rate → tax_groups/tax_rates). They could only
