@@ -4,7 +4,11 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **The EU OSS sales threshold no longer attributes amounts to a fabricated owner nor to the wrong fiscal year (AID-391).** `EuSalesThresholdService` fell back to `config('larabill.company.id', '1')` — a key that does not exist and a value that is not a UUID — silently corrupting the threshold ledger whenever an invoice reached it without `user_id`; it now fails loud with the new typed `MissingInvoiceOwnerException`. The `fiscal_year` fallback used `date('Y')` (PHP TZ, natural year), ignoring `LARABILL_FISCAL_START_MONTH`; it now derives from `RegionalContext::getFiscalYear(now())` — the same source the numbering uses.
+
 ### Changed
+- **PDF internals (AID-391):** the DomPDF rendering engine is now injectable into `PDFService` (third constructor argument; previously hard-wired, impossible to substitute in tests) and `DomPDFService::savePDF()` writes through the `File` facade (`ensureDirectoryExists` + `put`) instead of raw `mkdir`/`file_put_contents`. No behavior change; both `@internal`/additive.
 - **Idiomatic cleanup (AID-391):** `uniqid()` replaced by `Str::uuid()`/`Str::random(16)` (`FakeFiscalVerification` fake ids, `CacheService` health-check key — low-entropy `uniqid()` collides); the 6 PDF templates' date fallback uses `now()->format()` instead of `date()`; `GroupedPaymentService` batches its two per-invoice queries (`Invoice::find()` per pivot row on reversal, `exists()` per invoice on registration) into single `whereIn` queries. No behavior change. The classic-accessor→`Attribute::make()` conversion listed in the ticket was deliberately REJECTED under STABILITY.md rule 1: it removes public methods from `@api` models for "cleaner API" alone, which does not qualify.
 
 ## [6.1.0] - 2026-07-11

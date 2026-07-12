@@ -52,9 +52,14 @@ class PDFService
     /**
      * Create a new PDF service instance
      *
+     * The rendering engine is injectable (AID-391): tests and consumers can
+     * substitute a DomPDFService double instead of being locked to a
+     * hard-wired instance. When omitted, one is built with this service's
+     * merged config (the engine shares the caller's configuration).
+     *
      * @param  array<string, mixed>  $config  Configuration array
      */
-    public function __construct(array $config = [], ?CacheRepository $cache = null)
+    public function __construct(array $config = [], ?CacheRepository $cache = null, ?DomPDFService $dompdfService = null)
     {
         $this->config = array_merge([
             'default_connector' => 'local',
@@ -65,7 +70,7 @@ class PDFService
         ], $config);
 
         $this->cache         = $cache;
-        $this->dompdfService = new DomPDFService($this->config);
+        $this->dompdfService = $dompdfService ?? new DomPDFService($this->config);
         $this->initializeConnectors();
     }
 
