@@ -4,6 +4,9 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+- **Idiomatic cleanup (AID-391):** `uniqid()` replaced by `Str::uuid()`/`Str::random(16)` (`FakeFiscalVerification` fake ids, `CacheService` health-check key — low-entropy `uniqid()` collides); the 6 PDF templates' date fallback uses `now()->format()` instead of `date()`; `GroupedPaymentService` batches its two per-invoice queries (`Invoice::find()` per pivot row on reversal, `exists()` per invoice on registration) into single `whereIn` queries. No behavior change. The classic-accessor→`Attribute::make()` conversion listed in the ticket was deliberately REJECTED under STABILITY.md rule 1: it removes public methods from `@api` models for "cleaner API" alone, which does not qualify.
+
 ## [6.1.0] - 2026-07-11
 
 **Ships migrations: yes** — upgrade with the standard ritual: `composer update aichadigital/larabill` + `php artisan larabill:install` (idempotent, publishes only the new migration) + `php artisan migrate`. The migration is data-safe by construction (columns only widen; no row is touched, no value can be truncated).

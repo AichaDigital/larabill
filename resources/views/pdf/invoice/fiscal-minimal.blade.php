@@ -145,7 +145,7 @@
             <div class="invoice-info">
                 <div class="invoice-title">FACTURA</div>
                 <div><strong>Nº:</strong> {{ $invoice->number }}</div>
-                <div><strong>Fecha:</strong> {{ $invoice->created_at ? $invoice->created_at->format('d/m/Y') : date('d/m/Y') }}</div>
+                <div><strong>Fecha:</strong> {{ $invoice->created_at ? $invoice->created_at->format('d/m/Y') : now()->format('d/m/Y') }}</div>
                 <div><strong>Estado:</strong> {{ ucfirst($invoice->status) }}</div>
             </div>
             <div style="clear: both;"></div>

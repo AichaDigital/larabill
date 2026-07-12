@@ -6,6 +6,7 @@ namespace AichaDigital\Larabill\Services;
 
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 /**
  * Cache Service
@@ -492,7 +493,7 @@ class CacheService
     public function isAvailable(): bool
     {
         try {
-            $testKey = 'larabill:test:'.uniqid();
+            $testKey = 'larabill:test:'.Str::random(16);
             $this->put($testKey, 'test', 60);
             $result = $this->get($testKey);
             $this->forget($testKey);
