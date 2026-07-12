@@ -159,6 +159,9 @@
             <div class="invoice-title">PROFORMA</div>
             <div><strong>Número:</strong> {{ $invoice->number }}</div>
             <div><strong>Fecha de expedición:</strong> {{ $invoice->invoice_date->format('d/m/Y') }}</div>
+            @if ($operation_date)
+                <div><strong>Fecha de operación:</strong> {{ $operation_date }}</div>
+            @endif
             <div><strong>Estado:</strong> {{ $invoice->status?->label() }}</div>
         </div>
     </div>
