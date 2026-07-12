@@ -117,8 +117,15 @@ class GroupedPaymentService
                 ->where('grouped_payment_id', $locked->id)
                 ->get();
 
+            // One query for every grouped invoice instead of Invoice::find()
+            // per pivot row (AID-391).
+            $invoicesById = Invoice::query()
+                ->whereIn('id', $pivotRows->pluck('invoice_id')->map(fn ($id): string => (string) $id))
+                ->get()
+                ->keyBy(fn (Invoice $invoice): string => (string) $invoice->id);
+
             foreach ($pivotRows as $pivotRow) {
-                $invoice = Invoice::find((string) $pivotRow->invoice_id);
+                $invoice = $invoicesById->get((string) $pivotRow->invoice_id);
                 if ($invoice === null) {
                     continue;
                 }
@@ -161,6 +168,14 @@ class GroupedPaymentService
         $payableStatuses = [InvoiceStatus::SENT, InvoiceStatus::OVERDUE, InvoiceStatus::PENDING];
         $sum             = FixedDecimal::zero(2);
 
+        // One query for the whole batch instead of an exists() per invoice
+        // inside the loop (AID-391).
+        $activelyPaidIds = DB::table('grouped_payment_invoice')
+            ->whereIn('active_invoice_id', $found)
+            ->pluck('active_invoice_id')
+            ->map(fn ($id): string => (string) $id)
+            ->all();
+
         foreach ($invoices as $invoice) {
             if ((string) $invoice->billable_user_id !== $billableUserId) {
                 throw GroupedPaymentValidationException::mixedUsers();
@@ -180,8 +195,7 @@ class GroupedPaymentService
                 throw GroupedPaymentValidationException::notPayableStatus((string) $invoice->id, $invoice->status->value);
             }
 
-            $activelyPaid = DB::table('grouped_payment_invoice')->where('active_invoice_id', $invoice->id)->exists();
-            if ($activelyPaid) {
+            if (in_array((string) $invoice->id, $activelyPaidIds, true)) {
                 throw GroupedPaymentValidationException::alreadyActivelyPaid((string) $invoice->id);
             }
 

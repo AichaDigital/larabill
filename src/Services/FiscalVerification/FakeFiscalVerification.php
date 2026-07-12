@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Services\FiscalVerification;
 
 use AichaDigital\Larabill\Contracts\Services\FiscalVerificationContract;
+use Illuminate\Support\Str;
 
 /**
  * Fake Fiscal Verification Service
@@ -50,7 +51,7 @@ class FakeFiscalVerification implements FiscalVerificationContract
     public function __construct(array $defaultResponse = [])
     {
         $this->responses['default'] = array_merge([
-            'id'        => 'FAKE-'.uniqid(),
+            'id'        => 'FAKE-'.Str::uuid(),
             'qr'        => 'data:image/png;base64,'.base64_encode('fake-qr'),
             'hash'      => hash('sha256', 'fake-invoice'),
             'signature' => 'fake-signature',
