@@ -1,7 +1,7 @@
 # Proforma → Invoice Lifecycle Redesign (v7) — Design
 
 - **Date:** 2026-07-13 (rev. 6 — Codex round 4: 71–81 confirmed except 74 (test-wording, fixed) and 76 (refined here); new findings 82–84 incorporated. Declared accepted limitations: midnight catalog window pending temporal versioning; rectificative residual with ticket exit)
-- **Status:** Draft — pending Codex round 5 confirmation, then implementation planning
+- **Status:** APPROVED (2026-07-13) — adversarial review closed at round 5 (GATE PASS, 84 findings incorporated). This document is the constitution of v7.0.0: its release-boundary invariants (§3) bind every PR of the epic. Implementation planning is under way (Linear epic AID-459); PR-1's plan is `docs/superpowers/plans/2026-07-13-larabill-v7-pr1-schema-foundations.md`.
 - **Supersedes:** AID-444 (rejected as specified — see §13), reframes AID-442's data layer
 - **Related:** ADR-001 (fiscal config freezing), ADR-003 (user/customer unification), AID-307 (fiscal series vs type), AID-328 (snapshot vs live-row comparison), AID-390 (numbering owner), `STABILITY.md`
 - **Target release:** v7.0.0 (major — qualified imperative documented in §1)
@@ -326,6 +326,8 @@ Every migration ships `.php.stub` + `$migrationOrder` + manifest entry + install
 - **Immutability guards** on `saving`/`deleting` (header state driven); bulk/query and external SQL documented outside the contract.
 
 ### 7.3 New tables (names indicative; DDL literals = plan deliverables)
+
+**Engine split for CHECK constraints (amendment, 2026-07-13, after PR-1 planning):** every CHECK named in §7.1 and §7.3 is a **real CHECK on MySQL** (the production engine, and the engine the schema contract is proven against) **plus an application-level enforcer on every engine**. SQLite accepts a CHECK only inside `CREATE TABLE` and Laravel's `Blueprint` has no `check()` API; hand-writing per-engine raw DDL would fork the schema definition, which is the precise drift ADR-007 exists to prevent. Where a table has a live writer (`invoices`), the enforcer ships in the same PR as the constraint; where it has none yet (facts, obligations), it ships with the models that first write it. "CHECK-enforced" below therefore means *MySQL CHECK + model guard*, never *MySQL only*.
 
 - **`billing_economic_facts`** — append-only: owner = proforma FK XOR invoice FK (CHECK-enforced single owner, Codex 71), type (payment/delivery/completion), date, amount+currency, **`source_event_key` (unique, Codex 73)**, optional line scope (schema-ready, document-scoped in v7, Codex 72), actor, source, `supersedes_fact_id` (unique), metadata.
 - **`billing_fiscal_obligations`** — per §5.8: fact/schedule references, idempotency key (unique), amount+currency, accrual date, `issuance_due_at`, determination FK, state, audit.
