@@ -4,6 +4,9 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **`FiscalChangeDetector` is no longer blind to in-place edits of the fiscal config rows: the frozen side of the comparison is now the persisted encrypted snapshot (ADR-001), never a live row (AID-328).** When the active `CompanyFiscalConfig`/`UserTaxProfile` row was edited in place between the proforma freeze and its conversion, the detector saw the same ID on both sides and answered "no changes" — the final invoice could silently be issued with a different fiscal identity (tax id, country code) than the frozen one, exactly the drift ADR-001 exists to block. The blindness had a second door: with a replaced row, the OLD side was read from the live (possibly edited) old row instead of the snapshot. Both detection paths now derive the frozen state from `issuer_snapshot`/`customer_snapshot`, falling back to the live rows only for a proforma frozen without snapshots — for which the same-ID answer stays "no changes" (nothing frozen to compare against; documented limitation). Return shape is unchanged; a same-ID in-place drift reports `changed = true` with `old_id === new_id` and the field-level diff against the snapshot values.
+
 ## [6.3.0] - 2026-07-12
 
 **Ships migrations: yes** — upgrade with the standard ritual: `composer update aichadigital/larabill` + `php artisan larabill:install` (idempotent, publishes only the new migration) + `php artisan migrate`. The migration is a guarded one-way data cleanup (no schema change): it deletes only the phantom `proforma-simple` template row, and only when no override blade resolves for it.
