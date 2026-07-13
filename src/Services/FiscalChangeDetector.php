@@ -93,20 +93,42 @@ class FiscalChangeDetector
         $currentConfig = CompanyFiscalConfig::getActive();
         $newConfigId   = $currentConfig?->id;
 
-        // If same config, no changes
+        // The frozen truth is the persisted issuer snapshot (ADR-001): the
+        // config rows are editable in place, so comparing live row against
+        // live row misses drift that keeps the same ID (AID-328).
+        $frozen = $proforma->getIssuerSnapshotData();
+
+        // Same row: compare it against the snapshot taken at the freeze.
+        // Without a snapshot (legacy proforma) there is no frozen state to
+        // compare against, so the answer stays "no changes".
         if ($oldConfigId === $newConfigId) {
+            if ($frozen === null || $currentConfig === null) {
+                return [
+                    'changed'  => false,
+                    'critical' => false,
+                    'old_id'   => $oldConfigId,
+                    'new_id'   => $newConfigId,
+                    'changes'  => [],
+                ];
+            }
+
+            $changes = $this->compareConfigs((object) $frozen, $currentConfig, self::CRITICAL_COMPANY_FIELDS, self::WARNING_COMPANY_FIELDS);
+
             return [
-                'changed'  => false,
-                'critical' => false,
+                'changed'  => $changes['fields'] !== [],
+                'critical' => $changes['has_critical'],
                 'old_id'   => $oldConfigId,
                 'new_id'   => $newConfigId,
-                'changes'  => [],
+                'changes'  => $changes['fields'],
             ];
         }
 
-        // Config changed - compare fields
-        $oldConfig = $oldConfigId ? CompanyFiscalConfig::find($oldConfigId) : null;
-        $changes   = $this->compareConfigs($oldConfig, $currentConfig, self::CRITICAL_COMPANY_FIELDS, self::WARNING_COMPANY_FIELDS);
+        // Row replaced — the old side is still the snapshot when available:
+        // the replaced row itself may have been edited after the freeze.
+        $oldConfig = $frozen !== null
+            ? (object) $frozen
+            : ($oldConfigId ? CompanyFiscalConfig::find($oldConfigId) : null);
+        $changes = $this->compareConfigs($oldConfig, $currentConfig, self::CRITICAL_COMPANY_FIELDS, self::WARNING_COMPANY_FIELDS);
 
         return [
             'changed'  => true,
@@ -130,20 +152,43 @@ class FiscalChangeDetector
             : null;
         $newProfileId = $currentProfile?->id;
 
-        // If same profile, no changes
+        // The frozen truth is the persisted customer snapshot (ADR-001): the
+        // profile rows are editable in place, so comparing live row against
+        // live row misses drift that keeps the same ID (AID-328).
+        $frozen = $proforma->getCustomerSnapshotData();
+
+        // Same profile: compare it against the snapshot taken at the freeze.
+        // Without a snapshot (legacy proforma) there is no frozen state to
+        // compare against, so the answer stays "no changes".
         if ($oldProfileId === $newProfileId) {
+            if ($frozen === null || $currentProfile === null) {
+                return [
+                    'changed'  => false,
+                    'critical' => false,
+                    'old_id'   => $oldProfileId,
+                    'new_id'   => $newProfileId,
+                    'changes'  => [],
+                ];
+            }
+
+            $changes = $this->compareConfigs((object) $frozen, $currentProfile, self::CRITICAL_USER_FIELDS, self::WARNING_USER_FIELDS);
+
             return [
-                'changed'  => false,
-                'critical' => false,
+                'changed'  => $changes['fields'] !== [],
+                'critical' => $changes['has_critical'],
                 'old_id'   => $oldProfileId,
                 'new_id'   => $newProfileId,
-                'changes'  => [],
+                'changes'  => $changes['fields'],
             ];
         }
 
-        // Profile changed - compare fields
-        $oldProfile = $oldProfileId ? UserTaxProfile::find($oldProfileId) : null;
-        $changes    = $this->compareConfigs($oldProfile, $currentProfile, self::CRITICAL_USER_FIELDS, self::WARNING_USER_FIELDS);
+        // Profile replaced — the old side is still the snapshot when
+        // available: the replaced row itself may have been edited after the
+        // freeze.
+        $oldProfile = $frozen !== null
+            ? (object) $frozen
+            : ($oldProfileId ? UserTaxProfile::find($oldProfileId) : null);
+        $changes = $this->compareConfigs($oldProfile, $currentProfile, self::CRITICAL_USER_FIELDS, self::WARNING_USER_FIELDS);
 
         return [
             'changed'  => true,
