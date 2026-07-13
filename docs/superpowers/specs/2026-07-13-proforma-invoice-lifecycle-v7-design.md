@@ -1,7 +1,7 @@
 # Proforma → Invoice Lifecycle Redesign (v7) — Design
 
-- **Date:** 2026-07-13 (rev. 4 — Codex round 2 incorporated: 20/40 round-1 findings verified RESOLVED, the rest re-closed here; 30 new findings (41–70) triaged, operator arbitration D1–D5 applied)
-- **Status:** Draft — pending Codex round 3 confirmation, then implementation planning
+- **Date:** 2026-07-13 (rev. 5 — Codex round 3: rounds 1–2 fully re-verified RESOLVED except three declared accepted limitations (midnight catalog window pending temporal versioning ×2, rectificative residual with ticket exit); new findings 71–81 incorporated)
+- **Status:** Draft — pending Codex round 4 confirmation, then implementation planning
 - **Supersedes:** AID-444 (rejected as specified — see §13), reframes AID-442's data layer
 - **Related:** ADR-001 (fiscal config freezing), ADR-003 (user/customer unification), AID-307 (fiscal series vs type), AID-328 (snapshot vs live-row comparison), AID-390 (numbering owner), `STABILITY.md`
 - **Target release:** v7.0.0 (major — qualified imperative documented in §1)
@@ -46,7 +46,7 @@ Individual epic PRs are transitional and name their exceptions (§9).
 3. A frozen proforma freezes its **commercial contract**: `contract_unit_price`, `contract_line_total` and `price_tax_mode` per line, distinct from the fiscal net `unit_price`, whose semantics never change; arithmetic reconciliation is explicit via `unit_price_base_adjustment` (§4.3).
 4. At the v7.0.0 release boundary, no tax computation anywhere in the package consults the live catalog outside the dated resolver (§5.3, §6.1).
 5. Tax truth is fixed by **materialized accrual determinations**: larabill derives accruals from registered economic facts, the frozen contractual nature and the frozen chargeability schedule — the consumer never delivers a resolved accrual, and the schedule is the SOLE authority for chargeability (§5.1).
-6. **Fiscal obligations are rows, not a scalar** (§5.8): one row per concrete accrual, idempotently created, each with amount, currency, accrual date, deadline, determination and state. Cardinality of automatic conversion stays **strict 1:1**: it requires a SINGLE `DETERMINED` obligation covering the whole contract (coverage classified AFTER determination, §5.1); partial payments always create their recorded, deadline-bearing, blocked obligation — never denied.
+6. **Fiscal obligations are rows, not a scalar** (§5.8): one row per concrete accrual, idempotently created, each with amount, currency, accrual date, deadline, determination and state. Cardinality of automatic conversion stays **strict 1:1**: it requires the complete `DETERMINED` obligation set sharing one accrual date and jointly covering the whole contract (coverage classified AFTER determination, §5.1); partial payments always create their recorded, deadline-bearing, blocked obligation — never denied.
 7. `service_date` carries the **operation date of RD 1619/2012 art. 6.1.i**, derived per rule from the materialized accrual (§6.6), never a configurable preference.
 8. Conversion, issuance and fiscal submission are **distinct transitions** on distinct state axes (§6).
 9. Conversion is atomic, locked and idempotent, backed by database constraints, under the global lock order `proforma → invoice → epoch → series control` (§6.8).
@@ -83,8 +83,8 @@ LEGACY ──adopt() (audited)──▶ FROZEN        (migration-only entry stat
 
 **Guards:**
 
-- **Protection triggers at FACT registration:** from the first EFFECTIVE accrual-creating fact, no cancel/supersede. A superseded (corrected) fact stops being effective: obligations derived from it are recomputed/voided with audit, and if NO effective facts remain the protection lifts — auditable, never silent (Codex 45).
-- After an obligation exists, corrections are: audited re-determination pre-issuance (§5.4) or the rectificative handoff post-issuance (§5.7). The obligation itself never disappears while its facts stay effective.
+- **Protection triggers at FACT registration:** from the first EFFECTIVE accrual-creating fact, plain `cancel()` is forbidden entirely and plain `supersede()` is forbidden. What remains available is **guarded supersession** (audited): it TRANSFERS the effective facts and born obligations to the successor with a full audit trail — obligations never disappear, they move with the contract. Guarded supersession is the vehicle for legitimate post-fact commercial modifications (schedule changes before a chargeability date, the audited absorption of a rate difference, §5.1) — so the remedies this spec prescribes are reachable exactly when needed (Codex 76).
+- **Fact correction is unified (Codex 77):** a replacement fact with `supersedes_fact_id` (audited) exists BOTH before and after an obligation was born, as long as no determination was consumed by an ISSUED invoice; it voids/recomputes the derived obligations under the proforma aggregate lock, and if NO effective facts remain the protection lifts — auditable, never silent (Codex 45). After an issued invoice consumed the truth: re-determination is closed and everything routes to the rectificative handoff (§5.7).
 - Transitions are executed and validated by larabill; consumers only request them.
 
 **Legacy `InvoiceStatus` projection:** the old `status` column is frozen at migration time as a historical, non-authoritative fossil for proformas; larabill never writes new proforma states into it. Documented in `UPGRADE-7.0.md` and `docs/api-surface.md`.
@@ -120,7 +120,7 @@ The frozen commercial line is never mutated to turn an estimate into fiscal trut
 
 ### 5.1 Economic facts, contractual nature, payment coverage
 
-Consumers register **economic facts** (append-only; indicative `billing_economic_facts`): payment received (date, amount, currency), goods delivered (date), service completed (date). Facts carry actor, source, timestamp. **Facts are historical truth: never rejected for being inconvenient, never deleted.** Correction pre-obligation: replacement fact with `supersedes_fact_id` (unique); post-obligation: re-determination or rectificative handoff.
+Consumers register **economic facts** (append-only; indicative `billing_economic_facts`): payment received (date, amount, currency), goods delivered (date), service completed (date). Facts carry actor, source, timestamp and a **unique `source_event_key`** — required for machine-registered facts, so a retried payment webhook returns the EXISTING fact instead of minting a duplicate fact-and-obligation (registration itself is idempotent, Codex 73). Each fact belongs to exactly ONE billing aggregate — a proforma OR a direct invoice (Codex 71; §6.1). Facts are **document-scoped in v7** with line scope schema-ready: scenarios that genuinely need per-line mapping (mixed or partial deliveries across lines) fail typed naming the per-line accrual ticket (Codex 72). **Facts are historical truth: never rejected for being inconvenient, never deleted.** Correction: per the unified §4.1 rule (`supersedes_fact_id`, audited, pre- AND post-obligation while unconsumed by an issued invoice; afterwards, rectificative handoff).
 
 **Chargeability has ONE authority (operator arbitration D4):** the frozen chargeability schedule of `SUCCESSIVE_TRACT` lines. There is NO "chargeability reached" external fact. Larabill evaluates the schedule with its fiscal clock, **materializes the obligation idempotently when each date is reached** (catch-up capable if evaluation did not run that day), applies the art. 75.Uno.7.º fallback (no agreed exigibility, or exigibility beyond 12 months → 31 December accrual of the proportional part, computed by day-count with HalfUp rounding), and records when it materialized — a consequence, never a second authority. Contract changes before a chargeability date require superseding the proforma (the schedule is frozen content); after a date is reached, no rewrite removes the born obligation. An optional external confirmation may exist as evidence only; discrepancy raises an alarm, never overrides the schedule.
 
@@ -134,9 +134,13 @@ Consumers register **economic facts** (append-only; indicative `billing_economic
 4. Compare cumulative effective payments against that gross.
 5. Classify **full / partial / overpayment**.
 
+**Overpayment (Codex 79):** the contract-covering obligation is `DETERMINED` and conversion proceeds; the EXCESS is recorded as an **unallocated payment surplus** — visible and alarmed, never silently treated as consideration. Its resolution (refund, credit) is the consumer's commercial domain; any credit-note issuance belongs to the rectificative/1:N domain. Larabill records the surplus; it never invoices money not linked to consideration.
+
 The frozen provisional gross is the collection-request tool — evidence that the customer paid what was asked — never authority that the contract was fiscally satisfied. Canonical scenario (rate rise, `tax_exclusive`, customer paid the old provisional gross): the fact is kept; the obligation for the received amount is born; the remainder is a recorded pending commercial difference; 1:1 conversion is blocked (no full payment under the exclusive contract); if the issuer absorbs the difference, that is an **auditable commercial modification** (supersession path), never a retroactive reinterpretation of the mode.
 
 **Partial payments:** always recorded; each creates its obligation row (§5.8) in `BLOCKED_PARTIAL_ADVANCE` — **with its own legal issuance deadline** (the VAT accrued; the technical block does not remove the clock, Codex 43) — alarmed and operator-visible. Larabill invents no allocation across lines/taxes (1:N domain). Determination-for-conversion and conversion over a proforma with blocked obligations fail typed, naming the 1:N ticket (**HIGH; prerequisite for any consumer that can accept partial payments**).
+
+**Multi-period successive tract (Codex 75):** a proforma whose schedule has reached MORE than one chargeability date holds several obligations that strict 1:1 conversion cannot document in one invoice. v7 converts a successive-tract proforma only while the reached obligations share ONE accrual date (§5.8); further periods belong to recurring invoicing (existing package capability) or the per-line/1:N tickets — blocked typed, named, and deadline-visible, never invisible.
 
 **Currency:** fact amounts carry ISO-4217 and must equal the proforma's currency (constitution 15).
 
@@ -211,7 +215,9 @@ Larabill ships the rectificative base (`InvoiceSerieType::RECTIFICATIVE`, `recti
 
 **Proforma-level projection (derived, never persisted authority):** an explicit health value — `CLEAR` (no obligations) | `PENDING` | `BLOCKED` | `OVERDUE` | `FULFILLED` — computed from the rows with per-state counts and amounts exposed (a proforma can hold fulfilled AND blocked obligations simultaneously; the projection never hides that). LEGACY proformas project `UNKNOWN` until adopted.
 
-**v7 automatic conversion requires exactly ONE `DETERMINED` obligation covering the whole contract** (full coverage per §5.1); anything else fails typed.
+**v7 automatic conversion requires the complete set of `DETERMINED` obligations sharing ONE accrual date and jointly covering the whole contract** — per-line schedule entries with the same chargeability date legitimately produce multiple rows, and the same-date AGGREGATE, not an arbitrary single row, is the conversion unit (Codex 74); any other configuration fails typed. The issued invoice stamps `FULFILLED` on exactly that set.
+
+**Materialization trigger (Codex 81):** schedule evaluation has a guaranteed executor — a package artisan command (indicative `larabill:materialize-obligations`) documented as the scheduler entry point, AND mandatory catch-up evaluation on every read path that depends on obligations (conversion preconditions, projection computation, deadline reports). Reached obligations and their deadlines exist even on installations with no scheduler configured.
 
 ## 6. Invoice documental lifecycle — conversion, issuance, submission
 
@@ -233,11 +239,11 @@ InvoiceDocumentStatus:  DRAFT ──▶ PREPARED ──issue()──▶ ISSUED  
 - `NOT_REQUIRED` records the positive compliance decision (what config/state justified it, audited); `LEGACY_UNKNOWN` marks pre-v7 rows and exits only through an explicit operator reconciliation operation (Codex 63).
 - `SENT`/`PAID`/`OVERDUE` remain delivery/collection legacy in `InvoiceStatus` (authority reduced; separation out of scope).
 
-**`createInvoice()`** keeps its call shape, is reimplemented, and is documented NOT behavior-compatible: **two-phase** — (1) facts registered and committed durable (with their obligation rows) BEFORE the atomic block, so a later failure never erases economic truth (Codex 57); (2) atomic prepare → determination through the dated resolver → issue. **Facts and nature are REQUIRED explicit input** — larabill never defaults an accrual to the issuance date; a direct sale invoiced at the operation moment declares that fact. Observable changes documented in `UPGRADE-7.0.md`.
+**`createInvoice()`** keeps its call shape, is reimplemented, and is documented NOT behavior-compatible: **two-phase** — (1) a durable phase commits the DRAFT invoice row (the billing aggregate that OWNS the direct facts, Codex 71) together with the registered facts and their obligation rows, so a later failure never erases economic truth (Codex 57); (2) atomic determine (dated resolver) → issue. **The one-operation-date guard applies to direct invoices exactly as to conversions** (§6.6): facts whose accruals do not share one date fail typed (Codex 80). **Facts and nature are REQUIRED explicit input** — larabill never defaults an accrual to the issuance date; a direct sale invoiced at the operation moment declares that fact. Observable changes documented in `UPGRADE-7.0.md`.
 
 ### 6.2 Conversion (rewritten `convertProformaToInvoice`)
 
-Preconditions: proforma `FROZEN`; exactly one `DETERMINED` obligation covering the whole contract (§5.8); all lines share one accrual date (§6.6); identity matrix allows; no prior active conversion (idempotent while CONVERTING/CONVERTED → returns the linked invoice).
+Preconditions: proforma `FROZEN`; the complete same-date `DETERMINED` obligation set covering the whole contract (§5.8); all lines share one accrual date (§6.6); identity matrix allows; no prior active conversion (idempotent while CONVERTING/CONVERTED → returns the linked invoice).
 
 Atomic sequence (one transaction, locks §6.8): lock proforma → validate state/idempotency (D1) → validate identity (§5.6) → create PREPARED invoice: exact copy of CONTRACTUAL terms (`contract_unit_price`, `contract_line_total`, `price_tax_mode`, quantity, description, nature, codes, unit, periods, metadata) with fiscal values (`unit_price` net, `unit_price_base_adjustment`, `taxable_amount`, components, totals) from the determination, `tax_determination_id` linked, currency copied; the conversion path holds no catalog reference and receives a resolver double that throws if invoked → persist target series (`prefix`) via `InvoiceSeriesResolver` per operation (D5-defect closed); correlative NOT consumed → derive `service_date` per the §6.6 mapping (D10 closed) → write `proforma_id` (D2 closed) + dual-write mirror → proforma `FROZEN → CONVERTING`.
 
@@ -301,7 +307,7 @@ Every migration ships `.php.stub` + `$migrationOrder` + manifest entry + install
 ### 7.1 `invoices`
 
 - **`proforma_status`** — nullable tinyint, `ProformaStatus` cast; `serie = PROFORMA ⇔ proforma_status IS NOT NULL` (CHECK + guard).
-- **Cross-axis coherence, CHECK-backed and BIDIRECTIONAL (Codex 66):** document/submission axes NULL on proformas, NOT NULL on fiscal rows; `ISSUED ⇔ fiscal_number/series_number/fiscal_year/invoice_date/issued_at NOT NULL` (both directions — a numbered non-ISSUED row is impossible post-migration; the backfill classifies every numbered legacy row as ISSUED so no legacy exception is needed); CANCELLED never carries a number.
+- **Cross-axis coherence, CHECK-backed and BIDIRECTIONAL (Codex 66):** the document axis is NULL on proformas, NOT NULL on fiscal rows; `fiscal_submission_status` is set at issuance ONLY — `ISSUED ⇔ fiscal_submission_status NOT NULL`, NULL on DRAFT/PREPARED/CANCELLED rows (before issuance there is no submission intent nor positive decision to record, Codex 78); `ISSUED ⇔ fiscal_number/series_number/fiscal_year/invoice_date/issued_at NOT NULL` (both directions — a numbered non-ISSUED row is impossible post-migration; the backfill classifies every numbered legacy row as ISSUED so no legacy exception is needed); CANCELLED never carries a number.
 - **Backfill precedence:** (1) valid conversion link → `CONVERTED`; (2) cancelled → `CANCELLED`; (3) DRAFT+mutable → `DRAFT`; (4) immutable/non-editable legacy → **`LEGACY`** (adopt() promotes); (5) inconsistencies → preflight fail + report.
 - **Preflight detections (before any v7 mutation):** CONVERTED without linked invoice; `converted_invoice_id` → non-fiscal row; two proformas → one invoice; contradictory inverse links; **multiple invoices sharing one `proforma_id`**; historical line incoherence `taxable_amount ≠ round(qty × unit_price)` (report + line-total precedence, §4.3); **operator attestation that historical amounts are EUR** (report item, constitution 15).
 - **`proforma_id` canonical** (backfill from mirror, never overwriting) + **active-link uniqueness**: MySQL 8 stored generated column (`proforma_id` when document status ≠ CANCELLED, else NULL) + UNIQUE; SQLite partial unique index. Technique contractual; literals are plan deliverables. FK → `restrict`.
@@ -321,7 +327,7 @@ Every migration ships `.php.stub` + `$migrationOrder` + manifest entry + install
 
 ### 7.3 New tables (names indicative; DDL literals = plan deliverables)
 
-- **`billing_economic_facts`** — append-only: proforma FK, type (payment/delivery/completion), date, amount+currency, actor, source, `supersedes_fact_id` (unique), metadata.
+- **`billing_economic_facts`** — append-only: owner = proforma FK XOR invoice FK (CHECK-enforced single owner, Codex 71), type (payment/delivery/completion), date, amount+currency, **`source_event_key` (unique, Codex 73)**, optional line scope (schema-ready, document-scoped in v7, Codex 72), actor, source, `supersedes_fact_id` (unique), metadata.
 - **`billing_fiscal_obligations`** — per §5.8: fact/schedule references, idempotency key (unique), amount+currency, accrual date, `issuance_due_at`, determination FK, state, audit.
 - **Successive-tract schedules** — frozen chargeability schedule rows per line.
 - **`tax_determinations`** (+ components) — per §5.3/§5.4, incl. the explicit rounding-adjustment field, epoch revision+hash, resolver version, `supersedes_determination_id` (unique), active-unique per line/obligation.
@@ -360,6 +366,7 @@ Documentation travels in every PR; PR-4 only consolidates.
 - **Resolver/epochs:** in/out-of-epoch; override audit; governed closure transactional; single-active-epoch enforced + recovery op; compromised path (lock release/exclusive retry, no upgrade deadlock — fork test); shared-lock serialization fork test.
 - **Concurrency (fork, `RUN_CONCURRENCY_IT=1` + MySQL):** two conversions → one link; two `issue()` → one number; lock-order compliance across convert/issue/cancel/facts/mutation interleavings; sensitivity check = one-off mutation test, not CI gate.
 - **Boundary:** typed outcomes drive the machine; crash-after-external-success reconciles by key; `unique(invoice_id, operation_type)`; fiscal number never reverted/reused.
+- **Rev.-5 additions:** fact idempotency by `source_event_key` (retried webhook → same fact, same obligation); direct-invoice facts owned by the DRAFT invoice survive an atomic-phase failure; direct invoice with multi-date facts rejected; overpayment → conversion proceeds + surplus recorded/alarmed; same-date multi-row obligation set converts as one aggregate and all rows stamp FULFILLED; multi-reached-period tract conversion blocked typed; guarded supersession transfers facts+obligations with audit while plain supersede/cancel stay forbidden post-fact; post-obligation fact correction voids/recomputes under the aggregate lock; PREPARED rows carry NULL submission status (bidirectional CHECK); catch-up materialization fires on conversion/projection/report read paths without a scheduler.
 - **Immutability limit:** no public operation mutates issued headers/lines (incl. `save()` bypass); bulk/external SQL documented outside the guarantee.
 
 ## 11. Out of scope — follow-up tickets
@@ -367,7 +374,8 @@ Documentation travels in every PR; PR-4 only consolidates.
 - **Partial advances (1:N)** — **HIGH; prerequisite for any consumer accepting partial payments.** v7 records facts + deadline-bearing blocked obligations; the ticket delivers advance invoices, allocation and regularization. Designed expansion point with a named surgery list (active-unique, mirror removal, CONVERTED semantics, coverage guard).
 - **Full temporal catalog versioning** (ascends to prerequisite on override metrics).
 - **Real multi-currency** (persisted currency, EUR-only resolver until then).
-- **Per-line accrual representation** (multi-date invoices).
+- **Per-line accrual representation** (multi-date invoices; per-line fact scope).
+- **Multi-period successive-tract invoicing from proformas** (recurring-path integration; v7 converts a single reached same-date set only).
 - **Full proforma/accrual-aware rectificative workflow** (minimal handoff ships in v7).
 - **Unsupported tax compositions** (withholdings, cascading, different bases).
 - **Separating delivery/collection axes** out of `InvoiceStatus`; **DB-level immutability enforcement**.
