@@ -1,6 +1,6 @@
 {
-    "release": "6.3.0",
-    "upgrade_base": "6.2.0",
+    "release": "6.3.1",
+    "upgrade_base": "6.3.0",
     "migrations": [
         {
             "name": "2024_12_01_000000_create_tax_rates_table.php",
@@ -175,7 +175,7 @@
         {
             "name": "2026_07_12_000001_remove_phantom_proforma_simple_invoice_template.php",
             "sha256": "9a64bc1577a6bcf0c0673e189e7c0a3d0d891f021748f3558d47c15a2a03cc72",
-            "in_base": false
+            "in_base": true
         }
     ]
 }
