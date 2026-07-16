@@ -109,6 +109,26 @@ return [
         'enable_css_float'    => true,
         'enable_php'          => true,
         'enable_remote'       => true,
+
+        /*
+        | Whether this installation's invoices must carry the fiscal verification
+        | QR. It declares the DOCUMENT CONTRACT, not a legal obligation: larabill
+        | does not know the taxpayer type, exclusions, elected mode or effective
+        | adoption date. The consumer turns it on when it actually operates that
+        | flow — voluntarily during the trial period, or once obliged.
+        |
+        | VeriFACTU calendar (BOE, RD 1007/2023 consolidated:
+        | https://www.boe.es/buscar/act.php?id=BOE-A-2023-24840 — and AEAT's
+        | deadline-extension notice:
+        | https://sede.agenciatributaria.gob.es/Sede/iva/sistemas-informaticos-facturacion-verifactu/nota-informativa-ampliacion-plazo-adaptacion-facturacion.html):
+        | 2027-01-01 for corporate income tax payers, 2027-07-01 for the rest of
+        | art. 3.1 obliged parties; before that the period is a trial one.
+        |
+        | true  => a fiscal invoice without a coherent record and a usable QR is
+        |          a hard failure: no PDF is produced.
+        | false => such an invoice is rendered without the tax block.
+        */
+        'require_fiscal_verification_qr' => env('LARABILL_REQUIRE_FISCAL_QR', false),
     ],
 
     // Destination VAT settings
