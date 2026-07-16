@@ -68,7 +68,7 @@ class DomPDFService
         try {
             // Determine invoice type and template
             $template  = $this->getTemplateForInvoice($invoice);
-            $includeQR = $this->shouldIncludeQR($invoice);
+            $includeQR = $invoice->shouldIncludeQR();
 
             // Prepare template data
             $templateData = $this->prepareTemplateData($invoice, $qrData, $includeQR);
@@ -221,24 +221,6 @@ class DomPDFService
 
         // Default fiscal invoice
         return 'larabill::pdf.invoice.fiscal';
-    }
-
-    /**
-     * Determine if invoice should include QR code
-     *
-     * @param  Invoice  $invoice  The invoice
-     * @return bool True if QR should be included
-     */
-    protected function shouldIncludeQR(Invoice $invoice): bool
-    {
-        // Proforma invoices never include QR
-        if ($invoice->serie === InvoiceSerieType::PROFORMA) {
-            return false;
-        }
-
-        // Only fiscal invoices (INVOICE and RECTIFICATIVE) include QR
-        return $invoice->serie === InvoiceSerieType::INVOICE
-            || $invoice->serie === InvoiceSerieType::RECTIFICATIVE;
     }
 
     /**

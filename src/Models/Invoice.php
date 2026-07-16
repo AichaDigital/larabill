@@ -436,19 +436,23 @@ class Invoice extends Model implements LegallyRetainable
     // ========================================
 
     /**
-     * Check if this invoice should include QR code
+     * Whether this invoice has a tax QR to print.
      *
-     * @return bool True if QR should be included
+     * Two axes govern it, and invoice status is not one of them (AID-508):
+     *
+     * - Document class: only fiscal documents carry a tax QR. A proforma never
+     *   does, in any state.
+     * - Fiscal registration: the QR is an effect of the billing record — per the
+     *   AEAT FAQ, definitive issuance happens when the billing record is generated
+     *   and the QR incorporated, not when the PDF is delivered nor when AEAT
+     *   accepts the record.
+     *
+     * Delivery and payment do not make a document fiscal: an invoice does not
+     * acquire a QR by being paid.
      */
     public function shouldIncludeQR(): bool
     {
-        // Proforma invoices never include QR
-        if ($this->serie === InvoiceSerieType::PROFORMA) {
-            return false;
-        }
-
-        // Only fiscal invoices include QR
-        return $this->serie === InvoiceSerieType::INVOICE || $this->serie === InvoiceSerieType::RECTIFICATIVE;
+        return $this->serie->isFiscal() && $this->isFiscallyVerified();
     }
 
     /**
