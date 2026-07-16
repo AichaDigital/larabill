@@ -2,10 +2,12 @@
 
 declare(strict_types=1);
 
+use AichaDigital\Larabill\Contracts\PDFConnectorInterface;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Exceptions\MissingFiscalVerificationQrException;
 use AichaDigital\Larabill\Models\Invoice;
+use AichaDigital\Larabill\Services\PDF\PDFService;
 use AichaDigital\Larabill\Tests\TestCase;
 
 it('defaults require_fiscal_verification_qr to false', function () {
@@ -62,3 +64,79 @@ it('ignores delivery and payment status entirely', function (InvoiceStatus $stat
     'overdue' => InvoiceStatus::OVERDUE,
     'draft'   => InvoiceStatus::DRAFT,
 ]);
+
+it('fails explicitly when strict mode meets a fiscal invoice with no record', function () {
+    config()->set('larabill.pdf.require_fiscal_verification_qr', true);
+    $invoice = makeQrInvoice(InvoiceSerieType::INVOICE, registered: false);
+
+    $result = (new PDFService)->generatePDF($invoice);
+
+    expect($result['success'])->toBeFalse()
+        ->and($result['error'])->toContain('fiscal verification QR');
+});
+
+it('fails explicitly when strict mode meets a registered invoice whose QR is unusable', function (string $qr) {
+    config()->set('larabill.pdf.require_fiscal_verification_qr', true);
+    $invoice = makeQrInvoice(InvoiceSerieType::INVOICE, registered: true);
+    $invoice->update(['fiscal_verification_qr' => $qr]);
+
+    $result = (new PDFService)->generatePDF($invoice);
+
+    expect($result['success'])->toBeFalse();
+})->with([
+    'bare url'       => 'https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR?nif=B1',
+    'invalid base64' => 'data:image/png;base64,not!valid!',
+    'malformed svg'  => '<svg xmlns="http://www.w3.org/2000/svg"><rect',
+]);
+
+it('fails explicitly when the QR is present but the record is incoherent', function () {
+    // The blind spot of checking only the QR: a valid SVG with no registration ids.
+    config()->set('larabill.pdf.require_fiscal_verification_qr', true);
+    $invoice = makeQrInvoice(InvoiceSerieType::INVOICE, registered: false);
+    $invoice->update(['fiscal_verification_qr' => '<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>']);
+
+    $result = (new PDFService)->generatePDF($invoice);
+
+    expect($result['success'])->toBeFalse();
+});
+
+it('renders without the tax block when the contract is not required', function () {
+    config()->set('larabill.pdf.require_fiscal_verification_qr', false);
+    $invoice = makeQrInvoice(InvoiceSerieType::INVOICE, registered: false);
+
+    $result = (new PDFService)->generatePDF($invoice);
+
+    expect($result['success'])->toBeTrue();
+});
+
+it('exempts a proforma from strict mode', function () {
+    config()->set('larabill.pdf.require_fiscal_verification_qr', true);
+    $invoice = makeQrInvoice(InvoiceSerieType::PROFORMA, registered: false);
+
+    $result = (new PDFService)->generatePDF($invoice);
+
+    expect($result['success'])->toBeTrue();
+});
+
+it('never asks a connector to produce the QR', function () {
+    // The spy that proves 4b does what it says: whatever the invoice's state, the
+    // pipeline reads the fiscal record and never calls a connector to fabricate one.
+    // makeQrInvoice() hardcodes fiscal_number to 'QR-AXES' (fine for the single-invoice
+    // tests above); three live rows in one test would collide on the unique index, so
+    // each is deleted before the next is created.
+    $connector = Mockery::spy(PDFConnectorInterface::class);
+    $service   = new PDFService;
+    $service->registerConnector('local', $connector);
+
+    $registered = makeQrInvoice(InvoiceSerieType::INVOICE, registered: true);
+    $service->generatePDF($registered);
+    $registered->delete();
+
+    $unregistered = makeQrInvoice(InvoiceSerieType::INVOICE, registered: false);
+    $service->generatePDF($unregistered);
+    $unregistered->delete();
+
+    $service->generatePDF(makeQrInvoice(InvoiceSerieType::PROFORMA, registered: false));
+
+    $connector->shouldNotHaveReceived('generateQR');
+});

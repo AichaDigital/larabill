@@ -34,6 +34,9 @@ function realRouteFiscalInvoice(): Invoice
         'total_amount'                 => cents(1210),
         'fiscal_verification_qr'       => VERIFACTU_QR_SVG,
         'fiscal_verification_metadata' => ['qr_url' => 'https://prewww2.aeat.es/qr?id=REG-20260618-000001'],
+        // AID-508: "registered" means both facts hold — the QR alone is not enough.
+        'fiscal_verification_id'       => 'REG-20260618-000001',
+        'fiscal_verified_at'           => now(),
     ]);
 }
 

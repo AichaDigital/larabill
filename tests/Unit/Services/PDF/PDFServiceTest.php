@@ -133,6 +133,10 @@ it('uses the persisted fiscal verification QR when generating fiscal PDFs', func
         'fiscal_verification_metadata'  => [
             'qr_url' => 'https://prewww2.aeat.es/qr?id=REG-000001',
         ],
+        // AID-508: the QR alone is not enough — the frontier requires a coherent
+        // registration too (fiscal_verification_id + fiscal_verified_at).
+        'fiscal_verification_id'        => 'REG-000001',
+        'fiscal_verified_at'            => now(),
     ]);
 
     $result = $this->pdfService->generatePDF($invoice);

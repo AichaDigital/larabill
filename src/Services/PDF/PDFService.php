@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Services\PDF;
 
 use AichaDigital\Larabill\Contracts\PDFConnectorInterface;
+use AichaDigital\Larabill\Exceptions\MissingFiscalVerificationQrException;
 use AichaDigital\Larabill\Models\Invoice;
+use AichaDigital\Larabill\Support\FiscalQrImage;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -91,27 +93,24 @@ class PDFService
                 throw new \Exception('No suitable PDF connector found');
             }
 
-            // Generate QR code if the invoice type requires it
-            $qrResult = $this->fiscalVerificationQrResult($invoice)
-                ?? ['success' => true, 'qr_code' => null, 'qr_url' => null, 'qr_data' => []];
-            if ($invoice->shouldIncludeQR()) {
-                if (! isset($qrResult['source'])) {
-                    // Validate invoice for QR generation
-                    if (! $connector->validateInvoice($invoice)) {
-                        throw new \Exception('Invoice validation failed for connector: '.$connector->getConnectorType());
-                    }
+            // The QR is an effect of the fiscal record; larabill never fabricates it
+            // (AID-508). Two facts must hold, not one: a coherent registration AND a
+            // usable image. A valid SVG with no registration ids is a lost datum.
+            $isFiscal     = $invoice->serie->isFiscal();
+            $isRegistered = $invoice->isFiscallyVerified();
+            $qrResult     = $this->fiscalVerificationQrResult($invoice);
+            $strict       = (bool) config('larabill.pdf.require_fiscal_verification_qr', false);
 
-                    // Generate QR code
-                    $qrResult = $connector->generateQR($invoice);
-
-                    if (! $qrResult['success']) {
-                        throw new \Exception('QR generation failed: '.($qrResult['error'] ?? 'Unknown error'));
-                    }
-                }
+            if ($isFiscal && $strict && (! $isRegistered || $qrResult === null)) {
+                throw MissingFiscalVerificationQrException::forInvoice($invoice);
             }
 
+            $qrData = $isFiscal && $isRegistered && $qrResult !== null
+                ? $qrResult
+                : ['success' => true, 'qr_code' => null, 'qr_url' => null, 'qr_data' => []];
+
             // Generate PDF with QR code using DomPDF
-            $pdfResult = $this->dompdfService->generatePDF($invoice, $qrResult);
+            $pdfResult = $this->dompdfService->generatePDF($invoice, $qrData);
 
             // Do not report success when the underlying render failed; surface the error
             // (a failed render must never be reported as a generated PDF).
@@ -137,7 +136,7 @@ class PDFService
                 'success'        => true,
                 'pdf_path'       => $pdfResult['pdf_path'],
                 'pdf_url'        => $pdfResult['pdf_url'],
-                'qr_data'        => $qrResult,
+                'qr_data'        => $qrData,
                 'connector_used' => $connector->getConnectorType(),
                 'generated_at'   => now()->toISOString(),
             ];
@@ -173,11 +172,15 @@ class PDFService
      */
     protected function fiscalVerificationQrResult(Invoice $invoice): ?array
     {
-        if (! is_string($invoice->fiscal_verification_qr) || $invoice->fiscal_verification_qr === '') {
+        $qr   = $invoice->fiscal_verification_qr;
+        $kind = FiscalQrImage::classify(is_string($qr) ? $qr : null);
+
+        if ($kind === null) {
+            // Absent, a bare cotejo URL, an unknown format, invalid base64 or
+            // malformed XML: larabill does not render QR codes, so it cannot use it.
             return null;
         }
 
-        $qr       = $invoice->fiscal_verification_qr;
         $metadata = $invoice->fiscal_verification_metadata ?? [];
         $qrUrl    = $metadata['qr_url']                    ?? null;
 
@@ -192,16 +195,7 @@ class PDFService
             'metadata'       => $metadata,
         ];
 
-        // lara-verifactu emits the QR as an <svg> root that may be preceded by an XML
-        // declaration. Strip a leading XML declaration so both shapes are treated as
-        // inline SVG and render as an image rather than being dumped as escaped text.
-        $svgRoot = preg_replace('/^<\?xml[^>]*\?>\s*/i', '', ltrim($qr)) ?? ltrim($qr);
-
-        if (str_starts_with($svgRoot, '<svg')) {
-            $result['qr_svg'] = $qr;
-        } elseif (str_starts_with($qr, 'data:image/png;base64,')) {
-            $result['qr_png'] = $qr;
-        }
+        $result[$kind === 'svg' ? 'qr_svg' : 'qr_png'] = $qr;
 
         return $result;
     }
