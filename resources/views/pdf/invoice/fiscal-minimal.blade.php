@@ -217,11 +217,16 @@
         </div>
 
         <!-- QR Code Section -->
-        @if($include_qr && isset($qr_data))
+        @if($include_qr && (!empty($qr_data['qr_svg']) || !empty($qr_data['qr_png'])))
             <div class="qr-section">
-                <div><strong>Verificación Fiscal</strong></div>
-                <div class="qr-code">{{ $qr_data['qr_code'] ?? 'QR_CODE' }}</div>
-                <div style="font-size: 9px; margin-top: 5px;">{{ $qr_data['qr_url'] ?? 'QR_URL' }}</div>
+                <div><strong>QR tributario:</strong></div>
+                <div class="qr-code">
+                    @if(!empty($qr_data['qr_svg']))
+                        <div style="width: 35mm; height: 35mm;">{!! $qr_data['qr_svg'] !!}</div>
+                    @else
+                        <img src="{{ $qr_data['qr_png'] }}" alt="QR tributario" style="width: 35mm; height: 35mm;">
+                    @endif
+                </div>
             </div>
         @endif
 

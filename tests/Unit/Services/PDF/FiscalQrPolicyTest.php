@@ -8,6 +8,7 @@ use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Exceptions\MissingFiscalVerificationQrException;
 use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\Invoice;
+use AichaDigital\Larabill\Services\PDF\DomPDFService;
 use AichaDigital\Larabill\Services\PDF\PDFService;
 use AichaDigital\Larabill\Tests\TestCase;
 
@@ -168,3 +169,51 @@ it('never asks a connector to produce the QR', function () {
 
     $connector->shouldNotHaveReceived('generateQR');
 });
+
+function renderQrTemplate(string $template, Invoice $invoice, ?array $qrData): string
+{
+    $engine  = new DomPDFService([]);
+    $prepare = new ReflectionMethod($engine, 'prepareTemplateData');
+    $render  = new ReflectionMethod($engine, 'renderTemplate');
+
+    return $render->invoke($engine, $template, $prepare->invoke($engine, $invoice, $qrData, $qrData !== null));
+}
+
+it('renders the QR as an image with its label and legal size', function (string $template) {
+    $qr = ['qr_svg' => '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect/></svg>', 'qr_code' => 'x'];
+
+    $html = renderQrTemplate($template, makeQrInvoice(InvoiceSerieType::INVOICE, registered: true), $qr);
+
+    // AEAT QR spec v0.4.7 art. 20-21: 30x30..40x40 mm, preceded by «QR tributario:».
+    expect($html)->toContain('QR tributario')
+        ->and($html)->toContain('35mm')
+        ->and($html)->toContain('<svg')
+        ->and($html)->not->toContain('&lt;svg')   // escaped SVG dumped as text
+        ->and($html)->not->toContain('QR_CODE');
+})->with([
+    'fiscal'         => 'larabill::pdf.invoice.fiscal',
+    'fiscal-minimal' => 'larabill::pdf.invoice.fiscal-minimal',
+    'fiscal-modern'  => 'larabill::pdf.invoice.fiscal-modern',
+    'reverse-charge' => 'larabill::pdf.invoice.reverse-charge',
+    'exempt'         => 'larabill::pdf.invoice.exempt',
+]);
+
+it('never renders a QR on a proforma, even when one is injected', function () {
+    $qr = ['qr_svg' => '<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>', 'qr_code' => 'x'];
+
+    $html = renderQrTemplate('larabill::pdf.invoice.proforma', makeQrInvoice(InvoiceSerieType::PROFORMA, registered: false), $qr);
+
+    expect($html)->not->toContain('QR tributario')
+        ->and($html)->not->toContain('<svg')
+        ->and($html)->not->toContain('QR_CODE');
+});
+
+it('prints no tax block at all when there is no QR', function (string $template) {
+    $html = renderQrTemplate($template, makeQrInvoice(InvoiceSerieType::INVOICE, registered: false), null);
+
+    expect($html)->not->toContain('QR tributario')
+        ->and($html)->not->toContain('QR_CODE');
+})->with([
+    'fiscal'         => 'larabill::pdf.invoice.fiscal',
+    'fiscal-minimal' => 'larabill::pdf.invoice.fiscal-minimal',
+]);

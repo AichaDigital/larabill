@@ -238,13 +238,9 @@
             <div><strong>QR tributario:</strong></div>
             <div class="qr-code">
                 @if(!empty($qr_data['qr_svg']))
-                    {!! $qr_data['qr_svg'] !!}
+                    <div style="width: 35mm; height: 35mm;">{!! $qr_data['qr_svg'] !!}</div>
                 @elseif(!empty($qr_data['qr_png']))
                     <img src="{{ $qr_data['qr_png'] }}" alt="QR tributario" style="width: 35mm; height: 35mm;">
-                @else
-                    <div style="border: 1px solid #ccc; padding: 10px; display: inline-block;">
-                        {{ $qr_data['qr_code'] ?? 'QR_CODE' }}
-                    </div>
                 @endif
             </div>
             @if(($qr_data['source'] ?? null) === 'fiscal_verification')
