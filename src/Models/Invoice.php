@@ -536,14 +536,22 @@ class Invoice extends Model implements LegallyRetainable
     }
 
     /**
+     * The invoice PDF's filename. Single source of the name, shared with the
+     * writer (DomPDFService::savePDF) so both sides always agree (AID-508).
+     */
+    public function pdfFilename(): string
+    {
+        return 'invoice_'.$this->id.'_'.$this->getInvoiceType().'.pdf';
+    }
+
+    /**
      * Get PDF path for this invoice
      *
      * @return string|null PDF file path
      */
     public function getPDFPath(): ?string
     {
-        $filename = 'invoice_'.$this->id.'_'.$this->getInvoiceType().'.pdf';
-        $pdfPath  = storage_path('app/invoices/'.$filename);
+        $pdfPath = storage_path('app/invoices/'.$this->pdfFilename());
 
         return file_exists($pdfPath) ? $pdfPath : null;
     }
@@ -551,18 +559,17 @@ class Invoice extends Model implements LegallyRetainable
     /**
      * Get PDF URL for this invoice
      *
-     * @return string|null PDF URL
+     * Always null: larabill does not publish invoices. Delivery is the consumer's
+     * responsibility, through an authorised controller. The old
+     * url('storage/invoices/...') was an UNAUTHORISED public link that bypassed the
+     * consumer's policy — and a URL leaks through logs, history and Referer headers,
+     * so protection cannot rest on a UUID being hard to guess (AID-508).
+     *
+     * @return string|null Always null
      */
     public function getPDFUrl(): ?string
     {
-        $path = $this->getPDFPath();
-        if (! $path) {
-            return null;
-        }
-
-        $filename = 'invoice_'.$this->id.'_'.$this->getInvoiceType().'.pdf';
-
-        return url('storage/invoices/'.$filename);
+        return null;
     }
 
     // ========================================

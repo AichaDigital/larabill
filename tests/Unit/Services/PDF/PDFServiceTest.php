@@ -39,14 +39,19 @@ it('accepts an injected DomPDF engine instead of hard-wiring one (AID-391)', fun
 it('persists PDFs through the File facade (AID-391)', function () {
     $engine = new DomPDFService([]);
 
-    $invoice     = new Invoice;
-    $invoice->id = (string) Str::uuid7();
+    // AID-508: savePDF() now composes the name via Invoice::pdfFilename()
+    // (getInvoiceType() → $this->serie->label()), the same path getPDFPath()
+    // reads — so a bare invoice needs its serie set, unlike before when
+    // savePDF() read the nonexistent $invoice->type and never touched serie.
+    $invoice        = new Invoice;
+    $invoice->id    = (string) Str::uuid7();
+    $invoice->serie = InvoiceSerieType::INVOICE;
 
     $save = new ReflectionMethod($engine, 'savePDF');
     $save->setAccessible(true);
 
-    // Testing environment → the temp-dir branch; the write itself goes
-    // through File::put either way.
+    // savePDF() always writes under the single private root (AID-508); the
+    // write itself goes through File::put.
     $path = $save->invoke($engine, $invoice, '%PDF-fake-content');
 
     expect(File::exists($path))->toBeTrue()
@@ -254,4 +259,37 @@ it('does not retry with the local connector when generation fails', function () 
     // The old fallback_to_local retried and could report success on a fabricated path.
     expect($result['success'])->toBeFalse()
         ->and($result['error'])->toContain('render exploded');
+});
+
+it('finds the file it just wrote, so the PDF is not regenerated on every download', function () {
+    $invoice = Invoice::factory()->create([
+        'fiscal_number' => 'PATH-1',
+        'serie'         => InvoiceSerieType::INVOICE->value,
+        'status'        => InvoiceStatus::DRAFT->value,
+        'user_id'       => TestCase::USER_UUID_1,
+    ]);
+
+    $result = (new PDFService)->generatePDF($invoice);
+
+    // savePDF() used $invoice->type (a column that does not exist) → invoice_<id>_.pdf
+    // while getPDFPath() used getInvoiceType() → invoice_<id>_invoice.pdf. They never
+    // matched, so the consumer's controller regenerated the PDF on every download.
+    expect($result['success'])->toBeTrue()
+        ->and($invoice->getPDFPath())->not->toBeNull()
+        ->and($invoice->getPDFPath())->toBe($result['pdf_path']);
+});
+
+it('publishes no url for a private invoice', function () {
+    $invoice = Invoice::factory()->create([
+        'fiscal_number' => 'PATH-2',
+        'serie'         => InvoiceSerieType::INVOICE->value,
+        'status'        => InvoiceStatus::DRAFT->value,
+        'user_id'       => TestCase::USER_UUID_1,
+    ]);
+
+    $result = (new PDFService)->generatePDF($invoice);
+
+    expect($result['pdf_url'])->toBeNull()
+        ->and($invoice->getPDFUrl())->toBeNull()
+        ->and(json_encode($result))->not->toContain('storage/invoices');
 });

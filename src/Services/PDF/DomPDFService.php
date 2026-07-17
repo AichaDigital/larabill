@@ -457,7 +457,12 @@ class DomPDFService
     }
 
     /**
-     * Save PDF file
+     * Save the PDF under the single, private root.
+     *
+     * One root and one name (AID-508). The name used to be composed from
+     * $invoice->type — a column that does not exist — so it never matched what
+     * Invoice::getPDFPath() looked for, and the consumer regenerated the PDF on
+     * every single download. The temp/storage fork died with isProductionEnvironment().
      *
      * @param  Invoice  $invoice  The invoice
      * @param  string  $pdfContent  PDF content
@@ -465,42 +470,12 @@ class DomPDFService
      */
     protected function savePDF(Invoice $invoice, string $pdfContent): string
     {
-        $filename = 'invoice_'.$invoice->id.'_'.$invoice->type.'.pdf';
+        $pdfPath = storage_path('app/invoices/'.$invoice->pdfFilename());
 
-        // Use temp directory for testing, storage for production (AID-391:
-        // filesystem writes go through the File facade, never raw mkdir/
-        // file_put_contents — fakeable and consistent with the framework).
-        // The environment check and storage_path() are guaranteed framework
-        // APIs (AID-508) — no defensive wrapping.
-        if (! app()->environment('production')) {
-            $pdfPath = sys_get_temp_dir().'/'.$filename;
-        } else {
-            $pdfPath = storage_path('app/invoices/'.$filename);
-            File::ensureDirectoryExists(dirname($pdfPath), 0755);
-        }
-
+        File::ensureDirectoryExists(dirname($pdfPath), 0755);
         File::put($pdfPath, $pdfContent);
 
         return $pdfPath;
-    }
-
-    /**
-     * Generate PDF URL
-     *
-     * @param  Invoice  $invoice  The invoice
-     * @return string PDF URL
-     */
-    protected function generatePDFUrl(Invoice $invoice): string
-    {
-        $filename = 'invoice_'.$invoice->id.'_'.$invoice->type.'.pdf';
-
-        // Use temp URL for testing, real URL for production. app()->environment()
-        // and url() are guaranteed framework APIs (AID-508) — no defensive wrapping.
-        if (! app()->environment('production')) {
-            return 'http://localhost/storage/invoices/'.$filename;
-        }
-
-        return url('storage/invoices/'.$filename);
     }
 
     /**
