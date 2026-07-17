@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Factura #{{ $invoice->number }}</title>
+    <title>Factura #{{ $invoice->fiscal_number }}</title>
     <style>
         body {
             font-family: 'DejaVu Sans', sans-serif;
@@ -155,13 +155,11 @@
             <div>{{ $company['postal_code'] }} {{ $company['city'] }}</div>
             <div>{{ $company['country'] }}</div>
             <div>{{ $company['tax_id'] }}</div>
-            <div>{{ $company['phone'] }}</div>
-            <div>{{ $company['email'] }}</div>
         </div>
 
         <div class="invoice-info">
             <div class="invoice-title">FACTURA</div>
-            <div><strong>Número:</strong> {{ $invoice->number }}</div>
+            <div><strong>Número:</strong> {{ $invoice->fiscal_number }}</div>
             <div><strong>Fecha de expedición:</strong> {{ $invoice->invoice_date->format('d/m/Y') }}</div>
             @if ($operation_date)
                 <div><strong>Fecha de operación:</strong> {{ $operation_date }}</div>
@@ -204,11 +202,11 @@
             @foreach($items as $item)
                 <tr>
                     <td>{{ $item['description'] }}</td>
-                    <td class="text-right">{{ number_format($item['quantity'], 2) }}</td>
-                    <td class="text-right">{{ number_format($item['unit_price'] / 100, 2) }} €</td>
-                    <td class="text-right">{{ $item['tax_rate'] }}%</td>
-                    <td class="text-right">{{ number_format($item['tax_amount'] / 100, 2) }} €</td>
-                    <td class="text-right">{{ number_format($item['total'] / 100, 2) }} €</td>
+                    <td class="text-right">{{ $item['quantity'] }}</td>
+                    <td class="text-right">{{ $item['unit_price'] }} €</td>
+                    <td class="text-right">{{ $item['taxes'] ? collect($item['taxes'])->pluck('rate')->implode('% + ').'%' : '—' }}</td>
+                    <td class="text-right">{{ $item['tax_amount'] }} €</td>
+                    <td class="text-right">{{ $item['total'] }} €</td>
                 </tr>
             @endforeach
         </tbody>
@@ -219,32 +217,30 @@
         <table class="totals-table">
             <tr>
                 <td>Subtotal:</td>
-                <td class="text-right">{{ number_format($totals['subtotal'] / 100, 2) }} €</td>
+                <td class="text-right">{{ $totals['subtotal'] }} €</td>
             </tr>
-            <tr>
-                <td>IVA ({{ $items[0]['tax_rate'] ?? 21 }}%):</td>
-                <td class="text-right">{{ number_format($totals['tax_amount'] / 100, 2) }} €</td>
-            </tr>
+            @foreach($totals['tax_breakdown'] as $tax)
+                <tr>
+                    <td>{{ $tax['name'] }} ({{ $tax['rate'] }}% s/ {{ $tax['base'] }} €):</td>
+                    <td class="text-right">{{ $tax['amount'] }} €</td>
+                </tr>
+            @endforeach
             <tr class="total-row">
                 <td>TOTAL:</td>
-                <td class="text-right">{{ number_format($totals['total'] / 100, 2) }} €</td>
+                <td class="text-right">{{ $totals['total'] }} €</td>
             </tr>
         </table>
     </div>
 
     <!-- QR Code Section (only for fiscal invoices) -->
-    @if($include_qr && isset($qr_data))
+    @if($include_qr && (!empty($qr_data['qr_svg']) || !empty($qr_data['qr_png'])))
         <div class="qr-section">
             <div><strong>QR tributario:</strong></div>
             <div class="qr-code">
                 @if(!empty($qr_data['qr_svg']))
-                    {!! $qr_data['qr_svg'] !!}
+                    <div style="width: 35mm; height: 35mm;">{!! $qr_data['qr_svg'] !!}</div>
                 @elseif(!empty($qr_data['qr_png']))
                     <img src="{{ $qr_data['qr_png'] }}" alt="QR tributario" style="width: 35mm; height: 35mm;">
-                @else
-                    <div style="border: 1px solid #ccc; padding: 10px; display: inline-block;">
-                        {{ $qr_data['qr_code'] ?? 'QR_CODE' }}
-                    </div>
                 @endif
             </div>
             @if(($qr_data['source'] ?? null) === 'fiscal_verification')
@@ -287,7 +283,6 @@
     <!-- Footer -->
     <div class="footer">
         <p>{{ $company['name'] }} - {{ $company['address'] }} - {{ $company['tax_id'] }}</p>
-        <p>Tel: {{ $company['phone'] }} - Email: {{ $company['email'] }} - Web: {{ $company['website'] }}</p>
     </div>
 </body>
 </html>

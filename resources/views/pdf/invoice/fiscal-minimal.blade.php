@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Factura #{{ $invoice->number }}</title>
+    <title>Factura #{{ $invoice->fiscal_number }}</title>
     <style>
         body {
             font-family: 'DejaVu Sans', sans-serif;
@@ -144,7 +144,7 @@
 
             <div class="invoice-info">
                 <div class="invoice-title">FACTURA</div>
-                <div><strong>Nº:</strong> {{ $invoice->number }}</div>
+                <div><strong>Nº:</strong> {{ $invoice->fiscal_number }}</div>
                 <div><strong>Fecha de expedición:</strong> {{ $invoice->invoice_date->format('d/m/Y') }}</div>
                 @if ($operation_date)
                     <div><strong>Fecha de operación:</strong> {{ $operation_date }}</div>
@@ -186,11 +186,11 @@
                 @foreach($items as $item)
                     <tr>
                         <td>{{ $item['description'] }}</td>
-                        <td class="number">{{ number_format($item['quantity'], 2) }}</td>
-                        <td class="number">{{ number_format($item['unit_price'] / 100, 2) }} €</td>
-                        <td class="number">{{ $item['tax_rate'] }}%</td>
-                        <td class="number">{{ number_format($item['tax_amount'] / 100, 2) }} €</td>
-                        <td class="number">{{ number_format($item['total'] / 100, 2) }} €</td>
+                        <td class="number">{{ $item['quantity'] }}</td>
+                        <td class="number">{{ $item['unit_price'] }} €</td>
+                        <td class="number">{{ $item['taxes'] ? collect($item['taxes'])->pluck('rate')->implode('% + ').'%' : '—' }}</td>
+                        <td class="number">{{ $item['tax_amount'] }} €</td>
+                        <td class="number">{{ $item['total'] }} €</td>
                     </tr>
                 @endforeach
             </tbody>
@@ -201,25 +201,32 @@
             <table>
                 <tr>
                     <td>Subtotal:</td>
-                    <td class="number">{{ number_format($totals['subtotal'] / 100, 2) }} €</td>
+                    <td class="number">{{ $totals['subtotal'] }} €</td>
                 </tr>
-                <tr>
-                    <td>IVA:</td>
-                    <td class="number">{{ number_format($totals['tax_amount'] / 100, 2) }} €</td>
-                </tr>
+                @foreach($totals['tax_breakdown'] as $tax)
+                    <tr>
+                        <td>{{ $tax['name'] }} ({{ $tax['rate'] }}% s/ {{ $tax['base'] }} €):</td>
+                        <td class="number">{{ $tax['amount'] }} €</td>
+                    </tr>
+                @endforeach
                 <tr class="total-row">
                     <td>TOTAL:</td>
-                    <td class="number">{{ number_format($totals['total'] / 100, 2) }} €</td>
+                    <td class="number">{{ $totals['total'] }} €</td>
                 </tr>
             </table>
         </div>
 
         <!-- QR Code Section -->
-        @if($include_qr && isset($qr_data))
+        @if($include_qr && (!empty($qr_data['qr_svg']) || !empty($qr_data['qr_png'])))
             <div class="qr-section">
-                <div><strong>Verificación Fiscal</strong></div>
-                <div class="qr-code">{{ $qr_data['qr_code'] ?? 'QR_CODE' }}</div>
-                <div style="font-size: 9px; margin-top: 5px;">{{ $qr_data['qr_url'] ?? 'QR_URL' }}</div>
+                <div><strong>QR tributario:</strong></div>
+                <div class="qr-code">
+                    @if(!empty($qr_data['qr_svg']))
+                        <div style="width: 35mm; height: 35mm;">{!! $qr_data['qr_svg'] !!}</div>
+                    @else
+                        <img src="{{ $qr_data['qr_png'] }}" alt="QR tributario" style="width: 35mm; height: 35mm;">
+                    @endif
+                </div>
             </div>
         @endif
 
@@ -240,7 +247,6 @@
         <!-- Footer -->
         <div class="footer">
             <p>{{ $company['name'] }} | {{ $company['address'] }} | {{ $company['tax_id'] }}</p>
-            <p>Tel: {{ $company['phone'] }} | Email: {{ $company['email'] }}</p>
             <p>Generado: {{ $generated_at->format('d/m/Y H:i:s') }}</p>
         </div>
     </div>

@@ -4,10 +4,19 @@ declare(strict_types=1);
 
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
+use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Services\PDF\DomPDFService;
 use AichaDigital\Larabill\Services\PDF\PDFService;
 use AichaDigital\Larabill\Tests\TestCase;
+
+// AID-508/AID-328: getCompanyData() now reads the invoice's frozen issuer
+// snapshot instead of a hardcoded fantasy. Without an active CompanyFiscalConfig
+// for Invoice::boot()'s creating() hook to auto-snapshot against, the fiscal
+// blade's header block crashes on a missing key.
+beforeEach(function () {
+    CompanyFiscalConfig::factory()->create();
+});
 
 /**
  * Real fiscal QR shape emitted by lara-verifactu: an <svg> root preceded by an
@@ -34,6 +43,9 @@ function realRouteFiscalInvoice(): Invoice
         'total_amount'                 => cents(1210),
         'fiscal_verification_qr'       => VERIFACTU_QR_SVG,
         'fiscal_verification_metadata' => ['qr_url' => 'https://prewww2.aeat.es/qr?id=REG-20260618-000001'],
+        // AID-508: "registered" means both facts hold — the QR alone is not enough.
+        'fiscal_verification_id'       => 'REG-20260618-000001',
+        'fiscal_verified_at'           => now(),
     ]);
 }
 

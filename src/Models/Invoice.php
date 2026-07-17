@@ -436,19 +436,23 @@ class Invoice extends Model implements LegallyRetainable
     // ========================================
 
     /**
-     * Check if this invoice should include QR code
+     * Whether this invoice has a tax QR to print.
      *
-     * @return bool True if QR should be included
+     * Two axes govern it, and invoice status is not one of them (AID-508):
+     *
+     * - Document class: only fiscal documents carry a tax QR. A proforma never
+     *   does, in any state.
+     * - Fiscal registration: the QR is an effect of the billing record — per the
+     *   AEAT FAQ, definitive issuance happens when the billing record is generated
+     *   and the QR incorporated, not when the PDF is delivered nor when AEAT
+     *   accepts the record.
+     *
+     * Delivery and payment do not make a document fiscal: an invoice does not
+     * acquire a QR by being paid.
      */
     public function shouldIncludeQR(): bool
     {
-        // Proforma invoices never include QR
-        if ($this->serie === InvoiceSerieType::PROFORMA) {
-            return false;
-        }
-
-        // Only fiscal invoices include QR
-        return $this->serie === InvoiceSerieType::INVOICE || $this->serie === InvoiceSerieType::RECTIFICATIVE;
+        return $this->serie->isFiscal() && $this->isFiscallyVerified();
     }
 
     /**
@@ -532,14 +536,22 @@ class Invoice extends Model implements LegallyRetainable
     }
 
     /**
+     * The invoice PDF's filename. Single source of the name, shared with the
+     * writer (DomPDFService::savePDF) so both sides always agree (AID-508).
+     */
+    public function pdfFilename(): string
+    {
+        return 'invoice_'.$this->id.'_'.$this->getInvoiceType().'.pdf';
+    }
+
+    /**
      * Get PDF path for this invoice
      *
      * @return string|null PDF file path
      */
     public function getPDFPath(): ?string
     {
-        $filename = 'invoice_'.$this->id.'_'.$this->getInvoiceType().'.pdf';
-        $pdfPath  = storage_path('app/invoices/'.$filename);
+        $pdfPath = storage_path('app/invoices/'.$this->pdfFilename());
 
         return file_exists($pdfPath) ? $pdfPath : null;
     }
@@ -547,18 +559,17 @@ class Invoice extends Model implements LegallyRetainable
     /**
      * Get PDF URL for this invoice
      *
-     * @return string|null PDF URL
+     * Always null: larabill does not publish invoices. Delivery is the consumer's
+     * responsibility, through an authorised controller. The old
+     * url('storage/invoices/...') was an UNAUTHORISED public link that bypassed the
+     * consumer's policy — and a URL leaks through logs, history and Referer headers,
+     * so protection cannot rest on a UUID being hard to guess (AID-508).
+     *
+     * @return string|null Always null
      */
     public function getPDFUrl(): ?string
     {
-        $path = $this->getPDFPath();
-        if (! $path) {
-            return null;
-        }
-
-        $filename = 'invoice_'.$this->id.'_'.$this->getInvoiceType().'.pdf';
-
-        return url('storage/invoices/'.$filename);
+        return null;
     }
 
     // ========================================

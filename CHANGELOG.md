@@ -4,6 +4,36 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+## [6.4.0] - 2026-07-17
+
+**Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`; no `larabill:install` re-run or `migrate` needed.
+
+### Fixed
+
+- **The invoice PDF is an invoice again (AID-508).** The PDF pipeline was never finished and shipped anyway: the number printed blank (`$invoice->number` does not exist, in all six templates), lines were a hardcoded stub (`Servicio 1`, quantity 1), the totals read columns that do not exist (`subtotal`/`tax_amount`/`total` → `null` → `0.00` on a €121.00 invoice), and the issuer was fantasy (`Mi Empresa`, `NIF: 12345678A`, `info@empresa.com`). Everything now comes from the real models and the frozen issuer snapshot.
+- **The tax QR is no longer fabricated.** `DefaultPDFConnector` produced `QR:<hash>:<base64 of the JSON truncated to 100 bytes>` — plain text, not an image, unscannable. It is gone; the QR comes from the fiscal record (`fiscal_verification_qr`) or it is not printed. **Behaviour change:** a fiscal invoice without a fiscal record now renders **without a tax block** (before: with a fake one). Set `larabill.pdf.require_fiscal_verification_qr` to `true` to make that a hard failure instead.
+- **The tax breakdown is real.** The totals block printed the first line's rate for the entire invoice with a hardcoded `21%` fallback, misreporting every mixed-rate invoice. It now prints one row per rate with its base and amount (RD 1619/2012 art. 6.1.g/h). **Behaviour change:** invoices with several rates show several rows; invoices with no taxes show none, instead of a fabricated 21 %.
+- **Simplified invoices carry their QR.** `shouldIncludeQR()` excluded `SIMPLIFIED`; a simplified invoice is a fiscal document and carries its tax QR. It is now governed by document class and fiscal registration only — invoice status governs nothing.
+- **The PDF stops being regenerated on every download.** The writer composed the filename from `$invoice->type` (a nonexistent column) and the reader from `getInvoiceType()`: they never matched, so `getPDFPath()` returned `null` on a file that existed.
+- **The service can fail now.** Eleven guards and eight `catch` blocks turned every error into filler; a failed generation could even be retried with the fake-QR connector and reported as a success. Inner layers propagate, `PDFService` logs and translates to `['success' => false]`. **Behaviour change:** conditions that used to yield a plausible PDF now return an explicit failure.
+- **Amounts no longer travel to the templates as numbers to divide there.** The service hands over exact strings; the blades do no arithmetic on money. **Behaviour change:** amounts print without a thousands separator (`1234.56`, previously `1,234.56`). Neither is the Spanish format; localisation belongs to AID-502.
+
+### Removed
+
+- **`getPDFUrl()` returns `null`; invoices are private.** `url('storage/invoices/<file>.pdf')` was an unauthorised public link that bypassed the consumer's policy. Delivery is the consumer's responsibility, via an authorised controller.
+- **Invented contact details.** Phone, email and website did not exist in `CompanyFiscalConfig` and were invented by the stub; they no longer print.
+- `larabill.pdf.fallback_to_local` (the config key and its behaviour).
+
+### Added
+
+- `larabill.pdf.require_fiscal_verification_qr` (default `false`) — declares whether this installation's invoices must carry the fiscal QR. It states the **document contract**, not a legal obligation: larabill does not know your taxpayer type, exclusions, elected mode or adoption date. Turn it on when you actually operate that flow. VeriFACTU calendar: 2027-01-01 (corporate income tax payers) and 2027-07-01 (rest of art. 3.1 obliged parties); the earlier period is a trial one.
+- `MissingFiscalVerificationQrException` — thrown when the contract above is enabled and a fiscal invoice has no usable QR.
+- `Invoice::pdfFilename()` — the single source of the PDF filename, shared by writer and reader.
+
+### Note for consumers
+
+`PDFConnectorInterface` remains intact and `@api`, but larabill's pipeline no longer invokes any connector: the tax QR is an effect of the fiscal record, not something the PDF fabricates. If you implemented a connector, it will no longer be called. The contradiction this exposes — a public extension point registered through an `@internal` service — is tracked separately.
+
 ## [6.3.1] - 2026-07-13
 
 **Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`; no `larabill:install` re-run or `migrate` needed.

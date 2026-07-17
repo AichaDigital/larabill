@@ -406,6 +406,13 @@
             "returnType": "void",
             "static": false
         },
+        "pdfFilename": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "string",
+            "static": false
+        },
         "regenerateEncryptedSnapshots": {
             "api": false,
             "deprecated": false,

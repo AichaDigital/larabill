@@ -6,15 +6,19 @@ namespace AichaDigital\Larabill\Services\PDF;
 
 use AichaDigital\Larabill\Contracts\PDFConnectorInterface;
 use AichaDigital\Larabill\Models\Invoice;
+use LogicException;
 
 // use Illuminate\Support\Facades\Log;
 
 /**
- * Default PDF connector that generates QR codes locally
+ * Default PDF connector: metadata and validation, no fiscal QR generation.
  *
- * This connector provides basic QR generation without external dependencies.
- * It's suitable for internal use, testing, and as a fallback when external
- * connectors are not available.
+ * This is the built-in connector used when no external one is registered. It
+ * validates invoice data and reports connector metadata. It does NOT generate
+ * fiscal QR codes: the tax QR is an effect of the fiscal billing record
+ * (`fiscal_verification_qr`), built by the registrar (lara-verifactu) from the
+ * AEAT cotejo URL — never fabricated by the PDF pipeline. `generateQR()`
+ * refuses by design (AID-508); see its own docblock.
  *
  * @internal Implementation detail — may change without a major version (AID-413).
  */
@@ -44,52 +48,23 @@ class DefaultPDFConnector implements PDFConnectorInterface
     }
 
     /**
-     * Generate QR code data for an invoice
+     * larabill does not generate fiscal QR codes.
      *
-     * @param  Invoice  $invoice  The invoice to generate QR for
-     * @return array<string, mixed> QR data including code, url, and metadata
+     * The tax QR is an effect of the fiscal billing record, and it is the registrar
+     * (lara-verifactu) who builds it from the AEAT cotejo URL — nif, numserie, fecha,
+     * importe — per the AEAT QR spec v0.4.7. This connector used to fabricate a
+     * placeholder that was not a QR at all: plain text, unscannable, with the JSON
+     * truncated to 100 bytes. Presenting a code without the mandatory cotejo URL is
+     * the breach; fabricating it locally is not (the registrar does exactly that).
+     *
+     * The interface stays (@api): only this implementation refuses (AID-508).
      */
     public function generateQR(Invoice $invoice): array
     {
-        try {
-            // Validate invoice first
-            if (! $this->validateInvoice($invoice)) {
-                throw new \InvalidArgumentException('Invoice validation failed: missing required fields');
-            }
-
-            // Prepare QR data
-            $qrData = $this->prepareQRData($invoice);
-
-            // Generate QR code (using a simple hash for now, can be enhanced with actual QR library)
-            $qrCode = $this->generateQRCode($qrData);
-
-            // Create QR URL
-            $qrUrl = $this->createQRUrl($invoice, $qrCode);
-
-            return [
-                'success'        => true,
-                'qr_code'        => $qrCode,
-                'qr_url'         => $qrUrl,
-                'qr_data'        => $qrData,
-                'connector_type' => $this->getConnectorType(),
-                'generated_at'   => now()->toISOString(),
-                'metadata'       => [
-                    'invoice_id'     => $invoice->id,
-                    'invoice_number' => $invoice->fiscal_number,
-                    'total_amount'   => $invoice->total_amount->unscaledValue(),
-                    'currency'       => 'EUR', // Default currency
-                ],
-            ];
-        } catch (\Exception $e) {
-            // Error occurred during QR generation
-
-            return [
-                'success'        => false,
-                'error'          => $e->getMessage(),
-                'connector_type' => $this->getConnectorType(),
-                'generated_at'   => now()->toISOString(),
-            ];
-        }
+        throw new LogicException(
+            'larabill does not generate fiscal QR codes: the tax QR comes from the fiscal '
+            .'billing record (fiscal_verification_qr), never from the PDF pipeline.'
+        );
     }
 
     /**
@@ -208,65 +183,6 @@ class DefaultPDFConnector implements PDFConnectorInterface
             'supports_digital_signature'   => false,
             'requires_internet'            => false,
         ];
-    }
-
-    /**
-     * Prepare QR data from invoice
-     *
-     * @param  Invoice  $invoice  The invoice to prepare data for
-     * @return array<string, mixed> Prepared QR data
-     */
-    protected function prepareQRData(Invoice $invoice): array
-    {
-        $data = [
-            'invoice_id'     => $invoice->id,
-            'invoice_number' => $invoice->fiscal_number,
-            'total_amount'   => $invoice->total_amount->unscaledValue(),
-            'status'         => $invoice->status,
-            'created_at'     => $invoice->created_at?->toISOString(),
-        ];
-
-        // Include invoice data if configured
-        if ($this->config['qr_include_invoice_data']) {
-            $data['invoice_data'] = [
-                'taxable_amount' => $invoice->taxable_amount->unscaledValue(),
-                'tax_amount'     => $invoice->tax_amount,
-                'due_date'       => $invoice->due_date?->toISOString(),
-            ];
-        }
-
-        // Include tax data if configured
-        if ($this->config['qr_include_tax_data']) {
-            $data['tax_data'] = [
-                'reverse_charge' => $invoice->is_roi_taxed,
-            ];
-        }
-
-        // Include company data if configured
-        if ($this->config['qr_include_company_data']) {
-            $data['company_data'] = [
-                'user_id' => $invoice->user_id,
-            ];
-        }
-
-        return $data;
-    }
-
-    /**
-     * Generate QR code from data
-     *
-     * @param  array<string, mixed>  $data  The data to encode
-     * @return string Generated QR code
-     */
-    protected function generateQRCode(array $data): string
-    {
-        // For now, generate a simple hash-based QR code
-        // In a real implementation, you would use a QR library like SimpleSoftwareIO/simple-qrcode
-        $jsonData = json_encode($data, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
-        $hash     = hash('sha256', $jsonData);
-
-        // Create a simple QR-like string (this is a placeholder)
-        return 'QR:'.substr($hash, 0, 16).':'.base64_encode(substr($jsonData, 0, 100));
     }
 
     /**

@@ -3,16 +3,25 @@
 declare(strict_types=1);
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
+use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Services\PDF\DefaultPDFConnector;
 use AichaDigital\Larabill\Services\PDF\DomPDFService;
 use AichaDigital\Larabill\Services\PDF\PDFService;
 use AichaDigital\Larabill\Tests\TestCase;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
 
 beforeEach(function () {
     $this->pdfService = new PDFService;
+
+    // AID-508/AID-328: getCompanyData() now reads the invoice's frozen issuer
+    // snapshot instead of a hardcoded fantasy. Without an active
+    // CompanyFiscalConfig for Invoice::boot()'s creating() hook to auto-snapshot
+    // against, template rendering crashes on a missing 'name' key.
+    CompanyFiscalConfig::factory()->create();
 });
 
 it('can be instantiated', function () {
@@ -30,14 +39,19 @@ it('accepts an injected DomPDF engine instead of hard-wiring one (AID-391)', fun
 it('persists PDFs through the File facade (AID-391)', function () {
     $engine = new DomPDFService([]);
 
-    $invoice     = new Invoice;
-    $invoice->id = (string) Str::uuid7();
+    // AID-508: savePDF() now composes the name via Invoice::pdfFilename()
+    // (getInvoiceType() → $this->serie->label()), the same path getPDFPath()
+    // reads — so a bare invoice needs its serie set, unlike before when
+    // savePDF() read the nonexistent $invoice->type and never touched serie.
+    $invoice        = new Invoice;
+    $invoice->id    = (string) Str::uuid7();
+    $invoice->serie = InvoiceSerieType::INVOICE;
 
     $save = new ReflectionMethod($engine, 'savePDF');
     $save->setAccessible(true);
 
-    // Testing environment → the temp-dir branch; the write itself goes
-    // through File::put either way.
+    // savePDF() always writes under the single private root (AID-508); the
+    // write itself goes through File::put.
     $path = $save->invoke($engine, $invoice, '%PDF-fake-content');
 
     expect(File::exists($path))->toBeTrue()
@@ -79,7 +93,9 @@ it('can get configuration', function () {
 
     expect($config)->toBeArray();
     expect($config)->toHaveKey('default_connector');
-    expect($config)->toHaveKey('fallback_to_local');
+    // fallback_to_local removed (AID-508): the frontier no longer retries with
+    // another connector after a failure — see PDFServiceTest's frontier tests.
+    expect($config)->not->toHaveKey('fallback_to_local');
     expect($config['default_connector'])->toBe('local');
 });
 
@@ -133,6 +149,10 @@ it('uses the persisted fiscal verification QR when generating fiscal PDFs', func
         'fiscal_verification_metadata'  => [
             'qr_url' => 'https://prewww2.aeat.es/qr?id=REG-000001',
         ],
+        // AID-508: the QR alone is not enough — the frontier requires a coherent
+        // registration too (fiscal_verification_id + fiscal_verified_at).
+        'fiscal_verification_id'        => 'REG-000001',
+        'fiscal_verified_at'            => now(),
     ]);
 
     $result = $this->pdfService->generatePDF($invoice);
@@ -199,4 +219,77 @@ it('can clear PDF cache', function () {
 
     $cached = $this->pdfService->getCachedPDFResult($invoice);
     expect($cached)->toBeNull();
+});
+
+it('logs the original exception before translating it into the failure contract', function () {
+    Log::spy();
+    $invoice = Invoice::factory()->create([
+        'fiscal_number' => 'FRONTIER-1',
+        'serie'         => InvoiceSerieType::INVOICE->value,
+        'status'        => InvoiceStatus::DRAFT->value,
+        'user_id'       => TestCase::USER_UUID_1,
+        'template_name' => null,
+    ]);
+    // Force a render failure: point the invoice at a view that does not exist.
+    View::shouldReceive('make')->andThrow(new RuntimeException('boom from the depths'));
+
+    $result = (new PDFService)->generatePDF($invoice);
+
+    expect($result['success'])->toBeFalse()
+        ->and($result['error'])->toContain('boom from the depths');
+
+    // Scoped to the frontier's message: renderTemplate() logs separately (accepted
+    // double-logging, spec §8.1) — this test only asserts the frontier's log.
+    Log::shouldHaveReceived('error')
+        ->with('larabill: invoice PDF generation failed', Mockery::any())
+        ->once();
+});
+
+it('does not retry with the local connector when generation fails', function () {
+    $invoice = Invoice::factory()->create([
+        'fiscal_number' => 'FRONTIER-2',
+        'serie'         => InvoiceSerieType::INVOICE->value,
+        'status'        => InvoiceStatus::DRAFT->value,
+        'user_id'       => TestCase::USER_UUID_1,
+    ]);
+    View::shouldReceive('make')->andThrow(new RuntimeException('render exploded'));
+
+    $result = (new PDFService)->generatePDF($invoice);
+
+    // The old fallback_to_local retried and could report success on a fabricated path.
+    expect($result['success'])->toBeFalse()
+        ->and($result['error'])->toContain('render exploded');
+});
+
+it('finds the file it just wrote, so the PDF is not regenerated on every download', function () {
+    $invoice = Invoice::factory()->create([
+        'fiscal_number' => 'PATH-1',
+        'serie'         => InvoiceSerieType::INVOICE->value,
+        'status'        => InvoiceStatus::DRAFT->value,
+        'user_id'       => TestCase::USER_UUID_1,
+    ]);
+
+    $result = (new PDFService)->generatePDF($invoice);
+
+    // savePDF() used $invoice->type (a column that does not exist) → invoice_<id>_.pdf
+    // while getPDFPath() used getInvoiceType() → invoice_<id>_invoice.pdf. They never
+    // matched, so the consumer's controller regenerated the PDF on every download.
+    expect($result['success'])->toBeTrue()
+        ->and($invoice->getPDFPath())->not->toBeNull()
+        ->and($invoice->getPDFPath())->toBe($result['pdf_path']);
+});
+
+it('publishes no url for a private invoice', function () {
+    $invoice = Invoice::factory()->create([
+        'fiscal_number' => 'PATH-2',
+        'serie'         => InvoiceSerieType::INVOICE->value,
+        'status'        => InvoiceStatus::DRAFT->value,
+        'user_id'       => TestCase::USER_UUID_1,
+    ]);
+
+    $result = (new PDFService)->generatePDF($invoice);
+
+    expect($result['pdf_url'])->toBeNull()
+        ->and($invoice->getPDFUrl())->toBeNull()
+        ->and(json_encode($result))->not->toContain('storage/invoices');
 });

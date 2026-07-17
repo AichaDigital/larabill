@@ -2,9 +2,14 @@
 
 declare(strict_types=1);
 
+use AichaDigital\Larabill\Enums\InvoiceSerieType;
+use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\UserTaxProfile;
 use AichaDigital\Larabill\Services\PDF\DomPDFService;
+use AichaDigital\Larabill\Tests\TestCase;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * AID-245: the PDF service read fiscal flags from the orphan `fiscal_data` /
@@ -85,4 +90,70 @@ it('returns empty client data when the invoice has no userTaxProfile', function 
     $invoice->setRelation('userTaxProfile', null);
 
     expect(callDomProtected($svc, 'getClientData', $invoice))->toBe([]);
+});
+
+it('propagates a database failure instead of falling back to a default template', function () {
+    $invoice = Invoice::factory()->create([
+        'fiscal_number' => 'BLINDFOLD-1',
+        'serie'         => InvoiceSerieType::INVOICE->value,
+        'status'        => InvoiceStatus::DRAFT->value,
+        'user_id'       => TestCase::USER_UUID_1,
+        'template_name' => 'some-template',
+    ]);
+    Schema::drop('invoice_templates');
+
+    $engine = new DomPDFService([]);
+    $method = new ReflectionMethod($engine, 'getTemplateForInvoice');
+
+    expect(fn () => $method->invoke($engine, $invoice))->toThrow(QueryException::class);
+});
+
+it('no longer carries the mock html generator', function () {
+    expect(method_exists(DomPDFService::class, 'generateMockHTML'))->toBeFalse()
+        ->and(method_exists(DomPDFService::class, 'getConfigValue'))->toBeFalse()
+        ->and(method_exists(DomPDFService::class, 'isProductionEnvironment'))->toBeFalse();
+});
+
+it('warns when a configured template cannot be resolved, and uses the default', function () {
+    Log::spy();
+    $invoice = Invoice::factory()->create([
+        'fiscal_number' => 'TEMPLATE-1',
+        'serie'         => InvoiceSerieType::INVOICE->value,
+        'status'        => InvoiceStatus::DRAFT->value,
+        'user_id'       => TestCase::USER_UUID_1,
+        'template_name' => 'a-template-that-does-not-resolve',
+        // The factory randomizes is_roi_taxed (10% true). getTemplateForInvoice()'s
+        // fallback picks reverse-charge over fiscal when it's true, which made this
+        // assertion a CI flake (~1 in 10 runs). No userTaxProfile relation is set on
+        // this in-memory-loaded model, so isExemptInvoice() is already deterministic
+        // (falsy) — only is_roi_taxed needed pinning.
+        'is_roi_taxed'  => false,
+    ]);
+
+    $engine = new DomPDFService([]);
+    $method = new ReflectionMethod($engine, 'getTemplateForInvoice');
+
+    expect($method->invoke($engine, $invoice))->toBe('larabill::pdf.invoice.fiscal');
+
+    Log::shouldHaveReceived('warning')->once();
+});
+
+it('does not warn when no template was configured', function () {
+    Log::spy();
+    $invoice = Invoice::factory()->create([
+        'fiscal_number' => 'TEMPLATE-2',
+        'serie'         => InvoiceSerieType::INVOICE->value,
+        'status'        => InvoiceStatus::DRAFT->value,
+        'user_id'       => TestCase::USER_UUID_1,
+        'template_name' => null,
+        // Pinned for consistency with the sibling test above, even though this
+        // test only asserts the absence of a warning log (not which template
+        // resolved) — is_roi_taxed randomness cannot make it flaky either way.
+        'is_roi_taxed'  => false,
+    ]);
+
+    $engine = new DomPDFService([]);
+    (new ReflectionMethod($engine, 'getTemplateForInvoice'))->invoke($engine, $invoice);
+
+    Log::shouldNotHaveReceived('warning');
 });
