@@ -18,6 +18,15 @@ use AichaDigital\Larabill\Tests\TestCase;
  */
 function makeContentInvoice(): Invoice
 {
+    // AID-508 (Task 11): the template render tests need a resolvable issuer so
+    // the header block doesn't crash on a missing key. Only seed a default when
+    // none is active yet — a test that pre-creates its own config (the frozen
+    // snapshot test below) must stay the ONLY active one, or Invoice::boot()'s
+    // creating() hook throws on duplicate active configs (FiscalIntegrityChecker).
+    if (CompanyFiscalConfig::query()->where('is_active', true)->whereNull('valid_until')->doesntExist()) {
+        CompanyFiscalConfig::factory()->create();
+    }
+
     $invoice = Invoice::factory()->create([
         'fiscal_number'    => 'CASTRIS-2026-000001',
         'serie'            => InvoiceSerieType::INVOICE->value,
@@ -229,3 +238,75 @@ it('carries no invented contact details', function () {
     // +34 123 456 789 / info@empresa.com / https://empresa.com and printed them.
     expect($company)->not->toHaveKeys(['phone', 'email', 'website']);
 });
+
+function renderContentTemplate(string $template, Invoice $invoice): string
+{
+    $engine  = new DomPDFService([]);
+    $prepare = new ReflectionMethod($engine, 'prepareTemplateData');
+    $render  = new ReflectionMethod($engine, 'renderTemplate');
+
+    return $render->invoke($engine, $template, $prepare->invoke($engine, $invoice, null, false));
+}
+
+it('prints the fiscal number, never an empty accessor', function (string $template) {
+    $html = renderContentTemplate($template, makeContentInvoice());
+
+    // $invoice->number does not exist and never did: the six templates printed blank.
+    expect($html)->toContain('CASTRIS-2026-000001');
+})->with([
+    'fiscal'         => 'larabill::pdf.invoice.fiscal',
+    'fiscal-minimal' => 'larabill::pdf.invoice.fiscal-minimal',
+    'fiscal-modern'  => 'larabill::pdf.invoice.fiscal-modern',
+    'proforma'       => 'larabill::pdf.invoice.proforma',
+    'reverse-charge' => 'larabill::pdf.invoice.reverse-charge',
+    'exempt'         => 'larabill::pdf.invoice.exempt',
+]);
+
+it('prints the real line and the real amounts', function (string $template) {
+    $html = renderContentTemplate($template, makeContentInvoice());
+
+    expect($html)->toContain('Hosting anual Probe')
+        ->and($html)->toContain('121.00')      // the real total
+        ->and($html)->not->toContain('Servicio 1')
+        // What a €121.00 invoice used to print. Not a plain toContain('0.00 €'):
+        // the fixture's real, correct €100.00 subtotal/unit price legitimately
+        // contains that substring ("1[00.00 €]"), so the check must require the
+        // zero to be standalone, never embedded in a larger number.
+        ->and($html)->not->toMatch('/(?<!\d)0\.00\s€/');
+})->with([
+    'fiscal'         => 'larabill::pdf.invoice.fiscal',
+    'fiscal-minimal' => 'larabill::pdf.invoice.fiscal-minimal',
+    'fiscal-modern'  => 'larabill::pdf.invoice.fiscal-modern',
+    'proforma'       => 'larabill::pdf.invoice.proforma',
+    'reverse-charge' => 'larabill::pdf.invoice.reverse-charge',
+    'exempt'         => 'larabill::pdf.invoice.exempt',
+]);
+
+it('prints the quantity at its own scale', function (string $template) {
+    $html = renderContentTemplate($template, makeContentInvoice());
+
+    expect($html)->toContain('1.50')       // 1.50 units
+        ->and($html)->not->toContain('150.00');
+})->with([
+    'fiscal'         => 'larabill::pdf.invoice.fiscal',
+    'fiscal-minimal' => 'larabill::pdf.invoice.fiscal-minimal',
+    'fiscal-modern'  => 'larabill::pdf.invoice.fiscal-modern',
+    'proforma'       => 'larabill::pdf.invoice.proforma',
+    'reverse-charge' => 'larabill::pdf.invoice.reverse-charge',
+    'exempt'         => 'larabill::pdf.invoice.exempt',
+]);
+
+it('carries no invented contact details in the rendered template', function (string $template) {
+    $html = renderContentTemplate($template, makeContentInvoice());
+
+    expect($html)->not->toContain('info@empresa.com')
+        ->and($html)->not->toContain('+34 123 456 789')
+        ->and($html)->not->toContain('https://empresa.com');
+})->with([
+    'fiscal'         => 'larabill::pdf.invoice.fiscal',
+    'fiscal-minimal' => 'larabill::pdf.invoice.fiscal-minimal',
+    'fiscal-modern'  => 'larabill::pdf.invoice.fiscal-modern',
+    'proforma'       => 'larabill::pdf.invoice.proforma',
+    'reverse-charge' => 'larabill::pdf.invoice.reverse-charge',
+    'exempt'         => 'larabill::pdf.invoice.exempt',
+]);
