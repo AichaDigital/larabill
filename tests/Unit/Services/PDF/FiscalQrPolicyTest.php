@@ -124,13 +124,24 @@ it('never asks a connector to produce the QR', function () {
     // makeQrInvoice() hardcodes fiscal_number to 'QR-AXES' (fine for the single-invoice
     // tests above); three live rows in one test would collide on the unique index, so
     // each is deleted before the next is created.
+    //
+    // The spy must stub isAvailable() (unstubbed, it returns false — Mockery's
+    // type-aware default for `bool` — so getConnector() would never select it and
+    // generatePDF() would fail early with "No suitable PDF connector found",
+    // making shouldNotHaveReceived('generateQR') pass without exercising anything).
     $connector = Mockery::spy(PDFConnectorInterface::class);
-    $service   = new PDFService;
+    $connector->shouldReceive('isAvailable')->andReturn(true);
+    $connector->shouldReceive('getConnectorType')->andReturn('local');
+    $service = new PDFService;
     $service->registerConnector('local', $connector);
 
     $registered = makeQrInvoice(InvoiceSerieType::INVOICE, registered: true);
-    $service->generatePDF($registered);
+    $result     = $service->generatePDF($registered);
     $registered->delete();
+
+    // Proves the pipeline actually ran (not a vacuous early failure): a real PDF
+    // was rendered through the spy connector.
+    expect($result['success'])->toBeTrue();
 
     $unregistered = makeQrInvoice(InvoiceSerieType::INVOICE, registered: false);
     $service->generatePDF($unregistered);
