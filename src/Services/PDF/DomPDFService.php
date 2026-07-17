@@ -134,26 +134,6 @@ class DomPDFService
      */
     protected function initializeDomPDF(): void
     {
-        // Check if DomPDF is available (for testing compatibility)
-        if (! class_exists('Dompdf\Dompdf')) {
-            // Create a mock object for testing
-            $this->dompdf = new class
-            {
-                public function loadHtml(string $html): void {}
-
-                public function setPaper(string $paper, string $orientation): void {}
-
-                public function render(): void {}
-
-                public function output(): string
-                {
-                    return 'mock-pdf-content';
-                }
-            };
-
-            return;
-        }
-
         $options = new Options;
         $options->set('defaultFont', $this->config['default_font']);
         $options->set('isRemoteEnabled', $this->config['is_remote_enabled']);
@@ -174,20 +154,13 @@ class DomPDFService
     {
         // Check if invoice has specific template
         if ($invoice->template_name) {
-            // Only try to get from database if the model exists and we're not in testing
-            if (class_exists('\AichaDigital\Larabill\Models\InvoiceTemplate') && app()->bound('db')) {
-                try {
-                    $template = InvoiceTemplate::getByName(
-                        $invoice->template_name,
-                        $invoice->getInvoiceType()
-                    );
+            $template = InvoiceTemplate::getByName(
+                $invoice->template_name,
+                $invoice->getInvoiceType()
+            );
 
-                    if ($template) {
-                        return $template->template_path;
-                    }
-                } catch (\Exception $e) {
-                    // Fall back to default templates if database access fails
-                }
+            if ($template) {
+                return $template->template_path;
             }
         }
 
@@ -303,7 +276,7 @@ class DomPDFService
     {
         // This should be configurable per company
         return [
-            'name'        => $this->getConfigValue('app.name', 'Mi Empresa'),
+            'name'        => config('app.name', 'Mi Empresa'),
             'address'     => 'Dirección de la empresa',
             'city'        => 'Ciudad',
             'postal_code' => '00000',
@@ -391,7 +364,9 @@ class DomPDFService
         // Use temp directory for testing, storage for production (AID-391:
         // filesystem writes go through the File facade, never raw mkdir/
         // file_put_contents — fakeable and consistent with the framework).
-        if (! $this->isProductionEnvironment() || ! function_exists('storage_path')) {
+        // The environment check and storage_path() are guaranteed framework
+        // APIs (AID-508) — no defensive wrapping.
+        if (! app()->environment('production')) {
             $pdfPath = sys_get_temp_dir().'/'.$filename;
         } else {
             $pdfPath = storage_path('app/invoices/'.$filename);
@@ -413,8 +388,9 @@ class DomPDFService
     {
         $filename = 'invoice_'.$invoice->id.'_'.$invoice->type.'.pdf';
 
-        // Use temp URL for testing, real URL for production
-        if (! $this->isProductionEnvironment() || ! function_exists('url')) {
+        // Use temp URL for testing, real URL for production. app()->environment()
+        // and url() are guaranteed framework APIs (AID-508) — no defensive wrapping.
+        if (! app()->environment('production')) {
             return 'http://localhost/storage/invoices/'.$filename;
         }
 
@@ -429,27 +405,18 @@ class DomPDFService
      */
     protected function getInvoiceNotes(Invoice $invoice): ?string
     {
-        // Priority: individual -> client -> global
+        // Priority: individual -> client -> global. A null from getDefaultNotes()
+        // is a legitimate absence (no notes configured) and stays null; a database
+        // exception is NOT an absence and now propagates to the frontier (AID-508).
         if ($invoice->notes) {
             return $invoice->notes;
         }
 
-        // Only try to get from database if the model exists and we're not in testing
-        if (class_exists('\AichaDigital\Larabill\Models\CompanyTemplateSettings') && app()->bound('db')) {
-            try {
-                $companyId = $this->getCompanyId($invoice);
-
-                return CompanyTemplateSettings::getDefaultNotes(
-                    $companyId,
-                    $this->convertToTemplateInvoiceType($invoice->getInvoiceType()),
-                    (string) $invoice->user_id
-                );
-            } catch (\Exception $e) {
-                // Fall back to null if database access fails
-            }
-        }
-
-        return null;
+        return CompanyTemplateSettings::getDefaultNotes(
+            $this->getCompanyId($invoice),
+            $this->convertToTemplateInvoiceType($invoice->getInvoiceType()),
+            (string) $invoice->user_id
+        );
     }
 
     /**
@@ -460,27 +427,18 @@ class DomPDFService
      */
     protected function getPaymentTerms(Invoice $invoice): ?string
     {
-        // Priority: individual -> client -> global
+        // Priority: individual -> client -> global. A null from getPaymentTerms()
+        // is a legitimate absence (no terms configured) and stays null; a database
+        // exception is NOT an absence and now propagates to the frontier (AID-508).
         if ($invoice->payment_terms) {
             return $invoice->payment_terms;
         }
 
-        // Only try to get from database if the model exists and we're not in testing
-        if (class_exists('\AichaDigital\Larabill\Models\CompanyTemplateSettings') && app()->bound('db')) {
-            try {
-                $companyId = $this->getCompanyId($invoice);
-
-                return CompanyTemplateSettings::getPaymentTerms(
-                    $companyId,
-                    $this->convertToTemplateInvoiceType($invoice->getInvoiceType()),
-                    (string) $invoice->user_id
-                );
-            } catch (\Exception $e) {
-                // Fall back to null if database access fails
-            }
-        }
-
-        return null;
+        return CompanyTemplateSettings::getPaymentTerms(
+            $this->getCompanyId($invoice),
+            $this->convertToTemplateInvoiceType($invoice->getInvoiceType()),
+            (string) $invoice->user_id
+        );
     }
 
     /**
@@ -491,31 +449,25 @@ class DomPDFService
      */
     protected function getTemplateSettings(Invoice $invoice): array
     {
-        // Only try to get from database if the model exists and we're not in testing
-        if (class_exists('\AichaDigital\Larabill\Models\InvoiceTemplate') && app()->bound('db')) {
-            try {
-                $template = null;
+        // A missing template row is a legitimate absence (empty settings) and
+        // stays []; a database exception is NOT an absence and now propagates
+        // to the frontier (AID-508).
+        $template = null;
 
-                if ($invoice->template_name) {
-                    $template = InvoiceTemplate::getByName(
-                        $invoice->template_name,
-                        $invoice->getInvoiceType()
-                    );
-                }
-
-                if (! $template) {
-                    $template = InvoiceTemplate::getDefaultForType(
-                        $invoice->getInvoiceType()
-                    );
-                }
-
-                return $template ? $template->settings ?? [] : [];
-            } catch (\Exception $e) {
-                // Fall back to empty array if database access fails
-            }
+        if ($invoice->template_name) {
+            $template = InvoiceTemplate::getByName(
+                $invoice->template_name,
+                $invoice->getInvoiceType()
+            );
         }
 
-        return [];
+        if (! $template) {
+            $template = InvoiceTemplate::getDefaultForType(
+                $invoice->getInvoiceType()
+            );
+        }
+
+        return $template ? $template->settings ?? [] : [];
     }
 
     /**
@@ -528,7 +480,7 @@ class DomPDFService
     {
         // This should be configured based on your application's needs
         // For now, return a default company ID
-        return $this->getConfigValue('larabill.default_company_id', 'default');
+        return config('larabill.default_company_id', 'default');
     }
 
     /**
@@ -548,26 +500,6 @@ class DomPDFService
     }
 
     /**
-     * Safely get config value with fallback
-     *
-     * @param  string  $key  Config key
-     * @param  mixed  $default  Default value
-     * @return mixed Config value or default
-     */
-    protected function getConfigValue(string $key, $default = null)
-    {
-        try {
-            if (function_exists('config') && app()->bound('config')) {
-                return config($key, $default);
-            }
-        } catch (\Exception $e) {
-            // Fall back to default if config access fails
-        }
-
-        return $default;
-    }
-
-    /**
      * Render template safely
      *
      * @param  string  $template  Template name
@@ -576,16 +508,11 @@ class DomPDFService
      */
     protected function renderTemplate(string $template, array $data): string
     {
-        // Pure-unit context without a booted view layer: return a clearly-marked mock.
-        if (! class_exists('\Illuminate\Support\Facades\View') || ! app()->bound('view')) {
-            return $this->generateMockHTML($template, $data);
-        }
-
         try {
             return View::make($template, $data)->render();
         } catch (\Throwable $e) {
             // A real render failure must NOT be masked as a plausible-but-fake invoice.
-            // Log with context and surface the error so the caller reports failure.
+            // Log with context and surface the error so the frontier reports failure.
             $invoice = $data['invoice'] ?? null;
 
             Log::error('larabill: invoice PDF template render failed; surfacing instead of falling back to a mock invoice', [
@@ -598,50 +525,5 @@ class DomPDFService
 
             throw $e;
         }
-    }
-
-    /**
-     * Generate mock HTML for testing
-     *
-     * @param  string  $template  Template name
-     * @param  array<string, mixed>  $data  Template data
-     * @return string Mock HTML
-     */
-    protected function generateMockHTML(string $template, array $data): string
-    {
-        $invoice       = $data['invoice']            ?? null;
-        $invoiceNumber = $invoice ? $invoice->number ?? 'TEST-001' : 'TEST-001';
-        $total         = $invoice ? $invoice->total  ?? '100.00' : '100.00';
-
-        return "
-        <!DOCTYPE html>
-        <html>
-        <head><title>Invoice {$invoiceNumber}</title></head>
-        <body>
-            <h1>Invoice {$invoiceNumber}</h1>
-            <p>Total: €{$total}</p>
-            <p>Template: {$template}</p>
-        </body>
-        </html>
-        ";
-    }
-
-    /**
-     * Check if we're in a production environment
-     *
-     * @return bool True if production
-     */
-    protected function isProductionEnvironment(): bool
-    {
-        try {
-            if (function_exists('app') && app()->bound('env')) {
-                return app()->environment('production');
-            }
-        } catch (\Exception $e) {
-            // Fall back to false if environment check fails
-        }
-
-        // Assume testing/development if we can't determine environment
-        return false;
     }
 }

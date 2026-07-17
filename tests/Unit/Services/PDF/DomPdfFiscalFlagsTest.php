@@ -2,9 +2,14 @@
 
 declare(strict_types=1);
 
+use AichaDigital\Larabill\Enums\InvoiceSerieType;
+use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\UserTaxProfile;
 use AichaDigital\Larabill\Services\PDF\DomPDFService;
+use AichaDigital\Larabill\Tests\TestCase;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * AID-245: the PDF service read fiscal flags from the orphan `fiscal_data` /
@@ -85,4 +90,26 @@ it('returns empty client data when the invoice has no userTaxProfile', function 
     $invoice->setRelation('userTaxProfile', null);
 
     expect(callDomProtected($svc, 'getClientData', $invoice))->toBe([]);
+});
+
+it('propagates a database failure instead of falling back to a default template', function () {
+    $invoice = Invoice::factory()->create([
+        'fiscal_number' => 'BLINDFOLD-1',
+        'serie'         => InvoiceSerieType::INVOICE->value,
+        'status'        => InvoiceStatus::DRAFT->value,
+        'user_id'       => TestCase::USER_UUID_1,
+        'template_name' => 'some-template',
+    ]);
+    Schema::drop('invoice_templates');
+
+    $engine = new DomPDFService([]);
+    $method = new ReflectionMethod($engine, 'getTemplateForInvoice');
+
+    expect(fn () => $method->invoke($engine, $invoice))->toThrow(QueryException::class);
+});
+
+it('no longer carries the mock html generator', function () {
+    expect(method_exists(DomPDFService::class, 'generateMockHTML'))->toBeFalse()
+        ->and(method_exists(DomPDFService::class, 'getConfigValue'))->toBeFalse()
+        ->and(method_exists(DomPDFService::class, 'isProductionEnvironment'))->toBeFalse();
 });
