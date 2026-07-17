@@ -226,14 +226,11 @@ it('logs the original exception before translating it into the failure contract'
     expect($result['success'])->toBeFalse()
         ->and($result['error'])->toContain('boom from the depths');
 
-    // Two entries for one failure, and it is deliberate (AID-508 design spec
-    // §8.1 "Límites aceptados conscientemente"): renderTemplate() still logs
-    // and rethrows (AID-139, kept — see spec §3.1 line 618, "Conservar"), and
-    // now the frontier logs the same exception again before translating it.
-    // The spec documents this explicitly: "Dos entradas para un fallo. No se
-    // amplía el cambio ahora." What this test actually proves — the frontier
-    // logs the ORIGINAL exception, not a generic rebuilt one — still holds.
-    Log::shouldHaveReceived('error')->twice();
+    // Scoped to the frontier's message: renderTemplate() logs separately (accepted
+    // double-logging, spec §8.1) — this test only asserts the frontier's log.
+    Log::shouldHaveReceived('error')
+        ->with('larabill: invoice PDF generation failed', Mockery::any())
+        ->once();
 });
 
 it('does not retry with the local connector when generation fails', function () {
