@@ -359,12 +359,6 @@ class DomPDFService
     }
 
     /**
-     * Get invoice totals for template
-     *
-     * @param  Invoice  $invoice  The invoice
-     * @return array<string, mixed> Invoice totals
-     */
-    /**
      * Get the invoice totals for the template.
      *
      * Reads the REAL columns (AID-508): the old code read $invoice->subtotal,
