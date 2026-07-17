@@ -122,6 +122,12 @@ it('warns when a configured template cannot be resolved, and uses the default', 
         'status'        => InvoiceStatus::DRAFT->value,
         'user_id'       => TestCase::USER_UUID_1,
         'template_name' => 'a-template-that-does-not-resolve',
+        // The factory randomizes is_roi_taxed (10% true). getTemplateForInvoice()'s
+        // fallback picks reverse-charge over fiscal when it's true, which made this
+        // assertion a CI flake (~1 in 10 runs). No userTaxProfile relation is set on
+        // this in-memory-loaded model, so isExemptInvoice() is already deterministic
+        // (falsy) — only is_roi_taxed needed pinning.
+        'is_roi_taxed'  => false,
     ]);
 
     $engine = new DomPDFService([]);
@@ -140,6 +146,10 @@ it('does not warn when no template was configured', function () {
         'status'        => InvoiceStatus::DRAFT->value,
         'user_id'       => TestCase::USER_UUID_1,
         'template_name' => null,
+        // Pinned for consistency with the sibling test above, even though this
+        // test only asserts the absence of a warning log (not which template
+        // resolved) — is_roi_taxed randomness cannot make it flaky either way.
+        'is_roi_taxed'  => false,
     ]);
 
     $engine = new DomPDFService([]);
