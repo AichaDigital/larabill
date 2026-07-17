@@ -19,19 +19,6 @@ it('returns correct connector type', function () {
     expect($this->connector->getConnectorType())->toBe('local');
 });
 
-it('is available by default', function () {
-    expect($this->connector->isAvailable())->toBeTrue();
-});
-
-it('has no endpoint', function () {
-    expect($this->connector->getEndpoint())->toBeNull();
-});
-
-it('has no authentication', function () {
-    expect($this->connector->getAuthentication())->toBeArray();
-    expect($this->connector->getAuthentication())->toBeEmpty();
-});
-
 it('returns required fields', function () {
     $fields = $this->connector->getRequiredFields();
 
@@ -42,22 +29,22 @@ it('returns required fields', function () {
     expect($fields)->toContain('status');
 });
 
-it('supports all countries', function () {
-    $countries = $this->connector->getSupportedCountries();
+it('refuses to fabricate a fiscal QR', function () {
+    $invoice = Invoice::factory()->create([
+        'fiscal_number' => 'CONNECTOR-1',
+        'serie'         => InvoiceSerieType::INVOICE->value,
+        'status'        => InvoiceStatus::DRAFT->value,
+        'user_id'       => TestCase::USER_UUID_1,
+    ]);
 
-    expect($countries)->toBeArray();
-    expect($countries)->toContain('*');
+    // It used to return 'QR:'.substr($hash, 0, 16).':'.base64_encode(substr($json, 0, 100)):
+    // plain text, not scannable, with the JSON truncated mid-key.
+    expect(fn () => $this->connector->generateQR($invoice))
+        ->toThrow(LogicException::class, 'does not generate fiscal QR codes');
 });
 
-it('returns metadata', function () {
-    $metadata = $this->connector->getMetadata();
-
-    expect($metadata)->toBeArray();
-    expect($metadata)->toHaveKey('name');
-    expect($metadata)->toHaveKey('version');
-    expect($metadata)->toHaveKey('description');
-    expect($metadata)->toHaveKey('type');
-    expect($metadata['type'])->toBe('local');
+it('no longer carries the fake QR generator', function () {
+    expect(method_exists(DefaultPDFConnector::class, 'generateQRCode'))->toBeFalse();
 });
 
 it('can validate valid invoice', function () {
@@ -83,60 +70,6 @@ it('rejects invalid invoice', function () {
     expect($this->connector->validateInvoice($invoice))->toBeFalse();
 });
 
-it('can generate QR for valid invoice', function () {
-    $invoice = Invoice::factory()->create([
-        'fiscal_number'          => 'TEST-001',
-        'serie'                  => InvoiceSerieType::INVOICE->value,
-        'status'                 => InvoiceStatus::DRAFT->value,
-        'user_id'                => TestCase::USER_UUID_1,
-        'taxable_amount'         => cents((int) 100.0),
-        'total_tax_amount'       => cents((int) 21.0),
-        'total_amount'           => cents((int) 121.0),
-    ]);
-
-    $result = $this->connector->generateQR($invoice);
-
-    expect($result)->toBeArray();
-    expect($result['success'])->toBeTrue();
-    expect($result)->toHaveKey('qr_code');
-    expect($result)->toHaveKey('qr_url');
-    expect($result)->toHaveKey('qr_data');
-    expect($result['connector_type'])->toBe('local');
-});
-
-it('handles QR generation errors gracefully', function () {
-    $invoice     = new Invoice;
-    // Missing required fields - ID will be auto-generated
-
-    $result = $this->connector->generateQR($invoice);
-
-    expect($result)->toBeArray();
-    expect($result['success'])->toBeFalse();
-    expect($result)->toHaveKey('error');
-    expect($result['connector_type'])->toBe('local');
-});
-
-it('includes invoice data in QR', function () {
-    $invoice = Invoice::factory()->create([
-        'fiscal_number'          => 'TEST-001',
-        'serie'                  => InvoiceSerieType::INVOICE->value,
-        'status'                 => InvoiceStatus::DRAFT->value,
-        'user_id'                => TestCase::USER_UUID_1,
-        'taxable_amount'         => cents((int) 100.0),
-        'total_tax_amount'       => cents((int) 21.0),
-        'total_amount'           => cents((int) 121.0),
-    ]);
-
-    $result = $this->connector->generateQR($invoice);
-
-    expect($result['success'])->toBeTrue();
-    expect($result['qr_data'])->toHaveKey('invoice_id');
-    expect($result['qr_data'])->toHaveKey('invoice_number');
-    expect($result['qr_data'])->toHaveKey('total_amount');
-    expect($result['qr_data']['invoice_id'])->toBe($invoice->id);
-    expect($result['qr_data']['invoice_number'])->toBe($invoice->fiscal_number);
-});
-
 it('can be configured with custom settings', function () {
     $config = [
         'qr_base_url'             => 'https://example.com',
@@ -148,26 +81,6 @@ it('can be configured with custom settings', function () {
 
     expect($connectorConfig['qr_base_url'])->toBe('https://example.com');
     expect($connectorConfig['qr_include_invoice_data'])->toBeFalse();
-});
-
-it('generates QR URL with custom base URL', function () {
-    $config    = ['qr_base_url' => 'https://example.com'];
-    $connector = new DefaultPDFConnector($config);
-
-    $invoice = Invoice::factory()->create([
-        'fiscal_number'          => 'TEST-001',
-        'serie'                  => InvoiceSerieType::INVOICE->value,
-        'status'                 => InvoiceStatus::DRAFT->value,
-        'user_id'                => TestCase::USER_UUID_1,
-        'taxable_amount'         => cents((int) 100.0),
-        'total_tax_amount'       => cents((int) 21.0),
-        'total_amount'           => cents((int) 121.0),
-    ]);
-
-    $result = $connector->generateQR($invoice);
-
-    expect($result['success'])->toBeTrue();
-    expect($result['qr_url'])->toStartWith('https://example.com');
 });
 
 it('returns false when validating invoice if connector is not available', function () {
