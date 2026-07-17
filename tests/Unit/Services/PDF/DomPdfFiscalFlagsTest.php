@@ -113,3 +113,37 @@ it('no longer carries the mock html generator', function () {
         ->and(method_exists(DomPDFService::class, 'getConfigValue'))->toBeFalse()
         ->and(method_exists(DomPDFService::class, 'isProductionEnvironment'))->toBeFalse();
 });
+
+it('warns when a configured template cannot be resolved, and uses the default', function () {
+    Log::spy();
+    $invoice = Invoice::factory()->create([
+        'fiscal_number' => 'TEMPLATE-1',
+        'serie'         => InvoiceSerieType::INVOICE->value,
+        'status'        => InvoiceStatus::DRAFT->value,
+        'user_id'       => TestCase::USER_UUID_1,
+        'template_name' => 'a-template-that-does-not-resolve',
+    ]);
+
+    $engine = new DomPDFService([]);
+    $method = new ReflectionMethod($engine, 'getTemplateForInvoice');
+
+    expect($method->invoke($engine, $invoice))->toBe('larabill::pdf.invoice.fiscal');
+
+    Log::shouldHaveReceived('warning')->once();
+});
+
+it('does not warn when no template was configured', function () {
+    Log::spy();
+    $invoice = Invoice::factory()->create([
+        'fiscal_number' => 'TEMPLATE-2',
+        'serie'         => InvoiceSerieType::INVOICE->value,
+        'status'        => InvoiceStatus::DRAFT->value,
+        'user_id'       => TestCase::USER_UUID_1,
+        'template_name' => null,
+    ]);
+
+    $engine = new DomPDFService([]);
+    (new ReflectionMethod($engine, 'getTemplateForInvoice'))->invoke($engine, $invoice);
+
+    Log::shouldNotHaveReceived('warning');
+});

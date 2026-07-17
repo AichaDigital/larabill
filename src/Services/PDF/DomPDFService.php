@@ -164,6 +164,18 @@ class DomPDFService
             if ($template) {
                 return $template->template_path;
             }
+
+            // The consumer asked for a template and did not get it. That deserves a
+            // trace, not a hard failure: it is a presentation preference, not a
+            // fiscal blocker — the document is still valid with the default.
+            // The message does not claim WHY it failed: until AID-502 settles the
+            // canonical vocabulary, we cannot tell a wrong name from the
+            // type/`invoice` vs `fiscal` mismatch.
+            Log::warning('Configured invoice PDF template could not be resolved; using the default template.', [
+                'requested_template' => $invoice->template_name,
+                'lookup_type'        => $invoice->getInvoiceType(),
+                'invoice_id'         => $invoice->id,
+            ]);
         }
 
         // Determine template based on invoice type and fiscal data
