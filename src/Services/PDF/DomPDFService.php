@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services\PDF;
 
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\TemplateInvoiceType;
 use AichaDigital\Larabill\Models\CompanyTemplateSettings;
 use AichaDigital\Larabill\Models\Invoice;
+use AichaDigital\Larabill\Models\InvoiceItem;
 use AichaDigital\Larabill\Models\InvoiceTemplate;
 use Dompdf\Dompdf;
 use Dompdf\Options;
@@ -314,24 +316,46 @@ class DomPDFService
     }
 
     /**
-     * Get invoice items for template
+     * Get the invoice's real lines for the template.
+     *
+     * Amounts are handed over as EXACT STRINGS (AID-508): money never travels to a
+     * blade as a number to be divided there. The scale belongs to each value —
+     * `quantity` is 1.50 units, `unit_price` is €100.00 — and FixedDecimal knows it,
+     * so the template does no arithmetic at all.
      *
      * @param  Invoice  $invoice  The invoice
-     * @return array<int, array<string, mixed>> Invoice items
+     * @return array<int, array<string, mixed>> Invoice lines
      */
     protected function getInvoiceItems(Invoice $invoice): array
     {
-        // This should load from invoice_items relationship
-        return [
-            [
-                'description' => 'Servicio 1',
-                'quantity'    => 1,
-                'unit_price'  => $invoice->subtotal,
-                'tax_rate'    => 21,
-                'tax_amount'  => $invoice->tax_amount,
-                'total'       => $invoice->total,
-            ],
-        ];
+        return $invoice->items->map(fn (InvoiceItem $item): array => [
+            'description'    => $item->description,
+            'quantity'       => $item->quantity->toDecimalString(),
+            'unit_price'     => $item->unit_price->toDecimalString(),
+            'taxable_amount' => $item->taxable_amount->toDecimalString(),
+            'tax_amount'     => $item->total_tax_amount->toDecimalString(),
+            'total'          => $item->total_amount->toDecimalString(),
+            'taxes'          => $this->formatLineTaxes($item),
+        ])->all();
+    }
+
+    /**
+     * Format a line's immutable tax snapshot (`invoice_items.taxes_applied`).
+     *
+     * Shape persisted by VatCalculationStrategy:
+     * ['source_rate_id' => int, 'name' => 'IVA 21%', 'rate' => 2100, 'amount' => 2100]
+     * where `rate` is base-100 of the percentage (2100 = 21%) and `amount` base-100
+     * euros. The rate is a string too: an int cannot carry a 5.2% equivalence surcharge.
+     *
+     * @return array<int, array<string, string>>
+     */
+    protected function formatLineTaxes(InvoiceItem $item): array
+    {
+        return array_map(fn (array $tax): array => [
+            'name'   => (string) ($tax['name'] ?? ''),
+            'rate'   => FixedDecimal::ofUnscaled((int) ($tax['rate'] ?? 0), 2)->toDecimalString(),
+            'amount' => FixedDecimal::ofUnscaled((int) ($tax['amount'] ?? 0), 2)->toDecimalString(),
+        ], $item->taxes_applied ?? []);
     }
 
     /**
