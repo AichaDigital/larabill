@@ -217,3 +217,23 @@ it('prints no tax block at all when there is no QR', function (string $template)
     'fiscal'         => 'larabill::pdf.invoice.fiscal',
     'fiscal-minimal' => 'larabill::pdf.invoice.fiscal-minimal',
 ]);
+
+it('prints no tax block when a registered invoice has a corrupted QR image', function () {
+    // AID-508 regression: fiscal.blade.php gated the QR section with
+    // `isset($qr_data)`, not the canonical `!empty($qr_data['qr_svg']) ||
+    // !empty($qr_data['qr_png'])` used by the other four fiscal templates. A
+    // registered, fiscal invoice whose persisted fiscal_verification_qr is
+    // corrupted (FiscalQrImage::classify() -> null) makes PDFService build the
+    // null-QR success array (no qr_svg/qr_png keys) — in non-strict mode that
+    // array still reaches the template as $qr_data, so `isset($qr_data)` was
+    // true and fiscal.blade.php rendered an EMPTY box under «QR tributario:»
+    // while the other four correctly rendered nothing.
+    $invoice = makeQrInvoice(InvoiceSerieType::INVOICE, registered: true);
+    $invoice->update(['fiscal_verification_qr' => 'data:image/png;base64,not!valid!']);
+
+    $nullQr = ['success' => true, 'qr_code' => null, 'qr_url' => null, 'qr_data' => []];
+
+    $html = renderQrTemplate('larabill::pdf.invoice.fiscal', $invoice->fresh(), $nullQr);
+
+    expect($html)->not->toContain('QR tributario');
+});

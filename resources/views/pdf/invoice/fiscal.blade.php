@@ -233,7 +233,7 @@
     </div>
 
     <!-- QR Code Section (only for fiscal invoices) -->
-    @if($include_qr && isset($qr_data))
+    @if($include_qr && (!empty($qr_data['qr_svg']) || !empty($qr_data['qr_png'])))
         <div class="qr-section">
             <div><strong>QR tributario:</strong></div>
             <div class="qr-code">
