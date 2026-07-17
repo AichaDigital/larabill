@@ -3,6 +3,7 @@
 declare(strict_types=1);
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
+use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Services\PDF\DefaultPDFConnector;
 use AichaDigital\Larabill\Services\PDF\DomPDFService;
@@ -15,6 +16,12 @@ use Illuminate\Support\Str;
 
 beforeEach(function () {
     $this->pdfService = new PDFService;
+
+    // AID-508/AID-328: getCompanyData() now reads the invoice's frozen issuer
+    // snapshot instead of a hardcoded fantasy. Without an active
+    // CompanyFiscalConfig for Invoice::boot()'s creating() hook to auto-snapshot
+    // against, template rendering crashes on a missing 'name' key.
+    CompanyFiscalConfig::factory()->create();
 });
 
 it('can be instantiated', function () {

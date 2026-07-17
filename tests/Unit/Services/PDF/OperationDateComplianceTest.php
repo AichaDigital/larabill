@@ -4,9 +4,19 @@ declare(strict_types=1);
 
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
+use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Services\PDF\DomPDFService;
 use AichaDigital\Larabill\Tests\TestCase;
+
+// AID-508/AID-328: getCompanyData() now reads the invoice's frozen issuer
+// snapshot instead of a hardcoded fantasy. These invoices are INVOICE-serie,
+// so Invoice::boot()'s creating() hook auto-snapshots against whatever active
+// CompanyFiscalConfig exists — without one, the templates' header block
+// (unrelated to the operation-date row under test) crashes on a missing key.
+beforeEach(function () {
+    CompanyFiscalConfig::factory()->create();
+});
 
 /**
  * AID-442 — the operation date is a CONDITIONAL compliance field: RD 1619/2012

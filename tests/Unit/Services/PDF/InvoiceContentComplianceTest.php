@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
+use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\InvoiceItem;
 use AichaDigital\Larabill\Services\PDF\DomPDFService;
@@ -185,4 +186,46 @@ it('formats a rate with decimals, which an int cannot carry', function () {
     $breakdown = invoiceTotalsFor($invoice->fresh())['tax_breakdown'];
 
     expect($breakdown[0]['rate'])->toBe('5.20');
+});
+
+function companyDataFor(Invoice $invoice): array
+{
+    $engine = new DomPDFService([]);
+    $method = new ReflectionMethod($engine, 'getCompanyData');
+
+    return $method->invoke($engine, $invoice);
+}
+
+it('reads the issuer from the frozen snapshot, not from config or fantasy', function () {
+    $config  = CompanyFiscalConfig::factory()->create([
+        'business_name' => 'Castris Conformance SL',
+        'tax_id'        => 'ESB12345678',
+        'address'       => 'Calle Real 1',
+        'city'          => 'Granada',
+        'zip_code'      => '18001',
+        'country_code'  => 'ES',
+    ]);
+    $invoice                           = makeContentInvoice();
+    $invoice->company_fiscal_config_id = $config->id;
+    $invoice->snapshotFiscalConfigs();
+    $invoice->save();
+
+    $company = companyDataFor($invoice->fresh());
+
+    expect($company['name'])->toBe('Castris Conformance SL')
+        ->and($company['tax_id'])->toBe('ESB12345678')
+        ->and($company['address'])->toBe('Calle Real 1')
+        ->and($company['postal_code'])->toBe('18001')
+        ->and($company['city'])->toBe('Granada')
+        // The stub's fantasy, which reached the customer's PDF:
+        ->and($company['name'])->not->toBe('Mi Empresa')
+        ->and($company['tax_id'])->not->toBe('NIF: 12345678A');
+});
+
+it('carries no invented contact details', function () {
+    $company = companyDataFor(makeContentInvoice());
+
+    // CompanyFiscalConfig has no phone/email/website. The stub invented
+    // +34 123 456 789 / info@empresa.com / https://empresa.com and printed them.
+    expect($company)->not->toHaveKeys(['phone', 'email', 'website']);
 });

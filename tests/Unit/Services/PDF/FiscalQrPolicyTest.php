@@ -6,9 +6,19 @@ use AichaDigital\Larabill\Contracts\PDFConnectorInterface;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Exceptions\MissingFiscalVerificationQrException;
+use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Services\PDF\PDFService;
 use AichaDigital\Larabill\Tests\TestCase;
+
+// AID-508/AID-328: getCompanyData() now reads the invoice's frozen issuer
+// snapshot instead of a hardcoded fantasy. Without an active
+// CompanyFiscalConfig, the templates' header block crashes on a missing key —
+// makeQrInvoice() below explicitly snapshots against it (Invoice::boot()'s
+// auto-snapshot skips PROFORMA invoices, several of which render here too).
+beforeEach(function () {
+    CompanyFiscalConfig::factory()->create();
+});
 
 it('defaults require_fiscal_verification_qr to false', function () {
     expect(config('larabill.pdf.require_fiscal_verification_qr'))->toBeFalse();
@@ -30,7 +40,7 @@ it('builds a message naming the invoice', function () {
 
 function makeQrInvoice(InvoiceSerieType $serie, bool $registered, InvoiceStatus $status = InvoiceStatus::SENT): Invoice
 {
-    return Invoice::factory()->create([
+    $invoice = Invoice::factory()->create([
         'fiscal_number'          => 'QR-AXES',
         'serie'                  => $serie->value,
         'status'                 => $status->value,
@@ -38,6 +48,13 @@ function makeQrInvoice(InvoiceSerieType $serie, bool $registered, InvoiceStatus 
         'fiscal_verification_id' => $registered ? 'REG-1' : null,
         'fiscal_verified_at'     => $registered ? now() : null,
     ]);
+
+    // Invoice::boot()'s auto-snapshot skips PROFORMA (ADR-001) — snapshot
+    // explicitly here so both series carry an issuer identity to print.
+    $invoice->snapshotFiscalConfigs();
+    $invoice->save();
+
+    return $invoice->fresh();
 }
 
 it('includes the QR for every fiscal serie once registered', function (InvoiceSerieType $serie) {

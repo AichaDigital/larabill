@@ -222,7 +222,7 @@ class DomPDFService
     {
         $data = [
             'invoice'           => $invoice,
-            'company'           => $this->getCompanyData(),
+            'company'           => $this->getCompanyData($invoice),
             'client'            => $this->getClientData($invoice),
             'items'             => $this->getInvoiceItems($invoice),
             'totals'            => $this->getInvoiceTotals($invoice),
@@ -270,24 +270,52 @@ class DomPDFService
     }
 
     /**
-     * Get company data for template
+     * Get the issuer's data for the template, from the invoice's frozen snapshot.
      *
-     * @return array<string, mixed> Company data
+     * The issuer's identity is the one AT ISSUANCE, not today's configuration
+     * (ADR-001; AID-328 established that the frozen side is the persisted snapshot,
+     * never the live row — which can be edited in place).
+     *
+     * Legacy invoices with no snapshot fall back to the referenced config row. That
+     * row may have been edited since, so the identity is best-effort: a documented
+     * limitation, not a guarantee.
+     *
+     * No phone/email/website: those fields do not exist in CompanyFiscalConfig, and
+     * the old stub simply invented them (AID-508).
+     *
+     * @param  Invoice  $invoice  The invoice
+     * @return array<string, mixed> Issuer data
      */
-    protected function getCompanyData(): array
+    protected function getCompanyData(Invoice $invoice): array
     {
-        // This should be configurable per company
+        $snapshot = $invoice->getIssuerSnapshotData() ?? $this->legacyIssuerData($invoice);
+
+        if ($snapshot === null) {
+            return [];
+        }
+
         return [
-            'name'        => config('app.name', 'Mi Empresa'),
-            'address'     => 'Dirección de la empresa',
-            'city'        => 'Ciudad',
-            'postal_code' => '00000',
-            'country'     => 'España',
-            'tax_id'      => 'NIF: 12345678A',
-            'phone'       => '+34 123 456 789',
-            'email'       => 'info@empresa.com',
-            'website'     => 'https://empresa.com',
+            'name'        => $snapshot['business_name'] ?? null,
+            'address'     => $snapshot['address']       ?? null,
+            'city'        => $snapshot['city']          ?? null,
+            'postal_code' => $snapshot['zip_code']      ?? null,
+            'country'     => $snapshot['country_code']  ?? null,
+            'tax_id'      => $snapshot['tax_id']        ?? null,
         ];
+    }
+
+    /**
+     * Best-effort issuer data for invoices frozen before the snapshot existed.
+     *
+     * @return array<string, mixed>|null
+     */
+    protected function legacyIssuerData(Invoice $invoice): ?array
+    {
+        $config = $invoice->companyFiscalConfig;
+
+        return $config === null ? null : $config->only([
+            'business_name', 'tax_id', 'address', 'city', 'zip_code', 'country_code',
+        ]);
     }
 
     /**
@@ -545,16 +573,15 @@ class DomPDFService
     }
 
     /**
-     * Get company ID for invoice (placeholder implementation)
+     * The issuer whose template settings apply: the invoice's own fiscal config.
      *
-     * @param  Invoice  $invoice  The invoice
-     * @return string Company ID
+     * The old stub returned config('larabill.default_company_id', 'default') — a key
+     * that does not exist — so notes and payment terms silently resolved against a
+     * company that was never there (AID-508).
      */
     protected function getCompanyId(Invoice $invoice): string
     {
-        // This should be configured based on your application's needs
-        // For now, return a default company ID
-        return config('larabill.default_company_id', 'default');
+        return (string) $invoice->company_fiscal_config_id;
     }
 
     /**
