@@ -240,7 +240,6 @@
         <!-- Footer -->
         <div class="footer">
             <p>{{ $company['name'] }} | {{ $company['address'] }} | {{ $company['tax_id'] }}</p>
-            <p>Tel: {{ $company['phone'] }} | Email: {{ $company['email'] }}</p>
             <p>Generado: {{ $generated_at->format('d/m/Y H:i:s') }}</p>
         </div>
     </div>

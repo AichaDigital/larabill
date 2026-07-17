@@ -149,8 +149,6 @@
             <div>{{ $company['postal_code'] }} {{ $company['city'] }}</div>
             <div>{{ $company['country'] }}</div>
             <div>{{ $company['tax_id'] }}</div>
-            <div>{{ $company['phone'] }}</div>
-            <div>{{ $company['email'] }}</div>
         </div>
 
         <div class="invoice-info">
@@ -260,7 +258,6 @@
     <!-- Footer -->
     <div class="footer">
         <p>{{ $company['name'] }} - {{ $company['address'] }} - {{ $company['tax_id'] }}</p>
-        <p>Tel: {{ $company['phone'] }} - Email: {{ $company['email'] }} - Web: {{ $company['website'] }}</p>
     </div>
 </body>
 </html>
