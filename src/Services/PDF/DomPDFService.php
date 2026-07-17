@@ -444,6 +444,10 @@ class DomPDFService
             }
         }
 
+        // A fiscal document must print its rates in a stable order: relation-iteration
+        // order is an implementation detail, not something a printed PDF may vary on.
+        uasort($groups, fn (array $a, array $b): int => $b['rate'] <=> $a['rate'] ?: $a['name'] <=> $b['name']);
+
         return array_values(array_map(fn (array $group): array => [
             'name'   => $group['name'],
             'rate'   => FixedDecimal::ofUnscaled($group['rate'], 2)->toDecimalString(),
