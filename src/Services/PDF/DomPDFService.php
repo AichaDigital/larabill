@@ -65,46 +65,32 @@ class DomPDFService
      */
     public function generatePDF(Invoice $invoice, ?array $qrData = null): array
     {
-        try {
-            // Determine invoice type and template
-            $template  = $this->getTemplateForInvoice($invoice);
-            $includeQR = $invoice->shouldIncludeQR();
+        // No catch here (AID-508): this method used to translate any exception into
+        // ['success' => false], keeping only getMessage() and dropping the class,
+        // the stack trace and the previous — while PDFService rebuilt a generic
+        // RuntimeException from that string. Exception → array → exception → array,
+        // losing the original. The frontier (PDFService) is the only translator.
+        $template  = $this->getTemplateForInvoice($invoice);
+        $includeQR = $invoice->shouldIncludeQR();
 
-            // Prepare template data
-            $templateData = $this->prepareTemplateData($invoice, $qrData, $includeQR);
+        $templateData = $this->prepareTemplateData($invoice, $qrData, $includeQR);
+        $html         = $this->renderTemplate($template, $templateData);
 
-            // Load HTML content
-            $html = $this->renderTemplate($template, $templateData);
+        $this->dompdf->loadHtml($html);
+        $this->dompdf->render();
 
-            // Generate PDF
-            $this->dompdf->loadHtml($html);
-            $this->dompdf->render();
+        $pdfContent = $this->dompdf->output();
+        $pdfPath    = $this->savePDF($invoice, $pdfContent);
 
-            // Get PDF content
-            $pdfContent = $this->dompdf->output();
-
-            // Save PDF file
-            $pdfPath = $this->savePDF($invoice, $pdfContent);
-            $pdfUrl  = $this->generatePDFUrl($invoice);
-
-            return [
-                'success'       => true,
-                'pdf_path'      => $pdfPath,
-                'pdf_url'       => $pdfUrl,
-                'pdf_size'      => strlen($pdfContent),
-                'template_used' => $template,
-                'qr_included'   => $includeQR,
-                'generated_at'  => now()->toISOString(),
-            ];
-
-        } catch (\Exception $e) {
-            return [
-                'success'       => false,
-                'error'         => $e->getMessage(),
-                'template_used' => $template ?? 'unknown',
-                'generated_at'  => now()->toISOString(),
-            ];
-        }
+        return [
+            'success'       => true,
+            'pdf_path'      => $pdfPath,
+            'pdf_url'       => null,
+            'pdf_size'      => strlen($pdfContent),
+            'template_used' => $template,
+            'qr_included'   => $includeQR,
+            'generated_at'  => now()->toISOString(),
+        ];
     }
 
     /**

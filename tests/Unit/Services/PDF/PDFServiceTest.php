@@ -9,6 +9,8 @@ use AichaDigital\Larabill\Services\PDF\DomPDFService;
 use AichaDigital\Larabill\Services\PDF\PDFService;
 use AichaDigital\Larabill\Tests\TestCase;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\View;
 use Illuminate\Support\Str;
 
 beforeEach(function () {
@@ -79,7 +81,9 @@ it('can get configuration', function () {
 
     expect($config)->toBeArray();
     expect($config)->toHaveKey('default_connector');
-    expect($config)->toHaveKey('fallback_to_local');
+    // fallback_to_local removed (AID-508): the frontier no longer retries with
+    // another connector after a failure — see PDFServiceTest's frontier tests.
+    expect($config)->not->toHaveKey('fallback_to_local');
     expect($config['default_connector'])->toBe('local');
 });
 
@@ -203,4 +207,47 @@ it('can clear PDF cache', function () {
 
     $cached = $this->pdfService->getCachedPDFResult($invoice);
     expect($cached)->toBeNull();
+});
+
+it('logs the original exception before translating it into the failure contract', function () {
+    Log::spy();
+    $invoice = Invoice::factory()->create([
+        'fiscal_number' => 'FRONTIER-1',
+        'serie'         => InvoiceSerieType::INVOICE->value,
+        'status'        => InvoiceStatus::DRAFT->value,
+        'user_id'       => TestCase::USER_UUID_1,
+        'template_name' => null,
+    ]);
+    // Force a render failure: point the invoice at a view that does not exist.
+    View::shouldReceive('make')->andThrow(new RuntimeException('boom from the depths'));
+
+    $result = (new PDFService)->generatePDF($invoice);
+
+    expect($result['success'])->toBeFalse()
+        ->and($result['error'])->toContain('boom from the depths');
+
+    // Two entries for one failure, and it is deliberate (AID-508 design spec
+    // §8.1 "Límites aceptados conscientemente"): renderTemplate() still logs
+    // and rethrows (AID-139, kept — see spec §3.1 line 618, "Conservar"), and
+    // now the frontier logs the same exception again before translating it.
+    // The spec documents this explicitly: "Dos entradas para un fallo. No se
+    // amplía el cambio ahora." What this test actually proves — the frontier
+    // logs the ORIGINAL exception, not a generic rebuilt one — still holds.
+    Log::shouldHaveReceived('error')->twice();
+});
+
+it('does not retry with the local connector when generation fails', function () {
+    $invoice = Invoice::factory()->create([
+        'fiscal_number' => 'FRONTIER-2',
+        'serie'         => InvoiceSerieType::INVOICE->value,
+        'status'        => InvoiceStatus::DRAFT->value,
+        'user_id'       => TestCase::USER_UUID_1,
+    ]);
+    View::shouldReceive('make')->andThrow(new RuntimeException('render exploded'));
+
+    $result = (new PDFService)->generatePDF($invoice);
+
+    // The old fallback_to_local retried and could report success on a fabricated path.
+    expect($result['success'])->toBeFalse()
+        ->and($result['error'])->toContain('render exploded');
 });

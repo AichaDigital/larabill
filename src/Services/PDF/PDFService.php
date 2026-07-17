@@ -65,7 +65,6 @@ class PDFService
     {
         $this->config = array_merge([
             'default_connector' => 'local',
-            'fallback_to_local' => true,
             'cache_pdfs'        => true,
             'cache_ttl'         => 3600, // 1 hour
             'enable_logging'    => true,
@@ -112,25 +111,10 @@ class PDFService
             // Generate PDF with QR code using DomPDF
             $pdfResult = $this->dompdfService->generatePDF($invoice, $qrData);
 
-            // Do not report success when the underlying render failed; surface the error
-            // (a failed render must never be reported as a generated PDF).
-            if (! ($pdfResult['success'] ?? false)) {
-                throw new \RuntimeException('PDF rendering failed: '.($pdfResult['error'] ?? 'unknown error'));
-            }
-
             // Cache result if enabled
             if ($this->config['cache_pdfs']) {
                 $this->cachePDFResult($invoice, $pdfResult);
             }
-
-            // Log success (disabled for testing)
-            // if ($this->config['enable_logging'] && class_exists('Illuminate\Support\Facades\Log')) {
-            //     Log::info('PDF generated successfully', [
-            //         'invoice_id' => $invoice->id,
-            //         'connector_type' => $connector->getConnectorType(),
-            //         'qr_generated' => true,
-            //     ]);
-            // }
 
             return [
                 'success'        => true,
@@ -142,19 +126,17 @@ class PDFService
             ];
 
         } catch (\Exception $e) {
-            // Log error (disabled for testing)
-            // if ($this->config['enable_logging'] && class_exists('Illuminate\Support\Facades\Log')) {
-            //     Log::error('PDF generation failed', [
-            //         'invoice_id' => $invoice->id,
-            //         'connector_type' => $connectorType,
-            //         'error' => $e->getMessage(),
-            //     ]);
-            // }
-
-            // Try fallback if enabled
-            if ($this->config['fallback_to_local'] && $connectorType !== 'local') {
-                return $this->generatePDF($invoice, 'local');
-            }
+            // The frontier: log the exception BEFORE translating it, so the
+            // translation never loses the cause (AID-508). No fallback: retrying
+            // with another connector after a failure only fabricated a plausible
+            // result and buried the original error.
+            Log::error('larabill: invoice PDF generation failed', [
+                'invoice_id'      => $invoice->id,
+                'invoice_number'  => $invoice->fiscal_number,
+                'connector_type'  => $connectorType,
+                'exception_class' => $e::class,
+                'exception'       => $e->getMessage(),
+            ]);
 
             return [
                 'success'        => false,
