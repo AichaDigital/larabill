@@ -11,11 +11,14 @@ use LogicException;
 // use Illuminate\Support\Facades\Log;
 
 /**
- * Default PDF connector that generates QR codes locally
+ * Default PDF connector: metadata and validation, no fiscal QR generation.
  *
- * This connector provides basic QR generation without external dependencies.
- * It's suitable for internal use, testing, and as a fallback when external
- * connectors are not available.
+ * This is the built-in connector used when no external one is registered. It
+ * validates invoice data and reports connector metadata. It does NOT generate
+ * fiscal QR codes: the tax QR is an effect of the fiscal billing record
+ * (`fiscal_verification_qr`), built by the registrar (lara-verifactu) from the
+ * AEAT cotejo URL — never fabricated by the PDF pipeline. `generateQR()`
+ * refuses by design (AID-508); see its own docblock.
  *
  * @internal Implementation detail — may change without a major version (AID-413).
  */

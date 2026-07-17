@@ -90,7 +90,8 @@ it('fails explicitly when strict mode meets a fiscal invoice with no record', fu
     $result = (new PDFService)->generatePDF($invoice);
 
     expect($result['success'])->toBeFalse()
-        ->and($result['error'])->toContain('fiscal verification QR');
+        ->and($result['error'])->toContain('fiscal verification QR')
+        ->and($invoice->getPDFPath())->toBeNull();
 });
 
 it('fails explicitly when strict mode meets a registered invoice whose QR is unusable', function (string $qr) {
@@ -100,7 +101,8 @@ it('fails explicitly when strict mode meets a registered invoice whose QR is unu
 
     $result = (new PDFService)->generatePDF($invoice);
 
-    expect($result['success'])->toBeFalse();
+    expect($result['success'])->toBeFalse()
+        ->and($invoice->getPDFPath())->toBeNull();
 })->with([
     'bare url'       => 'https://www2.agenciatributaria.gob.es/wlpl/TIKE-CONT/ValidarQR?nif=B1',
     'invalid base64' => 'data:image/png;base64,not!valid!',
@@ -189,6 +191,31 @@ it('renders the QR as an image with its label and legal size', function (string 
         ->and($html)->toContain('35mm')
         ->and($html)->toContain('<svg')
         ->and($html)->not->toContain('&lt;svg')   // escaped SVG dumped as text
+        ->and($html)->not->toContain('QR_CODE');
+})->with([
+    'fiscal'         => 'larabill::pdf.invoice.fiscal',
+    'fiscal-minimal' => 'larabill::pdf.invoice.fiscal-minimal',
+    'fiscal-modern'  => 'larabill::pdf.invoice.fiscal-modern',
+    'reverse-charge' => 'larabill::pdf.invoice.reverse-charge',
+    'exempt'         => 'larabill::pdf.invoice.exempt',
+]);
+
+it('renders the QR as a PNG image with its label and legal size', function (string $template) {
+    // spec §6: the SVG branch is covered above; the PNG branch (elseif in
+    // fiscal.blade.php, else in the other four) needs its own coverage.
+    $png = 'data:image/png;base64,'.base64_encode(
+        base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==', true)
+    );
+    $qr = ['qr_png' => $png, 'qr_code' => 'x'];
+
+    $html = renderQrTemplate($template, makeQrInvoice(InvoiceSerieType::INVOICE, registered: true), $qr);
+
+    // AEAT QR spec v0.4.7 art. 20-21: 30x30..40x40 mm, preceded by «QR tributario:».
+    expect($html)->toContain('QR tributario')
+        ->and($html)->toContain('35mm')
+        ->and($html)->toContain('<img')
+        ->and($html)->toContain($png)
+        ->and($html)->not->toContain('<svg')
         ->and($html)->not->toContain('QR_CODE');
 })->with([
     'fiscal'         => 'larabill::pdf.invoice.fiscal',

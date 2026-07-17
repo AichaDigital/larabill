@@ -6,7 +6,7 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [6.4.0] - 2026-07-17
 
-Ships migrations: no.
+**Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`; no `larabill:install` re-run or `migrate` needed.
 
 ### Fixed
 

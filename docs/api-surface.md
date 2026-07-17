@@ -22,7 +22,7 @@
 | `Concerns/` (3) | `@api` | Green band; `HasUuid` and `HasUserRelationships` are applied to the CONSUMER's own User model |
 | `ValueObjects/` (1) | `@api` | `InvoiceNumber` is the return type of the public numbering API |
 | `Contracts/` (3) | `@api` | Extension points for consumers and sibling packages (PDF connectors, fiscal verification, tax strategies) |
-| `Exceptions/` (4) | `@api` | Thrown across the boundary; consumers catch them |
+| `Exceptions/` (6) | `@api` | Thrown across the boundary; consumers catch them |
 | `Events/` (7) | `@api` | Consumers listen to them |
 | `Actions/` (4) | `@api` | `VerifyVatNumber` (lararoi bridge) + the three `Process*` scheduler entry points |
 | `DataTransferObjects/` (6) | `@api` | Appear (directly or nested) in `@api` service signatures |
