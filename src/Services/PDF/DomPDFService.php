@@ -364,14 +364,70 @@ class DomPDFService
      * @param  Invoice  $invoice  The invoice
      * @return array<string, mixed> Invoice totals
      */
+    /**
+     * Get the invoice totals for the template.
+     *
+     * Reads the REAL columns (AID-508): the old code read $invoice->subtotal,
+     * ->tax_amount and ->total — none of which exist. Eloquent returned null and
+     * the blade's number_format(null / 100, 2) printed "0.00" with no error and no
+     * warning, on an invoice of €121.00.
+     *
+     * @param  Invoice  $invoice  The invoice
+     * @return array<string, mixed> Totals, as exact strings
+     */
     protected function getInvoiceTotals(Invoice $invoice): array
     {
         return [
-            'subtotal'   => $invoice->subtotal,
-            'tax_amount' => $invoice->tax_amount,
-            'total'      => $invoice->total,
-            'currency'   => 'EUR',
+            'subtotal'      => $invoice->taxable_amount->toDecimalString(),
+            'tax_amount'    => $invoice->total_tax_amount->toDecimalString(),
+            'total'         => $invoice->total_amount->toDecimalString(),
+            'currency'      => 'EUR',
+            'tax_breakdown' => $this->taxBreakdown($invoice),
         ];
+    }
+
+    /**
+     * Aggregate the per-rate tax breakdown from the lines' immutable snapshots.
+     *
+     * RD 1619/2012 art. 6.1.g/h requires the taxable base and the rate, broken down
+     * when the invoice comprises several. The old templates printed
+     * `$items[0]['tax_rate'] ?? 21` — the first line's rate for the whole invoice,
+     * with an invented fallback.
+     *
+     * Grouped by `source_rate_id` (the rate's identity, not its percentage: the
+     * snapshot keeps whatever was in force at issuance). A line bearing two taxes on
+     * the same base contributes its base to both, which is correct.
+     *
+     * @return array<int, array<string, string>>
+     */
+    protected function taxBreakdown(Invoice $invoice): array
+    {
+        $groups = [];
+
+        foreach ($invoice->items as $item) {
+            foreach ($item->taxes_applied ?? [] as $tax) {
+                $key = (string) ($tax['source_rate_id'] ?? $tax['rate'] ?? 'unknown');
+
+                if (! isset($groups[$key])) {
+                    $groups[$key] = [
+                        'name'   => (string) ($tax['name'] ?? ''),
+                        'rate'   => (int) ($tax['rate'] ?? 0),
+                        'base'   => 0,
+                        'amount' => 0,
+                    ];
+                }
+
+                $groups[$key]['base']   += $item->taxable_amount->unscaledValue();
+                $groups[$key]['amount'] += (int) ($tax['amount'] ?? 0);
+            }
+        }
+
+        return array_values(array_map(fn (array $group): array => [
+            'name'   => $group['name'],
+            'rate'   => FixedDecimal::ofUnscaled($group['rate'], 2)->toDecimalString(),
+            'base'   => FixedDecimal::ofUnscaled($group['base'], 2)->toDecimalString(),
+            'amount' => FixedDecimal::ofUnscaled($group['amount'], 2)->toDecimalString(),
+        ], $groups));
     }
 
     /**
