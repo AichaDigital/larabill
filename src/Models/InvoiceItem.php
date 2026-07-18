@@ -117,6 +117,27 @@ class InvoiceItem extends Model
         ];
     }
 
+    /**
+     * Override update to prevent modifications of immutable invoices' lines.
+     *
+     * Same pattern as Invoice::update() (AID-558, D8): the fiscal content of
+     * a frozen invoice is protected at the line level too. save() stays as
+     * the deliberate internal door, mirroring the header guard. Raw SQL and
+     * query-builder mass updates remain outside this guarantee — the DB-level
+     * half of D8 was cancelled in AID-468.
+     *
+     * @param  array<string, mixed>  $attributes
+     * @param  array<string, mixed>  $options
+     */
+    public function update(array $attributes = [], array $options = []): bool
+    {
+        if ($this->invoice?->is_immutable) {
+            throw new \Exception('Cannot update items of an immutable invoice');
+        }
+
+        return parent::update($attributes, $options);
+    }
+
     // ========================================
     // RELATIONSHIPS
     // ========================================
