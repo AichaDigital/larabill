@@ -8,13 +8,13 @@ use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\InvoiceItem;
 use AichaDigital\Larabill\Models\UserTaxProfile;
-use AichaDigital\Larabill\Tests\Models\User;
+use AichaDigital\Larabill\Tests\Models\TestUser;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 it('can have items relationship', function () {
-    $user    = User::factory()->create();
+    $user    = TestUser::factory()->create();
     $invoice = Invoice::factory()->create(['user_id' => $user->id]);
 
     InvoiceItem::factory()->count(3)->create(['invoice_id' => $invoice->id]);
@@ -23,15 +23,15 @@ it('can have items relationship', function () {
 });
 
 it('can have user relationship', function () {
-    $user    = User::factory()->create();
+    $user    = TestUser::factory()->create();
     $invoice = Invoice::factory()->create(['user_id' => $user->id]);
 
-    expect($invoice->user)->toBeInstanceOf(User::class)
+    expect($invoice->user)->toBeInstanceOf(TestUser::class)
         ->and($invoice->user->id)->toBe($user->id);
 });
 
 it('can have proforma relationship', function () {
-    $user     = User::factory()->create();
+    $user     = TestUser::factory()->create();
     $proforma = Invoice::factory()->create(['user_id' => $user->id]);
     $invoice  = Invoice::factory()->create([
         'user_id'     => $user->id,
@@ -43,7 +43,7 @@ it('can have proforma relationship', function () {
 });
 
 it('can have rectificative relationship', function () {
-    $user     = User::factory()->create();
+    $user     = TestUser::factory()->create();
     $original = Invoice::factory()->create(['user_id' => $user->id]);
     $rectif   = Invoice::factory()->create([
         'user_id'              => $user->id,
@@ -55,7 +55,7 @@ it('can have rectificative relationship', function () {
 });
 
 it('can have rectificatives collection', function () {
-    $user     = User::factory()->create();
+    $user     = TestUser::factory()->create();
     $original = Invoice::factory()->create(['user_id' => $user->id]);
 
     Invoice::factory()->count(2)->create([
@@ -67,7 +67,7 @@ it('can have rectificatives collection', function () {
 });
 
 it('can have converted invoices collection', function () {
-    $user     = User::factory()->create();
+    $user     = TestUser::factory()->create();
     $proforma = Invoice::factory()->create(['user_id' => $user->id]);
 
     Invoice::factory()->count(2)->create([
@@ -79,7 +79,7 @@ it('can have converted invoices collection', function () {
 });
 
 it('keeps the userTaxProfile snapshot accessible after the profile is soft-deleted', function () {
-    $user       = User::factory()->create();
+    $user       = TestUser::factory()->create();
     $taxProfile = UserTaxProfile::factory()->create(['owner_user_id' => $user->id]);
 
     $invoice = Invoice::factory()->immutable()->create([
@@ -99,7 +99,7 @@ it('keeps the userTaxProfile snapshot accessible after the profile is soft-delet
 });
 
 it('keeps the companyFiscalConfig snapshot accessible after the config is soft-deleted', function () {
-    $user   = User::factory()->create();
+    $user   = TestUser::factory()->create();
     $config = CompanyFiscalConfig::factory()->create();
 
     $invoice = Invoice::factory()->immutable()->create([

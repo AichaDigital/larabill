@@ -7,7 +7,7 @@ use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\InvoiceItem;
 use AichaDigital\Larabill\Services\Adapters\VerifactuAdapter;
-use AichaDigital\Larabill\Tests\Models\User;
+use AichaDigital\Larabill\Tests\Models\TestUser;
 use AichaDigital\LaraVerifactu\Enums\InvoiceTypeEnum;
 use AichaDigital\LaraVerifactu\Models\Invoice as VerifactuInvoice;
 use AichaDigital\LaraVerifactu\Models\InvoiceBreakdown as VerifactuBreakdown;
@@ -33,7 +33,7 @@ function makeVerifactuSourceInvoice(array $attributes = [], array $items = [], ?
     }
 
     $invoiceAttrs = fdMoney(array_merge([
-        'user_id'          => User::factory()->create()->id,
+        'user_id'          => TestUser::factory()->create()->id,
         'taxable_amount'   => 10000, // €100.00
         'total_tax_amount' => 2100,  // €21.00
         'total_amount'     => 12100, // €121.00

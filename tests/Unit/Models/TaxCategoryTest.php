@@ -6,7 +6,7 @@ use AichaDigital\Larabill\Enums\ItemType;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\InvoiceItem;
 use AichaDigital\Larabill\Models\TaxCategory;
-use AichaDigital\Larabill\Tests\Models\User;
+use AichaDigital\Larabill\Tests\Models\TestUser;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -117,7 +117,7 @@ it('can scope ordered by sort_order and name', function () {
 });
 
 it('can have invoice items relationship', function () {
-    $user    = User::factory()->create();
+    $user    = TestUser::factory()->create();
     $invoice = Invoice::factory()->create(['user_id' => $user->id]);
 
     InvoiceItem::factory()->create([

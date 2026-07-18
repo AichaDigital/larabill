@@ -97,11 +97,16 @@ LARABILL_USER_MODEL="App\\Models\\User"
 
 ### Model Configuration
 
-Configure your user model in `config/larabill.php`:
+The user model resolves through `user_model` (env `LARABILL_USER_MODEL`) in `config/larabill.php`:
+
+```php
+'user_model' => env('LARABILL_USER_MODEL', App\Models\User::class),
+```
+
+`models.user` is an optional explicit override — when set to an existing class it wins over `user_model`. If neither key points to an existing class, larabill fails loudly (no silent default). Package models can be swapped through the `models` block:
 
 ```php
 'models' => [
-    'user' => \App\Models\User::class,
     'invoice' => \AichaDigital\Larabill\Models\Invoice::class,
     'invoice_item' => \AichaDigital\Larabill\Models\InvoiceItem::class,
     // ...

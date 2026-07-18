@@ -4,6 +4,11 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **The user model mapping can no longer resolve a tests-only class, and `larabill.user_model` is honoured as its fallback (AID-553).** `ModelMappingService::getModelClass('user')` silently defaulted to `AichaDigital\Larabill\Tests\Models\User` — an autoload-dev class that never autoloads in production — whenever `larabill.models.user` did not resolve, ignoring the documented `larabill.user_model` key. Resolution is now a chain: `larabill.models.user` (explicit override) → `larabill.user_model` → a loud `RuntimeException` naming the keys to set. **Behaviour change:** installs where neither key points to an existing class fail loudly instead of silently binding `Invoice::user()`/`billableUser()`/`UserTaxProfile` relations to a phantom model — the state that made the `creating` hook skip `customer_snapshot` generation in silence.
+- **The shipped config no longer lists `models.user`, `models.customer` or `models.customer_fiscal_data`.** The published `models.user => App\Models\User` entry shadowed `larabill.user_model`/`LARABILL_USER_MODEL` in real installs (the models-block key wins whenever its class exists); the two `customer*` entries referenced models removed by ADR-003. Already-published configs keep working — `models.user` is still honoured as an explicit override.
+
 ## [6.4.1] - 2026-07-18
 
 **Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`; no `larabill:install` re-run or `migrate` needed.
