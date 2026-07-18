@@ -1,6 +1,6 @@
 {
-    "release": "6.5.1",
-    "upgrade_base": "6.5.0",
+    "release": "6.6.0",
+    "upgrade_base": "6.5.1",
     "migrations": [
         {
             "name": "2024_12_01_000000_create_tax_rates_table.php",
