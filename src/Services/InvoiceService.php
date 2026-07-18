@@ -8,6 +8,7 @@ use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Contracts\Services\FiscalVerificationContract;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
+use AichaDigital\Larabill\Enums\ItemType;
 use AichaDigital\Larabill\Exceptions\FiscalConfigChangedException;
 use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\Invoice;
@@ -24,6 +25,25 @@ use Illuminate\Support\Facades\DB;
  * Uses CompanyFiscalConfig for issuer data and UserTaxProfile for customer data (ADR-003).
  *
  * @api Supported public surface (AID-413; see docs/api-surface.md).
+ *
+ * @phpstan-type InvoiceItemData array{
+ *     article_id?: int|null,
+ *     tax_group_id?: int|null,
+ *     quantity?: int,
+ *     base_price?: int|float,
+ *     unit_price?: int|float,
+ *     description?: string,
+ *     item_type?: ItemType|int|null,
+ *     internal_code?: string|null,
+ *     unit_measure_id?: int|null,
+ *     service_date_from?: string|null,
+ *     service_date_to?: string|null,
+ *     metadata?: array<string, mixed>|null,
+ *     taxable_amount?: int,
+ *     total_tax_amount?: int,
+ *     taxes_applied?: array<int|string, mixed>|null,
+ *     total_amount?: int
+ * }
  */
 class InvoiceService
 {
@@ -53,7 +73,7 @@ class InvoiceService
      * @param  array{
      *     billable_user_id: string,
      *     user_id?: string,
-     *     items: array<array{article_id?: int|null, tax_group_id?: int|null, quantity?: int, base_price?: int|float, unit_price?: int|float, description?: string}>,
+     *     items: array<int, InvoiceItemData>,
      *     type?: string,
      *     series?: string,
      *     status?: string,
@@ -268,12 +288,37 @@ class InvoiceService
     /**
      * Create an invoice item with tax calculation.
      *
-     * @param  array{article_id?: int|null, tax_group_id?: int|null, quantity?: int, base_price?: int|float, unit_price?: int|float, description?: string}  $itemData
+     * When the frozen keys are present (total_amount et al.), the line is
+     * persisted VERBATIM — the proforma-conversion path (AID-556/AID-557):
+     * amounts and the taxes_applied snapshot were already frozen with the
+     * proforma (ADR-001) and must never be re-derived from the live catalog.
+     *
+     * @param  InvoiceItemData  $itemData
      */
     protected function createInvoiceItem(Invoice $invoice, array $itemData): InvoiceItem
     {
         $quantity  = $itemData['quantity']    ?? 1;
         $basePrice = $itemData['base_price']  ?? ($itemData['unit_price'] ?? 0);
+
+        if (array_key_exists('total_amount', $itemData)) {
+            return InvoiceItem::create([
+                'invoice_id'        => $invoice->id,
+                'article_id'        => $itemData['article_id']        ?? null,
+                'item_type'         => $itemData['item_type']         ?? ItemType::GOOD,
+                'description'       => $itemData['description']       ?? '',
+                'internal_code'     => $itemData['internal_code']     ?? null,
+                'quantity'          => FixedDecimal::ofUnscaled((int) $quantity, 2),
+                'unit_measure_id'   => $itemData['unit_measure_id']   ?? null,
+                'unit_price'        => FixedDecimal::ofUnscaled((int) $basePrice, 2),
+                'taxable_amount'    => FixedDecimal::ofUnscaled((int) ($itemData['taxable_amount'] ?? 0), 2),
+                'total_tax_amount'  => FixedDecimal::ofUnscaled((int) ($itemData['total_tax_amount'] ?? 0), 2),
+                'taxes_applied'     => $itemData['taxes_applied']     ?? [],
+                'total_amount'      => FixedDecimal::ofUnscaled((int) ($itemData['total_amount'] ?? 0), 2),
+                'service_date_from' => $itemData['service_date_from'] ?? null,
+                'service_date_to'   => $itemData['service_date_to']   ?? null,
+                'metadata'          => $itemData['metadata']          ?? null,
+            ]);
+        }
 
         // Calculate taxes using TaxCalculationService (ADR-003: billable_user_id)
         $taxCalculation = $this->taxCalculationService->calculateForInvoiceItem([
@@ -305,7 +350,7 @@ class InvoiceService
      * @param  array{
      *     billable_user_id: string,
      *     user_id?: string,
-     *     items: array<array{article_id?: int|null, tax_group_id?: int|null, quantity?: int, base_price?: int|float, unit_price?: int|float, description?: string}>,
+     *     items: array<int, InvoiceItemData>,
      *     due_date?: string|null,
      *     payment_terms?: int|null,
      *     template_name?: string|null
@@ -397,11 +442,27 @@ class InvoiceService
                 // AID-555 (D2): canonical invoice→proforma link; the inverse
                 // mirror (converted_invoice_id) alone left proforma() unreadable.
                 'proforma_id'      => (string) $proforma->id,
-                'items'            => $proforma->items->map(fn (InvoiceItem $item) => [
-                    'article_id'  => $item->article_id,
-                    'description' => $item->description,
-                    'quantity'    => $item->quantity->unscaledValue(),
-                    'base_price'  => $item->unit_price->unscaledValue(),
+                // AID-556 (D3) + AID-557 (D4): clone the proforma line VERBATIM.
+                // The old 4-field rebuild dropped item_type, internal_code,
+                // unit_measure_id, service dates and metadata, and re-derived
+                // the amounts against the LIVE tax catalog — silently diverging
+                // from the figures the customer accepted with the proforma.
+                'items' => $proforma->items->map(fn (InvoiceItem $item): array => [
+                    'article_id'        => $item->article_id,
+                    'item_type'         => $item->item_type,
+                    'description'       => $item->description,
+                    'internal_code'     => $item->internal_code,
+                    'quantity'          => $item->quantity->unscaledValue(),
+                    'unit_measure_id'   => $item->unit_measure_id,
+                    'base_price'        => $item->unit_price->unscaledValue(),
+                    'service_date_from' => $item->service_date_from?->toDateString(),
+                    'service_date_to'   => $item->service_date_to?->toDateString(),
+                    'metadata'          => $item->metadata,
+                    // Frozen amounts (ADR-001): copied, never recalculated.
+                    'taxable_amount'    => $item->taxable_amount->unscaledValue(),
+                    'total_tax_amount'  => $item->total_tax_amount->unscaledValue(),
+                    'taxes_applied'     => $item->taxes_applied,
+                    'total_amount'      => $item->total_amount->unscaledValue(),
                 ])->toArray(),
                 'type'          => 'invoice',
                 'status'        => 'pending',
