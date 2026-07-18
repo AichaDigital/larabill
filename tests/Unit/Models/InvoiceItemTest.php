@@ -5,14 +5,14 @@ declare(strict_types=1);
 use AichaDigital\Larabill\Enums\ItemType;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\InvoiceItem;
-use AichaDigital\Larabill\Tests\Models\User;
+use AichaDigital\Larabill\Tests\Models\TestUser;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    $this->user    = User::factory()->create();
+    $this->user    = TestUser::factory()->create();
     $this->invoice = Invoice::factory()->create(['user_id' => $this->user->id]);
     // Note: unit_measure_id is nullable and not required in v0.4.0
 });

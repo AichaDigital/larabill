@@ -8,7 +8,6 @@ use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\UserTaxProfile;
 use AichaDigital\Larabill\Services\PDF\DomPDFService;
-use AichaDigital\Larabill\Tests\Models\TestUser;
 use AichaDigital\Larabill\Tests\TestCase;
 
 /**
@@ -22,12 +21,6 @@ use AichaDigital\Larabill\Tests\TestCase;
  */
 function makeFrozenClientInvoice(array $profileAttributes = []): array
 {
-    // The suite's users live in TestUser (test_users). Without this override the
-    // billableUser() relation resolves the models.user mapping default — a model
-    // bound to another table — and the creating hook silently skips the
-    // customer_snapshot generation this test needs to exercise for real.
-    config()->set('larabill.models.user', TestUser::class);
-
     // Same guard as makeContentInvoice(): a second active config would trip
     // FiscalIntegrityChecker inside Invoice::boot()'s creating hook.
     if (CompanyFiscalConfig::query()->where('is_active', true)->whereNull('valid_until')->doesntExist()) {

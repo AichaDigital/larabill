@@ -8,7 +8,7 @@ use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\UserTaxProfile;
 use AichaDigital\Larabill\Services\FiscalChangeDetector;
-use AichaDigital\Larabill\Tests\Models\User;
+use AichaDigital\Larabill\Tests\Models\TestUser;
 
 uses()->group('unit', 'services', 'fiscal-change-detector');
 
@@ -23,7 +23,7 @@ beforeEach(function () {
     ]);
 
     // Create user
-    $this->user = User::factory()->create();
+    $this->user = TestUser::factory()->create();
 
     // Create initial tax profile
     $this->taxProfile = UserTaxProfile::factory()->create([

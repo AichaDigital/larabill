@@ -2,8 +2,6 @@
 
 declare(strict_types=1);
 use AichaDigital\Larabill\Models\CompanyFiscalConfig;
-use AichaDigital\Larabill\Models\Customer;
-use AichaDigital\Larabill\Models\CustomerFiscalData;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\InvoiceItem;
 use AichaDigital\Larabill\Models\TaxRate;
@@ -82,15 +80,15 @@ return [
         'fiscal_year_start_month' => 1, // 1 for January, 7 for July, etc.
     ],
 
-    // Model mappings for extensibility
+    // Model mappings for extensibility. The user model is deliberately NOT
+    // listed here: it resolves through 'user_model' above (LARABILL_USER_MODEL).
+    // Set 'models.user' only as an explicit override — when present and the
+    // class exists, it wins over 'user_model' (AID-553).
     'models' => [
-        'user'                  => User::class, // Your application's User model
         'invoice'               => Invoice::class,
         'invoice_item'          => InvoiceItem::class,
         'tax_rate'              => TaxRate::class,
         'company_fiscal_config' => CompanyFiscalConfig::class,
-        'customer_fiscal_data'  => CustomerFiscalData::class,
-        'customer'              => Customer::class,
     ],
 
     // Field mappings for custom field names

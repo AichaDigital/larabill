@@ -7,7 +7,7 @@ use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\TaxGroup;
 use AichaDigital\Larabill\Models\TaxRate;
 use AichaDigital\Larabill\Services\InvoiceService;
-use AichaDigital\Larabill\Tests\Models\User;
+use AichaDigital\Larabill\Tests\Models\TestUser;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -23,7 +23,7 @@ beforeEach(function () {
         'valid_until' => null,
     ]);
 
-    $this->customer = User::factory()->create();
+    $this->customer = TestUser::factory()->create();
 
     $vatGroup = TaxGroup::factory()->create(['name' => 'IVA General']);
     $rate     = TaxRate::factory()->create(['name' => 'IVA General 21%', 'rate' => 2100]);

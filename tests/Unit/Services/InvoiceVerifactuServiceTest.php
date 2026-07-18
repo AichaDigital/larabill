@@ -7,13 +7,13 @@ use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\InvoiceItem;
 use AichaDigital\Larabill\Models\UserTaxProfile;
 use AichaDigital\Larabill\Services\InvoiceVerifactuService;
-use AichaDigital\Larabill\Tests\Models\User;
+use AichaDigital\Larabill\Tests\Models\TestUser;
 use AichaDigital\LaraVerifactu\Models\Invoice as VerifactuInvoice;
 use Illuminate\Validation\ValidationException;
 
 beforeEach(function () {
     $this->service = new InvoiceVerifactuService;
-    $this->user    = User::factory()->create();
+    $this->user    = TestUser::factory()->create();
 
     $this->invoice = Invoice::factory()->create(fdMoney([
         'user_id'          => $this->user->id,

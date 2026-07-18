@@ -5,7 +5,7 @@ declare(strict_types=1);
 use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\InvoiceSeriesControl;
 use AichaDigital\Larabill\Services\InvoiceService;
-use AichaDigital\Larabill\Tests\Models\User;
+use AichaDigital\Larabill\Tests\Models\TestUser;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -22,7 +22,7 @@ beforeEach(function () {
         'valid_until' => null,
     ]);
 
-    $this->customer = User::factory()->create();
+    $this->customer = TestUser::factory()->create();
 });
 
 it('derives fiscal_number, prefix, series_number and fiscal_year from the series control', function () {

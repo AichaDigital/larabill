@@ -5,7 +5,7 @@ declare(strict_types=1);
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\UserTaxProfile;
-use AichaDigital\Larabill\Tests\Models\User;
+use AichaDigital\Larabill\Tests\Models\TestUser;
 use AichaDigital\LaraPrivacyCore\Contracts\LegallyRetainable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -14,7 +14,7 @@ uses(RefreshDatabase::class);
 /**
  * Attach a fiscal invoice with the given legal date to a profile.
  */
-function fiscalInvoiceFor(User $user, UserTaxProfile $profile, string $date, InvoiceSerieType $serie = InvoiceSerieType::INVOICE): Invoice
+function fiscalInvoiceFor(TestUser $user, UserTaxProfile $profile, string $date, InvoiceSerieType $serie = InvoiceSerieType::INVOICE): Invoice
 {
     return Invoice::factory()->create([
         'user_id'             => $user->id,
@@ -26,7 +26,7 @@ function fiscalInvoiceFor(User $user, UserTaxProfile $profile, string $date, Inv
 
 describe('UserTaxProfile retention contract', function () {
     beforeEach(function () {
-        $this->user    = User::factory()->create();
+        $this->user    = TestUser::factory()->create();
         $this->profile = UserTaxProfile::factory()->create(['owner_user_id' => $this->user->id]);
     });
 

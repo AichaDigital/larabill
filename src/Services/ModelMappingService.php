@@ -9,7 +9,6 @@ use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\InvoiceItem;
 use AichaDigital\Larabill\Models\TaxRate;
 use AichaDigital\Larabill\Models\UserTaxProfile;
-use AichaDigital\Larabill\Tests\Models\User;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -26,23 +25,51 @@ class ModelMappingService
      */
     public static function getModelClass(string $modelType): string
     {
-        // ADR-003: Customer removed, unified into User with billable_user_id
-        $defaultModels = [
-            'user'                   => User::class,
-            'invoice'                => Invoice::class,
-            'invoice_item'           => InvoiceItem::class,
-            'tax_rate'               => TaxRate::class,
-            'company_fiscal_config'  => CompanyFiscalConfig::class,
-            'user_tax_profile'       => UserTaxProfile::class,
-        ];
-
         $configuredModel = config("larabill.models.{$modelType}");
 
-        if ($configuredModel && class_exists($configuredModel)) {
+        if (is_string($configuredModel) && class_exists($configuredModel)) {
             return $configuredModel;
         }
 
+        if ($modelType === 'user') {
+            return self::resolveUserModel();
+        }
+
+        // ADR-003: Customer removed, unified into User with billable_user_id
+        $defaultModels = [
+            'invoice'               => Invoice::class,
+            'invoice_item'          => InvoiceItem::class,
+            'tax_rate'              => TaxRate::class,
+            'company_fiscal_config' => CompanyFiscalConfig::class,
+            'user_tax_profile'      => UserTaxProfile::class,
+        ];
+
         return $defaultModels[$modelType] ?? throw new \InvalidArgumentException("Unknown model type: {$modelType}");
+    }
+
+    /**
+     * Resolve the consumer's user model (AID-553).
+     *
+     * `larabill.models.user` (explicit override, checked by the caller) falls
+     * back to `larabill.user_model` — the canonical key. There is no silent
+     * default: the package cannot guess the consumer's user model, and the
+     * historical fallback pointed to a tests-only class that never autoloads
+     * in production.
+     */
+    private static function resolveUserModel(): string
+    {
+        $userModel = config('larabill.user_model');
+
+        if (is_string($userModel) && class_exists($userModel)) {
+            return $userModel;
+        }
+
+        throw new \RuntimeException(
+            'Unable to resolve the user model: neither larabill.models.user nor '
+            .'larabill.user_model point to an existing class. Set larabill.user_model '
+            .'(env LARABILL_USER_MODEL) to your application user model — UUID v7 '
+            .'primary key required, see docs/setup-uuid.md.'
+        );
     }
 
     /**
