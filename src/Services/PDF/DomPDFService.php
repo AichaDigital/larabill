@@ -620,7 +620,13 @@ class DomPDFService
     }
 
     /**
-     * Render template safely
+     * Render the template.
+     *
+     * A render failure surfaces RAW to the frontier (PDFService), the
+     * subsystem's single logger and translator (AID-535): no mock-invoice
+     * fallback (AID-508) and no double logging. The failing view's name
+     * travels inside the exception Blade throws, so no context is lost by
+     * not logging here.
      *
      * @param  string  $template  Template name
      * @param  array<string, mixed>  $data  Template data
@@ -628,22 +634,6 @@ class DomPDFService
      */
     protected function renderTemplate(string $template, array $data): string
     {
-        try {
-            return View::make($template, $data)->render();
-        } catch (\Throwable $e) {
-            // A real render failure must NOT be masked as a plausible-but-fake invoice.
-            // Log with context and surface the error so the frontier reports failure.
-            $invoice = $data['invoice'] ?? null;
-
-            Log::error('larabill: invoice PDF template render failed; surfacing instead of falling back to a mock invoice', [
-                'invoice_id'      => $invoice instanceof Invoice ? $invoice->id : null,
-                'invoice_number'  => $invoice instanceof Invoice ? $invoice->fiscal_number : null,
-                'template'        => $template,
-                'exception_class' => $e::class,
-                'exception'       => $e->getMessage(),
-            ]);
-
-            throw $e;
-        }
+        return View::make($template, $data)->render();
     }
 }

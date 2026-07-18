@@ -8,6 +8,10 @@ All notable changes to `larabill` will be documented in this file.
 
 - **The stale `branch-alias` (`dev-main: 3.1.x-dev`) is gone from `composer.json` (AID-503).** On a v6.x package, a non-detached `dev-main` install resolved as `3.1.x-dev` — a garbage cardinal that could confuse constraint resolution, audit tooling and gate evidence. Removed instead of realigned: an alias rots at every major (this one proved it); consumers that test `dev-main` use an inline alias on their side (`dev-main as 6.x-dev`), which needs nothing from the package.
 
+### Fixed
+
+- **The PDF frontier catches `\Throwable` and is the subsystem's single logger (AID-535).** A raw `\Error`/`TypeError` from the engine escaped the "single translator" (`catch (\Exception)`) as an uncaught throwable; it now reaches the consumer as `['success' => false]` like any other failure. The render-level `Log::error` + rethrow is gone — one failure, one log line, at the frontier (enriched with the exception location); the failing view's name travels inside the exception itself. The template-fallback `Log::warning` stays: it is an operational signal, not duplication.
+
 ## [6.5.0] - 2026-07-18
 
 **Ships migrations: yes** — upgrade is `composer update aichadigital/larabill`, then re-run `php artisan larabill:install` (idempotent: publishes only the new migration by name) and `php artisan migrate`. Installations auto-loading the package migrations (no published stubs) only need `composer update` + `php artisan migrate`.

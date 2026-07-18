@@ -238,11 +238,59 @@ it('logs the original exception before translating it into the failure contract'
     expect($result['success'])->toBeFalse()
         ->and($result['error'])->toContain('boom from the depths');
 
-    // Scoped to the frontier's message: renderTemplate() logs separately (accepted
-    // double-logging, spec §8.1) — this test only asserts the frontier's log.
+    // The frontier is the subsystem's single logger (AID-535): the render
+    // level no longer logs, so this is the ONLY error line for the failure.
     Log::shouldHaveReceived('error')
         ->with('larabill: invoice PDF generation failed', Mockery::any())
         ->once();
+});
+
+it('translates a raw Error from the engine into an explicit failure (AID-535)', function () {
+    $engine = new class([]) extends DomPDFService
+    {
+        /**
+         * @param  array<string, mixed>|null  $qrData
+         * @return array<string, mixed>
+         */
+        public function generatePDF(Invoice $invoice, ?array $qrData = null): array
+        {
+            throw new Error('engine blew up with a raw Error');
+        }
+    };
+
+    $invoice = Invoice::factory()->create([
+        'fiscal_number' => 'THROWABLE-1',
+        'serie'         => InvoiceSerieType::INVOICE->value,
+        'status'        => InvoiceStatus::DRAFT->value,
+        'user_id'       => TestCase::USER_UUID_1,
+    ]);
+
+    // The frontier is the single translator: \Error/TypeError must reach the
+    // consumer as ['success' => false], never as an uncaught throwable.
+    $result = (new PDFService([], null, $engine))->generatePDF($invoice);
+
+    expect($result['success'])->toBeFalse()
+        ->and($result['error'])->toContain('raw Error');
+});
+
+it('logs a failed generation exactly once, at the frontier (AID-535)', function () {
+    Log::spy();
+
+    $invoice = Invoice::factory()->create([
+        'fiscal_number' => 'SINGLELOG-1',
+        'serie'         => InvoiceSerieType::INVOICE->value,
+        'status'        => InvoiceStatus::DRAFT->value,
+        'user_id'       => TestCase::USER_UUID_1,
+    ]);
+    View::shouldReceive('make')->andThrow(new RuntimeException('render exploded once'));
+
+    $result = (new PDFService)->generatePDF($invoice);
+
+    expect($result['success'])->toBeFalse();
+
+    // One failure, one log line — the frontier's. The render level no longer
+    // logs: the failing view's name travels inside the exception itself.
+    Log::shouldHaveReceived('error')->once();
 });
 
 it('does not retry with the local connector when generation fails', function () {
