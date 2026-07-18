@@ -251,11 +251,57 @@ class InvoiceService
             'customer_country'  => $customerData?->country_code,
             'currency'          => 'EUR', // TODO: Make configurable
             'exchange_rate'     => 1.0,   // TODO: Implement multi-currency
-            'tax_rules_applied' => [], // TODO: Add tax calculation details
+            'tax_rules_applied' => $this->aggregateTaxRules($invoice),
             'snapshot_at'       => now()->toIso8601String(),
         ];
 
         return Crypt::encryptString(json_encode($data, JSON_THROW_ON_ERROR));
+    }
+
+    /**
+     * Aggregate the tax rules actually applied across the invoice lines
+     * (AID-534): one entry per distinct rule, base and amount summed from the
+     * items' immutable taxes_applied snapshots — same frozen source, same
+     * instant, so the fiscal snapshot cannot drift from the lines. Ordered by
+     * rate descending (the tax-breakdown precedent, AID-508).
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    protected function aggregateTaxRules(Invoice $invoice): array
+    {
+        $rules = [];
+
+        foreach ($invoice->items as $item) {
+            $entries = is_array($item->taxes_applied) ? $item->taxes_applied : [];
+
+            foreach ($entries as $entry) {
+                if (! is_array($entry)) {
+                    continue;
+                }
+
+                $sourceRateId = $entry['source_rate_id'] ?? null;
+                $name         = $entry['name']           ?? null;
+                $rate         = $entry['rate']           ?? null;
+                $key          = (string) json_encode([$sourceRateId, $name, $rate]);
+
+                $rules[$key] ??= [
+                    'source_rate_id' => $sourceRateId,
+                    'name'           => $name,
+                    'rate'           => $rate,
+                    'base'           => 0,
+                    'amount'         => 0,
+                ];
+
+                $rules[$key]['base']   += $item->taxable_amount->unscaledValue();
+                $rules[$key]['amount'] += (int) ($entry['amount'] ?? 0);
+            }
+        }
+
+        $rules = array_values($rules);
+
+        usort($rules, fn (array $a, array $b): int => (float) ($b['rate'] ?? 0) <=> (float) ($a['rate'] ?? 0));
+
+        return $rules;
     }
 
     /**
