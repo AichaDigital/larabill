@@ -261,7 +261,7 @@
             "static": false
         },
         "generatePDF": {
-            "api": false,
+            "api": true,
             "deprecated": false,
             "parameters": [],
             "returnType": "array",

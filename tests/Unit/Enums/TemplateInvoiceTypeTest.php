@@ -29,4 +29,15 @@ describe('TemplateInvoiceType Enum', function () {
     it('has all expected cases', function () {
         expect(TemplateInvoiceType::cases())->toHaveCount(4);
     });
+
+    // AID-502 (ADR-011): the enum owns the string the template registry
+    // persists in `invoice_templates.type`. The registry never speaks the
+    // fiscal serie vocabulary ('invoice', 'simplified', ...) — that mismatch
+    // is why the registry never resolved for fiscal invoices.
+    it('exposes the registry key persisted in invoice_templates.type', function () {
+        expect(TemplateInvoiceType::FISCAL->registryKey())->toBe('fiscal');
+        expect(TemplateInvoiceType::PROFORMA->registryKey())->toBe('proforma');
+        expect(TemplateInvoiceType::REVERSE_CHARGE->registryKey())->toBe('reverse-charge');
+        expect(TemplateInvoiceType::EXEMPT->registryKey())->toBe('exempt');
+    });
 });

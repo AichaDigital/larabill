@@ -33,6 +33,24 @@ enum TemplateInvoiceType: int
     }
 
     /**
+     * The string the template registry persists in `invoice_templates.type`.
+     *
+     * Single source of the registry vocabulary (ADR-011, AID-502): every
+     * lookup against InvoiceTemplate rows goes through this key — never
+     * through the fiscal serie's label ('invoice', 'simplified', ...), whose
+     * mismatch is why the registry never resolved for fiscal invoices.
+     */
+    public function registryKey(): string
+    {
+        return match ($this) {
+            self::FISCAL         => 'fiscal',
+            self::PROFORMA       => 'proforma',
+            self::REVERSE_CHARGE => 'reverse-charge',
+            self::EXEMPT         => 'exempt',
+        };
+    }
+
+    /**
      * Get description.
      */
     public function description(): string

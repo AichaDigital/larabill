@@ -94,10 +94,11 @@ it('declares every src/ classlike with exactly one of @api or @internal', functi
     );
 });
 
-it('keeps the seven amber-band model operations tagged @api at method level (AID-407)', function () {
+it('keeps the eight amber-band model operations tagged @api at method level (AID-407, AID-502)', function () {
     $amber = [
         [Invoice::class, 'makeImmutable'],
         [Invoice::class, 'snapshotFiscalConfigs'],
+        [Invoice::class, 'generatePDF'],
         [CompanyFiscalConfig::class, 'getValidAt'],
         [CompanyFiscalConfig::class, 'createNew'],
         [InvoiceSeriesControl::class, 'getNextNumber'],

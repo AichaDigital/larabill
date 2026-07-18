@@ -524,7 +524,25 @@ class Invoice extends Model implements LegallyRetainable
     }
 
     /**
-     * Generate PDF for this invoice
+     * Generate PDF for this invoice.
+     *
+     * The consumer's entry point to the PDF subsystem (ADR-011, AID-502) —
+     * the services behind it (`PDFService`, `DomPDFService`) are `@internal`
+     * and may change without a major version. The result shape IS the
+     * contract:
+     *
+     * - success: `['success' => true, 'pdf_path' => string, 'pdf_url' => null,
+     *   'qr_data' => array, 'connector_used' => string, 'generated_at' => string]`.
+     *   `pdf_url` is always null — invoices are private; delivery belongs to
+     *   the consumer via an authorised controller (AID-508).
+     * - failure: `['success' => false, 'error' => string,
+     *   'connector_used' => string|null, 'generated_at' => string]`. The
+     *   subsystem never throws to the caller: the frontier translates every
+     *   failure — including a consumer template dropping mandatory fiscal
+     *   content (`FiscalContentMissingException`, ADR-011) — into this shape
+     *   with a single log line (AID-535).
+     *
+     * @api Supported public surface (AID-413; see docs/api-surface.md).
      *
      * @return array<string, mixed> PDF generation result
      */
