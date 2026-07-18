@@ -90,6 +90,11 @@ class InvoiceService
      */
     public function createInvoice(array $invoiceData, array $options = []): Invoice
     {
+        // attempts: 3 (AID-570) — the numbering first-use protection of
+        // AID-390 runs NESTED here (a savepoint), so an InnoDB deadlock on a
+        // virgin series aborts THIS transaction and only a retry at this
+        // outermost boundary can recover. CONTRACT: the closure must stay
+        // side-effect-free outside the database — a retry re-runs it in full.
         return DB::transaction(function () use ($invoiceData, $options): Invoice {
             // Get billable user (ADR-003)
             $userModel    = ModelMappingService::getModelClass('user');
@@ -176,7 +181,7 @@ class InvoiceService
             }
 
             return $invoice->fresh() ?? $invoice;
-        });
+        }, 3);
     }
 
     /**
@@ -391,6 +396,12 @@ class InvoiceService
      */
     public function convertProformaToInvoice(Invoice $proforma, array $options = []): Invoice|array
     {
+        // attempts: 3 (AID-570) — same outermost-boundary retry as
+        // createInvoice(): two conversions of DIFFERENT proformas on a virgin
+        // series can still deadlock on the numbering first-use insert (the
+        // AID-554 proforma lock only serializes conversions of the SAME one).
+        // CONTRACT: the closure must stay side-effect-free outside the
+        // database — a retry re-runs it in full (lock, idempotency and all).
         return DB::transaction(function () use ($proforma, $options): Invoice|array {
             // AID-554 (D1): re-read the proforma under an exclusive row lock.
             // The idempotency check below must not race a concurrent conversion
@@ -500,7 +511,7 @@ class InvoiceService
             }
 
             return $invoice;
-        });
+        }, 3);
     }
 
     /**
