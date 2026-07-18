@@ -125,17 +125,21 @@ class PDFService
                 'generated_at'   => now()->toISOString(),
             ];
 
-        } catch (\Exception $e) {
-            // The frontier: log the exception BEFORE translating it, so the
-            // translation never loses the cause (AID-508). No fallback: retrying
-            // with another connector after a failure only fabricated a plausible
-            // result and buried the original error.
+        } catch (\Throwable $e) {
+            // The frontier: the subsystem's SINGLE logger and translator
+            // (AID-508/AID-535). \Throwable, not \Exception — a raw
+            // \Error/TypeError must reach the consumer as an explicit failure,
+            // never as an uncaught throwable. Inner layers no longer log; the
+            // exception itself carries their context (e.g. the failing view's
+            // name). No fallback: retrying with another connector after a
+            // failure only fabricated a plausible result and buried the cause.
             Log::error('larabill: invoice PDF generation failed', [
-                'invoice_id'      => $invoice->id,
-                'invoice_number'  => $invoice->fiscal_number,
-                'connector_type'  => $connectorType,
-                'exception_class' => $e::class,
-                'exception'       => $e->getMessage(),
+                'invoice_id'         => $invoice->id,
+                'invoice_number'     => $invoice->fiscal_number,
+                'connector_type'     => $connectorType,
+                'exception_class'    => $e::class,
+                'exception'          => $e->getMessage(),
+                'exception_location' => $e->getFile().':'.$e->getLine(),
             ]);
 
             return [
