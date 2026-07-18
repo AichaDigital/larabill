@@ -71,6 +71,8 @@ class LarabillInstallCommand extends Command
         '037' => 'widen_invoices_prefix_to_aeat_limit',
         // === PHANTOM TEMPLATE CLEANUP (AID-450) ===
         '038' => 'remove_phantom_proforma_simple_invoice_template',
+        // === PROFORMA LINK BACKFILL (AID-555) ===
+        '039' => 'backfill_invoice_proforma_link',
     ];
 
     public function handle(): int
