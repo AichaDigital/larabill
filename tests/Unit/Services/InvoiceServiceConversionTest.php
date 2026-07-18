@@ -9,6 +9,7 @@ use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\UnitMeasure;
 use AichaDigital\Larabill\Services\InvoiceService;
+use AichaDigital\Larabill\Services\PDF\DomPDFService;
 use AichaDigital\Larabill\Tests\Models\TestUser;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -132,6 +133,47 @@ it('clones the full proforma line at conversion, losing no fields', function () 
         ->and($line->metadata)->toBe(['source' => 'contract-7'])
         ->and($line->quantity->unscaledValue())->toBe(200)
         ->and($line->unit_price->unscaledValue())->toBe(5000);
+});
+
+it('carries the proforma service date into the final invoice, feeding the PDF operation-date row', function () {
+    $service  = app(InvoiceService::class);
+    $proforma = $service->createProforma(['billable_user_id' => $this->customer->id, 'items' => []]);
+
+    // The operation date the proforma declared (RD 1619/2012 art. 6.1.f/i).
+    $proforma->update(['service_date' => '2026-06-15']);
+
+    $invoice = $service->convertProformaToInvoice($proforma->fresh());
+
+    expect($invoice->service_date?->toDateString())->toBe('2026-06-15');
+
+    // The PDF machinery (AID-442) finally has its datum: the row prints
+    // because the operation date differs from the conversion-day invoice_date.
+    $engine  = new DomPDFService([]);
+    $prepare = new ReflectionMethod($engine, 'prepareTemplateData');
+    expect($prepare->invoke($engine, $invoice->fresh(), null, false)['operation_date'])->toBe('15/06/2026');
+});
+
+it('leaves service_date null at conversion when the proforma declared none', function () {
+    $service  = app(InvoiceService::class);
+    $proforma = $service->createProforma(['billable_user_id' => $this->customer->id, 'items' => []]);
+
+    $invoice = $service->convertProformaToInvoice($proforma);
+
+    // Documented rule (AID-559): no source datum → null, never an invented
+    // date — the PDF operation-date row simply does not print.
+    expect($invoice->service_date)->toBeNull();
+});
+
+it('persists a service_date passed explicitly to createInvoice', function () {
+    $service = app(InvoiceService::class);
+
+    $invoice = $service->createInvoice([
+        'billable_user_id' => $this->customer->id,
+        'items'            => [],
+        'service_date'     => '2026-05-01',
+    ]);
+
+    expect($invoice->service_date?->toDateString())->toBe('2026-05-01');
 });
 
 it('rejects converting an invoice that is not a proforma', function () {

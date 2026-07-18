@@ -77,6 +77,7 @@ class InvoiceService
      *     type?: string,
      *     series?: string,
      *     status?: string,
+     *     service_date?: string|null,
      *     due_date?: string|null,
      *     payment_terms?: int|null,
      *     template_name?: string|null,
@@ -133,6 +134,7 @@ class InvoiceService
                 'fiscal_year'               => $number->fiscalYear,
                 'invoice_date'              => now()->toDateString(),
                 'issued_at'                 => now(),
+                'service_date'              => $invoiceData['service_date'] ?? null,
                 'status'                    => $status,
                 'billable_user_id'          => $billableUser->id,
                 'user_id'                   => $userId,
@@ -351,6 +353,7 @@ class InvoiceService
      *     billable_user_id: string,
      *     user_id?: string,
      *     items: array<int, InvoiceItemData>,
+     *     service_date?: string|null,
      *     due_date?: string|null,
      *     payment_terms?: int|null,
      *     template_name?: string|null
@@ -466,6 +469,10 @@ class InvoiceService
                 ])->toArray(),
                 'type'          => 'invoice',
                 'status'        => 'pending',
+                // AID-559 (D10): the operation date the proforma declared
+                // (RD 1619/2012 art. 6.1.f/i) survives the conversion. No
+                // datum → null, documented — never an invented date.
+                'service_date'  => $proforma->service_date?->toDateString(),
                 'due_date'      => $proforma->due_date?->toDateString(),
                 'payment_terms' => $proforma->payment_terms ? (int) $proforma->payment_terms : null,
                 'template_name' => $proforma->template_name,
