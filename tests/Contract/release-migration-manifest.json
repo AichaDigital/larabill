@@ -1,6 +1,6 @@
 {
-    "release": "6.5.0",
-    "upgrade_base": "6.4.1",
+    "release": "6.5.1",
+    "upgrade_base": "6.5.0",
     "migrations": [
         {
             "name": "2024_12_01_000000_create_tax_rates_table.php",
@@ -180,7 +180,7 @@
         {
             "name": "2026_07_18_000001_backfill_invoice_proforma_link.php",
             "sha256": "9ca3123c14473a3a531eebfec07939de246af1f54360b03d76ed16ebdee015d9",
-            "in_base": false
+            "in_base": true
         }
     ]
 }

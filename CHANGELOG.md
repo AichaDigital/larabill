@@ -4,6 +4,10 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+## [6.5.1] - 2026-07-18
+
+**Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`; no `larabill:install` re-run or `migrate` needed.
+
 ### Removed
 
 - **The stale `branch-alias` (`dev-main: 3.1.x-dev`) is gone from `composer.json` (AID-503).** On a v6.x package, a non-detached `dev-main` install resolved as `3.1.x-dev` — a garbage cardinal that could confuse constraint resolution, audit tooling and gate evidence. Removed instead of realigned: an alias rots at every major (this one proved it); consumers that test `dev-main` use an inline alias on their side (`dev-main as 6.x-dev`), which needs nothing from the package.
