@@ -158,12 +158,14 @@ class PDFService
      */
     protected function fiscalVerificationQrResult(Invoice $invoice): ?array
     {
-        $qr   = $invoice->fiscal_verification_qr;
-        $kind = FiscalQrImage::classify(is_string($qr) ? $qr : null);
+        $raw  = $invoice->fiscal_verification_qr;
+        $qr   = is_string($raw) ? $raw : null;
+        $kind = FiscalQrImage::classify($qr);
 
-        if ($kind === null) {
-            // Absent, a bare cotejo URL, an unknown format, invalid base64 or
-            // malformed XML: larabill does not render QR codes, so it cannot use it.
+        if ($kind === null || $qr === null) {
+            // Absent, a bare cotejo URL, an unknown format, invalid base64,
+            // malformed XML or an SVG carrying external references (AID-537):
+            // larabill does not render QR codes, so it cannot use it.
             return null;
         }
 
@@ -181,7 +183,13 @@ class PDFService
             'metadata'       => $metadata,
         ];
 
-        $result[$kind === 'svg' ? 'qr_svg' : 'qr_png'] = $qr;
+        // AID-537: inline SVG renders at its INTRINSIC size in dompdf — the
+        // template's 35mm wrapper does not rescale it, and lara-verifactu
+        // emits 300px (~79mm, double the AEAT 30-40mm band). Normalize the
+        // root to the 35mm presentation box before it reaches the template.
+        $result[$kind === 'svg' ? 'qr_svg' : 'qr_png'] = $kind === 'svg'
+            ? FiscalQrImage::atPresentationSize($qr)
+            : $qr;
 
         return $result;
     }

@@ -29,6 +29,14 @@ final class FiscalQrImage
     private const PNG_SIGNATURE = "\x89PNG\r\n\x1a\n";
 
     /**
+     * 35mm at dompdf's 96dpi (35 × 96 / 25.4 ≈ 132.28) — the AEAT QR spec
+     * v0.4.7 (arts. 20-21) requires 30-40mm printed. Inline SVG renders at
+     * its INTRINSIC size in dompdf; the template's 35mm wrapper div does not
+     * rescale it (lara-verifactu emits 300px ≈ 79mm — double the band).
+     */
+    private const PRESENTATION_PX = 132;
+
+    /**
      * Classify the persisted value as a usable image.
      *
      * @return string|null 'svg', 'png', or null when the value is unusable
@@ -78,6 +86,87 @@ final class FiscalQrImage
         libxml_clear_errors();
         libxml_use_internal_errors($previous);
 
-        return $wellFormed && $document->documentElement?->localName === 'svg';
+        if (! $wellFormed || $document->documentElement?->localName !== 'svg') {
+            return false;
+        }
+
+        return ! self::carriesExternalReferences($document);
+    }
+
+    /**
+     * AID-537: a WELL-FORMED svg can still exfiltrate — the value is inlined
+     * raw in the template and dompdf runs with isRemoteEnabled. Anything
+     * referencing outside the document (href/xlink:href with a scheme, path
+     * or protocol-relative target, url(...) in styles) disqualifies it;
+     * fragment (#id) and data: references stay. Defense-in-depth: reaching
+     * this column already requires database write access.
+     */
+    private static function carriesExternalReferences(DOMDocument $document): bool
+    {
+        foreach ($document->getElementsByTagName('*') as $element) {
+            foreach (['href', 'xlink:href'] as $name) {
+                if (! $element->hasAttribute($name)) {
+                    continue;
+                }
+
+                $target = trim($element->getAttribute($name));
+
+                if ($target !== ''
+                    && ! str_starts_with($target, '#')
+                    && ! str_starts_with(strtolower($target), 'data:')) {
+                    return true;
+                }
+            }
+
+            $style = $element->localName === 'style'
+                ? $element->textContent
+                : $element->getAttribute('style');
+
+            if ($style !== '' && preg_match('/url\s*\(\s*["\']?\s*(?!["\']?\s*#|["\']?\s*data:)/i', $style) === 1) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Rewrite the svg root to the 35mm presentation box (AID-537).
+     *
+     * Keeps (or synthesizes, from the intrinsic width/height) the viewBox so
+     * the drawing scales instead of cropping, and drops the XML declaration —
+     * the value is inlined inside an HTML template. Returns the input
+     * untouched when it cannot be parsed; callers only reach this with a
+     * value classify() already accepted.
+     */
+    public static function atPresentationSize(string $svg): string
+    {
+        $previous = libxml_use_internal_errors(true);
+        $document = new DOMDocument;
+        $loaded   = $document->loadXML($svg, LIBXML_NONET);
+        libxml_clear_errors();
+        libxml_use_internal_errors($previous);
+
+        $root = $document->documentElement;
+
+        if (! $loaded || $root === null || $root->localName !== 'svg') {
+            return $svg;
+        }
+
+        if (! $root->hasAttribute('viewBox')) {
+            $width  = (float) $root->getAttribute('width');
+            $height = (float) $root->getAttribute('height');
+
+            if ($width > 0 && $height > 0) {
+                $root->setAttribute('viewBox', sprintf('0 0 %s %s', rtrim(rtrim(number_format($width, 2, '.', ''), '0'), '.'), rtrim(rtrim(number_format($height, 2, '.', ''), '0'), '.')));
+            }
+        }
+
+        $root->setAttribute('width', (string) self::PRESENTATION_PX);
+        $root->setAttribute('height', (string) self::PRESENTATION_PX);
+
+        $rendered = $document->saveXML($root);
+
+        return $rendered === false ? $svg : $rendered;
     }
 }

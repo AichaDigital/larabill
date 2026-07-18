@@ -80,7 +80,10 @@ it('classifies a verifactu QR carrying an <?xml preamble as SVG, not PNG', funct
 
     expect($result['success'])->toBeTrue()
         ->and($result['qr_data']['source'])->toBe('fiscal_verification')
-        ->and($result['qr_data']['qr_svg'] ?? null)->toBe(VERIFACTU_QR_SVG)
+        // AID-537: classified as SVG and handed over normalized to the 35mm
+        // box (width/height 132px, declaration stripped) — never as a PNG.
+        ->and($result['qr_data']['qr_svg'] ?? null)->toContain('data-testid="verifactu-qr"')
+        ->and($result['qr_data']['qr_svg'] ?? null)->toContain('width="132"')
         ->and($result['qr_data'])->not->toHaveKey('qr_png');
 });
 
