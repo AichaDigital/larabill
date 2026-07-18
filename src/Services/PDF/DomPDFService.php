@@ -218,8 +218,12 @@ class DomPDFService
      */
     protected function isExemptInvoice(Invoice $invoice): bool
     {
-        // VAT exemption comes from the recipient's immutable fiscal snapshot.
-        return (bool) $invoice->userTaxProfile?->is_exempt_vat;
+        // VAT exemption is frozen with the invoice (AID-546): the recipient's
+        // customer_snapshot, never the live profile — which can be edited after
+        // issuance. Legacy invoices without a snapshot fall back best-effort.
+        $snapshot = $invoice->getCustomerSnapshotData() ?? $this->legacyCustomerData($invoice);
+
+        return (bool) ($snapshot['is_exempt_vat'] ?? false);
     }
 
     /**
@@ -331,28 +335,52 @@ class DomPDFService
     }
 
     /**
-     * Get client data for template
+     * Get the recipient's data for the template, from the invoice's frozen snapshot.
+     *
+     * The recipient's identity is the one AT ISSUANCE, not today's profile
+     * (ADR-001; AID-546 — the customer half of the identity defect AID-508 fixed
+     * on the issuer side). The frozen side is the persisted customer_snapshot,
+     * never the live row, which can be edited in place (AID-328).
+     *
+     * Legacy invoices with no snapshot fall back to the referenced profile row.
+     * That row may have been edited since, so the identity is best-effort: a
+     * documented limitation, not a guarantee.
      *
      * @param  Invoice  $invoice  The invoice
      * @return array<string, mixed> Client data
      */
     protected function getClientData(Invoice $invoice): array
     {
-        // Recipient identity comes from the immutable UserTaxProfile snapshot.
-        $profile = $invoice->userTaxProfile;
+        $snapshot = $invoice->getCustomerSnapshotData() ?? $this->legacyCustomerData($invoice);
 
-        if (! $profile) {
+        if ($snapshot === null) {
             return [];
         }
 
         return [
-            'name'        => $profile->fiscal_name,
-            'address'     => $profile->address,
-            'city'        => $profile->city,
-            'postal_code' => $profile->zip_code,
-            'country'     => $profile->country_code,
-            'tax_id'      => $profile->tax_id,
+            'name'        => $snapshot['fiscal_name']  ?? null,
+            'address'     => $snapshot['address']      ?? null,
+            'city'        => $snapshot['city']         ?? null,
+            'postal_code' => $snapshot['zip_code']     ?? null,
+            'country'     => $snapshot['country_code'] ?? null,
+            'tax_id'      => $snapshot['tax_id']       ?? null,
         ];
+    }
+
+    /**
+     * Best-effort recipient data for invoices frozen before the snapshot existed.
+     *
+     * Mirror of legacyIssuerData(): the live profile is all there is.
+     *
+     * @return array<string, mixed>|null
+     */
+    protected function legacyCustomerData(Invoice $invoice): ?array
+    {
+        $profile = $invoice->userTaxProfile;
+
+        return $profile === null ? null : $profile->only([
+            'fiscal_name', 'tax_id', 'address', 'city', 'zip_code', 'country_code', 'is_exempt_vat',
+        ]);
     }
 
     /**
