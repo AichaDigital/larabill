@@ -74,9 +74,13 @@ class InvoiceFactory extends Factory
             'total_tax_amount' => FixedDecimal::ofUnscaled($taxAmount, 2),
             'total_amount'     => FixedDecimal::ofUnscaled($totalAmount, 2),
 
-            // Immutability
-            'is_immutable' => $this->faker->boolean(20), // 20% chance
-            'immutable_at' => $this->faker->optional(0.2)->dateTime(),
+            // Immutability: deterministic mutable default (AID-558). The old
+            // 20% random coin made any fixture that later edits the invoice or
+            // its lines flaky once the immutability guards existed — a test
+            // that needs a frozen invoice states it (makeImmutable() or an
+            // explicit override), never inherits it from a dice roll.
+            'is_immutable' => false,
+            'immutable_at' => null,
 
             // Additional fields
             'notes'         => $this->faker->optional()->sentence(),
