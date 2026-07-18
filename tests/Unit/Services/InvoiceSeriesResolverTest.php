@@ -5,6 +5,9 @@ declare(strict_types=1);
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Services\InvoiceSeriesResolver;
 
+// AID-536: this suite owns the mutation testing of its subject (pest --mutate).
+mutates(\AichaDigital\Larabill\Services\InvoiceSeriesResolver::class);
+
 /*
  * InvoiceSeriesResolver — single source of truth for the fiscal SERIES
  * (AID-307). Covers the full resolution cascade and the v4→v5 backward
