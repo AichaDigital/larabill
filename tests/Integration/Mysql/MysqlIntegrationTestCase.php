@@ -83,6 +83,12 @@ abstract class MysqlIntegrationTestCase extends Orchestra
         ]);
 
         $app['config']->set('app.key', 'base64:'.base64_encode(random_bytes(32)));
+
+        // The user mapping resolves larabill.models.user → larabill.user_model
+        // and fails loudly when neither exists (AID-553). Declare the model
+        // bound to the consumer-shaped `users` table this case creates — the
+        // suite must not lean on any implicit default.
+        $app['config']->set('larabill.user_model', Support\MysqlUser::class);
     }
 
     protected function getPackageProviders($app)
