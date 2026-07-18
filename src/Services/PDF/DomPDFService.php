@@ -147,18 +147,26 @@ class DomPDFService
     }
 
     /**
-     * Get template for invoice type
+     * Get the view for the invoice's template.
+     *
+     * Resolution chain (ADR-011, AID-502): the requested `template_name` in
+     * the registry → the registry's default row for the template type → the
+     * package blade (unseeded installations). All registry lookups speak
+     * TemplateInvoiceType::registryKey() — the serie label never reaches the
+     * registry, whose vocabulary mismatch ('invoice' vs 'fiscal') meant no
+     * fiscal invoice ever resolved a registry row before this.
      *
      * @param  Invoice  $invoice  The invoice
      * @return string Template name
      */
     protected function getTemplateForInvoice(Invoice $invoice): string
     {
-        // Check if invoice has specific template
+        $type = $this->resolveTemplateType($invoice);
+
         if ($invoice->template_name) {
             $template = InvoiceTemplate::getByName(
                 $invoice->template_name,
-                $invoice->getInvoiceType()
+                $type->registryKey()
             );
 
             if ($template) {
@@ -167,33 +175,59 @@ class DomPDFService
 
             // The consumer asked for a template and did not get it. That deserves a
             // trace, not a hard failure: it is a presentation preference, not a
-            // fiscal blocker — the document is still valid with the default.
-            // The message does not claim WHY it failed: until AID-502 settles the
-            // canonical vocabulary, we cannot tell a wrong name from the
-            // type/`invoice` vs `fiscal` mismatch.
-            Log::warning('Configured invoice PDF template could not be resolved; using the default template.', [
+            // fiscal blocker — the document is still valid with the default. With
+            // the vocabulary settled (ADR-011), a miss here means exactly one
+            // thing: no active row with that name for this template type.
+            Log::warning('Configured invoice PDF template does not exist (or is inactive) for this template type; using the default template.', [
                 'requested_template' => $invoice->template_name,
-                'lookup_type'        => $invoice->getInvoiceType(),
+                'lookup_type'        => $type->registryKey(),
                 'invoice_id'         => $invoice->id,
             ]);
         }
 
-        // Determine template based on invoice type and fiscal data
-        if ($invoice->serie === InvoiceSerieType::PROFORMA) {
-            return 'larabill::pdf.invoice.proforma';
+        // The registry's default row governs the view; before ADR-011 it only
+        // ever contributed settings, never the view itself.
+        $default = InvoiceTemplate::getDefaultForType($type->registryKey());
+
+        if ($default) {
+            return $default->template_path;
         }
 
-        // Check for special fiscal cases
-        if ($this->isReverseCharge($invoice)) {
-            return 'larabill::pdf.invoice.reverse-charge';
-        }
+        return $this->defaultViewFor($type);
+    }
 
-        if ($this->isExemptInvoice($invoice)) {
-            return 'larabill::pdf.invoice.exempt';
-        }
+    /**
+     * The package's own blade for a template type — the last-resort fallback
+     * for installations that never seeded the template registry.
+     */
+    protected function defaultViewFor(TemplateInvoiceType $type): string
+    {
+        return match ($type) {
+            TemplateInvoiceType::PROFORMA       => 'larabill::pdf.invoice.proforma',
+            TemplateInvoiceType::REVERSE_CHARGE => 'larabill::pdf.invoice.reverse-charge',
+            TemplateInvoiceType::EXEMPT         => 'larabill::pdf.invoice.exempt',
+            TemplateInvoiceType::FISCAL         => 'larabill::pdf.invoice.fiscal',
+        };
+    }
 
-        // Default fiscal invoice
-        return 'larabill::pdf.invoice.fiscal';
+    /**
+     * The invoice's template type — the SINGLE derivation (ADR-011, AID-502).
+     *
+     * The fiscal serie (`InvoiceSerieType`) is AEAT vocabulary; the template
+     * registry speaks presentation vocabulary (`TemplateInvoiceType`). This is
+     * the only place one becomes the other: proforma keeps its own family,
+     * reverse charge (ROI) takes precedence over VAT exemption, and every
+     * other fiscal serie (invoice, simplified, rectificative) presents as
+     * FISCAL.
+     */
+    protected function resolveTemplateType(Invoice $invoice): TemplateInvoiceType
+    {
+        return match (true) {
+            $invoice->serie === InvoiceSerieType::PROFORMA => TemplateInvoiceType::PROFORMA,
+            $this->isReverseCharge($invoice)               => TemplateInvoiceType::REVERSE_CHARGE,
+            $this->isExemptInvoice($invoice)               => TemplateInvoiceType::EXEMPT,
+            default                                        => TemplateInvoiceType::FISCAL,
+        };
     }
 
     /**
@@ -535,7 +569,7 @@ class DomPDFService
 
         return CompanyTemplateSettings::getDefaultNotes(
             $this->getCompanyId($invoice),
-            $this->convertToTemplateInvoiceType($invoice->getInvoiceType()),
+            $this->resolveTemplateType($invoice),
             (string) $invoice->user_id
         );
     }
@@ -557,7 +591,7 @@ class DomPDFService
 
         return CompanyTemplateSettings::getPaymentTerms(
             $this->getCompanyId($invoice),
-            $this->convertToTemplateInvoiceType($invoice->getInvoiceType()),
+            $this->resolveTemplateType($invoice),
             (string) $invoice->user_id
         );
     }
@@ -572,19 +606,21 @@ class DomPDFService
     {
         // A missing template row is a legitimate absence (empty settings) and
         // stays []; a database exception is NOT an absence and now propagates
-        // to the frontier (AID-508).
+        // to the frontier (AID-508). Lookups speak the registry vocabulary
+        // (ADR-011) — with the serie label they never resolved a row.
+        $type     = $this->resolveTemplateType($invoice);
         $template = null;
 
         if ($invoice->template_name) {
             $template = InvoiceTemplate::getByName(
                 $invoice->template_name,
-                $invoice->getInvoiceType()
+                $type->registryKey()
             );
         }
 
         if (! $template) {
             $template = InvoiceTemplate::getDefaultForType(
-                $invoice->getInvoiceType()
+                $type->registryKey()
             );
         }
 
@@ -601,22 +637,6 @@ class DomPDFService
     protected function getCompanyId(Invoice $invoice): string
     {
         return (string) $invoice->company_fiscal_config_id;
-    }
-
-    /**
-     * Convert invoice type string to TemplateInvoiceType enum
-     *
-     * @param  string  $invoiceType  Invoice type string (e.g., 'invoice', 'proforma')
-     * @return TemplateInvoiceType Corresponding enum value
-     */
-    protected function convertToTemplateInvoiceType(string $invoiceType): TemplateInvoiceType
-    {
-        return match (strtolower($invoiceType)) {
-            'proforma'                         => TemplateInvoiceType::PROFORMA,
-            'reverse_charge', 'reverse-charge' => TemplateInvoiceType::REVERSE_CHARGE,
-            'exempt'                           => TemplateInvoiceType::EXEMPT,
-            default                            => TemplateInvoiceType::FISCAL, // invoice, simplified, rectificative -> fiscal
-        };
     }
 
     /**
