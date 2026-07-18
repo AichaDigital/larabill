@@ -342,8 +342,12 @@ class InvoiceService
     public function convertProformaToInvoice(Invoice $proforma, array $options = []): Invoice|array
     {
         return DB::transaction(function () use ($proforma, $options): Invoice|array {
-            // Refresh proforma within transaction
-            $proforma->refresh();
+            // AID-554 (D1): re-read the proforma under an exclusive row lock.
+            // The idempotency check below must not race a concurrent conversion
+            // of the same proforma — without the lock, N callers could all
+            // observe converted_invoice_id = NULL and each mint a final invoice
+            // (or crash on the nested numbering first-use deadlock).
+            $proforma = Invoice::whereKey($proforma->getKey())->lockForUpdate()->firstOrFail();
 
             if ($proforma->serie !== InvoiceSerieType::PROFORMA) {
                 throw new \InvalidArgumentException('Invoice is not a proforma');
