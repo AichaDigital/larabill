@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 use AichaDigital\Larabill\Support\FiscalQrImage;
 
+// AID-536: this suite owns the mutation testing of its subject (pest --mutate).
+mutates(FiscalQrImage::class);
+
 it('classifies a well-formed svg', function () {
     $svg = '<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10"><rect width="10" height="10"/></svg>';
 
