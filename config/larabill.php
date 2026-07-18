@@ -127,6 +127,22 @@ return [
         | false => such an invoice is rendered without the tax block.
         */
         'require_fiscal_verification_qr' => env('LARABILL_REQUIRE_FISCAL_QR', false),
+
+        /*
+        | The safe-restyle guarantee (ADR-011, AID-502). After rendering a
+        | FISCAL invoice, larabill asserts that every non-empty mandatory
+        | fiscal datum handed to the template (number, dates, party
+        | identification, per-line and per-rate figures, totals — RD 1619/2012
+        | arts. 6/7) appears in the output: a consumer template may restyle
+        | everything, but it may not silently drop or rewrite fiscal values.
+        |
+        | true  => a template that drops mandatory content is an explicit
+        |          failure (FiscalContentMissingException at the frontier).
+        | false => the installation assumes the risk of emitting non-compliant
+        |          documents from its own templates. Proformas are never
+        |          validated (not fiscal documents).
+        */
+        'validate_fiscal_content' => env('LARABILL_PDF_VALIDATE_FISCAL_CONTENT', true),
     ],
 
     // Destination VAT settings

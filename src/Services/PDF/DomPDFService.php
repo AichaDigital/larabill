@@ -78,6 +78,14 @@ class DomPDFService
         $templateData = $this->prepareTemplateData($invoice, $qrData, $includeQR);
         $html         = $this->renderTemplate($template, $templateData);
 
+        // The safe-restyle guarantee (ADR-011, AID-502): a template — the
+        // consumer's included — may not silently drop mandatory fiscal
+        // content. Fiscal series only; a proforma is not a fiscal document.
+        // The exception propagates raw to the frontier (AID-535).
+        if ($invoice->serie->isFiscal() && (bool) config('larabill.pdf.validate_fiscal_content', true)) {
+            (new FiscalContentValidator)->validate($invoice, $templateData, $html);
+        }
+
         $this->dompdf->loadHtml($html);
         $this->dompdf->render();
 

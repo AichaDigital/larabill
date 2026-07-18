@@ -17,12 +17,12 @@
 
 | Directory | Tag | Rationale (boundary-spec band) |
 |---|---|---|
-| `Models/` (21) | `@api` | Yellow band: columns/casts/relations/scopes are read directly by consumers. The amber fiscal operations additionally carry method-level `@api` (7 methods, guarded by the contract snapshots) |
+| `Models/` (21) | `@api` | Yellow band: columns/casts/relations/scopes are read directly by consumers. The amber fiscal operations additionally carry method-level `@api` (8 methods, guarded by the contract snapshots; `Invoice::generatePDF()` joined in AID-502/ADR-011 with its result shape as the contract) |
 | `Enums/` (17) | `@api` | Green band: consumed directly everywhere |
 | `Concerns/` (3) | `@api` | Green band; `HasUuid` and `HasUserRelationships` are applied to the CONSUMER's own User model |
 | `ValueObjects/` (1) | `@api` | `InvoiceNumber` is the return type of the public numbering API |
 | `Contracts/` (3) | `@api` | Extension points for consumers and sibling packages (PDF connectors, fiscal verification, tax strategies) |
-| `Exceptions/` (6) | `@api` | Thrown across the boundary; consumers catch them |
+| `Exceptions/` (7) | `@api` | Thrown across the boundary; consumers catch them |
 | `Events/` (7) | `@api` | Consumers listen to them |
 | `Actions/` (4) | `@api` | `VerifyVatNumber` (lararoi bridge) + the three `Process*` scheduler entry points |
 | `DataTransferObjects/` (6) | `@api` | Appear (directly or nested) in `@api` service signatures |
@@ -37,7 +37,7 @@
 ### Services split
 
 - **`@api` (13):** `InvoiceService`, `InvoiceNumberingService`, `InvoiceSeriesResolver` (AID-307 — the single source of the fiscal series), `InvoiceVerifactuService`, `TaxCalculationService`, `FiscalChangeDetector` (real consumer usage), `RecurringBillingService`, `ServiceLifecycleService`, `GroupedPaymentService`, `PricingService`, `EuSalesThresholdService`, `DestinationVatService`, `CommissionCalculationService` (consumer-orchestrated domain). (`BillingService`, formerly `@api` + `@deprecated`, was removed in v6.0.0/AID-423.)
-- **`@internal` (9):** `FiscalIntegrityChecker` (creating-hook mechanism; its public exception is the contract), `ModelMappingService` (the config keys are public, not the resolver), `CacheService`, `PDFService`/`DomPDFService`/`DefaultPDFConnector` (public surface is `Invoice::generatePDF()` + `PDFConnectorInterface`), `VerifactuAdapter`, `FakeFiscalVerification` (test double; promotable), `VatCalculationStrategy` (default implementation — the contract is the API).
+- **`@internal` (10):** `FiscalIntegrityChecker` (creating-hook mechanism; its public exception is the contract), `ModelMappingService` (the config keys are public, not the resolver), `CacheService`, `PDFService`/`DomPDFService`/`DefaultPDFConnector`/`FiscalContentValidator` (public surface is `Invoice::generatePDF()` + `PDFConnectorInterface` + the typed exceptions; the validator's contract is `FiscalContentMissingException` — ADR-011), `VerifactuAdapter`, `FakeFiscalVerification` (test double; promotable), `VatCalculationStrategy` (default implementation — the contract is the API).
 
 ## Notes / candidates recorded here (not acted on in AID-413)
 

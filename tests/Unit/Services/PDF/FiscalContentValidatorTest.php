@@ -6,6 +6,7 @@ use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Exceptions\FiscalContentMissingException;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Services\PDF\FiscalContentValidator;
+use Carbon\Carbon;
 
 /**
  * AID-502 (ADR-011, D2a): the post-render guard of the safe-restyle guarantee.
@@ -15,12 +16,12 @@ use AichaDigital\Larabill\Services\PDF\FiscalContentValidator;
  * RENDER FIDELITY, not data completeness (an empty datum is an emission
  * concern, out of its scope).
  */
-function fiscalInvoiceFor(InvoiceSerieType $serie = InvoiceSerieType::INVOICE): Invoice
+function validatorFiscalInvoice(InvoiceSerieType $serie = InvoiceSerieType::INVOICE): Invoice
 {
     $invoice                = new Invoice;
     $invoice->serie         = $serie;
     $invoice->fiscal_number = 'FAC-2026-000123';
-    $invoice->invoice_date  = \Carbon\Carbon::parse('2026-07-18');
+    $invoice->invoice_date  = Carbon::parse('2026-07-18');
 
     return $invoice;
 }
@@ -60,20 +61,20 @@ function htmlWithEverything(): string
 }
 
 it('passes a rendered output carrying every mandatory datum', function () {
-    (new FiscalContentValidator)->validate(fiscalInvoiceFor(), completeTemplateData(), htmlWithEverything());
+    (new FiscalContentValidator)->validate(validatorFiscalInvoice(), completeTemplateData(), htmlWithEverything());
 })->throwsNoExceptions();
 
 it('throws naming the missing field when the number is dropped', function () {
     $html = str_replace('FAC-2026-000123', '', htmlWithEverything());
 
-    expect(fn () => (new FiscalContentValidator)->validate(fiscalInvoiceFor(), completeTemplateData(), $html))
+    expect(fn () => (new FiscalContentValidator)->validate(validatorFiscalInvoice(), completeTemplateData(), $html))
         ->toThrow(FiscalContentMissingException::class, 'fiscal_number');
 });
 
 it('accepts the expedition date in any tolerated format', function (string $rendered) {
     $html = str_replace('18/07/2026', $rendered, htmlWithEverything());
 
-    (new FiscalContentValidator)->validate(fiscalInvoiceFor(), completeTemplateData(), $html);
+    (new FiscalContentValidator)->validate(validatorFiscalInvoice(), completeTemplateData(), $html);
 })->with([
     'ISO'         => '2026-07-18',
     'dashed'      => '18-07-2026',
@@ -83,7 +84,7 @@ it('accepts the expedition date in any tolerated format', function (string $rend
 it('throws when the expedition date appears in no tolerated format', function () {
     $html = str_replace('18/07/2026', '18 de julio de 2026', htmlWithEverything());
 
-    expect(fn () => (new FiscalContentValidator)->validate(fiscalInvoiceFor(), completeTemplateData(), $html))
+    expect(fn () => (new FiscalContentValidator)->validate(validatorFiscalInvoice(), completeTemplateData(), $html))
         ->toThrow(FiscalContentMissingException::class, 'invoice_date');
 });
 
@@ -91,20 +92,20 @@ it('requires the operation date verbatim when the data layer computed one', func
     $data                   = completeTemplateData();
     $data['operation_date'] = '01/07/2026';
 
-    expect(fn () => (new FiscalContentValidator)->validate(fiscalInvoiceFor(), $data, htmlWithEverything()))
+    expect(fn () => (new FiscalContentValidator)->validate(validatorFiscalInvoice(), $data, htmlWithEverything()))
         ->toThrow(FiscalContentMissingException::class, 'operation_date');
 });
 
 it('does not require customer identification on a simplified invoice', function () {
     $html = str_replace(['Cliente &amp; Asociados', 'X1234567L'], '', htmlWithEverything());
 
-    (new FiscalContentValidator)->validate(fiscalInvoiceFor(InvoiceSerieType::SIMPLIFIED), completeTemplateData(), $html);
+    (new FiscalContentValidator)->validate(validatorFiscalInvoice(InvoiceSerieType::SIMPLIFIED), completeTemplateData(), $html);
 })->throwsNoExceptions();
 
 it('requires customer identification on a standard invoice', function () {
     $html = str_replace(['Cliente &amp; Asociados', 'X1234567L'], '', htmlWithEverything());
 
-    expect(fn () => (new FiscalContentValidator)->validate(fiscalInvoiceFor(), completeTemplateData(), $html))
+    expect(fn () => (new FiscalContentValidator)->validate(validatorFiscalInvoice(), completeTemplateData(), $html))
         ->toThrow(FiscalContentMissingException::class, 'customer.name');
 });
 
@@ -116,7 +117,7 @@ it('skips mandatory slots whose datum is empty in the data layer', function () {
 
     $html = str_replace('B12345678', '', htmlWithEverything());
 
-    (new FiscalContentValidator)->validate(fiscalInvoiceFor(), $data, $html);
+    (new FiscalContentValidator)->validate(validatorFiscalInvoice(), $data, $html);
 })->throwsNoExceptions();
 
 it('finds values regardless of markup, entities and whitespace', function () {
@@ -127,14 +128,14 @@ it('finds values regardless of markup, entities and whitespace', function () {
         htmlWithEverything()
     );
 
-    (new FiscalContentValidator)->validate(fiscalInvoiceFor(), completeTemplateData(), $html);
+    (new FiscalContentValidator)->validate(validatorFiscalInvoice(), completeTemplateData(), $html);
 })->throwsNoExceptions();
 
 it('requires every tax breakdown row, not just the first', function () {
     $data                                      = completeTemplateData();
     $data['totals']['tax_breakdown'][]         = ['name' => 'IVA 10%', 'rate' => '10.00', 'base' => '50.00', 'amount' => '5.00'];
 
-    expect(fn () => (new FiscalContentValidator)->validate(fiscalInvoiceFor(), $data, htmlWithEverything()))
+    expect(fn () => (new FiscalContentValidator)->validate(validatorFiscalInvoice(), $data, htmlWithEverything()))
         ->toThrow(FiscalContentMissingException::class, 'tax_breakdown.1');
 });
 
@@ -142,7 +143,7 @@ it('lists every missing field in one exception', function () {
     $html = '<html><body>nothing fiscal here</body></html>';
 
     try {
-        (new FiscalContentValidator)->validate(fiscalInvoiceFor(), completeTemplateData(), $html);
+        (new FiscalContentValidator)->validate(validatorFiscalInvoice(), completeTemplateData(), $html);
         $this->fail('Expected FiscalContentMissingException');
     } catch (FiscalContentMissingException $e) {
         expect($e->getMessage())

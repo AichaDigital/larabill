@@ -4,6 +4,15 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **A consumer template can no longer silently drop mandatory fiscal content (AID-502, ADR-011).** After rendering a fiscal invoice, larabill now asserts that every non-empty mandatory fiscal datum handed to the template (number, expedition/operation dates, party identification, per-line description and unit price, per-rate breakdown figures, totals — RD 1619/2012 arts. 6/7) appears in the output; a template that drops one fails explicitly (`FiscalContentMissingException` translated at the frontier, single log line) instead of emitting a plausible non-compliant PDF. The package's own six templates pass by construction; simplified invoices do not require recipient identification; proformas are never validated. **Behaviour change:** installations with restyled override templates that dropped mandatory content now get an explicit failure — fix the template, or consciously assume the risk via `larabill.pdf.validate_fiscal_content` (default `true`, env `LARABILL_PDF_VALIDATE_FISCAL_CONTENT`). The guard checks render fidelity, not data completeness: a datum empty in the data layer is an emission concern and is skipped.
+- **`Invoice::generatePDF()` is now supported public surface (AID-502, ADR-011).** Promoted to method-level `@api` (amber band, gate `SurfaceTaxonomyTest`) with its result shape documented as the contract — success: `success`/`pdf_path`/`pdf_url` (always `null`; delivery is the consumer's, AID-508)/`qr_data`/`connector_used`/`generated_at`; failure: `success=false`/`error`/`connector_used`/`generated_at`. The services behind it stay `@internal`; the subsystem's public surface is this method, `PDFConnectorInterface` and the typed exceptions.
+
+### Fixed
+
+- **The template registry finally resolves for fiscal invoices (AID-502, ADR-011).** Lookups against `invoice_templates` passed the fiscal serie label (`invoice`, `simplified`, …) while the rows are typed with the presentation vocabulary (`fiscal`, `proforma`, `reverse-charge`, `exempt`), so no fiscal invoice ever resolved a registry row: `template_name` was silently ignored (warning + hardcoded fallback) and the seeded default settings never applied. The template type now has a single derivation (`TemplateInvoiceType`, exposed to rows via `registryKey()`), and the resolution chain is: requested `template_name` → the registry's default row for the type (which now governs the **view**, not just settings) → the package blade. **Behaviour change:** `template_name` and custom default rows on fiscal invoices are honoured for the first time, and notes/payment-terms/settings lookups for reverse-charge and exempt invoices now consult their own template type — the `REVERSE_CHARGE`/`EXEMPT` arms of the settings vocabulary were unreachable before (everything non-proforma resolved as `FISCAL`).
+
 ## [6.5.1] - 2026-07-18
 
 **Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`; no `larabill:install` re-run or `migrate` needed.
