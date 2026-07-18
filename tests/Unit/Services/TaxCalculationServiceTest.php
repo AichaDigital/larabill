@@ -11,7 +11,7 @@ use AichaDigital\Larabill\Services\TaxCalculationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 // AID-536: this suite owns the mutation testing of its subject (pest --mutate).
-mutates(\AichaDigital\Larabill\Services\TaxCalculationService::class);
+mutates(TaxCalculationService::class);
 
 uses(RefreshDatabase::class);
 

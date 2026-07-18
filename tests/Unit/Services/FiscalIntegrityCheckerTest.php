@@ -11,7 +11,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Notification;
 
 // AID-536: this suite owns the mutation testing of its subject (pest --mutate).
-mutates(\AichaDigital\Larabill\Services\FiscalIntegrityChecker::class);
+mutates(FiscalIntegrityChecker::class);
 
 uses(RefreshDatabase::class);
 

@@ -11,7 +11,7 @@ use AichaDigital\Larabill\Services\FiscalChangeDetector;
 use AichaDigital\Larabill\Tests\Models\TestUser;
 
 // AID-536: this suite owns the mutation testing of its subject (pest --mutate).
-mutates(\AichaDigital\Larabill\Services\FiscalChangeDetector::class);
+mutates(FiscalChangeDetector::class);
 
 uses()->group('unit', 'services', 'fiscal-change-detector');
 

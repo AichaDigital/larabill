@@ -8,7 +8,7 @@ use AichaDigital\Larabill\Services\TaxCalculation\VatCalculationStrategy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 // AID-536: this suite owns the mutation testing of its subject (pest --mutate).
-mutates(\AichaDigital\Larabill\Services\TaxCalculation\VatCalculationStrategy::class);
+mutates(VatCalculationStrategy::class);
 
 uses(RefreshDatabase::class);
 

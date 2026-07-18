@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 // AID-536: this suite owns the mutation testing of its subject (pest --mutate).
-mutates(\AichaDigital\Larabill\Services\InvoiceNumberingService::class);
+mutates(InvoiceNumberingService::class);
 
 beforeEach(function () {
     $this->service = new InvoiceNumberingService;
