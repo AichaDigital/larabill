@@ -10,6 +10,7 @@ All notable changes to `larabill` will be documented in this file.
 
 ### Fixed
 
+- **The fiscal QR prints at 35mm and cannot smuggle external references (AID-537).** Two hardenings of the QR render: (1) inline SVG renders at its **intrinsic** size in dompdf — the template's 35mm wrapper never rescaled it, so the 300px QR lara-verifactu emits printed at ~79mm, **double** the AEAT 30–40mm band (QR spec v0.4.7 arts. 20-21); the SVG root is now normalized to the 35mm box (132px @ 96dpi, viewBox preserved or synthesized) before reaching the template. (2) A well-formed SVG carrying `href`/`xlink:href` to anything outside the document, or an external `url(...)` in styles, is now rejected by `FiscalQrImage::classify()` — the value is inlined raw and dompdf runs with `isRemoteEnabled` (defense-in-depth: reaching the column already requires DB write access); fragment (`#id`) and `data:` references stay accepted.
 - **The PDF frontier catches `\Throwable` and is the subsystem's single logger (AID-535).** A raw `\Error`/`TypeError` from the engine escaped the "single translator" (`catch (\Exception)`) as an uncaught throwable; it now reaches the consumer as `['success' => false]` like any other failure. The render-level `Log::error` + rethrow is gone — one failure, one log line, at the frontier (enriched with the exception location); the failing view's name travels inside the exception itself. The template-fallback `Log::warning` stays: it is an operational signal, not duplication.
 
 ## [6.5.0] - 2026-07-18

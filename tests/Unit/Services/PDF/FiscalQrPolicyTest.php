@@ -117,7 +117,24 @@ it('fails explicitly when the QR is present but the record is incoherent', funct
 
     $result = (new PDFService)->generatePDF($invoice);
 
-    expect($result['success'])->toBeFalse();
+    expect($result['success'])->toBeFalse()
+        ->and($invoice->getPDFPath())->toBeNull();
+});
+
+it('hands the template a QR normalized to the 35mm box, whatever its intrinsic size (AID-537)', function () {
+    $invoice = makeQrInvoice(InvoiceSerieType::INVOICE, registered: true);
+    // The real lara-verifactu/BaconQrCode shape: 300px intrinsic + viewBox.
+    // Inline SVG renders at intrinsic size in dompdf (~79mm) — the 35mm
+    // wrapper div does not rescale it.
+    $invoice->update(['fiscal_verification_qr' => '<?xml version="1.0" encoding="UTF-8"?>'."\n"
+        .'<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="300" height="300" viewBox="0 0 300 300"><rect x="0" y="0" width="300" height="300" fill="#ffffff"/></svg>']);
+
+    $result = (new PDFService)->generatePDF($invoice);
+
+    expect($result['success'])->toBeTrue()
+        ->and($result['qr_data']['qr_svg'])->toContain('width="132"')
+        ->and($result['qr_data']['qr_svg'])->toContain('height="132"')
+        ->and($result['qr_data']['qr_svg'])->toContain('viewBox="0 0 300 300"');
 });
 
 it('renders without the tax block when the contract is not required', function () {

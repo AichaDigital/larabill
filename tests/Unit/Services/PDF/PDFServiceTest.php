@@ -159,7 +159,9 @@ it('uses the persisted fiscal verification QR when generating fiscal PDFs', func
 
     expect($result['success'])->toBeTrue()
         ->and($result['qr_data']['source'])->toBe('fiscal_verification')
-        ->and($result['qr_data']['qr_svg'])->toBe('<svg data-testid="verifactu-qr"></svg>')
+        // AID-537: the svg reaches the template normalized to the 35mm box.
+        ->and($result['qr_data']['qr_svg'])->toContain('data-testid="verifactu-qr"')
+        ->and($result['qr_data']['qr_svg'])->toContain('width="132"')
         ->and($result['qr_data']['qr_url'])->toBe('https://prewww2.aeat.es/qr?id=REG-000001');
 });
 
