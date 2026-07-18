@@ -46,6 +46,16 @@ it('converts a proforma into a final invoice and freezes the proforma', function
         ->and($frozen->converted_at)->not->toBeNull();
 });
 
+it('links the final invoice back to its proforma through the canonical proforma_id', function () {
+    $service  = app(InvoiceService::class);
+    $proforma = $service->createProforma(['billable_user_id' => $this->customer->id, 'items' => []]);
+
+    $invoice = $service->convertProformaToInvoice($proforma);
+
+    expect((string) $invoice->proforma_id)->toBe((string) $proforma->id)
+        ->and($invoice->proforma->is($proforma))->toBeTrue();
+});
+
 it('returns the already-created invoice when converting the same proforma again', function () {
     $service  = app(InvoiceService::class);
     $proforma = $service->createProforma(['billable_user_id' => $this->customer->id, 'items' => []]);

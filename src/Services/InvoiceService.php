@@ -59,7 +59,8 @@ class InvoiceService
      *     status?: string,
      *     due_date?: string|null,
      *     payment_terms?: int|null,
-     *     template_name?: string|null
+     *     template_name?: string|null,
+     *     proforma_id?: string|null
      * }  $invoiceData
      * @param  array{
      *     make_immutable?: bool,
@@ -117,6 +118,7 @@ class InvoiceService
                 'user_id'                   => $userId,
                 'company_fiscal_config_id'  => $companyConfig->id,
                 'user_tax_profile_id'       => $userTaxProfile?->id,
+                'proforma_id'               => $invoiceData['proforma_id'] ?? null,
                 'is_immutable'              => false,
                 'due_date'                  => $invoiceData['due_date']      ?? null,
                 'payment_terms'             => $invoiceData['payment_terms'] ?? null,
@@ -392,6 +394,9 @@ class InvoiceService
             $invoiceData = [
                 'billable_user_id' => (string) $proforma->billable_user_id,
                 'user_id'          => (string) $proforma->user_id,
+                // AID-555 (D2): canonical invoice→proforma link; the inverse
+                // mirror (converted_invoice_id) alone left proforma() unreadable.
+                'proforma_id'      => (string) $proforma->id,
                 'items'            => $proforma->items->map(fn (InvoiceItem $item) => [
                     'article_id'  => $item->article_id,
                     'description' => $item->description,
