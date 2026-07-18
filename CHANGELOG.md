@@ -4,6 +4,10 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+## [6.4.1] - 2026-07-18
+
+**Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`; no `larabill:install` re-run or `migrate` needed.
+
 ### Fixed
 
 - **The PDF prints the recipient frozen at issuance, never today's profile (AID-546).** `getClientData()` built the «FACTURAR A» block from the live `UserTaxProfile` relation — editing the client's profile after issuance rewrote the PDF of every historical invoice. It now reads the encrypted `customer_snapshot` (ADR-001), the customer half of the identity defect AID-508 fixed on the issuer side. Legacy invoices frozen before the snapshot existed fall back to the live profile, a documented best-effort limitation (mirror of the issuer path). **Behaviour change:** the VAT-exemption mention (`fiscal_data.exempt`) is frozen with the invoice too — it used to follow the live profile's `is_exempt_vat`.
