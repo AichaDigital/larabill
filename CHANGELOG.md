@@ -4,6 +4,10 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+## [6.5.0] - 2026-07-18
+
+**Ships migrations: yes** — upgrade is `composer update aichadigital/larabill`, then re-run `php artisan larabill:install` (idempotent: publishes only the new migration by name) and `php artisan migrate`. Installations auto-loading the package migrations (no published stubs) only need `composer update` + `php artisan migrate`.
+
 ### Fixed
 
 - **The user model mapping can no longer resolve a tests-only class, and `larabill.user_model` is honoured as its fallback (AID-553).** `ModelMappingService::getModelClass('user')` silently defaulted to `AichaDigital\Larabill\Tests\Models\User` — an autoload-dev class that never autoloads in production — whenever `larabill.models.user` did not resolve, ignoring the documented `larabill.user_model` key. Resolution is now a chain: `larabill.models.user` (explicit override) → `larabill.user_model` → a loud `RuntimeException` naming the keys to set. **Behaviour change:** installs where neither key points to an existing class fail loudly instead of silently binding `Invoice::user()`/`billableUser()`/`UserTaxProfile` relations to a phantom model — the state that made the `creating` hook skip `customer_snapshot` generation in silence.
