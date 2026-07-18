@@ -4,6 +4,10 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+## [6.6.0] - 2026-07-18
+
+**Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`; no `larabill:install` re-run or `migrate` needed.
+
 ### Added
 
 - **A consumer template can no longer silently drop mandatory fiscal content (AID-502, ADR-011).** After rendering a fiscal invoice, larabill now asserts that every non-empty mandatory fiscal datum handed to the template (number, expedition/operation dates, party identification, per-line description and unit price, per-rate breakdown figures, totals — RD 1619/2012 arts. 6/7) appears in the output; a template that drops one fails explicitly (`FiscalContentMissingException` translated at the frontier, single log line) instead of emitting a plausible non-compliant PDF. The package's own six templates pass by construction; simplified invoices do not require recipient identification; proformas are never validated. **Behaviour change:** installations with restyled override templates that dropped mandatory content now get an explicit failure — fix the template, or consciously assume the risk via `larabill.pdf.validate_fiscal_content` (default `true`, env `LARABILL_PDF_VALIDATE_FISCAL_CONTENT`). The guard checks render fidelity, not data completeness: a datum empty in the data layer is an emission concern and is skipped.
