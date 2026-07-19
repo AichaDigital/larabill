@@ -89,3 +89,17 @@ it('lets the installation assume the risk via config', function () {
 it('ships the guard enabled by default', function () {
     expect(config('larabill.pdf.validate_fiscal_content'))->toBeTrue();
 });
+
+it('gives guardedInvoice a FISCAL fixture: InvoiceFactory never rolls is_roi_taxed on', function () {
+    // Regression guard (AID-576 cleanup) for the nondeterministic failure of
+    // "fails loud when a consumer template drops mandatory fiscal content".
+    // guardedInvoice() relies on the factory yielding a plain FISCAL invoice.
+    // The old random default (faker->boolean(10)) flipped ~10% of these to
+    // reverse-charge, which resolveTemplateType() routes to the CONFORMANT
+    // package reverse-charge blade — bypassing the broken-template guard and
+    // making success=true. The default must stay deterministic (same
+    // factory-coin class as AID-508 / AID-558).
+    $flags = collect(range(1, 60))->map(fn (): bool => (bool) Invoice::factory()->make()->is_roi_taxed);
+
+    expect($flags->contains(true))->toBeFalse();
+});

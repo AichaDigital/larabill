@@ -67,7 +67,14 @@ class InvoiceFactory extends Factory
             'issuer_snapshot'   => null,
             'customer_snapshot' => null,
             'fiscal_snapshot'   => null,
-            'is_roi_taxed'      => $this->faker->boolean(10),
+            // Reverse charge: deterministic false default (AID-576, same class
+            // as the AID-558 is_immutable coin). The old 10% random default fed
+            // DomPDFService::resolveTemplateType(), so ~10% of fiscal fixtures
+            // silently resolved as reverse-charge and rendered the conformant
+            // package blade — flaking any guard that assumes a plain FISCAL
+            // invoice. A test that needs reverse charge states it (is_roi_taxed
+            // => true), never inherits it from a dice roll.
+            'is_roi_taxed'      => false,
 
             // v0.3.3: Renamed amount fields
             'taxable_amount'   => FixedDecimal::ofUnscaled($taxableAmount, 2),
