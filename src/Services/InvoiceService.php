@@ -75,7 +75,7 @@ class InvoiceService
      *     user_id?: string,
      *     items: array<int, InvoiceItemData>,
      *     type?: string,
-     *     series?: string,
+     *     series?: string|null,
      *     status?: string,
      *     service_date?: string|null,
      *     due_date?: string|null,
@@ -434,7 +434,8 @@ class InvoiceService
      * @param  array{
      *     verify_fiscally?: bool,
      *     force?: bool,
-     *     on_changes?: 'throw'|'warn'|'ignore'
+     *     on_changes?: 'throw'|'warn'|'ignore',
+     *     series?: string|null
      * }  $options
      * @return Invoice|array{invoice: Invoice, warnings: array<string>}
      *
@@ -526,6 +527,11 @@ class InvoiceService
                 ])->toArray(),
                 'type'          => 'invoice',
                 'status'        => 'pending',
+                // AID-576: forward the per-call fiscal series a consumer opted
+                // into (RD 1619/2012 art. 6 — multiple series for the same
+                // type). null → InvoiceSeriesResolver resolves the default,
+                // so omitting the option leaves numbering exactly as before.
+                'series'        => $options['series'] ?? null,
                 // AID-559 (D10): the operation date the proforma declared
                 // (RD 1619/2012 art. 6.1.f/i) survives the conversion. No
                 // datum → null, documented — never an invented date.

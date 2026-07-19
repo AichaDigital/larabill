@@ -183,3 +183,52 @@ it('rejects converting an invoice that is not a proforma', function () {
     expect(fn () => $service->convertProformaToInvoice($invoice))
         ->toThrow(InvalidArgumentException::class, 'not a proforma');
 });
+
+/*
+ * AID-576 (v6.7.0) — the conversion forwards a per-call fiscal series.
+ *
+ * A consumer running multiple series for the same fiscal type (RD 1619/2012
+ * art. 6 — e.g. Castris's `AAICHA`) can now govern the final invoice's series
+ * at conversion, instead of the manual proforma→invoice rebuild AID-576
+ * reconciles away. The option flows into createInvoice's `series`, which
+ * InvoiceSeriesResolver already resolves; defaults stay untouched.
+ */
+it('numbers the final invoice on a series requested via the conversion option', function () {
+    $service  = app(InvoiceService::class);
+    $proforma = $service->createProforma(['billable_user_id' => $this->customer->id, 'items' => []]);
+
+    $invoice = $service->convertProformaToInvoice($proforma, ['series' => 'AAICHA']);
+
+    // The requested series governs the prefix (distinct from the installation
+    // default FAC) and drives the correlative on that virgin series.
+    expect($invoice)->toBeInstanceOf(Invoice::class)
+        ->and($invoice->prefix)->toBe('AAICHA')
+        ->and($invoice->series_number)->toBe(1);
+});
+
+it('numbers the final invoice on the resolver default when no series option is given', function () {
+    $service  = app(InvoiceService::class);
+    $proforma = $service->createProforma(['billable_user_id' => $this->customer->id, 'items' => []]);
+
+    // Regression pin: the default path must stay exactly as before AID-576 —
+    // omitted option → InvoiceSeriesResolver default for INVOICE (FAC).
+    $invoice = $service->convertProformaToInvoice($proforma);
+
+    expect($invoice->prefix)->toBe('FAC');
+});
+
+it('composes the series option with idempotency, minting no extra number on a repeat conversion', function () {
+    $service  = app(InvoiceService::class);
+    $proforma = $service->createProforma(['billable_user_id' => $this->customer->id, 'items' => []]);
+
+    $first = $service->convertProformaToInvoice($proforma, ['series' => 'AAICHA']);
+
+    // Second conversion of the same proforma re-reads the committed state under
+    // lock and returns the first invoice — it must NOT consume another AAICHA
+    // number (the idempotency guard sits before any numbering).
+    $second = $service->convertProformaToInvoice($proforma, ['series' => 'AAICHA']);
+
+    expect($second->id)->toBe($first->id)
+        ->and($second->prefix)->toBe('AAICHA')
+        ->and(Invoice::where('prefix', 'AAICHA')->count())->toBe(1);
+});
