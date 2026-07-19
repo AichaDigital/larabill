@@ -4,6 +4,12 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+**Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`; no `larabill:install` re-run or `migrate` needed.
+
+### Added
+
+- **The proforma→invoice conversion accepts a per-call fiscal series (AID-576).** `InvoiceService::convertProformaToInvoice()` now takes a `series` option and forwards it into the invoice it builds for `createInvoice()`, which `InvoiceSeriesResolver` already resolves. A consumer running multiple series for the same fiscal type (RD 1619/2012 art. 6 — e.g. Castris's `AAICHA`) can govern the final invoice's series at conversion, so it can delegate to the canonical conversion instead of maintaining a manual proforma→invoice rebuild. **No behaviour change on the default path:** an omitted or `null` option resolves the installation default exactly as before. Additive `@api` surface on an `@api` method (semver-minor).
+
 ## [6.6.0] - 2026-07-18
 
 **Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`; no `larabill:install` re-run or `migrate` needed.
