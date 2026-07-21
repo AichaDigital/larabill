@@ -247,7 +247,7 @@ final class RecurringBillingService
                 'invoice_id'        => $invoice->id,
                 'item_type'         => $article->item_type,
                 'description'       => $article->name,
-                'quantity'          => FixedDecimal::ofUnscaled(1, 2),
+                'quantity'          => FixedDecimal::ofUnscaled(100, 2), // base-100: 1.00 unit
                 'unit_price'        => FixedDecimal::ofUnscaled((int) $pricingDetails->appliedPrice, 2),
                 'service_date_from' => $periodStart,
                 'service_date_to'   => $periodEnd,
