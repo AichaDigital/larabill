@@ -350,7 +350,7 @@ class InvoiceService
      */
     protected function createInvoiceItem(Invoice $invoice, array $itemData): InvoiceItem
     {
-        $quantity  = $itemData['quantity']    ?? 1;
+        $quantity  = $itemData['quantity']    ?? 100; // base-100: 1.00 unit
         $basePrice = $itemData['base_price']  ?? ($itemData['unit_price'] ?? 0);
 
         if (array_key_exists('total_amount', $itemData)) {

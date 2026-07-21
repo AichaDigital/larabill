@@ -4,6 +4,10 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Invoice line quantities are written on the base-100 scale (AID-352).** Two call sites wrote the integer `1` where one whole unit was meant; since `invoice_items.quantity` is a scale-2 `FixedDecimal` (100 = 1.00 unit, as documented in the README and `TaxCalculationService`), those lines were persisted as **0.01 units**. Affected: every line produced by `RecurringBillingService` (wrong quantity printed on the invoice PDF — a mandatory fiscal datum, RD 1619/2012 art. 6 — and a `getTaxableAmount()` off by a factor of 100), and `InvoiceService::createInvoice()` whenever a caller **omitted** `quantity`, whose default also under-scaled the line and the tax base computed from it. **Behaviour change:** callers that omit `quantity` now get 1.00 unit instead of 0.01; callers that pass `quantity` explicitly are unaffected, since the input contract was already base-100. **The fix is forward-only:** lines on already-issued invoices are immutable (ADR-001) and are not rewritten — consumers holding recurring invoices with a `0.01` quantity must handle them through the ordinary fiscal correction path.
+
 ## [6.7.0] - 2026-07-19
 
 **Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`; no `larabill:install` re-run or `migrate` needed.
