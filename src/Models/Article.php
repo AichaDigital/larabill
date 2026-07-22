@@ -311,6 +311,13 @@ class Article extends Model
         // ?float contract and the int-cents expectations of every caller.
         return $this->activePrices()
             ->where('billing_frequency', $frequency)
+            // Deterministic pick when a legacy database still holds overlapping
+            // rows (AID-601): most recent start wins, id breaks the tie. NULL
+            // sorts lowest in MySQL and SQLite, so a dated row beats an
+            // open-start legacy one. Aimed at predictability, not at guessing
+            // the operator's intent — the real fix is removing the duplicate.
+            ->orderByDesc('valid_from')
+            ->orderByDesc('id')
             ->value('price')?->unscaledValue();
     }
 
