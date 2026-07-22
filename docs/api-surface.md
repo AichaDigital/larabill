@@ -22,11 +22,11 @@
 | `Concerns/` (3) | `@api` | Green band; `HasUuid` and `HasUserRelationships` are applied to the CONSUMER's own User model |
 | `ValueObjects/` (1) | `@api` | `InvoiceNumber` is the return type of the public numbering API |
 | `Contracts/` (3) | `@api` | Extension points for consumers and sibling packages (PDF connectors, fiscal verification, tax strategies) |
-| `Exceptions/` (7) | `@api` | Thrown across the boundary; consumers catch them |
+| `Exceptions/` (8) | `@api` | Thrown across the boundary; consumers catch them |
 | `Events/` (7) | `@api` | Consumers listen to them |
 | `Actions/` (4) | `@api` | `VerifyVatNumber` (lararoi bridge) + the three `Process*` scheduler entry points |
 | `DataTransferObjects/` (6) | `@api` | Appear (directly or nested) in `@api` service signatures |
-| `Console/` (1) | `@api` | `larabill:install` is the documented install path |
+| `Console/` (2) | `@api` | `larabill:install` is the documented install path; `larabill:diagnose-price-overlaps` is the read-only pre-upgrade gate for the article price invariant (AID-601/ADR-012) |
 | `Facades/` + `Larabill` | `@api` | Trivial (`version()`/`description()`) but public |
 | `Services/` | mixed | See below |
 | `Support/` | mixed | `MigrationHelper` `@api` (STD-001 setup API, used in real consumer migrations); `RegionalContext` `@internal` (no consumption; promotable) |
@@ -36,7 +36,7 @@
 
 ### Services split
 
-- **`@api` (13):** `InvoiceService` (its `convertProformaToInvoice()` gained the additive `series` option in v6.7.0/AID-576 — forwards a per-call fiscal series into the numbering, semver-minor), `InvoiceNumberingService`, `InvoiceSeriesResolver` (AID-307 — the single source of the fiscal series), `InvoiceVerifactuService`, `TaxCalculationService`, `FiscalChangeDetector` (real consumer usage), `RecurringBillingService`, `ServiceLifecycleService`, `GroupedPaymentService`, `PricingService`, `EuSalesThresholdService`, `DestinationVatService`, `CommissionCalculationService` (consumer-orchestrated domain). (`BillingService`, formerly `@api` + `@deprecated`, was removed in v6.0.0/AID-423.)
+- **`@api` (14):** `InvoiceService` (its `convertProformaToInvoice()` gained the additive `series` option in v6.7.0/AID-576 — forwards a per-call fiscal series into the numbering, semver-minor), `InvoiceNumberingService`, `InvoiceSeriesResolver` (AID-307 — the single source of the fiscal series), `InvoiceVerifactuService`, `TaxCalculationService`, `FiscalChangeDetector` (real consumer usage), `RecurringBillingService`, `ServiceLifecycleService`, `GroupedPaymentService`, `PricingService`, `EuSalesThresholdService`, `DestinationVatService`, `CommissionCalculationService` (consumer-orchestrated domain), `ArticlePriceService` (AID-601/ADR-012 — the locked write path that guarantees the article price non-overlap invariant). (`BillingService`, formerly `@api` + `@deprecated`, was removed in v6.0.0/AID-423.)
 - **`@internal` (10):** `FiscalIntegrityChecker` (creating-hook mechanism; its public exception is the contract), `ModelMappingService` (the config keys are public, not the resolver), `CacheService`, `PDFService`/`DomPDFService`/`DefaultPDFConnector`/`FiscalContentValidator` (public surface is `Invoice::generatePDF()` + `PDFConnectorInterface` + the typed exceptions; the validator's contract is `FiscalContentMissingException` — ADR-011), `VerifactuAdapter`, `FakeFiscalVerification` (test double; promotable), `VatCalculationStrategy` (default implementation — the contract is the API).
 
 ## Notes / candidates recorded here (not acted on in AID-413)
