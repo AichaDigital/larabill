@@ -4,6 +4,10 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+## [6.8.0] - 2026-07-22
+
+**Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`; no `larabill:install` re-run or `migrate` needed. If your database predates this release, run `php artisan larabill:diagnose-price-overlaps` first: writes that overlap are now rejected, and existing overlaps must be resolved by you (see below).
+
 ### Added
 
 - **Article prices can no longer overlap in time for the same article and billing frequency (AID-601, ADR-012).** `article_prices` promises in its index comment a guarantee the index does not give: `valid_from` is nullable, and MySQL allows duplicate NULLs in a unique index, so two prices of the same `(article, billing frequency)` could be active at once. Reading resolves a single value (`Article::getPriceFor()` → `PricingService` → invoice lines), so one of them silently won and reached billed money. The invariant is now enforced on write: `ArticlePrice::scopeOverlapping()` is the single definition of a collision, a `saving` hook raises the new `OverlappingArticlePriceException` on every Eloquent path, and the new `ArticlePriceService::setPrice()` is the guaranteed path — it locks the parent `articles` row before validating, which the hook alone cannot do (with six concurrent processes and the lock removed, five or six of them wrote). **Behaviour change:** writes that were silently accepted before now fail loudly; legitimate price history (disjoint ranges) and inactive rows are unaffected. **No schema change** — MySQL has no exclusion constraints, so the guarantee lives in the application layer.
