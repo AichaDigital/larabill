@@ -35,6 +35,7 @@ Larabill is a professional, **UUID-first** billing and invoicing package for Lar
 - **Preflight check**: `larabill:install` aborts cleanly when `users.id` is not UUID-compatible
 - **Temporal Validity**: Fiscal configurations with `valid_from`/`valid_until` dates
 - **Invoice Immutability**: Protection against modifications after issuance
+- **Non-overlapping prices**: at most one active price per article and billing frequency on any date, enforced on write (ADR-012)
 
 ## 📦 Requirements
 
@@ -66,6 +67,21 @@ This will:
 1. Publish migrations
 2. Run database migrations
 3. Seed default tax categories and rates
+
+### Diagnostic Commands
+
+```bash
+# List article prices that are active at the same time for the same article
+# and billing frequency. Read-only; exits 1 when any pair exists.
+php artisan larabill:diagnose-price-overlaps
+```
+
+Larabill enforces at most one active price per article and billing frequency on
+any given date (ADR-012), and rejects writes that would break it. A database
+written before that invariant may already hold overlapping prices, so run this
+as a **pre-upgrade gate** and resolve what it reports. It does not repair
+anything on purpose: deciding which of two prices survives is a pricing
+decision, and it is yours.
 
 ### Manual Installation (if preferred)
 

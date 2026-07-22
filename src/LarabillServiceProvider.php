@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill;
 
+use AichaDigital\Larabill\Console\DiagnosePriceOverlapsCommand;
 use AichaDigital\Larabill\Console\LarabillInstallCommand;
 use AichaDigital\Larabill\Contracts\Services\TaxCalculation\TaxCalculationStrategy;
 use AichaDigital\Larabill\Events\RecurringBillingCompleted;
@@ -68,6 +69,7 @@ class LarabillServiceProvider extends PackageServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 LarabillInstallCommand::class,
+                DiagnosePriceOverlapsCommand::class,
             ]);
         }
     }

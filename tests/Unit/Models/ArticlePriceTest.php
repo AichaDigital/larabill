@@ -132,7 +132,10 @@ describe('ArticlePrice scopes', function () {
         $article1 = Article::factory()->withoutPrices()->create();
         $article2 = Article::factory()->withoutPrices()->create();
 
-        ArticlePrice::factory()->for($article1)->count(2)->create();
+        // Distinct frequencies: two prices of the same article and frequency
+        // may never be active at once (AID-601).
+        ArticlePrice::factory()->for($article1)->monthly()->create();
+        ArticlePrice::factory()->for($article1)->yearly()->create();
         ArticlePrice::factory()->for($article2)->create();
 
         $prices = ArticlePrice::forArticle($article1->id)->get();
