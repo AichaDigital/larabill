@@ -183,7 +183,7 @@ jobs:
 
   mutation:
     runs-on: ubuntu-latest
-    name: Mutation Testing (Infection, money+fiscal scope)
+    name: Mutation Testing (pest --mutate, money+fiscal scope)
 
     steps:
       - name: Checkout code
