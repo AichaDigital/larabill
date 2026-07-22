@@ -126,6 +126,43 @@ class ArticlePrice extends Model
     }
 
     /**
+     * Scope to the ACTIVE rows of one (article, frequency) whose validity range
+     * intersects the candidate range. NULL is an open end on both sides.
+     *
+     * Single source of truth for the non-overlap invariant (AID-601): used by
+     * the saving hook and by ArticlePriceService. Deliberately pure — it does
+     * NOT exclude the candidate's own row; that is the caller's business, and
+     * keeping it out lets the diagnose command reuse the same condition.
+     *
+     * @param  Builder<static>  $query
+     */
+    public function scopeOverlapping(
+        Builder $query,
+        int $articleId,
+        BillingFrequency $frequency,
+        ?Carbon $validFrom,
+        ?Carbon $validTo,
+    ): void {
+        $query->where('article_id', $articleId)
+            ->where('billing_frequency', $frequency)
+            ->where('is_active', true);
+
+        // candidate.from <= existing.to  (either side NULL ⇒ always true)
+        if ($validFrom !== null) {
+            $query->where(function (Builder $q) use ($validFrom) {
+                $q->whereNull('valid_to')->orWhere('valid_to', '>=', $validFrom);
+            });
+        }
+
+        // existing.from <= candidate.to  (either side NULL ⇒ always true)
+        if ($validTo !== null) {
+            $query->where(function (Builder $q) use ($validTo) {
+                $q->whereNull('valid_from')->orWhere('valid_from', '<=', $validTo);
+            });
+        }
+    }
+
+    /**
      * Scope to filter by billing frequency.
      *
      * @param  Builder<static>  $query
