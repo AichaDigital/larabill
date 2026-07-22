@@ -106,6 +106,39 @@
             "returnType": "void",
             "static": false
         },
+        "scopeOverlapping": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                },
+                {
+                    "name": "articleId",
+                    "type": "int",
+                    "variadic": false
+                },
+                {
+                    "name": "frequency",
+                    "type": "AichaDigital\\Larabill\\Enums\\BillingFrequency",
+                    "variadic": false
+                },
+                {
+                    "name": "validFrom",
+                    "type": "?Carbon\\Carbon",
+                    "variadic": false
+                },
+                {
+                    "name": "validTo",
+                    "type": "?Carbon\\Carbon",
+                    "variadic": false
+                }
+            ],
+            "returnType": "void",
+            "static": false
+        },
         "scopeValidAt": {
             "api": false,
             "deprecated": false,

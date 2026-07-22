@@ -8,6 +8,7 @@ use AichaDigital\Lara100\Casts\FixedDecimalCast;
 use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Database\Factories\ArticlePriceFactory;
 use AichaDigital\Larabill\Enums\BillingFrequency;
+use AichaDigital\Larabill\Exceptions\OverlappingArticlePriceException;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -69,6 +70,48 @@ class ArticlePrice extends Model
         'valid_to'                 => 'date',
         'is_active'                => 'boolean',
     ];
+
+    /**
+     * Enforce the non-overlap invariant on every Eloquent write (AID-601).
+     *
+     * Safety net, not a guarantee: without a transaction two processes can
+     * validate and write concurrently. The guaranteed path is
+     * ArticlePriceService, which locks the parent article first.
+     *
+     * Only active rows are checked — an inactive row is disabled history and
+     * cannot violate the invariant — which also covers reactivation
+     * (is_active false→true), as real an overlap path as any create.
+     *
+     * Note: this runs on every save of an active row, and is_active defaults to
+     * true, so a bulk seeder pays one extra query per price. Deliberate.
+     */
+    protected static function booted(): void
+    {
+        static::saving(function (self $price): void {
+            if (! $price->is_active) {
+                return;
+            }
+
+            $conflicts = self::query()
+                ->overlapping(
+                    $price->article_id,
+                    $price->billing_frequency,
+                    $price->valid_from,
+                    $price->valid_to,
+                )
+                // Explicit self-exclusion on update. Not a bug fix:
+                // whereKeyNot(null) would NOT emit `id != NULL` — the query
+                // builder rewrites a null value with `!=` into `IS NOT NULL`
+                // (Query/Builder.php) — but relying on that rewrite is
+                // unreadable, so the condition is spelled out.
+                ->when($price->exists, fn (Builder $query) => $query->whereKeyNot($price->getKey()))
+                ->get();
+
+            if ($conflicts->isNotEmpty()) {
+                throw OverlappingArticlePriceException::forCandidate($price, $conflicts);
+            }
+        });
+    }
 
     /**
      * Get the article for this price.
