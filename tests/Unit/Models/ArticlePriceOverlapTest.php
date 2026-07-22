@@ -161,7 +161,7 @@ it('names the conflicting rows and the diagnose command in the message', functio
 });
 
 it('survives the consumer delete-then-create pattern', function () {
-    // Regression for the reference consumer (Castris ArticleEdit::save):
+    // Regression for the reference consumer (clientes, ArticleEdit::save):
     // it deletes the ACTIVE rows and re-creates one per frequency.
     aid601SeedPrice($this->article, null, null);
 
