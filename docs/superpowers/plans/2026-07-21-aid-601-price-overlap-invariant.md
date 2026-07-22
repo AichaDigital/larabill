@@ -351,7 +351,7 @@ it('names the conflicting rows and the diagnose command in the message', functio
 });
 
 it('survives the consumer delete-then-create pattern', function () {
-    // Regression for the reference consumer (Castris ArticleEdit::save):
+    // Regression for the reference consumer (clientes, ArticleEdit::save):
     // it deletes the ACTIVE rows and re-creates one per frequency.
     aid601SeedPrice($this->article, null, null);
 
@@ -1107,4 +1107,4 @@ PR en inglés, con: el defecto de dinero, la tabla de opciones descartadas, la e
 - [ ] `git diff main --stat -- database/` **vacío** (ninguna migración tocada)
 - [ ] `git diff main -- tests/Contract/release-migration-manifest.json` **vacío**
 - [ ] CI en verde, incluido el job MySQL 8
-- [ ] Conformidad de Castris contra el commit candidato exacto (constitución §14) antes de etiquetar `6.8.0`
+- [ ] Conformidad de `clientes` contra el commit candidato exacto (constitución §14) antes de etiquetar `6.8.0`

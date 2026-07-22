@@ -12,7 +12,7 @@ No es un defecto cosmético, es **un defecto de dinero**. La invariante «a lo s
 
 - `Article::getPriceFor()` resuelve **un** valor y lo hacía **sin `ORDER BY`** — qué precio ganaba dependía del recorrido del índice.
 - De ahí el valor viaja a `PricingService` y termina en una **línea de factura**, es decir, en dinero facturado.
-- El consumidor de referencia (Castris, `ArticleEdit::save`) borra las filas activas y recrea una por frecuencia — un patrón que solo es correcto **si** la invariante se sostiene.
+- El consumidor de referencia (`clientes`, `ArticleEdit::save`) borra las filas activas y recrea una por frecuencia — un patrón que solo es correcto **si** la invariante se sostiene.
 
 El resultado era un ganador silencioso: dos precios vivos, y el que llegaba a la factura no estaba determinado.
 
