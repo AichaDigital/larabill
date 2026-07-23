@@ -4,6 +4,16 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+**Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`; no `larabill:install` re-run or `migrate` needed. **Before upgrading**, check whether your installation relies on an unconfigured fiscal series: if `larabill.invoice_numbering.series.<type>` (or the matching `LARABILL_SERIES_*` env var) is unset for a fiscal type you actually issue, and you never set the legacy `invoice_prefix`/`proforma_prefix` keys either, set it now — otherwise creating an invoice of that type will start throwing.
+
+### Added
+
+- **`MissingFiscalSeriesException` (AID-589).** New `@api` exception thrown by `InvoiceSeriesResolver::resolve()` when no explicit per-call series, no `larabill.invoice_numbering.series.{type}` config, and no legacy prefix key resolve a fiscal series for the requested type.
+
+### Fixed
+
+- **`InvoiceSeriesResolver` no longer invents a fiscal series when none is configured (AID-589).** The resolver's cascade had a fourth, undocumented step: an unresolved type fell through to `InvoiceSerieType::defaultPrefix()` (`FAC`/`PRO`/`TIK`/`RECT`) — and the shipped `config/larabill.php` carried those same strings as literal defaults, so a fresh install that never touched the config still emitted an invented fiscal series with no warning. RD 1619/2012 art. 6 makes the series a business decision (one installation runs `FAC`, another runs per-tenant series like `CASTRIS`/`AAICHA` — AID-289); the package cannot make that decision silently on the consumer's behalf. **Behaviour change:** `config/larabill.php` now ships `series.*`, `invoice_prefix` and `proforma_prefix` as `null` (previously `'FAC'`/`'PRO'`/`'RECT'`/`'TIK'`), and an unresolved type throws `MissingFiscalSeriesException` instead of silently resolving to a hardcoded default. Installations that already configure a series explicitly (per call, via config, or via the legacy keys) are unaffected. `InvoiceSerieType::defaultPrefix()` is unchanged and still `@api` — it is simply no longer consulted implicitly by the resolver.
+
 ## [6.8.0] - 2026-07-22
 
 **Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`; no `larabill:install` re-run or `migrate` needed. If your database predates this release, run `php artisan larabill:diagnose-price-overlaps` first: writes that overlap are now rejected, and existing overlaps must be resolved by you (see below).
