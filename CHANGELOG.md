@@ -4,7 +4,17 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
-**Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`; no `larabill:install` re-run or `migrate` needed. **Before upgrading**, check whether your installation relies on an unconfigured fiscal series: if `larabill.invoice_numbering.series.<type>` (or the matching `LARABILL_SERIES_*` env var) is unset for a fiscal type you actually issue, and you never set the legacy `invoice_prefix`/`proforma_prefix` keys either, set it now — otherwise creating an invoice of that type will start throwing.
+## [6.9.0] - 2026-07-23
+
+**Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`; no `larabill:install` re-run or `migrate` needed.
+
+**Before upgrading**, check whether your installation relies on a fiscal series it never configured. This runs on the version you already have, so you can decide before touching `composer.lock`:
+
+```bash
+php artisan tinker --execute="dump(config('larabill.invoice_numbering.series'), config('larabill.invoice_numbering.invoice_prefix'), config('larabill.invoice_numbering.proforma_prefix'));"
+```
+
+For every fiscal type you actually issue, the value must come from **your** configuration (your published `config/larabill.php` or a `LARABILL_SERIES_*` env var), not from the package default. If a type you issue shows `FAC`/`PRO`/`TIK`/`RECT` and you never chose that literal, set it explicitly now — after the upgrade an unconfigured type throws instead of resolving silently.
 
 ### Added
 
