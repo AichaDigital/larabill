@@ -87,6 +87,18 @@ class TestCase extends Orchestra
 
         // Override user model for tests
         $app['config']->set('larabill.user_model', TestUser::class);
+
+        // The shipped config carries no default fiscal series (AID-589) — a
+        // series is a business decision the package will not invent. The
+        // suite makes that decision explicitly here, exactly like any real
+        // consumer must, so fixtures keep resolving FAC/PRO/TIK/RECT unless a
+        // test deliberately overrides it (see InvoiceSeriesResolverTest).
+        $app['config']->set('larabill.invoice_numbering.series', [
+            'invoice'       => 'FAC',
+            'proforma'      => 'PRO',
+            'simplified'    => 'TIK',
+            'rectificative' => 'RECT',
+        ]);
     }
 
     /**

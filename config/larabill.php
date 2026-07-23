@@ -64,17 +64,30 @@ return [
         // also pass an explicit series per invoice to run multiple series for
         // the same fiscal type (RD 1619/2012 art. 6). Keys match
         // InvoiceSerieType::label().
+        //
+        // NO DEFAULT VALUE ON PURPOSE (AID-589). A fiscal series is a business
+        // decision — one installation runs 'FAC', another runs per-tenant
+        // series like 'CASTRIS'/'AAICHA'. Before AID-589 this shipped with
+        // 'FAC'/'PRO'/'RECT'/'TIK' baked in, so a fresh install that never
+        // touched this file still emitted an invented fiscal series with no
+        // warning. Set the env var (or the key directly) for every fiscal
+        // type you actually issue, BEFORE creating invoices of that type —
+        // an unresolved type throws MissingFiscalSeriesException instead of
+        // guessing.
         'series' => [
-            'invoice'       => env('LARABILL_SERIES_INVOICE', 'FAC'),
-            'proforma'      => env('LARABILL_SERIES_PROFORMA', 'PRO'),
-            'rectificative' => env('LARABILL_SERIES_RECTIFICATIVE', 'RECT'),
-            'simplified'    => env('LARABILL_SERIES_SIMPLIFIED', 'TIK'),
+            'invoice'       => env('LARABILL_SERIES_INVOICE'),
+            'proforma'      => env('LARABILL_SERIES_PROFORMA'),
+            'rectificative' => env('LARABILL_SERIES_RECTIFICATIVE'),
+            'simplified'    => env('LARABILL_SERIES_SIMPLIFIED'),
         ],
 
-        // Legacy prefix keys — kept as a resolver fallback so a v4 consumer
-        // that upgrades without re-publishing this config keeps working.
-        'proforma_prefix'         => 'PRO',
-        'invoice_prefix'          => 'FAC',
+        // Legacy prefix keys — resolver fallback for a v4 consumer that
+        // upgraded without re-publishing this config. NO DEFAULT VALUE either
+        // (AID-589, same reasoning as 'series' above): only set these if your
+        // installation genuinely used FAC/PRO historically and wants that
+        // preserved without touching the 'series' map.
+        'proforma_prefix'         => null,
+        'invoice_prefix'          => null,
         'suffix_format'           => 'Y', // 'Y' for yearly reset, 'N' for continuous numeric
         'start_number'            => 1,
         'fiscal_year_start_month' => 1, // 1 for January, 7 for July, etc.

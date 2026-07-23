@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Services;
 
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
+use AichaDigital\Larabill\Exceptions\MissingFiscalSeriesException;
 use InvalidArgumentException;
 
 /**
@@ -22,7 +23,15 @@ use InvalidArgumentException;
  *   2. `config('larabill.invoice_numbering.series.{type}')`.
  *   3. Legacy config `invoice_prefix` / `proforma_prefix`, so a v4 consumer
  *      that upgrades without re-publishing its config keeps working.
- *   4. The type's built-in default prefix (FAC/PRO/TIK/RECT).
+ *
+ * There is deliberately no fourth step. Before AID-589 an unresolved type
+ * fell through to `InvoiceSerieType::defaultPrefix()` (`FAC`/`PRO`/`TIK`/
+ * `RECT`), and the shipped config carried those same strings as literal
+ * defaults — so an installation that never configured anything still got a
+ * silently invented fiscal series (RD 1619/2012 art. 6 makes the series a
+ * business decision, not a package default). The shipped config now ships
+ * those keys as `null`; when none of steps 1-3 resolve, `resolve()` throws
+ * `MissingFiscalSeriesException` instead of guessing.
  *
  * The series must be a non-empty string of at most 50 characters — the width
  * of the `prefix` column, derived from the norm (AID-429): the AEAT VERI*FACTU
@@ -49,6 +58,7 @@ final class InvoiceSeriesResolver
      * @param  string|null  $requested  Optional explicit series chosen by the caller.
      *
      * @throws InvalidArgumentException When an explicitly requested series exceeds 50 characters (AID-429).
+     * @throws MissingFiscalSeriesException When no explicit series, config, nor legacy key resolves one (AID-589).
      */
     public function resolve(InvoiceSerieType $type, ?string $requested = null): string
     {
@@ -58,7 +68,7 @@ final class InvoiceSeriesResolver
             return $this->assertFits($explicit);
         }
 
-        return $this->assertFits($this->fromConfig($type) ?? $type->defaultPrefix());
+        return $this->assertFits($this->fromConfig($type) ?? throw MissingFiscalSeriesException::forType($type));
     }
 
     private function fromConfig(InvoiceSerieType $type): ?string

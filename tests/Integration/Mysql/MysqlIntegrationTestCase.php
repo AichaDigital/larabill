@@ -89,6 +89,18 @@ abstract class MysqlIntegrationTestCase extends Orchestra
         // bound to the consumer-shaped `users` table this case creates — the
         // suite must not lean on any implicit default.
         $app['config']->set('larabill.user_model', Support\MysqlUser::class);
+
+        // Same reasoning for the fiscal series (AID-589): the shipped config no
+        // longer carries a default, because a series is a consumer business
+        // decision the package will not invent. This harness — which drives the
+        // real emission paths in tests/Concurrency — declares it explicitly,
+        // exactly like a real consumer must.
+        $app['config']->set('larabill.invoice_numbering.series', [
+            'invoice'       => 'FAC',
+            'proforma'      => 'PRO',
+            'simplified'    => 'TIK',
+            'rectificative' => 'RECT',
+        ]);
     }
 
     protected function getPackageProviders($app)
