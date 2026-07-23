@@ -3,13 +3,18 @@
 <!-- AI-BADGES:START profile=essential -->
 [![Latest Version](https://img.shields.io/packagist/v/aichadigital/larabill.svg?style=flat-square)](https://packagist.org/packages/aichadigital/larabill)
 [![Total Downloads](https://img.shields.io/packagist/dt/aichadigital/larabill.svg?style=flat-square)](https://packagist.org/packages/aichadigital/larabill)
-[![Tests](https://img.shields.io/github/actions/workflow/status/AichaDigital/larabill/tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/AichaDigital/larabill/actions?query=workflow%3Arun-tests+branch%3Amain)
-[![Code Coverage](https://img.shields.io/codecov/c/github/AichaDigital/larabill?style=flat-square&logo=codecov)](https://codecov.io/gh/AichaDigital/larabill)
+[![Pipeline](https://gitlab.castris.com/aichadigital/larabill/badges/main/pipeline.svg?style=flat-square)](https://gitlab.castris.com/aichadigital/larabill/-/pipelines)
+[![Coverage](https://gitlab.castris.com/aichadigital/larabill/badges/main/coverage.svg?style=flat-square)](https://gitlab.castris.com/aichadigital/larabill/-/pipelines)
 [![PHPStan level 8](https://img.shields.io/badge/PHPStan-level%208-brightgreen.svg?style=flat-square&logo=php)](https://phpstan.org/)
 [![PHP Version](https://img.shields.io/packagist/php-v/aichadigital/larabill.svg?style=flat-square&logo=php)](https://packagist.org/packages/aichadigital/larabill)
 [![Laravel Version](https://img.shields.io/badge/Laravel-12.x%20%7C%2013.x-red.svg?style=flat-square&logo=laravel)](https://laravel.com)
 [![License](https://img.shields.io/packagist/l/aichadigital/larabill.svg?style=flat-square)](https://packagist.org/packages/aichadigital/larabill)
 <!-- AI-BADGES:END -->
+
+> Development happens on
+> [gitlab.castris.com](https://gitlab.castris.com/aichadigital/larabill).
+> The GitHub repository is a read-only distribution mirror: issues and pull
+> requests opened there are not seen.
 
 > 🔒 **Stability contract (effective from v6.0.0)** — larabill is a closed, stable product governed by [STABILITY.md](STABILITY.md): breaking changes only enter with a qualified, documented usage imperative; every major is auto-upgradeable from the previous one; deprecations live through at least one full major before removal. As of 6.0 the deprecated backlog is empty and there is **no known future breaking change**.
 
