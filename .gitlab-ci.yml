@@ -1,0 +1,256 @@
+# CI/CD de aichadigital/larabill en GitLab self-hosted (ADE-295 — Fase 3, cierre).
+# Traducción de .github/workflows/{tests,release}.yml.
+# Runner: aichadigital-runner01 (VM 891 en prohe03), tags [aichadigital, docker].
+# El runner es opt-in (run_untagged=false): sin estos tags no se ejecuta nada.
+#
+# Es el paquete PRODUCTO de la umbrela: contrato STABILITY.md, consumidores
+# externos y 45 releases reales. Por eso es el último migrado y el único con un
+# job de RELEASE traducido (release.yml sí funcionaba, a diferencia de los
+# update-changelog.yml muertos del resto).
+#
+# Depende de cuatro paquetes de la umbrela (lara-privacy-core, lara-verifactu,
+# lara100, lararoi), ya migrados: el `composer update` los resuelve por Packagist
+# → dist desde sus espejos de GitHub, sin tocar esta instancia.
+#
+# CAMBIO DE COMPORTAMIENTO DELIBERADO (patrón de la fase): el `code-style` de
+# GitHub corría `pint --test` (verifica) — aquí no hay auto-commit que retirar,
+# a diferencia de laratickets/lararoi.
+
+stages:
+  - quality
+  - test
+  - release
+
+default:
+  tags:
+    - aichadigital
+    - docker
+  interruptible: true
+
+variables:
+  COMPOSER_CACHE_DIR: "$CI_PROJECT_DIR/.composer-cache"
+  COMPOSER_ALLOW_SUPERUSER: "1"
+  # La matriz resuelve cuatro árboles y la mutación recorre el código: el límite
+  # de 300 s de Composer a sus procesos hijo está latente aquí.
+  COMPOSER_PROCESS_TIMEOUT: "0"
+  GIT_DEPTH: "20"
+
+# Se permiten pipelines de rama por defecto, de MR, y de TAG `v*` (para el job de
+# release). Sin la regla de tag, GitLab no crearía el pipeline del tag y la
+# release nunca se emitiría.
+workflow:
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d/
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# Reglas de los jobs de CI: corren en rama/MR pero NUNCA en un pipeline de tag
+# (el tag solo debe emitir la release; los tests ya pasaron antes de mergear,
+# igual que en GitHub).
+.rules-ci:
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+
+# Paquete: sin composer.lock versionado → `composer update`, como en GitHub.
+.php:
+  before_script:
+    - php -v | head -1
+    - composer update --prefer-stable --prefer-dist --no-interaction --no-progress
+  cache:
+    key: "composer-php${PHP_VERSION}-l${LARAVEL}"
+    paths:
+      - .composer-cache/
+
+# --- Stage: quality -----------------------------------------------------------
+
+manifest:
+  stage: quality
+  image: aichadigital/laravel-ci:8.3
+  rules: !reference [.rules-ci, rules]
+  script:
+    - composer validate --strict --no-interaction
+
+pint:
+  stage: quality
+  image: aichadigital/laravel-ci:8.3
+  variables:
+    PHP_VERSION: "8.3"
+  extends: .php
+  rules: !reference [.rules-ci, rules]
+  script:
+    - ./vendor/bin/pint --test
+
+phpstan:
+  stage: quality
+  image: aichadigital/laravel-ci:8.3
+  variables:
+    PHP_VERSION: "8.3"
+  extends: .php
+  rules: !reference [.rules-ci, rules]
+  script:
+    - composer phpstan
+
+# --- Stage: test --------------------------------------------------------------
+
+# PCOV OBLIGATORIO aunque midamos o no: phpunit.xml declara failOnWarning="true",
+# y «No code coverage driver available» es un warning → sin driver la suite aborta
+# sin ejecutar un test (lección de lara-verifactu, 2026-07-22). La imagen trae
+# PCOV deshabilitado, así que se activa y se asierta.
+pest:
+  stage: test
+  image: aichadigital/laravel-ci:$PHP_VERSION
+  parallel:
+    matrix:
+      - PHP_VERSION: ["8.3", "8.4"]
+        LARAVEL: "12.*"
+        TESTBENCH: "10.*"
+      - PHP_VERSION: ["8.3", "8.4"]
+        LARAVEL: "13.*"
+        TESTBENCH: "11.*"
+  cache:
+    key: "composer-php${PHP_VERSION}-l${LARAVEL}"
+    paths:
+      - .composer-cache/
+  rules: !reference [.rules-ci, rules]
+  before_script:
+    - php -v | head -1
+    - composer require "laravel/framework:${LARAVEL}" "orchestra/testbench:${TESTBENCH}" --no-interaction --no-update
+    - composer update --prefer-stable --prefer-dist --no-interaction --no-progress
+    - composer show -D
+  script:
+    - echo 'pcov.enabled=1' > /usr/local/etc/php/conf.d/zz-pcov-on.ini
+    - |
+      if ! php -r 'exit(ini_get("pcov.enabled") ? 0 : 1);'; then
+        echo "PCOV no se activó — la suite abortaría por failOnWarning sin ejecutar nada"
+        exit 1
+      fi
+    - ./vendor/bin/pest --ci --coverage --coverage-clover=coverage.xml
+  coverage: '/Total:\s*(\d+\.\d+)\s*%/'
+  artifacts:
+    when: always
+    paths:
+      - coverage.xml
+    expire_in: 1 week
+
+# Integración contra MySQL real MÁS la prueba de concurrencia por fork. En GitHub
+# eran pasos del mismo job; se conserva así.
+#
+# Dos trampas silenciosas cubiertas con aserción:
+#   1. GitHub publica el servicio en 127.0.0.1; GitLab lo expone por ALIAS de red.
+#   2. MysqlIntegrationTestCase documenta sus «skip semantics»: sin las variables
+#      LARABILL_TEST_MYSQL_* hace markTestSkipped() y «the suite stays green».
+#
+# La prueba de concurrencia (AID-436) NO es opcional: verifica el invariante de
+# numeración (AID-390) bajo fork real, y el workflow la corría en cada push con
+# RUN_CONCURRENCY_IT=1. Sin esa variable, tests/Concurrency se salta en silencio.
+# La imagen trae pcntl, así que corre.
+mysql-integration:
+  stage: test
+  image: aichadigital/laravel-ci:8.3
+  services:
+    - name: mysql:9
+      alias: mysql
+  variables:
+    PHP_VERSION: "8.3"
+    LARAVEL: "12.*"
+    MYSQL_ROOT_PASSWORD: root
+    MYSQL_DATABASE: larabill_test
+    LARABILL_TEST_MYSQL_HOST: mysql
+    LARABILL_TEST_MYSQL_PORT: "3306"
+    LARABILL_TEST_MYSQL_DATABASE: larabill_test
+    LARABILL_TEST_MYSQL_USERNAME: root
+    LARABILL_TEST_MYSQL_PASSWORD: root
+  rules: !reference [.rules-ci, rules]
+  before_script:
+    - php -v | head -1
+    - composer require "laravel/framework:12.*" "orchestra/testbench:10.*" --no-interaction --no-update
+    - composer update --prefer-stable --prefer-dist --no-interaction --no-progress
+  script:
+    # PCOV: la suite comparte phpunit.xml con failOnWarning="true".
+    - echo 'pcov.enabled=1' > /usr/local/etc/php/conf.d/zz-pcov-on.ini
+    - |
+      if ! php -r 'exit(ini_get("pcov.enabled") ? 0 : 1);'; then
+        echo "PCOV no se activó — failOnWarning abortaría la suite"
+        exit 1
+      fi
+    # Espera con las credenciales reales (no root): comprueba que el servicio creó
+    # usuario y base.
+    - |
+      for i in $(seq 1 60); do
+        php -r 'try { new PDO("mysql:host=".getenv("LARABILL_TEST_MYSQL_HOST").";port=".getenv("LARABILL_TEST_MYSQL_PORT"), getenv("LARABILL_TEST_MYSQL_USERNAME"), getenv("LARABILL_TEST_MYSQL_PASSWORD")); exit(0); } catch (Throwable $e) { exit(1); }' && break
+        sleep 2
+      done
+    - |
+      if ! php -r 'try { new PDO("mysql:host=".getenv("LARABILL_TEST_MYSQL_HOST").";port=".getenv("LARABILL_TEST_MYSQL_PORT"), getenv("LARABILL_TEST_MYSQL_USERNAME"), getenv("LARABILL_TEST_MYSQL_PASSWORD")); exit(0); } catch (Throwable $e) { exit(1); }'; then
+        echo "MySQL no respondió en 120 s con el usuario de test"
+        exit 1
+      fi
+    - |
+      set -o pipefail
+      ./vendor/bin/pest tests/Integration/Mysql/ tests/Integration/InstallMysql/ tests/Integration/UpgradePath/ --ci 2>&1 | tee /tmp/mysql-pest.log
+    - |
+      if grep -qiE '[0-9]+ skipped' /tmp/mysql-pest.log; then
+        echo "La integración MySQL se SALTÓ: el TestCase no vio entorno utilizable."
+        exit 1
+      fi
+      if ! grep -qE 'Tests:.*[0-9]+ passed' /tmp/mysql-pest.log; then
+        echo "Ningún test pasado en la suite de integración MySQL."
+        exit 1
+      fi
+    # Prueba de concurrencia — invariante de numeración bajo fork (AID-436).
+    - |
+      set -o pipefail
+      RUN_CONCURRENCY_IT=1 ./vendor/bin/pest tests/Concurrency/ --ci 2>&1 | tee /tmp/conc-pest.log
+    - |
+      if grep -qiE '[0-9]+ skipped' /tmp/conc-pest.log && ! grep -qE 'Tests:.*[0-9]+ passed' /tmp/conc-pest.log; then
+        echo "La prueba de concurrencia se SALTÓ ENTERA: RUN_CONCURRENCY_IT o pcntl no surtieron efecto."
+        echo "El invariante de numeración (AID-390) quedaría SIN verificar bajo fork."
+        exit 1
+      fi
+
+# Mutación con gate REAL: `pest --mutate --parallel --min=68` (scope money+fiscal).
+# Se conserva el umbral. PCOV obligatorio (la mutación mide cobertura) + aserción.
+mutation:
+  stage: test
+  image: aichadigital/laravel-ci:8.3
+  variables:
+    PHP_VERSION: "8.3"
+  extends: .php
+  rules: !reference [.rules-ci, rules]
+  script:
+    - echo 'pcov.enabled=1' > /usr/local/etc/php/conf.d/zz-pcov-on.ini
+    - |
+      if ! php -r 'exit(ini_get("pcov.enabled") ? 0 : 1);'; then
+        echo "PCOV no se activó — la mutación no podría medir y el gate --min=68 sería falso"
+        exit 1
+      fi
+    - composer test-mutate
+
+# --- Stage: release -----------------------------------------------------------
+# Traducción de release.yml: en cada tag `v*`, crear la Release NATIVA de GitLab
+# con las notas de ESTA versión extraídas del CHANGELOG (misma lógica awk que
+# GitHub). Decisión del operador (2026-07-22): las releases pasan a vivir donde
+# vive el desarrollo — soberanía (ADE-291).
+#
+# No re-ejecuta los tests: el tag se empuja sobre un main ya verde, igual que en
+# GitHub. El `release:` usa CI_JOB_TOKEN automáticamente, acotado a este proyecto.
+release:
+  stage: release
+  image: registry.gitlab.com/gitlab-org/cli:latest
+  rules:
+    - if: $CI_COMMIT_TAG =~ /^v\d/
+  needs: []
+  script:
+    - VERSION="${CI_COMMIT_TAG#v}"
+    # Extrae la sección "## [X.Y.Z]" hasta la siguiente "## [" — idéntico al awk
+    # del workflow de GitHub.
+    - awk "/^## \[${VERSION}\]/{found=1; next} /^## \[/{if(found) exit} found{print}" CHANGELOG.md > release_notes.md
+    - '[ -s release_notes.md ] || echo "Release ${CI_COMMIT_TAG}" > release_notes.md'
+    - echo "Emitiendo release ${CI_COMMIT_TAG} ($(wc -l < release_notes.md) líneas de notas)"
+  release:
+    tag_name: "$CI_COMMIT_TAG"
+    name: "$CI_COMMIT_TAG"
+    description: "./release_notes.md"
