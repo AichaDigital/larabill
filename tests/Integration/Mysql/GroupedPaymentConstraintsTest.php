@@ -25,13 +25,19 @@ describe('AID-30 — grouped payment schema on MySQL', function () {
         ];
     };
 
-    it('stores amount/applied_amount as big integers and ids as char(36)', function () {
+    it('stores amount/applied_amount as big integers and ids as UUID', function () {
         $this->bootstrap();
+
+        // Money stays base-100 integer — that IS larabill's contract (ADR-009).
         expect($this->getMysqlColumnType('grouped_payments', 'amount'))->toBe('bigint');
         expect($this->getMysqlColumnType('grouped_payment_invoice', 'applied_amount'))->toBe('bigint');
-        expect($this->getMysqlColumnLength('grouped_payments', 'id'))->toBe(36);
-        expect($this->getMysqlColumnLength('grouped_payments', 'billable_user_id'))->toBe(36);
-        expect($this->getMysqlColumnLength('grouped_payment_invoice', 'active_invoice_id'))->toBe(36);
+
+        // Identity is asserted semantically (AID-708): the physical shape of a
+        // UUID column belongs to Laravel's grammar for the configured driver,
+        // not to this package. Pinning char(36) here failed a valid schema.
+        $this->assertUuidCompatibleColumn('grouped_payments', 'id');
+        $this->assertUuidCompatibleColumn('grouped_payments', 'billable_user_id');
+        $this->assertUuidCompatibleColumn('grouped_payment_invoice', 'active_invoice_id');
     });
 
     it('enforces one pivot row per (grouped_payment_id, invoice_id)', function () use ($pivotRow) {

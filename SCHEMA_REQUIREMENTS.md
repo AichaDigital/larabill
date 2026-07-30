@@ -210,7 +210,7 @@ When setting up a new installation, migrations must run in this order:
 
 ```env
 # Optional: override the User model class (defaults to App\Models\User).
-# The model MUST use UUID v7 char(36) primary keys — see docs/setup-uuid.md.
+# The model MUST use UUID v7 primary keys — see docs/setup-uuid.md.
 LARABILL_USER_MODEL="App\\Models\\User"
 ```
 

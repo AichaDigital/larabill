@@ -4,6 +4,12 @@
 > **Date**: 2026-05-09
 > **Supersedes**: La pretensión agnostic `int|uuid|ulid` en `larabill.user_id_type`. ADR-002 (UUID v7 string char 36) sigue vigente y se refuerza.
 
+> **Precisión de capa (AID-708, 2026-07-30).** La decisión de este ADR —UUID v7 como tipo único, sin `int` ni `ulid`— sigue **íntegramente vigente**. Lo que se precisa es la CAPA en la que se expresa.
+>
+> Donde el documento dice «char(36)» debe leerse **«UUID v7, declarado con la API de Blueprint (`uuid()` / `foreignUuid()`), en la representación que Laravel emita para la conexión configurada»**. `char(36)` es lo que emite `MySqlGrammar`; `MariaDbGrammar` emite el tipo `uuid` nativo en servidores MariaDB >= 10.7. Ambas albergan un UUID v7 y ambas son válidas.
+>
+> La representación física es decisión de Laravel y del motor, **no de larabill**: el paquete declara la semántica y no se acopla a un RDBMS. Corolario operativo: **no** sustituir `uuid()` por un `char($col, 36)` explícito para fijar la forma — usar el tipo genérico donde el framework ofrece el semántico es un desvío. El preflight de `larabill:install` ya aplica este criterio: acepta `uuid`/`guid` nativo, `char`/`varchar` de longitud 36, y string en SQLite.
+
 ## Contexto
 
 Hasta v0.7.4 larabill ofrecía soporte público para tres tipos de PK en el `users` de la app consumidora: `int` (bigInt Laravel default), `uuid` (char 36, recomendado) y `ulid` (char 26). El mecanismo: `MigrationHelper::userIdColumn()` + config `larabill.user_id_type` + tests de integración MySQL que demostraban el contrato para los tres.
@@ -26,7 +32,7 @@ larabill no es un paquete de utilidades genérico tipo Spatie. Es un núcleo de 
 
 1. **Config:** `larabill.user_id_type` se elimina del config publicado. La opción ENV `LARABILL_USER_ID_TYPE` deja de leerse.
 2. **Helper:** `MigrationHelper::userIdColumn()` se simplifica a emisión UUID exclusiva. Ramas `int`, `ulid` y `auto-detect` desaparecen del código de producción.
-3. **Install command:** `larabill:install` ejecuta un preflight check sobre `users.id`. Si la columna no es `char(36)` compatible UUID, aborta con mensaje accionable apuntando a `docs/setup-uuid.md`. No se ofrece flag `--user-id-type=`.
+3. **Install command:** `larabill:install` ejecuta un preflight check sobre `users.id`. Si la columna no puede albergar un UUID v7 —acepta `uuid`/`guid` nativo, `char`/`varchar` de longitud 36, y string en SQLite— aborta con mensaje accionable apuntando a `docs/setup-uuid.md`. No se ofrece flag `--user-id-type=`.
 4. **Tests:** la suite `tests/Integration/Mysql/FreshInstallUserIdTypeTest` se reduce a un único caso UUID. Se elimina la matriz `->with(['int','uuid','ulid'])`.
 5. **Docs:** README, SCHEMA_REQUIREMENTS, CONTRIBUTING y CRITICAL_RULES eliminan toda mención a `int`/`ulid`/`agnostic`. El mensaje pasa a ser **"UUID-first billing package"**.
 6. **CHANGELOG:** entrada explícita en próxima release marcando el cambio como **breaking** respecto a la promesa pública anterior. Dado que `dev-main` no garantiza upgrade, no se ofrece migración automática.
