@@ -135,7 +135,7 @@ pest:
       - coverage.xml
     expire_in: 1 week
 
-# Integración contra MySQL real MÁS la prueba de concurrencia por fork. En GitHub
+# Integración contra motor real MÁS la prueba de concurrencia por fork. En GitHub
 # eran pasos del mismo job; se conserva así.
 #
 # Dos trampas silenciosas cubiertas con aserción:
@@ -147,18 +147,42 @@ pest:
 # numeración (AID-390) bajo fork real, y el workflow la corría en cada push con
 # RUN_CONCURRENCY_IT=1. Sin esa variable, tests/Concurrency se salta en silencio.
 # La imagen trae pcntl, así que corre.
-mysql-integration:
+#
+# AID-700 — DOS MOTORES, no uno. Hasta aquí este job solo hablaba con MySQL, y
+# eso dejó sin cubrir una divergencia REAL: el primer uso de una serie fiscal
+# tomaba un gap lock sobre el rango vacío, y el ciclo de locks resultante mataba
+# 31 de 32 procesos concurrentes en MariaDB 11.4 mientras MySQL 9 aguantaba
+# (su umbral está entre 48 y 64). El defecto era del patrón, no del motor, pero
+# solo un motor lo exponía a la escala que se prueba. Mientras la matriz tenga
+# un solo motor, cualquier parámetro de concurrencia está calibrado contra una
+# sola realidad.
+#
+# El DRIVER se mantiene en `mysql` para ambos servidores a propósito: el driver
+# `mariadb` nativo de Laravel 11 hace que `$table->uuid()` emita el tipo UUID
+# nativo de MariaDB (BINARY(16), information_schema DATA_TYPE='uuid') en vez del
+# char(36) que ADR-006/STD-001 fijan como contrato. Eso es un asunto de esquema
+# —con su propio programa de actualización— y no de concurrencia; el harness ya
+# acepta LARABILL_TEST_MYSQL_DRIVER para cuando se aborde.
+db-integration:
   stage: test
   image: aichadigital/laravel-ci:8.3
+  parallel:
+    matrix:
+      - DB_IMAGE: "mysql:9"
+      - DB_IMAGE: "mariadb:11.4"
   services:
-    - name: mysql:9
-      alias: mysql
+    - name: $DB_IMAGE
+      alias: dbhost
   variables:
     PHP_VERSION: "8.3"
     LARAVEL: "12.*"
+    # La imagen de MySQL lee MYSQL_*; la de MariaDB prefiere MARIADB_* (y acepta
+    # MYSQL_* como legacy). Se definen ambos: cada imagen ignora los ajenos.
     MYSQL_ROOT_PASSWORD: root
     MYSQL_DATABASE: larabill_test
-    LARABILL_TEST_MYSQL_HOST: mysql
+    MARIADB_ROOT_PASSWORD: root
+    MARIADB_DATABASE: larabill_test
+    LARABILL_TEST_MYSQL_HOST: dbhost
     LARABILL_TEST_MYSQL_PORT: "3306"
     LARABILL_TEST_MYSQL_DATABASE: larabill_test
     LARABILL_TEST_MYSQL_USERNAME: root
@@ -185,22 +209,27 @@ mysql-integration:
       done
     - |
       if ! php -r 'try { new PDO("mysql:host=".getenv("LARABILL_TEST_MYSQL_HOST").";port=".getenv("LARABILL_TEST_MYSQL_PORT"), getenv("LARABILL_TEST_MYSQL_USERNAME"), getenv("LARABILL_TEST_MYSQL_PASSWORD")); exit(0); } catch (Throwable $e) { exit(1); }'; then
-        echo "MySQL no respondió en 120 s con el usuario de test"
+        echo "$DB_IMAGE no respondió en 120 s con el usuario de test"
         exit 1
       fi
+    # Deja constancia en el log de CONTRA QUÉ motor se corrió: el nombre del job
+    # dice la imagen, esto dice la versión que respondió.
+    - |
+      php -r 'echo "motor bajo prueba: ".(new PDO("mysql:host=".getenv("LARABILL_TEST_MYSQL_HOST").";port=".getenv("LARABILL_TEST_MYSQL_PORT"), getenv("LARABILL_TEST_MYSQL_USERNAME"), getenv("LARABILL_TEST_MYSQL_PASSWORD")))->query("SELECT VERSION()")->fetchColumn().PHP_EOL;'
     - |
       set -o pipefail
-      ./vendor/bin/pest tests/Integration/Mysql/ tests/Integration/InstallMysql/ tests/Integration/UpgradePath/ --ci 2>&1 | tee /tmp/mysql-pest.log
+      ./vendor/bin/pest tests/Integration/Mysql/ tests/Integration/InstallMysql/ tests/Integration/UpgradePath/ --ci 2>&1 | tee /tmp/db-pest.log
     - |
-      if grep -qiE '[0-9]+ skipped' /tmp/mysql-pest.log; then
-        echo "La integración MySQL se SALTÓ: el TestCase no vio entorno utilizable."
+      if grep -qiE '[0-9]+ skipped' /tmp/db-pest.log; then
+        echo "La integración contra $DB_IMAGE se SALTÓ: el TestCase no vio entorno utilizable."
         exit 1
       fi
-      if ! grep -qE 'Tests:.*[0-9]+ passed' /tmp/mysql-pest.log; then
-        echo "Ningún test pasado en la suite de integración MySQL."
+      if ! grep -qE 'Tests:.*[0-9]+ passed' /tmp/db-pest.log; then
+        echo "Ningún test pasado en la suite de integración contra $DB_IMAGE."
         exit 1
       fi
-    # Prueba de concurrencia — invariante de numeración bajo fork (AID-436).
+    # Prueba de concurrencia — invariante de numeración bajo fork (AID-436),
+    # ahora contra CADA motor de la matriz (AID-700).
     - |
       set -o pipefail
       RUN_CONCURRENCY_IT=1 ./vendor/bin/pest tests/Concurrency/ --ci 2>&1 | tee /tmp/conc-pest.log
