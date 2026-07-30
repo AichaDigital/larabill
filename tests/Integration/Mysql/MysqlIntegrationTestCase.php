@@ -69,7 +69,13 @@ abstract class MysqlIntegrationTestCase extends Orchestra
 
         $app['config']->set('database.default', 'testing');
         $app['config']->set('database.connections.testing', [
-            'driver'    => 'mysql',
+            // AID-700: the engine is a variable, not a constant. Larabill's
+            // consumers run MariaDB as well as MySQL, and the two diverge on
+            // locking behaviour — first-use numbering collapsed on MariaDB
+            // while MySQL stayed green, because this harness only ever spoke to
+            // one of them. Laravel 11 ships a distinct `mariadb` driver; the
+            // default stays `mysql` so existing environments are unaffected.
+            'driver'    => env('LARABILL_TEST_MYSQL_DRIVER', 'mysql'),
             'host'      => env('LARABILL_TEST_MYSQL_HOST'),
             'port'      => (int) env('LARABILL_TEST_MYSQL_PORT'),
             'database'  => env('LARABILL_TEST_MYSQL_DATABASE'),

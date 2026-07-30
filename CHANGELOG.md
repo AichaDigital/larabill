@@ -4,6 +4,21 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+**Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`; no `larabill:install` re-run or `migrate` needed.
+
+### Fixed
+
+- **First use of a fiscal series no longer deadlocks under concurrency (AID-700).** `InvoiceNumberingService` opened the numbering transaction with a locked read (`lockForUpdate()`) over a range that, on first use, matches no row. In InnoDB that does not lock a record — it takes a **gap lock** on the empty range, and gap locks are mutually compatible, so every concurrent caller acquired one and then needed a mutually *incompatible* insert-intention lock to `INSERT` the control row. That is a lock cycle by construction, not bad luck, and `DB::transaction(..., 3)` cannot retry its way out of it. The existence probe is now unlocked and the row is created before the lock is taken, so `lockForUpdate()` always lands on a real record. Correctness still rests where it always did — on the unique index plus the `UniqueConstraintViolationException` recovery — but losers of the creation race now merely *wait* for the winner to commit instead of forming a cycle.
+
+  **Measured**, first use with N concurrent processes released on a synchronised barrier: on MariaDB 11.4.12 the previous code left **1 survivor out of 32** (and 23 of 24, deterministically across rounds); on MySQL 9.7.2 it survived 48 but collapsed at 64. So the defect was in the pattern and affected **both** engines — MariaDB merely has a threshold roughly three times lower (it breaks from ~20 processes, MySQL from ~64). After the fix: 64 of 64 converge on both engines, one control row, strict correlative sequence, no gaps or duplicates.
+
+  **Who was exposed:** the window is the first invoice of a `(series, fiscal year)` — for example a year-start batch issuing the first invoices of a new series concurrently. Losing processes raised an uncaught `QueryException` (SQLSTATE 40001), i.e. invoices that were never issued. Steady-state numbering was never affected.
+
+### Changed
+
+- **The integration and concurrency gates now run against MySQL *and* MariaDB (AID-700).** They only ever spoke to MySQL, which is why the divergence above went undetected: the hardened first-use test fails on MariaDB and passes on MySQL **against the same broken code**. A single-engine gate can only calibrate against one reality. `MysqlIntegrationTestCase` accepts `LARABILL_TEST_MYSQL_DRIVER` (default `mysql`, unchanged) so the harness can also target Laravel's native `mariadb` driver.
+- **The concurrency test actually exercises concurrency now (AID-700).** It forked 6 children in a sequential loop, so on a fast host the first could commit before the last was born — it went green on both engines *with the deadlock present*. Children are now released on an absolute-time barrier at a fork count with measured discriminating power, and a failing child records its real exception instead of a mute `exit(1)`.
+
 ## [6.9.0] - 2026-07-23
 
 **Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`; no `larabill:install` re-run or `migrate` needed.

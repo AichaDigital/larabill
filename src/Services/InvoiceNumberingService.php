@@ -110,11 +110,23 @@ class InvoiceNumberingService
 
     /**
      * Read the series control under a pessimistic lock, creating it on first
-     * use. Safe under concurrency: if a concurrent transaction wins the
-     * creation race, the unique violation is caught and the winner's row is
-     * re-read (the duplicate-key check blocks until the winner commits, so
-     * the re-read sees it). Gap-lock deadlocks on the empty range abort the
-     * whole transaction, which DB::transaction() retries.
+     * use.
+     *
+     * AID-700: the existence probe is deliberately UNLOCKED. A locked read over
+     * a range that matches no row does not lock a row — it takes a gap lock on
+     * the empty range, and gap locks are mutually compatible. N concurrent
+     * callers therefore all acquire one, and then all need an insert-intention
+     * lock to INSERT, which is NOT compatible with the others' gap locks. That
+     * is a lock cycle by construction, not bad luck: measured on first use it
+     * collapsed to a single survivor out of 32 processes on MariaDB 11.4, and
+     * MySQL 9 fails the same way past its own (higher) threshold. Retrying the
+     * transaction cannot fix a pattern that deadlocks by design.
+     *
+     * Probing unlocked leaves the empty range free of locks. Correctness still
+     * rests where it always did — on the unique index, not on the probe: if a
+     * concurrent caller wins the creation race the unique violation is caught
+     * and the winner's row is read below. Losers merely WAIT on the
+     * duplicate-key check until the winner commits; a wait is not a cycle.
      */
     protected function getOrCreateControlForUpdate(
         string $prefix,
@@ -122,18 +134,17 @@ class InvoiceNumberingService
         int $fiscalYear,
         string $scopeId
     ): InvoiceSeriesControl {
-        $control = $this->lockedControlQuery($prefix, $serie, $fiscalYear, $scopeId)->first();
-
-        if ($control !== null) {
-            return $control;
+        if (! $this->controlQuery($prefix, $serie, $fiscalYear, $scopeId)->exists()) {
+            try {
+                $this->createSeriesControl($prefix, $serie, $fiscalYear, $scopeId);
+            } catch (UniqueConstraintViolationException) {
+                // Lost the creation race to a concurrent transaction.
+            }
         }
 
-        try {
-            return $this->createSeriesControl($prefix, $serie, $fiscalYear, $scopeId);
-        } catch (UniqueConstraintViolationException) {
-            // Lost the creation race to a concurrent transaction.
-        }
-
+        // The row exists by now, so this lock lands on a real record instead of
+        // a gap: ordinary record-lock serialisation, which is what the caller
+        // actually wants from lockForUpdate().
         $control = $this->lockedControlQuery($prefix, $serie, $fiscalYear, $scopeId)->first();
 
         if ($control === null) {
@@ -144,12 +155,12 @@ class InvoiceNumberingService
     }
 
     /**
-     * Locked lookup for one exact series scope. The scope match is exact on
+     * Unlocked lookup for one exact series scope. The scope match is exact on
      * purpose: global and user-scoped series are independent sequences.
      *
      * @return Builder<InvoiceSeriesControl>
      */
-    protected function lockedControlQuery(
+    protected function controlQuery(
         string $prefix,
         int $serie,
         int $fiscalYear,
@@ -159,8 +170,25 @@ class InvoiceNumberingService
             ->where('prefix', $prefix)
             ->where('serie', $serie)
             ->where('fiscal_year', $fiscalYear)
-            ->where('user_id', $scopeId)
-            ->lockForUpdate();
+            ->where('user_id', $scopeId);
+    }
+
+    /**
+     * Locked lookup for one exact series scope.
+     *
+     * Only call this once the row is known to exist (see
+     * getOrCreateControlForUpdate): locking a range that matches nothing takes
+     * a gap lock, which is the AID-700 deadlock.
+     *
+     * @return Builder<InvoiceSeriesControl>
+     */
+    protected function lockedControlQuery(
+        string $prefix,
+        int $serie,
+        int $fiscalYear,
+        string $scopeId
+    ): Builder {
+        return $this->controlQuery($prefix, $serie, $fiscalYear, $scopeId)->lockForUpdate();
     }
 
     /**
