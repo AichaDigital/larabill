@@ -210,13 +210,17 @@ class LarabillInstallCommand extends Command
             }
 
             $this->failPreflight(
-                "users.id is string of length {$length} — Larabill requires UUID v7 char(36)."
+                "users.id is a string of length {$length} — Larabill requires a UUID v7 column "
+                .'(native uuid, or char/varchar of length 36).'
             );
 
             return false;
         }
 
-        $this->failPreflight("users.id type is '{$type}' — Larabill requires UUID v7 char(36).");
+        $this->failPreflight(
+            "users.id type is '{$type}' — Larabill requires a UUID v7 column "
+            .'(native uuid, or char/varchar of length 36).'
+        );
 
         return false;
     }

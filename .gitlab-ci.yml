@@ -166,10 +166,21 @@ pest:
 db-integration:
   stage: test
   image: aichadigital/laravel-ci:8.3
+  # AID-708 — tres combinaciones, porque el DRIVER también decide. Laravel 11
+  # trajo un driver `mariadb` propio cuyo grammar emite el tipo UUID nativo de
+  # MariaDB en servidores >= 10.7, mientras `MySqlGrammar` emite char(36)
+  # siempre. Las dos representaciones albergan un UUID v7 y las dos están
+  # soportadas; el paquete declara la semántica y no se acopla a la elección
+  # del motor. La tercera entrada es la que ejercita ese camino: sin ella, el
+  # combo driver=mariadb + MariaDB >= 10.7 no lo cubre nadie.
   parallel:
     matrix:
       - DB_IMAGE: "mysql:9"
+        LARABILL_TEST_MYSQL_DRIVER: "mysql"
       - DB_IMAGE: "mariadb:11.4"
+        LARABILL_TEST_MYSQL_DRIVER: "mysql"
+      - DB_IMAGE: "mariadb:11.4"
+        LARABILL_TEST_MYSQL_DRIVER: "mariadb"
   services:
     - name: $DB_IMAGE
       alias: dbhost
@@ -212,10 +223,12 @@ db-integration:
         echo "$DB_IMAGE no respondió en 120 s con el usuario de test"
         exit 1
       fi
-    # Deja constancia en el log de CONTRA QUÉ motor se corrió: el nombre del job
-    # dice la imagen, esto dice la versión que respondió.
+    # Deja constancia en el log de CONTRA QUÉ se corrió: el nombre del job dice
+    # la imagen, esto dice la versión que respondió Y el driver. Con dos jobs
+    # apuntando al mismo MariaDB (AID-708), el motor por sí solo no distingue
+    # cuál de los dos caminos se ejercitó.
     - |
-      php -r 'echo "motor bajo prueba: ".(new PDO("mysql:host=".getenv("LARABILL_TEST_MYSQL_HOST").";port=".getenv("LARABILL_TEST_MYSQL_PORT"), getenv("LARABILL_TEST_MYSQL_USERNAME"), getenv("LARABILL_TEST_MYSQL_PASSWORD")))->query("SELECT VERSION()")->fetchColumn().PHP_EOL;'
+      php -r 'echo "motor bajo prueba: ".(new PDO("mysql:host=".getenv("LARABILL_TEST_MYSQL_HOST").";port=".getenv("LARABILL_TEST_MYSQL_PORT"), getenv("LARABILL_TEST_MYSQL_USERNAME"), getenv("LARABILL_TEST_MYSQL_PASSWORD")))->query("SELECT VERSION()")->fetchColumn()." | driver: ".(getenv("LARABILL_TEST_MYSQL_DRIVER") ?: "mysql (default)").PHP_EOL;'
     - |
       set -o pipefail
       ./vendor/bin/pest tests/Integration/Mysql/ tests/Integration/InstallMysql/ tests/Integration/UpgradePath/ --ci 2>&1 | tee /tmp/db-pest.log

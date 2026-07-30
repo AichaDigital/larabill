@@ -14,24 +14,23 @@ describe('Larabill fresh install on MySQL — UUID-first contract (ADR-006)', fu
         $this->bootstrap();
 
         // ─────────────────────────────────────────────────────────────────────
-        // 1. All user-keyed columns are UUID v7 char(36).
+        // 1. All user-keyed columns can hold a UUID v7.
+        //
+        //    AID-708: the assertion is semantic on purpose. `$table->uuid()`
+        //    emits `char(36)` under MySqlGrammar but MariaDB's native `uuid`
+        //    type under MariaDbGrammar on servers >= 10.7 — both are valid, and
+        //    which one appears is Laravel's decision for the configured
+        //    connection, not larabill's contract. Pinning the literal `char`
+        //    froze a grammar detail and failed a perfectly good schema.
         // ─────────────────────────────────────────────────────────────────────
-        $expectedType   = 'char';
-        $expectedLength = 36;
 
         // customer_id columns (via MigrationHelper::agnosticIdColumn()).
-        expect($this->getMysqlColumnType('article_overrides', 'customer_id'))->toBe($expectedType);
-        expect($this->getMysqlColumnLength('article_overrides', 'customer_id'))->toBe($expectedLength);
-
-        expect($this->getMysqlColumnType('article_service_status', 'customer_id'))->toBe($expectedType);
-        expect($this->getMysqlColumnLength('article_service_status', 'customer_id'))->toBe($expectedLength);
+        $this->assertUuidCompatibleColumn('article_overrides', 'customer_id');
+        $this->assertUuidCompatibleColumn('article_service_status', 'customer_id');
 
         // user_id / owner_user_id columns (via MigrationHelper::userIdColumn()).
-        expect($this->getMysqlColumnType('invoices', 'user_id'))->toBe($expectedType);
-        expect($this->getMysqlColumnLength('invoices', 'user_id'))->toBe($expectedLength);
-
-        expect($this->getMysqlColumnType('user_tax_profiles', 'owner_user_id'))->toBe($expectedType);
-        expect($this->getMysqlColumnLength('user_tax_profiles', 'owner_user_id'))->toBe($expectedLength);
+        $this->assertUuidCompatibleColumn('invoices', 'user_id');
+        $this->assertUuidCompatibleColumn('user_tax_profiles', 'owner_user_id');
 
         // ─────────────────────────────────────────────────────────────────────
         // 2. Composite UNIQUE indexes exist with customer_id at position 0.

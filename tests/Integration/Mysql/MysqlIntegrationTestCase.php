@@ -189,6 +189,45 @@ abstract class MysqlIntegrationTestCase extends Orchestra
         }
     }
 
+    /**
+     * Assert that a column can hold a UUID v7, in whatever representation the
+     * driver chose for it.
+     *
+     * AID-708: `$table->uuid()` does not emit one fixed physical type. Laravel's
+     * MariaDbGrammar returns MariaDB's native `uuid` type on servers >= 10.7 and
+     * `char(36)` below that; MySqlGrammar always returns `char(36)`. Asserting
+     * the literal `char`/36 froze a grammar detail as if it were the contract,
+     * and made these tests fail against a schema that was perfectly valid.
+     *
+     * The contract is semantic — the column holds a UUID v7 — and the physical
+     * representation belongs to Laravel and the configured connection. This
+     * mirrors exactly what LarabillInstallCommand::verifyUsersTableUuid()
+     * accepts, so the tests and the installer speak about the same thing.
+     */
+    protected function assertUuidCompatibleColumn(string $table, string $column): void
+    {
+        $type   = $this->getMysqlColumnType($table, $column);
+        $length = $this->getMysqlColumnLength($table, $column);
+
+        // Native UUID type (MariaDB >= 10.7): 16 binary bytes, no char length.
+        if (in_array($type, ['uuid', 'guid'], true)) {
+            expect(true)->toBeTrue();
+
+            return;
+        }
+
+        // Textual representation: must be exactly wide enough for a canonical UUID.
+        expect($type)->toBeIn(
+            ['char', 'varchar'],
+            "{$table}.{$column} is '{$type}', which cannot hold a UUID v7."
+        );
+
+        expect($length)->toBe(
+            36,
+            "{$table}.{$column} is {$type}({$length}); a canonical UUID v7 needs 36 characters."
+        );
+    }
+
     protected function getMysqlColumnType(string $table, string $column): string
     {
         $row = DB::selectOne(

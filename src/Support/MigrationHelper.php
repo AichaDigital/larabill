@@ -9,11 +9,24 @@ use Illuminate\Database\Schema\Blueprint;
 /**
  * Migration Helper for User-related FK columns.
  *
- * Larabill is UUID-first (ADR-006). This helper emits UUID v7 char(36)
- * columns for any FK that references the consumer app's `users.id`.
+ * Larabill is UUID-first (ADR-006). This helper declares UUID v7 columns for
+ * any FK that references the consumer app's `users.id`, using Blueprint's
+ * `uuid()` — the semantic API. The PHYSICAL representation is Laravel's
+ * decision for the configured connection, not this package's:
  *
- * Consumer apps must provide `users.id` as UUID v7 char(36). The
- * `larabill:install` command runs a preflight check and aborts otherwise.
+ *   - MySqlGrammar   → char(36), always.
+ *   - MariaDbGrammar → MariaDB's native `uuid` type on servers >= 10.7,
+ *                      char(36) below that.
+ *
+ * Both are valid and interchangeable for the package's purposes (AID-708).
+ * Do NOT replace `uuid()` with an explicit `char($col, 36)` to pin the shape:
+ * using a generic type where the framework offers a semantic one is a
+ * deviation, and it would couple the schema to an engine decision the software
+ * has no business making.
+ *
+ * Consumer apps must provide `users.id` as a UUID v7 column in any of those
+ * representations. The `larabill:install` command runs a preflight check and
+ * aborts if the column cannot hold one.
  *
  * See: docs/ADR-006-uuid-first-no-agnostic.md, docs/setup-uuid.md
  *

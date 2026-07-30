@@ -4,6 +4,18 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- **The UUID identity contract is stated where the software actually decides it (AID-708).** Larabill declares identity columns with Blueprint's `uuid()` / `foreignUuid()`, and the *physical* representation is Laravel's decision for the configured connection: `MySqlGrammar` emits `char(36)` always, while `MariaDbGrammar` emits MariaDB's native `uuid` type on servers >= 10.7 and `char(36)` below that. Both hold a UUID v7 and both are supported — the package does not couple its schema to an engine's choice.
+
+  Nothing changed in the migrations, the DDL or your database. What changed is everything that *described* that behaviour one layer too low: `MigrationHelper`'s docblock claimed to emit `char(36)`, `ADR-006` and `SCHEMA_REQUIREMENTS.md` stated `char(36)` as the contract, and `larabill:install` reported the requirement more narrowly than the check it actually runs (the preflight already accepted native `uuid`/`guid`, `char`/`varchar(36)` and SQLite strings).
+
+  If you install under the `mariadb` driver against MariaDB >= 10.7 you will get native `uuid` columns, and that is a valid, supported installation. **Operational note:** do not migrate one database with different drivers over its lifetime — mixing `char(36)` and native `uuid` across tables can cost you an index on a JOIN.
+
+### Fixed
+
+- **Two MySQL integration tests asserted a grammar detail as if it were the contract (AID-708).** `FreshInstallTest` and `GroupedPaymentConstraintsTest` pinned `DATA_TYPE = 'char'` and length 36, so they failed against a perfectly valid schema installed with the `mariadb` driver. They now assert UUID *compatibility* — the same criterion the installer's preflight applies — via the new `assertUuidCompatibleColumn()` helper on `MysqlIntegrationTestCase`.
+
 ## [6.9.1] - 2026-07-30
 
 **Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`; no `larabill:install` re-run or `migrate` needed.
