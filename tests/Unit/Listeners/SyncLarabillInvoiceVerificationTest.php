@@ -35,7 +35,12 @@ it('updates the larabill invoice when lara-verifactu registers it asynchronously
         ],
     ]);
 
-    $registry = VerifactuRegistry::create([
+    // forceFill, not create(): lara-verifactu keeps the chain's integrity
+    // attributes (hash, previous_hash, hash_generated_at, xml, signed_xml) out
+    // of $fillable, so mass assignment drops them silently and the NOT NULL
+    // `hash` column fails. They are written only by the code that generates
+    // them; a fixture standing in for that generator does the same.
+    $registry = (new VerifactuRegistry)->forceFill([
         'invoice_id'           => $verifactuInvoice->id,
         'registry_number'      => 'REG-000001',
         'registry_date'        => now(),
@@ -50,6 +55,8 @@ it('updates the larabill invoice when lara-verifactu registers it asynchronously
         'status'               => RegistryStatusEnum::PENDING,
         'submission_attempts'  => 0,
     ]);
+
+    $registry->save();
 
     Event::dispatch(new InvoiceRegisteredEvent($verifactuInvoice, $registry, false));
 
