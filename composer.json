@@ -46,7 +46,7 @@
         "nunomaduro/phpinsights": "^2.13",
         "orchestra/testbench": "^10.6||^11.0",
         "pestphp/pest": "^4.0",
-        "pestphp/pest-plugin-arch": "^4.0",
+        "pestphp/pest-plugin-arch": "^5.0",
         "pestphp/pest-plugin-laravel": "^4.0",
         "phpstan/extension-installer": "^1.4",
         "phpstan/phpstan-deprecation-rules": "^2.0",
