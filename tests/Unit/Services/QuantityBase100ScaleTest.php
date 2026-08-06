@@ -8,6 +8,7 @@ use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticleServiceStatus;
 use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\Invoice;
+use AichaDigital\Larabill\Models\UserTaxProfile;
 use AichaDigital\Larabill\Services\InvoiceService;
 use AichaDigital\Larabill\Services\PricingService;
 use AichaDigital\Larabill\Services\RecurringBillingService;
@@ -28,8 +29,22 @@ beforeEach(function () {
 });
 
 it('bills one full unit per recurring service line', function () {
+    // AID-836: the recurring flow emits through the canonical path.
+    CompanyFiscalConfig::factory()->create([
+        'is_active'   => true,
+        'valid_until' => null,
+    ]);
+
     $customer = $this->userModel::factory()->create();
-    $article  = Article::factory()->monthly(2900)->create();
+
+    UserTaxProfile::factory()->create([
+        'owner_user_id' => $customer->id,
+        'tax_id'        => 'ES'.fake()->numerify('B########'),
+        'valid_from'    => now()->subYear(),
+        'valid_until'   => null,
+    ]);
+
+    $article = Article::factory()->monthly(2900)->create();
 
     ArticleServiceStatus::factory()->create([
         'customer_id'       => $customer->id,

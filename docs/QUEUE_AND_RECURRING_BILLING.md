@@ -95,6 +95,41 @@ $article = Article::create([
 ]);
 ```
 
+### Emission contract (AID-836)
+
+Recurring invoices are emitted through the canonical path (`InvoiceService::createInvoice()`), inside an **atomic per-service boundary**: creation, numbering, sealing, the `next_billing_date` advance and the consumer emission hook commit or roll back together. Requirements at emission time — each one fails loudly (the service is counted as `failed`, nothing is persisted, no fiscal number is consumed):
+
+- **An active `CompanyFiscalConfig`** (the issuer).
+- **A configured fiscal series** (`larabill.invoice_numbering.series.invoice` — the package never invents one, AID-589).
+- **A valid `UserTaxProfile` with a non-empty `tax_id`** for the receiver. Unattended emission refuses to degrade silently into a fiscally unidentified (simplified/F2) invoice.
+
+Every recurring invoice is born **sealed** (`is_immutable = true`), with taxes calculated and the three encrypted snapshots (issuer, receiver, fiscal context). `invoice_date`, `issued_at` and `due_date` anchor to the **real emission instant** — the processing date passed to `processRecurringBilling()` decides *eligibility only*; the billed period lives in the line's `service_date_from`/`service_date_to`.
+
+#### In-boundary integration hook
+
+Bind a `RecurringEmissionHookContract` implementation to run fiscal registration (e.g. `InvoiceVerifactuService::registerInvoice()`), OSS accumulation, or any bookkeeping that must succeed-or-reject **together with the emission** — a listener on `RecurringInvoiceGenerated` fires after commit, when the fiscal number is already consumed:
+
+```php
+use AichaDigital\Larabill\Contracts\Services\RecurringEmissionHookContract;
+
+// In your AppServiceProvider::register()
+$this->app->bind(RecurringEmissionHookContract::class, MyRecurringEmissionHook::class);
+```
+
+The hook runs **inside the transaction**, after the invoice is sealed and the service advanced. If it throws, the whole emission rolls back. Contract rules (see the interface docblock): database writes only, on the same connection; no network, mail, or queued jobs without `afterCommit()`; it may re-run if the boundary retries on deadlock; on the sealed invoice only the `fiscal_verification_*` fields are writable.
+
+To make the hook mandatory (fail before issuing anything when none is bound):
+
+```env
+LARABILL_REQUIRE_EMISSION_HOOK=true
+```
+
+Dry runs are exempt from this gate.
+
+#### Event semantics
+
+`RecurringInvoiceGenerated`, `RecurringBillingFailed` and `RecurringBillingCompleted` are **best-effort, at-most-once notifications**, dispatched post-commit: a throwing listener is logged and never alters the run's fiscal result, the generated event fires only when an invoice was actually created (never on the idempotent repair path), and a crash between commit and dispatch loses the event. The reliable integration point is the hook; durable delivery would require an outbox, which is out of scope for the 6.x line.
+
 ### Manual Execution
 
 #### Via Artisan Command
