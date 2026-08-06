@@ -4,6 +4,10 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+## [6.10.0] - 2026-08-06
+
+**Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`; no `larabill:install` re-run or `migrate` needed. If you use the recurring flow, read the Changed section: emission now REQUIRES an active `CompanyFiscalConfig`, a configured fiscal series and a receiver `UserTaxProfile` with a non-empty `tax_id`. Pre-upgrade check, runnable before updating: `SELECT COUNT(*) FROM article_service_status s LEFT JOIN user_tax_profiles p ON p.owner_user_id = s.customer_id AND p.valid_from <= CURDATE() AND (p.valid_until IS NULL OR p.valid_until >= CURDATE()) AND p.tax_id IS NOT NULL AND p.tax_id != '' WHERE s.status = '0' AND p.id IS NULL;` (`0` = `ServiceStatus::ACTIVE`) — every row counted is an active service whose receiver would fail recurring emission after the upgrade.
+
 ### Added
 
 - **In-boundary consumer integration point for recurring emission (AID-836).** New `Contracts\Services\RecurringEmissionHookContract` (`afterEmission(Invoice $invoice, ArticleServiceStatus $service): void`): bind it to run fiscal registration (e.g. `InvoiceVerifactuService::registerInvoice()`), OSS accumulation, or any bookkeeping that must succeed-or-reject *together* with the emission. It runs inside the atomic emission boundary, after the invoice is sealed — a throwing hook rolls back everything, including the consumed fiscal number. A post-commit listener on `RecurringInvoiceGenerated` cannot provide this (the number is already consumed and the service already advanced). Contract rules in the interface docblock: DB-only, same connection, retry-aware.
