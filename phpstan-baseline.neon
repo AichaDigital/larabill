@@ -98,12 +98,6 @@ parameters:
 			path: src/Services/PricingService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: src/Services/RecurringBillingService.php
-
-		-
 			message: '#^Parameter \#2 \$type of event class AichaDigital\\Larabill\\Events\\ServiceCancelled constructor expects AichaDigital\\Larabill\\Enums\\CancellationType in AichaDigital\\Larabill\\Events\\ServiceCancelled\:\:dispatch\(\), string\|null given\.$#'
 			identifier: argument.type
 			count: 1

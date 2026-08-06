@@ -229,6 +229,14 @@ return [
 
         // Payment terms in days (for calculating due_date)
         'payment_terms_days' => (int) env('LARABILL_PAYMENT_TERMS_DAYS', 15),
+
+        // Fail loudly (before issuing anything) when no
+        // RecurringEmissionHookContract binding exists (AID-836). Enable it
+        // when your compliance path (e.g. Verifactu registration, OSS
+        // accumulation) runs inside the emission boundary and must never be
+        // silently skipped. The gate does not apply to dry runs. The
+        // effective default lives at the read site, not in this file.
+        'require_emission_hook' => (bool) env('LARABILL_REQUIRE_EMISSION_HOOK', false),
     ],
 
     /*

@@ -7,12 +7,37 @@ use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Enums\ServiceStatus;
 use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticleServiceStatus;
+use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\Invoice;
+use AichaDigital\Larabill\Models\UserTaxProfile;
 use AichaDigital\Larabill\Services\RecurringBillingService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
+
+beforeEach(function () {
+    // AID-836: recurring emission goes through the canonical path — it
+    // needs an active CompanyFiscalConfig and a fiscally identified receiver.
+    CompanyFiscalConfig::factory()->create([
+        'is_active'   => true,
+        'valid_until' => null,
+    ]);
+
+    $this->makeCustomer = function () {
+        $userModel = config('larabill.user_model', 'App\\Models\\User');
+        $customer  = $userModel::factory()->create();
+
+        UserTaxProfile::factory()->create([
+            'owner_user_id' => $customer->id,
+            'tax_id'        => 'ES'.fake()->numerify('B########'),
+            'valid_from'    => now()->subYear(),
+            'valid_until'   => null,
+        ]);
+
+        return $customer;
+    };
+});
 
 it('has correct command signature', function () {
     $service = app(RecurringBillingService::class);
@@ -29,8 +54,7 @@ it('has correct command description', function () {
 });
 
 it('can be executed as a direct call', function () {
-    $userModel = config('larabill.user_model', 'App\\Models\\User');
-    $customer  = $userModel::factory()->create();
+    $customer  = ($this->makeCustomer)();
     $article   = Article::factory()->service()->monthly(2900)->create();
 
     ArticleServiceStatus::factory()->create([
@@ -48,8 +72,7 @@ it('can be executed as a direct call', function () {
 });
 
 it('supports custom date parameter', function () {
-    $userModel = config('larabill.user_model', 'App\\Models\\User');
-    $customer  = $userModel::factory()->create();
+    $customer  = ($this->makeCustomer)();
     $article   = Article::factory()->service()->monthly(2900)->create();
 
     ArticleServiceStatus::factory()->create([
@@ -66,8 +89,7 @@ it('supports custom date parameter', function () {
 });
 
 it('supports dry-run mode', function () {
-    $userModel = config('larabill.user_model', 'App\\Models\\User');
-    $customer  = $userModel::factory()->create();
+    $customer  = ($this->makeCustomer)();
     $article   = Article::factory()->service()->monthly(2900)->create();
 
     ArticleServiceStatus::factory()->create([

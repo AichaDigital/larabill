@@ -4,7 +4,26 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **In-boundary consumer integration point for recurring emission (AID-836).** New `Contracts\Services\RecurringEmissionHookContract` (`afterEmission(Invoice $invoice, ArticleServiceStatus $service): void`): bind it to run fiscal registration (e.g. `InvoiceVerifactuService::registerInvoice()`), OSS accumulation, or any bookkeeping that must succeed-or-reject *together* with the emission. It runs inside the atomic emission boundary, after the invoice is sealed — a throwing hook rolls back everything, including the consumed fiscal number. A post-commit listener on `RecurringInvoiceGenerated` cannot provide this (the number is already consumed and the service already advanced). Contract rules in the interface docblock: DB-only, same connection, retry-aware.
+- New opt-in gate `larabill.recurring_billing.require_emission_hook` (env `LARABILL_REQUIRE_EMISSION_HOOK`, default `false`): when enabled and no hook is bound, `processRecurringBilling()` throws the new `MissingRecurringEmissionHookException` **before issuing anything**. Dry runs are exempt.
+- New `MissingUserTaxProfileException`, thrown per-service when the receiver lacks a valid tax profile or its `tax_id` is empty (see Changed).
+- Fork-based concurrency proof `tests/Concurrency/RecurringBillingConcurrencyTest.php`: N processes billing the same service/period converge on exactly one invoice, one advance, one hook execution (calibrated floor/ceiling in its docblock).
+
 ### Changed
+
+- **The recurring flow now emits through the canonical emission contract (AID-836).** `RecurringBillingService::createInvoiceForService()` delegates to `InvoiceService::createInvoice()` instead of a raw `Invoice::create()`. Behaviour changes for every recurring invoice:
+  - **`user_id` is the ISSUER and `billable_user_id` the receiver (ADR-003).** Previously `user_id` held the billed customer and `billable_user_id` was never set — which silently skipped the ADR-001 receiver snapshot (`customer_snapshot`/`user_tax_profile_id` were null) and misattributed OSS thresholds.
+  - **Taxes are calculated** via `TaxCalculationService` (previously `total_tax_amount` was 0 and the line carried no `taxes_applied`).
+  - **Recurring invoices are born sealed** (`is_immutable = true`, `immutable_at`/`issued_at` populated) — what the AID-352 changelog already assumed and the code never did.
+  - **Emission requires an active `CompanyFiscalConfig`, a configured fiscal series AND a valid `UserTaxProfile` with a non-empty `tax_id`** for the receiver; each failure is loud (service counted as `failed`, nothing persisted, no number consumed). Unattended emission no longer degrades silently into a fiscally unidentified (simplified/F2) invoice.
+  - **`invoice_date`, `issued_at` and `due_date` anchor to the real emission instant.** The `$date` argument of `processRecurringBilling()` decides *eligibility only*; previously `invoice_date` took the processing date, which on backdated runs produced documents whose date contradicted their numbering year, snapshots and Verifactu `issue_datetime`. The billed period lives, as always, in the line's `service_date_from`/`service_date_to`.
+  - **The emission is an atomic per-service boundary** (`DB::transaction(..., 3)` at the outermost level, AID-570): creation, numbering, sealing, the `next_billing_date` advance and the hook commit or roll back together. The service row is re-read under `lockForUpdate()` and the selected period plus the selection criteria are revalidated — an overlapping run or a concurrent suspension makes the run stand down (`skipped`) instead of emitting the next period early or billing a suspended service.
+  - **The idempotency check is bounded to real recurring emissions** (`source_reference.type = 'article_service'` and a non-proforma invoice), so a proforma or a manual line carrying similar metadata no longer masks the emission.
+- **Recurring events are best-effort, at-most-once notifications (AID-836).** `RecurringInvoiceGenerated` is dispatched post-commit, only when an invoice was actually CREATED (previously it re-fired on the idempotent path), and with the updated service instance. All three recurring events (`Generated`/`Failed`/`Completed`) are isolated: a throwing listener is logged and never alters the run's fiscal result. A crash between commit and dispatch loses the event — the reliable integration point is the hook; durable delivery would need an outbox (out of scope for 6.x). The processing loop now catches `\Throwable` (a `TypeError` in consumer code no longer aborts the whole run).
+- **Legacy recurring invoices (pre-AID-836) found by the idempotency check are returned as-is:** the hook does not re-run for them and they are not retro-sealed or registered — that backfill belongs to the consumer.
+- `RecurringBillingService`'s constructor gained optional `?InvoiceService` and `?RecurringEmissionHookContract` parameters (BC — existing `new RecurringBillingService($pricing)` calls keep working). Its `$invoiceNumbering`/`$seriesResolver` parameters are **deprecated** (the canonical path owns numbering and series now) and will be removed in the next major.
 
 - **The UUID identity contract is stated where the software actually decides it (AID-708).** Larabill declares identity columns with Blueprint's `uuid()` / `foreignUuid()`, and the *physical* representation is Laravel's decision for the configured connection: `MySqlGrammar` emits `char(36)` always, while `MariaDbGrammar` emits MariaDB's native `uuid` type on servers >= 10.7 and `char(36)` below that. Both hold a UUID v7 and both are supported — the package does not couple its schema to an engine's choice.
 
@@ -13,6 +32,8 @@ All notable changes to `larabill` will be documented in this file.
   If you install under the `mariadb` driver against MariaDB >= 10.7 you will get native `uuid` columns, and that is a valid, supported installation. **Operational note:** do not migrate one database with different drivers over its lifetime — mixing `char(36)` and native `uuid` across tables can cost you an index on a JOIN.
 
 ### Fixed
+
+- **The calculated branch of `InvoiceService::createInvoiceItem()` silently dropped `item_type`, `internal_code`, `unit_measure_id`, `service_date_from`, `service_date_to` and `metadata` (AID-836)** even though the documented `InvoiceItemData` shape promises them. They are now persisted.
 
 - **Two MySQL integration tests asserted a grammar detail as if it were the contract (AID-708).** `FreshInstallTest` and `GroupedPaymentConstraintsTest` pinned `DATA_TYPE = 'char'` and length 36, so they failed against a perfectly valid schema installed with the `mariadb` driver. They now assert UUID *compatibility* — the same criterion the installer's preflight applies — via the new `assertUuidCompatibleColumn()` helper on `MysqlIntegrationTestCase`.
 

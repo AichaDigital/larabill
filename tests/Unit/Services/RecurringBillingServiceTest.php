@@ -8,8 +8,10 @@ use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticleOverride;
 use AichaDigital\Larabill\Models\ArticlePrice;
 use AichaDigital\Larabill\Models\ArticleServiceStatus;
+use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\InvoiceSeriesControl;
+use AichaDigital\Larabill\Models\UserTaxProfile;
 use AichaDigital\Larabill\Services\PricingService;
 use AichaDigital\Larabill\Services\RecurringBillingService;
 use Carbon\Carbon;
@@ -18,15 +20,36 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
+    // AID-836: the recurring flow emits through the canonical path, which
+    // requires an active CompanyFiscalConfig and a fiscally identified
+    // receiver — exactly like any real consumer installation.
+    CompanyFiscalConfig::factory()->create([
+        'is_active'   => true,
+        'valid_until' => null,
+    ]);
+
     $this->service   = new RecurringBillingService(new PricingService);
     $this->userModel = config('larabill.user_model', 'App\\Models\\User');
+
+    $this->makeCustomer = function () {
+        $customer = $this->userModel::factory()->create();
+
+        UserTaxProfile::factory()->create([
+            'owner_user_id' => $customer->id,
+            'tax_id'        => 'ES'.fake()->numerify('B########'),
+            'valid_from'    => now()->subYear(),
+            'valid_until'   => null,
+        ]);
+
+        return $customer;
+    };
 });
 
 describe('RecurringBillingService basic processing', function () {
     it('derives invoice numbering from the shared series control on the global scope', function () {
         // AID-390 PR2: recurring invoices must use the hardened counter, on
         // the GLOBAL issuer scope — never scoped by the billed customer.
-        $customer = $this->userModel::factory()->create();
+        $customer = ($this->makeCustomer)();
         $article  = Article::factory()->monthly(2900)->create();
 
         ArticleServiceStatus::factory()->create([
@@ -51,7 +74,7 @@ describe('RecurringBillingService basic processing', function () {
     });
 
     it('processes recurring billing for services due', function () {
-        $customer = $this->userModel::factory()->create();
+        $customer = ($this->makeCustomer)();
         $article  = Article::factory()
             ->monthly(2900)
             ->create();
@@ -73,7 +96,7 @@ describe('RecurringBillingService basic processing', function () {
     });
 
     it('skips services not due yet', function () {
-        $customer = $this->userModel::factory()->create();
+        $customer = ($this->makeCustomer)();
         $article  = Article::factory()->monthly(2900)->create();
 
         ArticleServiceStatus::factory()->create([
@@ -92,7 +115,7 @@ describe('RecurringBillingService basic processing', function () {
     });
 
     it('supports dry-run mode without creating invoices', function () {
-        $customer = $this->userModel::factory()->create();
+        $customer = ($this->makeCustomer)();
         $article  = Article::factory()->monthly(2900)->create();
 
         ArticleServiceStatus::factory()->create([
@@ -111,7 +134,7 @@ describe('RecurringBillingService basic processing', function () {
     });
 
     it('only processes billable services', function () {
-        $customer = $this->userModel::factory()->create();
+        $customer = ($this->makeCustomer)();
         $article  = Article::factory()->monthly(2900)->create();
 
         // Active service (should be processed)
@@ -151,7 +174,7 @@ describe('RecurringBillingService days_in_advance configuration', function () {
     it('respects global days_in_advance configuration', function () {
         config(['larabill.recurring_billing.days_in_advance' => 7]);
 
-        $customer = $this->userModel::factory()->create();
+        $customer = ($this->makeCustomer)();
         $article  = Article::factory()->monthly(2900)->create();
 
         ArticleServiceStatus::factory()->create([
@@ -169,7 +192,7 @@ describe('RecurringBillingService days_in_advance configuration', function () {
     it('respects ArticlePrice-specific days_in_advance override', function () {
         config(['larabill.recurring_billing.days_in_advance' => 7]);
 
-        $customer = $this->userModel::factory()->create();
+        $customer = ($this->makeCustomer)();
         $article  = Article::factory()->withoutPrices()->create();
 
         // Create price with specific days_in_advance
@@ -194,7 +217,7 @@ describe('RecurringBillingService days_in_advance configuration', function () {
 
 describe('RecurringBillingService billing period calculations', function () {
     it('calculates monthly billing period correctly', function () {
-        $customer        = $this->userModel::factory()->create();
+        $customer        = ($this->makeCustomer)();
         $article         = Article::factory()->monthly(2900)->create();
         $nextBillingDate = Carbon::parse('2024-01-15');
 
@@ -216,7 +239,7 @@ describe('RecurringBillingService billing period calculations', function () {
     });
 
     it('calculates quarterly billing period correctly', function () {
-        $customer        = $this->userModel::factory()->create();
+        $customer        = ($this->makeCustomer)();
         $article         = Article::factory()->quarterly(7900)->create();
         $nextBillingDate = Carbon::parse('2024-01-01');
 
@@ -237,7 +260,7 @@ describe('RecurringBillingService billing period calculations', function () {
     });
 
     it('calculates yearly billing period correctly', function () {
-        $customer        = $this->userModel::factory()->create();
+        $customer        = ($this->makeCustomer)();
         $article         = Article::factory()->yearly(29000)->create();
         $nextBillingDate = Carbon::parse('2024-01-15');
 
@@ -258,7 +281,7 @@ describe('RecurringBillingService billing period calculations', function () {
     });
 
     it('calculates weekly billing period correctly', function () {
-        $customer        = $this->userModel::factory()->create();
+        $customer        = ($this->makeCustomer)();
         $article         = Article::factory()->create();
 
         ArticlePrice::factory()->for($article)->weekly()->create(['price' => cents(500)]);
@@ -284,7 +307,7 @@ describe('RecurringBillingService billing period calculations', function () {
 
 describe('RecurringBillingService next_billing_date updates', function () {
     it('updates next_billing_date after invoice creation', function () {
-        $customer     = $this->userModel::factory()->create();
+        $customer     = ($this->makeCustomer)();
         $article      = Article::factory()->monthly(2900)->create();
         $originalDate = Carbon::parse('2024-01-15');
 
@@ -305,7 +328,7 @@ describe('RecurringBillingService next_billing_date updates', function () {
 
 describe('RecurringBillingService pricing', function () {
     it('applies customer price overrides to invoices', function () {
-        $customer = $this->userModel::factory()->create();
+        $customer = ($this->makeCustomer)();
         $article  = Article::factory()->monthly(2900)->create();
 
         ArticleOverride::factory()->create([
@@ -333,7 +356,7 @@ describe('RecurringBillingService pricing', function () {
 
 describe('RecurringBillingService metadata', function () {
     it('creates invoice with comprehensive metadata', function () {
-        $customer = $this->userModel::factory()->create();
+        $customer = ($this->makeCustomer)();
         $article  = Article::factory()->monthly(2900)->create();
 
         $service = ArticleServiceStatus::factory()->create([
@@ -363,7 +386,7 @@ describe('RecurringBillingService metadata', function () {
 
 describe('RecurringBillingService idempotency', function () {
     it('does not create duplicate invoices for same service and period', function () {
-        $customer       = $this->userModel::factory()->create();
+        $customer       = ($this->makeCustomer)();
         $article        = Article::factory()->monthly(2900)->create();
         $processingDate = Carbon::parse('2024-01-08');
         $billingDate    = Carbon::parse('2024-01-15');
@@ -416,7 +439,7 @@ describe('RecurringBillingService idempotency', function () {
     });
 
     it('creates new invoice for different billing period', function () {
-        $customer = $this->userModel::factory()->create();
+        $customer = ($this->makeCustomer)();
         $article  = Article::factory()->monthly(2900)->create();
 
         $service = ArticleServiceStatus::factory()->create([
@@ -445,7 +468,7 @@ describe('RecurringBillingService idempotency', function () {
 
 describe('RecurringBillingService error handling', function () {
     it('handles errors gracefully and continues processing', function () {
-        $customer = $this->userModel::factory()->create();
+        $customer = ($this->makeCustomer)();
         $article  = Article::factory()->monthly(2900)->create();
 
         // Create a service that will fail (invalid data)

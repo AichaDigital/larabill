@@ -76,7 +76,7 @@ class InvoiceService
      *     items: array<int, InvoiceItemData>,
      *     type?: string,
      *     series?: string|null,
-     *     status?: string,
+     *     status?: string|int,
      *     service_date?: string|null,
      *     due_date?: string|null,
      *     payment_terms?: int|null,
@@ -382,16 +382,26 @@ class InvoiceService
             'billable_user_id' => $invoice->billable_user_id,
         ]);
 
+        // AID-836: persist every optional field the InvoiceItemData shape
+        // promises. They used to be dropped on this branch, which broke any
+        // caller relying on them — notably the recurring flow's idempotency
+        // check, which filters on metadata + service_date_from.
         return InvoiceItem::create([
-            'invoice_id'       => $invoice->id,
-            'article_id'       => $itemData['article_id']  ?? null,
-            'description'      => $itemData['description'] ?? '',
-            'quantity'         => FixedDecimal::ofUnscaled((int) $quantity, 2),
-            'unit_price'       => FixedDecimal::ofUnscaled((int) $basePrice, 2),
-            'taxable_amount'   => FixedDecimal::ofUnscaled((int) $taxCalculation['taxable_amount'], 2),
-            'total_tax_amount' => FixedDecimal::ofUnscaled((int) $taxCalculation['total_tax_amount'], 2),
-            'taxes_applied'    => $taxCalculation['taxes_applied'],
-            'total_amount'     => FixedDecimal::ofUnscaled((int) $taxCalculation['total_amount'], 2),
+            'invoice_id'        => $invoice->id,
+            'article_id'        => $itemData['article_id']        ?? null,
+            'item_type'         => $itemData['item_type']         ?? ItemType::GOOD,
+            'description'       => $itemData['description']       ?? '',
+            'internal_code'     => $itemData['internal_code']     ?? null,
+            'quantity'          => FixedDecimal::ofUnscaled((int) $quantity, 2),
+            'unit_measure_id'   => $itemData['unit_measure_id']   ?? null,
+            'unit_price'        => FixedDecimal::ofUnscaled((int) $basePrice, 2),
+            'taxable_amount'    => FixedDecimal::ofUnscaled((int) $taxCalculation['taxable_amount'], 2),
+            'total_tax_amount'  => FixedDecimal::ofUnscaled((int) $taxCalculation['total_tax_amount'], 2),
+            'taxes_applied'     => $taxCalculation['taxes_applied'],
+            'total_amount'      => FixedDecimal::ofUnscaled((int) $taxCalculation['total_amount'], 2),
+            'service_date_from' => $itemData['service_date_from'] ?? null,
+            'service_date_to'   => $itemData['service_date_to']   ?? null,
+            'metadata'          => $itemData['metadata']          ?? null,
         ]);
     }
 
