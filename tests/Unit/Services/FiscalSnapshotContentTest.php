@@ -89,3 +89,36 @@ it('freezes an empty rule set for an invoice without taxed lines', function () {
 
     expect(aid534FiscalSnapshot($invoice)['tax_rules_applied'])->toBe([]);
 });
+
+/**
+ * AID-929 (D9) — the reverse-charge qualification belongs in the frozen
+ * fiscal context.
+ *
+ * There are two generators of this snapshot and their schemas had drifted:
+ * Invoice::generateFiscalContextSnapshot() carried `is_roi_applied`, while
+ * InvoiceService::generateFiscalSnapshot() — the one the canonical issuing
+ * path uses — did not. So the document that ADR-001 says freezes its own
+ * state was omitting the datum that decides its PDF template, its OSS
+ * threshold treatment and its Verifactu qualification. Same key name as the
+ * other generator: a third vocabulary for one concept is how they drift again.
+ */
+it('freezes the reverse-charge qualification into the canonical fiscal snapshot', function () {
+    $service = app(InvoiceService::class);
+
+    $invoice = $service->createInvoice([
+        'billable_user_id' => $this->customer->id,
+        'is_roi_taxed'     => true,
+        'items'            => [],
+    ]);
+
+    expect(aid534FiscalSnapshot($invoice)['is_roi_applied'])->toBeTrue();
+});
+
+it('freezes a false reverse-charge qualification rather than omitting the key', function () {
+    $service = app(InvoiceService::class);
+
+    $invoice = $service->createInvoice(['billable_user_id' => $this->customer->id, 'items' => []]);
+
+    expect(aid534FiscalSnapshot($invoice))->toHaveKey('is_roi_applied')
+        ->and(aid534FiscalSnapshot($invoice)['is_roi_applied'])->toBeFalse();
+});

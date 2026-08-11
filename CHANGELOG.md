@@ -4,6 +4,42 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+**Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`. Read Fixed before upgrading: issuing a document that declares reverse charge while its lines carry tax is now refused. Pre-upgrade check, runnable **before** updating, lists the proformas that would stop converting:
+
+```sql
+SELECT i.id, i.fiscal_number, i.total_tax_amount
+FROM invoices i
+WHERE i.serie = 0 AND i.is_roi_taxed = 1 AND i.converted_invoice_id IS NULL
+  AND ( i.total_tax_amount <> 0
+     OR EXISTS (SELECT 1 FROM invoice_items it
+                WHERE it.invoice_id = i.id AND it.total_tax_amount <> 0)
+     OR EXISTS (SELECT 1 FROM invoice_items it2,
+                JSON_TABLE(it2.taxes_applied, '$[*]' COLUMNS (amount INT PATH '$.amount')) jt
+                WHERE it2.invoice_id = i.id AND jt.amount <> 0) );
+```
+
+Every row returned is a proforma whose qualification and tax contradict each other; decide which of the two is wrong before upgrading.
+
+### Added
+
+- **`is_roi_taxed` is now part of the documented input of `InvoiceService::createInvoice()` and `createProforma()` (AID-929).** The consumer declares the reverse-charge qualification of the operation and the package consumes it (AID-309 doctrine — never a live VIES lookup). Absent key means `false`, so callers that ignore it are unaffected.
+- New `ReverseChargeWithTaxException` (`@api`), thrown when a document declares reverse charge while carrying real tax. See Fixed.
+- New `Invoice::hasRealTax(): bool`: single owner of "does this document carry tax", asked both by the issuance guard and by `VerifactuAdapter`'s rule-1237 check. Public surface of an `@api` model, frozen in the contract snapshot.
+
+### Fixed
+
+- **The proforma→invoice conversion silently dropped `is_roi_taxed` (AID-929).** A proforma frozen with the flag on produced an invoice with it off — the header datum that qualifies the operation was discarded. **Old:** the converted invoice always carried `false`, so the fail-loud check for an incomplete intra-EU recipient never ran, the flag reached the AEAT as `false` in the submission metadata, the sale counted towards the distance-sales threshold it must stay out of, and the PDF used the ordinary template instead of the reverse-charge one. **New:** the flag travels verbatim, exactly like `service_date`. Nothing is inferred and nothing is recalculated. **No backfill:** already-issued invoices are sealed documents and are not rewritten — correcting one is a rectificative invoice, a consumer decision.
+
+  Note that the fix was not reachable by simply cloning the key: `createInvoice()` builds the row from an explicit key list, so an unknown key in `$invoiceData` was ignored. Until this release **no canonical path could issue with the flag on at all**, in any of the three issuing paths.
+
+- **Issuing with reverse charge AND real tax is now refused (AID-929).** `TaxCalculationService` never reads the qualification, so a proforma can legitimately hold the flag and a VAT amount at the same time; propagating the flag would have sealed that contradiction into an invoice. **Old:** such a document was created and sealed, and only `VerifactuAdapter` refused it later at registration time (AEAT rule 1237), with the fiscal number already consumed — and only for operations that reach the N2 branch. **New:** `ReverseChargeWithTaxException` is thrown during issuance, after the lines are known and before any snapshot is frozen, inside the transaction: no invoice row, no lines and no consumed fiscal number survive. It applies to proformas too, which is where the mismatch can still be corrected at no fiscal cost. The package does not zero the tax for you: line amounts are frozen fiscal content (ADR-001). Effects triggered by a consumer's own model observers on `creating`/`created` are NOT rolled back — bind those with `afterCommit`.
+
+- **An N2 breakdown carrying NEGATIVE tax was accepted (AID-929).** The predicate behind rule 1237 tested the header total for `> 0`. **Old:** a credit line with negative tax and no `taxes_applied` breakdown passed as a clean N2. **New:** the test is `!== 0`, so negative tax is refused like positive tax.
+
+- **The canonical `fiscal_snapshot` did not freeze the reverse-charge qualification (AID-929).** The package has two generators of that snapshot and their schemas had drifted: the model's carried `is_roi_applied`, the service's — the one the canonical issuing path uses — did not. **Old:** the frozen fiscal context omitted the datum that decides PDF template, OSS treatment and Verifactu qualification. **New:** `InvoiceService::generateFiscalSnapshot()` freezes `is_roi_applied`, reusing the other generator's key name. Documents issued before this release keep their original snapshot; sealed snapshots are not rewritten.
+
+**Not fixed here:** the recurring flow still issues with `is_roi_taxed = false`. `RecurringBillingService` builds the `createInvoice()` input itself and the v6.10.0 emission hook receives the invoice already sealed, so widening the input shape gives the consumer nowhere to declare the qualification. Deciding where it comes from in unattended issuance is tracked separately (AID-931). `notes` is likewise still dropped by the conversion, deliberately (AID-930).
+
 ## [6.10.0] - 2026-08-06
 
 **Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`; no `larabill:install` re-run or `migrate` needed. If you use the recurring flow, read the Changed section: emission now REQUIRES an active `CompanyFiscalConfig`, a configured fiscal series and a receiver `UserTaxProfile` with a non-empty `tax_id`. Pre-upgrade check, runnable before updating: `SELECT COUNT(*) FROM article_service_status s LEFT JOIN user_tax_profiles p ON p.owner_user_id = s.customer_id AND p.valid_from <= CURDATE() AND (p.valid_until IS NULL OR p.valid_until >= CURDATE()) AND p.tax_id IS NOT NULL AND p.tax_id != '' WHERE s.status = '0' AND p.id IS NULL;` (`0` = `ServiceStatus::ACTIVE`) — every row counted is an active service whose receiver would fail recurring emission after the upgrade.

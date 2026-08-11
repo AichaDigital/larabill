@@ -418,6 +418,22 @@ describe('VerifactuAdapter::toVerifactuBreakdowns (intra-EU N2 + guards — AID-
             ->toThrow(ValidationException::class);
     });
 
+    it('rejects an N2 candidate carrying NEGATIVE tax, which the old > 0 test let through (AID-929 D8)', function () use ($b2bDe, $esIssuer) {
+        // Behaviour change: invoiceHasRealTax() used to ask `> 0`, so a credit
+        // line with negative tax and no breakdown was emitted as a clean N2 —
+        // an N2 that carries VAT, which rule 1237 forbids regardless of sign.
+        // The predicate now lives on Invoice::hasRealTax() and asks `!== 0`.
+        $invoice = makeVerifactuSourceInvoice(
+            ['taxable_amount' => -10000, 'total_tax_amount' => -2100, 'total_amount' => -12100],
+            [['taxable_amount' => -10000, 'total_tax_amount' => -2100, 'total_amount' => -12100, 'item_type' => ItemType::SERVICE, 'taxes_applied' => []]],
+            $b2bDe,
+            $esIssuer,
+        );
+
+        expect(fn () => VerifactuAdapter::toVerifactuBreakdowns($invoice))
+            ->toThrow(ValidationException::class);
+    });
+
     it('rejects a B2C OSS sale fail-loud (régimen 17 out of scope) instead of silently emitting S1', function () {
         $invoice = makeVerifactuSourceInvoice(
             ['taxable_amount' => 10000, 'total_tax_amount' => 1900, 'total_amount' => 11900],
