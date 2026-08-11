@@ -393,18 +393,11 @@ class VerifactuAdapter
      */
     private static function invoiceHasRealTax(Invoice $invoice): bool
     {
-        if (($invoice->total_tax_amount?->unscaledValue() ?? 0) > 0) {
-            return true;
-        }
-
-        foreach ($invoice->items as $item) {
-            foreach ($item->taxes_applied ?? [] as $tax) {
-                if ((int) ($tax['amount'] ?? 0) !== 0) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        // AID-929: delegates to the single owner of the definition. The
+        // issuance guard asks the same question before sealing, and two copies
+        // of a fiscal predicate drift. Behaviour change carried by that move:
+        // the header total is now tested for non-zero instead of positive, so
+        // a credit line with negative tax no longer passes as an N2.
+        return $invoice->hasRealTax();
     }
 }

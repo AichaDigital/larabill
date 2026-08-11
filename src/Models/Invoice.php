@@ -679,6 +679,41 @@ class Invoice extends Model implements LegallyRetainable
     }
 
     /**
+     * Whether this document actually carries tax.
+     *
+     * Single owner of the definition (AID-929). It lived as a private helper
+     * inside `VerifactuAdapter`, which needs it to enforce AEAT rule 1237 (an
+     * N2 breakdown cannot carry VAT); the issuance guard needs the SAME
+     * question answered before sealing, and two copies of a fiscal predicate
+     * is how they drift apart.
+     *
+     * Two sources, because either can hold the figure: the header total, and
+     * the per-line `taxes_applied` breakdown — a line may state a zero total
+     * while its breakdown carries an amount.
+     *
+     * Non-zero, NOT positive (AID-929 D8): the inherited implementation tested
+     * `> 0`, so a credit line with negative tax and no breakdown slipped
+     * through unnoticed. A negative amount is as invalid under reverse charge
+     * as a positive one.
+     */
+    public function hasRealTax(): bool
+    {
+        if (($this->total_tax_amount?->unscaledValue() ?? 0) !== 0) {
+            return true;
+        }
+
+        foreach ($this->items as $item) {
+            foreach ($item->taxes_applied ?? [] as $tax) {
+                if ((int) ($tax['amount'] ?? 0) !== 0) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /**
      * Snapshot fiscal configs at invoice creation (ADR-001).
      *
      * CRITICAL: This method loads and stores the fiscal identities

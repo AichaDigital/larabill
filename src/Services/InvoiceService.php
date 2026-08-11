@@ -10,6 +10,7 @@ use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Enums\ItemType;
 use AichaDigital\Larabill\Exceptions\FiscalConfigChangedException;
+use AichaDigital\Larabill\Exceptions\ReverseChargeWithTaxException;
 use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\InvoiceItem;
@@ -81,7 +82,8 @@ class InvoiceService
      *     due_date?: string|null,
      *     payment_terms?: int|null,
      *     template_name?: string|null,
-     *     proforma_id?: string|null
+     *     proforma_id?: string|null,
+     *     is_roi_taxed?: bool
      * }  $invoiceData
      * @param  array{
      *     make_immutable?: bool,
@@ -146,6 +148,11 @@ class InvoiceService
                 'company_fiscal_config_id'  => $companyConfig->id,
                 'user_tax_profile_id'       => $userTaxProfile?->id,
                 'proforma_id'               => $invoiceData['proforma_id'] ?? null,
+                // AID-929: the consumer DECLARES the reverse-charge
+                // qualification (AID-309 doctrine — the package consumes the
+                // flag, it never infers it from a live VIES lookup). Absent
+                // key => false, so nothing changes for callers that ignore it.
+                'is_roi_taxed'              => $invoiceData['is_roi_taxed'] ?? false,
                 'is_immutable'              => false,
                 'due_date'                  => $invoiceData['due_date']      ?? null,
                 'payment_terms'             => $invoiceData['payment_terms'] ?? null,
@@ -162,6 +169,17 @@ class InvoiceService
             $invoice->taxable_amount   = $invoice->items->reduce(fn (FixedDecimal $c, InvoiceItem $i) => $c->plus($i->taxable_amount), FixedDecimal::zero(2));
             $invoice->total_tax_amount = $invoice->items->reduce(fn (FixedDecimal $c, InvoiceItem $i) => $c->plus($i->total_tax_amount), FixedDecimal::zero(2));
             $invoice->total_amount     = $invoice->items->reduce(fn (FixedDecimal $c, InvoiceItem $i) => $c->plus($i->total_amount), FixedDecimal::zero(2));
+
+            // AID-929 (D4): reverse charge and real tax cannot coexist (AEAT
+            // rule 1237). Checked HERE — after the lines exist and the totals
+            // are known, before any snapshot is frozen and before sealing —
+            // and inside this transaction, so a refusal leaves no invoice, no
+            // lines and no consumed fiscal number. VerifactuAdapter enforces
+            // the same rule, but only at registration time: by then the
+            // document has already been born and sealed.
+            if ($invoice->is_roi_taxed && $invoice->hasRealTax()) {
+                throw ReverseChargeWithTaxException::forInvoice($invoice);
+            }
 
             // Generate encrypted snapshots
             $invoice->issuer_snapshot   = $this->generateIssuerSnapshot($companyConfig);
@@ -249,6 +267,12 @@ class InvoiceService
             'invoice_date'      => $invoice->invoice_date,
             'issuer_country'    => $companyConfig->country_code,
             'customer_country'  => $customerData?->country_code,
+            // AID-929 (D9): the reverse-charge qualification is frozen with
+            // the rest of the fiscal context (ADR-001). Same key name as
+            // Invoice::generateFiscalContextSnapshot(), the other generator of
+            // this snapshot — a third vocabulary for one concept is how the
+            // two drifted apart in the first place.
+            'is_roi_applied'    => (bool) $invoice->is_roi_taxed,
             'currency'          => 'EUR', // TODO: Make configurable
             'exchange_rate'     => 1.0,   // TODO: Implement multi-currency
             'tax_rules_applied' => $this->aggregateTaxRules($invoice),
@@ -417,7 +441,8 @@ class InvoiceService
      *     service_date?: string|null,
      *     due_date?: string|null,
      *     payment_terms?: int|null,
-     *     template_name?: string|null
+     *     template_name?: string|null,
+     *     is_roi_taxed?: bool
      * }  $invoiceData
      * @param  array{make_immutable?: bool}  $options
      */
@@ -546,6 +571,12 @@ class InvoiceService
                 // (RD 1619/2012 art. 6.1.f/i) survives the conversion. No
                 // datum → null, documented — never an invented date.
                 'service_date'  => $proforma->service_date?->toDateString(),
+                // AID-929: the fiscal qualification of the operation travels
+                // VERBATIM, exactly like service_date. Dropping it produced an
+                // invoice that silently contradicted the proforma the customer
+                // accepted — and no consumer could restore it afterwards,
+                // because the invoice is born sealed.
+                'is_roi_taxed'  => (bool) $proforma->is_roi_taxed,
                 'due_date'      => $proforma->due_date?->toDateString(),
                 'payment_terms' => $proforma->payment_terms ? (int) $proforma->payment_terms : null,
                 'template_name' => $proforma->template_name,

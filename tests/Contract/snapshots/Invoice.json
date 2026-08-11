@@ -365,6 +365,13 @@
             "returnType": "bool",
             "static": false
         },
+        "hasRealTax": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "bool",
+            "static": false
+        },
         "isDraft": {
             "api": false,
             "deprecated": false,
