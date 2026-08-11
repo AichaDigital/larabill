@@ -4,6 +4,20 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+**Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`. Read Fixed before upgrading if you pass `status` to `createInvoice()`/`createProforma()` as a string: values that used to be accepted silently are now rejected.
+
+### Added
+
+- New `InvalidInvoiceStatusException` (`@api`), thrown when the `status` input of an invoice-issuing call is not an `InvoiceStatus`. It extends `InvalidArgumentException`, so consumers already catching that keep working.
+
+### Fixed
+
+- **An unknown `status` string no longer produces a draft invoice nobody asked for (AID-838).** The mapping behind the documented `status?: string|int` input accepted four of the seven enum cases and sent everything else — `'sent'`, `'overdue'`, `'converted'` and every typo — through a `default` that returned `DRAFT`. **Old:** `createInvoice([... 'status' => 'sent'])` issued a DRAFT, silently discarding the caller's intent. **New:** the accepted names are derived from `InvoiceStatus` itself (case-insensitive, so all seven cases work, including the three that were missing), and anything else throws `InvalidInvoiceStatusException` naming the offending value and the accepted ones.
+
+  The accepted list is now *derived* rather than hand-written on purpose: a parallel list is what drifted out of sync with the enum in the first place, so a case added later can never silently become a fallback again. Note that `InvoiceStatus::label()` is NOT the source — it returns a translation, which would make the mapping locale-dependent.
+
+- **An out-of-range integer `status` now fails with a domain error instead of a raw `ValueError` (AID-838).** The integer branch returned whatever it was given without checking it was a real case. **Old:** `'status' => 99` travelled until Eloquent's enum cast blew up with PHP's `ValueError: 99 is not a valid backing value for enum InvoiceStatus`, which names neither the input nor the fix. **New:** the same `InvalidInvoiceStatusException` as the string branch — one contract for one mistake, whichever type it arrives in.
+
 ## [6.11.0] - 2026-08-11
 
 **Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`. Read Fixed before upgrading: issuing a document that declares reverse charge while its lines carry tax is now refused. Pre-upgrade check, runnable **before** updating, lists the proformas that would stop converting:
