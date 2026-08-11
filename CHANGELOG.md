@@ -4,6 +4,8 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+## [6.12.0] - 2026-08-11
+
 **Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`. Read Fixed before upgrading if you pass `status` to `createInvoice()`/`createProforma()` as a string: values that used to be accepted silently are now rejected.
 
 ### Added
