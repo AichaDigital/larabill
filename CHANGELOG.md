@@ -4,6 +4,8 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+## [6.11.0] - 2026-08-11
+
 **Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`. Read Fixed before upgrading: issuing a document that declares reverse charge while its lines carry tax is now refused. Pre-upgrade check, runnable **before** updating, lists the proformas that would stop converting:
 
 ```sql
