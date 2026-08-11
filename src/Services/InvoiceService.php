@@ -10,6 +10,7 @@ use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Enums\ItemType;
 use AichaDigital\Larabill\Exceptions\FiscalConfigChangedException;
+use AichaDigital\Larabill\Exceptions\InvalidInvoiceStatusException;
 use AichaDigital\Larabill\Exceptions\ReverseChargeWithTaxException;
 use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\Invoice;
@@ -630,18 +631,26 @@ class InvoiceService
      */
     protected function mapStatusToEnum(string|int $status): int
     {
-        // If already int, return it
+        // AID-838: validated, not guessed. The accepted names are DERIVED from
+        // the enum instead of listed here — the hand-written map had drifted to
+        // four of the seven cases, and 'sent'/'overdue'/'converted' (plus every
+        // typo) fell through a `default` that quietly returned DRAFT. Deriving
+        // them means a case added to InvoiceStatus can never become a silent
+        // fallback again. NOTE: the case NAME is the key, not label(), which
+        // returns a translation and would make this locale-dependent.
         if (is_int($status)) {
-            return $status;
+            return (InvoiceStatus::tryFrom($status)
+                ?? throw InvalidInvoiceStatusException::forValue($status))->value;
         }
 
-        // Map string to int
-        return match (strtolower($status)) {
-            'draft'     => InvoiceStatus::DRAFT->value,
-            'pending'   => InvoiceStatus::PENDING->value,
-            'paid'      => InvoiceStatus::PAID->value,
-            'cancelled' => InvoiceStatus::CANCELLED->value,
-            default     => InvoiceStatus::DRAFT->value,
-        };
+        $normalized = mb_strtolower(trim($status));
+
+        foreach (InvoiceStatus::cases() as $case) {
+            if (mb_strtolower($case->name) === $normalized) {
+                return $case->value;
+            }
+        }
+
+        throw InvalidInvoiceStatusException::forValue($status);
     }
 }
