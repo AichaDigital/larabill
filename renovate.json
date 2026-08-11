@@ -6,5 +6,12 @@
     ":timezone(Europe/Madrid)",
     ":semanticCommits"
   ],
-  "schedule": ["before 10am on monday"]
+  "schedule": ["before 10am on monday"],
+  "packageRules": [
+    {
+      "description": "Hold Pest at 4.x: Pest 5 requires php ^8.4, and this package's floor is ^8.3 because it supports Laravel 12 and 13 (L13 itself requires ^8.3). Raising the floor would evict consumers running a Laravel line that is still alive, so dev tooling does not get to force it. Revisit when the supported Laravel lines reach EOL and the PHP floor can rise on its own terms — not before.",
+      "matchPackageNames": ["pestphp/**"],
+      "allowedVersions": "<5"
+    }
+  ]
 }
