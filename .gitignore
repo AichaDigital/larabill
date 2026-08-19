@@ -91,6 +91,7 @@ docs/ARCHITECTURE_FISCAL_VERIFICATION_JOBS.md
 docs/ADR_PROPOSAL_*.md
 docs/AGENT_CONTEXT.md
 docs/OPERATIONAL_NOTES.md
+docs/reports/*
 
 # Local scripts
 ./PUBLISH.sh
