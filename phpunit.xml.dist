@@ -24,6 +24,16 @@
             <exclude>tests/Concurrency</exclude>
         </testsuite>
     </testsuites>
+    <php>
+        <!-- The suite does not fit in PHP's 128M default: in parallel a worker
+             dies rendering PDFs, sequentially the arch test dies inside
+             php-parser (AID-976). It is declared HERE, and not in a composer
+             script, because paratest spawns each worker as its own PHP process:
+             the worker reads this file, but never the parent's inline ini
+             flags. Same posture as PHPStan, which already asks for 1G in its
+             own script. -->
+        <ini name="memory_limit" value="1G"/>
+    </php>
     <logging>
         <junit outputFile="build/report.junit.xml"/>
     </logging>
