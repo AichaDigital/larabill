@@ -10,6 +10,7 @@ use AichaDigital\Larabill\Database\Factories\ArticleServiceStatusFactory;
 use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Enums\CancellationType;
 use AichaDigital\Larabill\Enums\ServiceStatus;
+use AichaDigital\Larabill\Exceptions\MissingContractPriceException;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -281,7 +282,18 @@ class ArticleServiceStatus extends Model
     }
 
     /**
-     * Update the effective price (checks for active overrides).
+     * Revise the contractual price from the catalogue or an active override.
+     *
+     * This is an explicit act of the CONSUMER — a contract revision — and the
+     * recurring engine never calls it (AID-956 D3). Invoking it from the
+     * emission path would reprice live agreements without a contractual act,
+     * which is exactly what `effective_price` exists to prevent.
+     *
+     * The revision only affects periods not yet emitted (D4): already emitted
+     * lines are immutable, and their settlement measures on the emitted line.
+     *
+     * @throws MissingContractPriceException when neither an override nor a
+     *                                       catalogue price yields a candidate. The previous price is kept.
      */
     public function updateEffectivePrice(): void
     {
@@ -290,9 +302,22 @@ class ArticleServiceStatus extends Model
         // Get price from ArticlePrice for current billing frequency
         $basePrice = $this->article->getPriceFor($this->billing_frequency);
 
+        // No nullsafe here, deliberately: `??` already suppresses the
+        // "property on null" warning for the whole left-hand expression
+        // (verified on PHP 8.3), so `?->` would be redundant and PHPStan
+        // rejects it. The AID-956 spec claimed this line worked by accident —
+        // it did not; measured, the defect was only the missing guard below.
+        $candidate = $override->custom_price
+            ?? ($basePrice !== null ? FixedDecimal::ofUnscaled((int) $basePrice, 2) : null);
+
+        // Compute first, write second: a revision with no candidate must leave
+        // the agreement exactly as it was, never blank its price (D7).
+        if ($candidate === null) {
+            throw MissingContractPriceException::forRevision($this);
+        }
+
         $this->update([
-            'effective_price'     => $override->custom_price
-                ?? ($basePrice !== null ? FixedDecimal::ofUnscaled((int) $basePrice, 2) : null),
+            'effective_price'     => $candidate,
             'current_override_id' => $override?->id,
         ]);
     }

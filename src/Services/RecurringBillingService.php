@@ -396,8 +396,9 @@ final class RecurringBillingService
         // Calculate billing period
         $periodEnd = $this->calculatePeriodEnd($service);
 
-        // Get effective pricing (with customer overrides) using service's billing frequency
-        $pricingDetails = $this->pricingService->createPricingDetailsForService($service);
+        // The amount comes from the CONTRACT, never re-derived from the
+        // catalogue or overrides at emission time (ADR-004, AID-956 D1).
+        $pricingDetails = $this->pricingService->createPricingDetailsForContract($service);
 
         // Calculate next billing date (for metadata)
         $nextBillingDate = $this->calculateNextBillingDate($service);

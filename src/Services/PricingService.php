@@ -6,6 +6,7 @@ namespace AichaDigital\Larabill\Services;
 
 use AichaDigital\Larabill\DataTransferObjects\PricingDetails;
 use AichaDigital\Larabill\Enums\BillingFrequency;
+use AichaDigital\Larabill\Exceptions\MissingContractPriceException;
 use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticleOverride;
 use AichaDigital\Larabill\Models\ArticleServiceStatus;
@@ -128,6 +129,44 @@ class PricingService
             $service->article,
             $service->billing_frequency,
             $service->customer_id
+        );
+    }
+
+    /**
+     * Create pricing details DTO from the CONTRACT, for recurring emission.
+     *
+     * Reads the price stored on the agreement and consults neither the
+     * catalogue nor overrides: `effective_price` is contractual state, not a
+     * cache (ADR-004, AID-956 D1). Changing an ArticlePrice or an
+     * ArticleOverride therefore does not reprice a live agreement.
+     *
+     * Discounts are null on purpose: there is no stored historical base to
+     * compute them against, and inventing one by querying the catalogue is
+     * exactly what this method exists to avoid.
+     *
+     * `overrideId` is carried as an OBSERVATION — "which discount the contract
+     * pointed at when it was emitted" — never as provenance of the amount:
+     * both columns are independently fillable and the FK is nullOnDelete, so
+     * nothing guarantees that override set that price (AID-956 D6).
+     */
+    public function createPricingDetailsForContract(ArticleServiceStatus $service): PricingDetails
+    {
+        // Absent is null and ONLY null: a contract price of zero is a valid
+        // agreement and is billed as zero (AID-956 D7). Never write this as
+        // `if (! $price)`.
+        if ($service->effective_price === null) {
+            throw MissingContractPriceException::forService($service);
+        }
+
+        $contractPrice = $service->effective_price->unscaledValue();
+
+        return new PricingDetails(
+            basePrice: $contractPrice,
+            appliedPrice: $contractPrice,
+            pricingRule: 'contract_price',
+            discountAmount: null,
+            discountPercentage: null,
+            overrideId: $service->current_override_id,
         );
     }
 
