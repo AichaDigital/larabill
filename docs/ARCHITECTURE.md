@@ -503,8 +503,8 @@ Ref: articles.unit_measure_id > unit_measures.id
 │       ❌ NO usar addDays(30) → produce desfases      │
 │       ✅ SÍ usar addMonth() → respeta calendario     │
 │                                                       │
-│    b) Verificar precio efectivo actual               │
-│       (puede haber cambiado override)                │
+│    b) Leer precio contractual efectivo               │
+│       (estado del acuerdo, no caché)                 │
 │                                                       │
 │    c) Crear Invoice                                  │
 │                                                       │

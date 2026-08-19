@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Services;
 
 use AichaDigital\Lara100\RoundingMode;
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Enums\CancellationType;
 use AichaDigital\Larabill\Enums\ServiceStatus;
 use AichaDigital\Larabill\Events\ServiceActivated;
@@ -12,6 +13,7 @@ use AichaDigital\Larabill\Events\ServiceCancelled;
 use AichaDigital\Larabill\Events\ServiceExpired;
 use AichaDigital\Larabill\Events\ServiceSuspended;
 use AichaDigital\Larabill\Models\ArticleServiceStatus;
+use AichaDigital\Larabill\Models\InvoiceItem;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -107,7 +109,24 @@ final class ServiceLifecycleService
     }
 
     /**
-     * Calculate refund amount for a service based on unused period
+     * Calculate the value of the unused part of the current period.
+     *
+     * The base is what was ACTUALLY INVOICED for that period — the emitted
+     * line, which carries its own price and service dates verbatim (AID-559)
+     * — never the price the contract carries today (AID-956 D12). A contract
+     * revision is a legitimate act of the consumer (D3) and only affects
+     * periods not yet emitted (D4); measuring an already invoiced period
+     * against a later revision would refund money the customer never paid, or
+     * keep money that is theirs.
+     *
+     * When no emitted line covers the period — a service imported from a
+     * previous system, a period larabill never invoiced — this falls back to
+     * the contract price. It does not throw: this is an indicative figure the
+     * consumer acts on, not a fiscal document.
+     *
+     * This returns an AMOUNT and nothing else. Whether anything is refunded at
+     * all, under which commercial policy, and which fiscal artefact documents
+     * it, is not larabill's to decide — see docs/ADR-014.
      *
      * @return int|null Amount in Base100, or null if no refund
      */
@@ -128,7 +147,7 @@ final class ServiceLifecycleService
         }
 
         // Proportional refund, settled to the cent with HalfUp (EU/Spain norm).
-        $refundAmount = $service->effective_price
+        $refundAmount = ($this->invoicedAmountForCurrentPeriod($service) ?? $service->effective_price)
             ->multipliedBy((int) $unusedDays)
             ->dividedBy((int) $totalDaysInPeriod, 2, RoundingMode::HalfUp)
             ->unscaledValue();
@@ -244,6 +263,29 @@ final class ServiceLifecycleService
                 $service->article->metadata['notice_period_days'] ?? 30
             ),
         };
+    }
+
+    /**
+     * The amount actually invoiced for the period the service is in today.
+     *
+     * Located through the service reference the recurring engine freezes on
+     * every line it emits (`metadata.source_reference.service_status_id`),
+     * which is what distinguishes two agreements of the same customer for the
+     * same article and frequency — something ArticleOverride cannot express.
+     */
+    protected function invoicedAmountForCurrentPeriod(ArticleServiceStatus $service): ?FixedDecimal
+    {
+        $today = now()->toDateString();
+
+        $line = InvoiceItem::query()
+            // @phpstan-ignore argument.type (Eloquent JSON path operator, not a model column)
+            ->where('metadata->source_reference->service_status_id', $service->getKey())
+            ->whereDate('service_date_from', '<=', $today)
+            ->whereDate('service_date_to', '>=', $today)
+            ->orderByDesc('id')
+            ->first();
+
+        return $line?->taxable_amount;
     }
 
     /**

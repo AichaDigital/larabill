@@ -327,11 +327,16 @@ describe('RecurringBillingService next_billing_date updates', function () {
 });
 
 describe('RecurringBillingService pricing', function () {
-    it('applies customer price overrides to invoices', function () {
+    // AID-956 D1: this used to assert that the engine resolved the override
+    // dynamically at emission time. It no longer does — the agreement carries
+    // its own price, and the override is only the discount the contract
+    // pointed at when it was signed. The fixture now states the agreement
+    // explicitly instead of leaning on the factory default.
+    it('bills the price stored on the contract, which an override set at contract time', function () {
         $customer = ($this->makeCustomer)();
         $article  = Article::factory()->monthly(2900)->create();
 
-        ArticleOverride::factory()->create([
+        $override = ArticleOverride::factory()->create([
             'article_id'   => $article->id,
             'customer_id'  => $customer->id,
             'custom_price' => cents(2400),
@@ -339,10 +344,12 @@ describe('RecurringBillingService pricing', function () {
         ]);
 
         ArticleServiceStatus::factory()->create([
-            'customer_id'       => $customer->id,
-            'article_id'        => $article->id,
-            'billing_frequency' => BillingFrequency::MONTHLY,
-            'next_billing_date' => now()->addDays(7),
+            'customer_id'         => $customer->id,
+            'article_id'          => $article->id,
+            'billing_frequency'   => BillingFrequency::MONTHLY,
+            'next_billing_date'   => now()->addDays(7),
+            'effective_price'     => cents(2400),
+            'current_override_id' => $override->id,
         ]);
 
         $this->service->processRecurringBilling(now());

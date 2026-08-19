@@ -4,6 +4,65 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+**Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`. **Read Fixed before upgrading: recurring invoice amounts can change.** Run the impact query below **before** updating, and pause the recurring run while you do.
+
+### Added
+
+- `PricingService::createPricingDetailsForContract(ArticleServiceStatus $service)` (`@api`): builds the pricing payload from the agreement itself, consulting neither the catalogue nor overrides. `createPricingDetailsForService()` is untouched and keeps quoting at current catalogue prices.
+- `MissingContractPriceException` (`@api`), thrown when an agreement reaches the pricing path with no contractual price, and when a contract revision finds no candidate. It extends `RuntimeException`.
+
+### Fixed
+
+- **The recurring engine now bills `effective_price`, the price stored on the agreement (AID-956).** **Old:** the amount was re-derived from `ArticlePrice`/`ArticleOverride` at emission time, so a contract imported or negotiated at an agreed price was invoiced at whatever the catalogue said that day, and a catalogue edit repriced live agreements on the next run. **New:** the agreement's own price is billed, which is what ADR-004 has promised since 2025-12-09. **For any consumer whose `effective_price` differs from its catalogue price, the invoiced amount changes** — towards the agreed one. See `docs/ADR-013`.
+
+- **An agreement whose frequency has no catalogue price no longer invoices ZERO (AID-956).** **Old:** `PricingService` fell back to `?? 0.0` and issued an invoice for nothing, silently. **New:** it fails loud with `MissingContractPriceException`; the service is counted as `failed`, nothing is persisted and no fiscal number is consumed (the atomic boundary of AID-836).
+
+- **Settling unconsumed time now measures on the emitted invoice line, not on today's contract price (AID-956).** A contract revision is a legitimate act and only affects periods not yet emitted — a promise that was false while `calculateRefund()` read the live price. **Old:** invoice a month at 24.00, revise the contract to 99.00, and a cancellation inside that same month refunded a share of 99.00 — money the customer never paid; a revision downwards kept money that was theirs. **New:** the base is the line actually invoiced for that period. With no line covering it (a service imported from a previous system), it falls back to the contract price and does not throw: this is an indicative figure, not a fiscal document. Which artefact documents a refund, and whether there is one at all, remains outside larabill — see `docs/ADR-014`.
+
+- **A failed contract revision no longer blanks the stored price (AID-956).** `ArticleServiceStatus::updateEffectivePrice()` computes the candidate first and throws before writing when neither an active override nor a catalogue price yields one. **Old:** it wrote `null` and the NOT NULL column rejected it with a raw database error, after the fact. **New:** `MissingContractPriceException`, with the previous price intact.
+
+  Note that a contract price of **zero is valid** and is billed as zero. "Absent" means `null`, and only `null`.
+
+### Impact query — run it BEFORE updating
+
+Lists every active agreement, its contractual price, the catalogue price for its frequency and the active override candidates. It does **not** reproduce what the old engine would have billed, and it is not called drift: the previous resolver picked among candidates with no ordering and without applying `valid_from`/`valid_to`, so no query can be exactly equivalent. Two cases are flagged separately because they are the genuinely ambiguous ones.
+
+```sql
+SELECT s.id                                  AS service_id,
+       s.instance_identifier,
+       s.effective_price                     AS contract_price_base100,
+       MIN(p.price)                          AS catalogue_price_base100,
+       COUNT(DISTINCT o.id)                  AS active_override_candidates,
+       GROUP_CONCAT(DISTINCT o.custom_price) AS override_prices_base100,
+       CASE
+           WHEN MIN(p.price) IS NULL          THEN 'NO CATALOGUE PRICE - this agreement was billing ZERO'
+           WHEN COUNT(DISTINCT o.id) > 1      THEN 'AMBIGUOUS - several active overrides matched'
+           WHEN COUNT(DISTINCT o.id) = 1
+                AND s.effective_price <> MIN(o.custom_price) THEN 'AMOUNT CHANGES - was billing the override'
+           WHEN COUNT(DISTINCT o.id) = 0
+                AND s.effective_price <> MIN(p.price)        THEN 'AMOUNT CHANGES - was billing the catalogue'
+           ELSE 'unchanged'
+       END                                   AS impact
+FROM article_service_status s
+LEFT JOIN article_prices p
+       ON p.article_id = s.article_id
+      AND p.billing_frequency = s.billing_frequency
+      AND p.is_active = 1
+LEFT JOIN article_overrides o
+       ON o.article_id = s.article_id
+      AND o.customer_id = s.customer_id
+      AND o.is_active = 1
+WHERE s.status = 0            -- ServiceStatus::ACTIVE
+GROUP BY s.id, s.instance_identifier, s.effective_price
+ORDER BY impact, s.id;
+```
+
+Rows reported as `AMOUNT CHANGES` are agreements whose invoiced amount moves to the contractual price. Reconciling them — deciding whether the stored price is the right one, and revising it with `updateEffectivePrice()` if not — is the consumer's act: the package does not backfill anything, because rewriting those values is precisely what this fix exists to prevent.
+
+### Changed
+
+- Temporary overrides with a `valid_to` no longer return the service to its base price when they expire. This follows directly from billing the contract, and is documented as the explicit trade-off in `docs/ADR-013`. If that behaviour is needed, it should be modelled as a scheduled price revision, not by making every contract's price float again.
+
 ## [6.12.0] - 2026-08-11
 
 **Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`. Read Fixed before upgrading if you pass `status` to `createInvoice()`/`createProforma()` as a string: values that used to be accepted silently are now rejected.
