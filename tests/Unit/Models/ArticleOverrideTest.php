@@ -206,7 +206,13 @@ it('calculates days until expiration', function () {
         'valid_to' => now()->addDays(10),
     ]);
 
-    expect($override->daysUntilExpiration())->toBe(9); // Carbon includes current day in diff
+    // Whole calendar days on the same grain as the window (AID-974): the row is
+    // in force through that tenth day, so the answer is 10. It used to be 9 —
+    // the old comparison ran from `now()` with its time of day against a `date`
+    // column widened to midnight, and truncation ate the partial day. That also
+    // made 0 ambiguous between "expires at the end of today" and "expires at the
+    // end of tomorrow"; on day grain the two are 0 and 1.
+    expect($override->daysUntilExpiration())->toBe(10);
 });
 
 it('returns null days until expiration when no expiration date', function () {

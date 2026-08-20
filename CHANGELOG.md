@@ -4,6 +4,95 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+**Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`. **Read Fixed before upgrading: quoted prices can change, and saving an override that overlaps an active one now throws.** Run the impact queries below **before** updating.
+
+### Added
+
+- `Article::resolveOverrideFor(int|string $customerId, Carbon $at)`: resolves the customer override in force at a given instant, with deterministic ordering. Public on an `@api` class, like its siblings `getActiveOverrideFor()` and `hasActiveOverrideFor()`; it carries no method-level `@api` tag, which in this package marks a closed list of eight amber-band operations. `getActiveOverrideFor()` keeps its exact signature and delegates to it with `now()`. `$at` is the ordinary `Carbon\Carbon` — the type the scopes and `ArticleOverrideService::setOverride()` already take, and which `Illuminate\Support\Carbon` satisfies.
+- **`ArticleOverrideService` (`@api`) — the guaranteed write path for customer overrides (AID-974).** `setOverride(Article $article, int|string $customerId, FixedDecimal $customPrice, ?Carbon $validFrom = null, ?Carbon $validTo = null, ?string $reason = null): ArticleOverride`. Sister of `ArticlePriceService` (AID-601/ADR-012) and locked the same way: it locks the parent `articles` row, not the overrides. `FOR UPDATE` only locks rows the `WHERE` clause matches, and the *first* override of a customer/article pair matches none — so locking "the overrides of this pair" would not serialise two concurrent first writes at all, and each would validate against a table the other has not written to yet. Use it wherever concurrent writes are real; the model hook described under Fixed is a net, not a guarantee. It also rejects an inverted range (`valid_from` after `valid_to`) with `InvalidArgumentException`.
+
+  Two deliberate boundaries, so they are not discovered by trial and error: `setOverride()` is **create-only and always active** — `is_active` is not a parameter and there is no service path to seed an inactive override — and an overlapping range is **rejected, not absorbed**, because silently retiring a live override would be deciding the consumer's price.
+
+- `OverlappingArticleOverrideException` (`@api`), extending `RuntimeException`. Its message names the candidate range, the customer and article, and the id and range of every conflicting override.
+- `ArticleOverride::scopeOverlapping()`: the single definition of "these two overrides are in force at the same time", shared by the model hook and the service. `NULL` is an open end on either side.
+
+### Fixed
+
+- **Quoting no longer applies overrides that are outside their validity window (AID-974).** **Old:** `PricingService::getActiveOverride()` filtered on `is_active` alone and never looked at `valid_from`/`valid_to`, so an override that expired in 2020 — or one dated to start in 2099 — was applied to every quote as if it were in force. **New:** it delegates to `Article::getActiveOverrideFor()`, which applies the window. All six public entry points of the service funnel through that one read and inherit the correction: `getActiveOverride()`, `hasActiveOverride()`, `getEffectivePrice()`, `getEffectivePriceForService()`, `createPricingDetails()` and `createPricingDetailsForService()`. **Any quote that was being priced by an out-of-window override now returns to the catalogue price.**
+
+  `createPricingDetailsForContract()` is deliberately untouched: since v6.13.0 (AID-956/ADR-013) recurring emission bills the agreement's stored `effective_price` and consults neither catalogue nor overrides, so **already-issued invoices and the recurring run are unaffected by this item**. What changes is quoting, and any contract revision the consumer performs from here on.
+
+- **An override whose last day is today is now in force all day (AID-974).** `valid_from`/`valid_to` are `date` columns, and the reads compared them against a full instant — a `now()` carrying a time of day. **Old:** an override with `valid_to` = today was widened to midnight and dropped from the very first second of its own last day; and the two engines did not even agree on the edge — measured with `valid_to = 2026-08-19` against `2026-08-19 00:00:00`, MySQL said *in force* and SQLite said *expired* (at any later hour both said *expired*). **New:** the window is inclusive and day-grain, normalised in exactly one place (`ArticleOverride::scopeValidAt()`), and every PHP predicate reaches the scope's verdict for the same data: `isValidAt()`, `isCurrentlyValid()` — which delegates to it — and `isExpired()`, which keeps its own implementation and is now compared on the same grain. `isExpired()` is worth naming because it moved last: while it still compared a full instant, a row the resolver was applying answered *currently valid* and *expired* at the same time. `daysUntilExpiration()` follows it and counts whole calendar days, so a row whose last day is today answers **0** instead of `null`, and one expiring ten days out answers **10** where it used to answer 9 — the old value truncated the partial day, which also made 0 ambiguous between “expires tonight” and “expires tomorrow”. Both halves are pinned against a real engine in `tests/Integration/Mysql/`, because this is a class of defect SQLite cannot judge.
+
+- **With several overrides in force, the winner no longer depends on the index (AID-974).** **Old:** the read had no `ORDER BY`, so which of two valid overrides priced a line was decided by the engine's traversal — the same query could return either row, and there is no record of which one it did return. **New:** the order is `valid_from DESC, id DESC` — most recent start wins, id breaks ties. `NULL` sorts lowest in both MySQL and SQLite, so a dated override beats a legacy open-start one. This buys predictability, not intent-guessing: **the real fix is not having the duplicate**, which is what the write path above guarantees. `ArticleServiceStatus::updateEffectivePrice()` inherits the same order, so a contract revision now freezes a determined winner.
+
+- **Which readers inherit what.** The validity correction of the first item was specific to `PricingService`, whose read had no window at all. The **day-grain** and **ordering** corrections reach every reader that resolves an override, because they all route through `Article::getActiveOverrideFor()`: the six `PricingService` entry points, the `@api` model methods `Article::getEffectivePriceFor()` and `Article::hasActiveOverrideFor()`, and `ArticleServiceStatus::updateEffectivePrice()`.
+
+- **Saving an override that overlaps an active one now throws instead of persisting silently (AID-974).** This is the only item that can break a call you already make. **Old:** two active overrides for the same customer and article, in force on the same dates, were accepted without a word — and then one of them priced the line, unpredictably (previous item). **New:** the model's `saving` hook rejects it with `OverlappingArticleOverrideException`. Being on `saving`, it reaches every **model write that dispatches `saving`** — `create()`, `save()`, `update()` on a model instance, factories — not just the new service. It does **not** reach the query builder: `ArticleOverride::query()->update()`, `insert()` and `upsert()` dispatch no model events at all, and neither does `withoutEvents()`. If you retire or move overrides with a bulk `query()->update()`, there is no net under that call. Precise scope, so nobody has to find out by experiment:
+
+  - It only fires when the row being saved is **active**, and only an explicit `is_active => false` counts as inactive. Deactivating an override, or saving an already-inactive one, is never rejected. `ArticleOverride` now also declares `is_active` as a model default, matching the `->default(true)` the schema always carried: a write that omits the key reads back `true` in memory instead of `null`, which is what let it slip past the check before the database stamped it active.
+  - On update the row **excludes itself**, so editing an existing override still works.
+  - It does **not** fire for `ArticleOverride::withoutEvents(...)` or for the query builder (`insert()`, `update()`, `upsert()`). That is the escape hatch for a data migration that has to reproduce legacy state — and the reason a bulk import that bypasses it can still create the state the readers above are built to tolerate.
+
+  Note that the existing unique index `(customer_id, article_id, valid_from)` already rejected **one** class of this — two active rows sharing the exact same non-null `valid_from` — but nothing when the dates merely differ, and `NULL` starts never deduplicate at all. An index cannot express "no two active ranges intersect", which is why the invariant lives in the application layer, exactly as decided for article prices in ADR-012.
+
+### Impact queries — run them BEFORE updating
+
+Raw SQL on purpose: there is **no** `larabill:diagnose-*` command for overrides and there will not be one. Unlike ADR-012, where real consumer databases held legacy duplicates, the measurement here returned zero rows, and a command would be `@api` surface to maintain forever with nothing to diagnose. A pre-upgrade gate shipped *inside* the release it polices cannot be run before the upgrade, so these two queries are the substitute — they need nothing installed.
+
+**1. Overlapping active overrides.** Every row is a customer/article pair that will start **rejecting writes** once you update:
+
+```sql
+SELECT a.customer_id,
+       a.article_id,
+       a.id         AS override_id,
+       a.valid_from AS override_from,
+       a.valid_to   AS override_to,
+       b.id         AS conflicting_id,
+       b.valid_from AS conflicting_from,
+       b.valid_to   AS conflicting_to
+FROM article_overrides a
+JOIN article_overrides b
+  ON  b.customer_id = a.customer_id
+  AND b.article_id  = a.article_id
+  AND b.id          > a.id
+  AND b.is_active   = 1
+  AND (a.valid_to   IS NULL OR b.valid_from IS NULL OR b.valid_from <= a.valid_to)
+  AND (a.valid_from IS NULL OR b.valid_to   IS NULL OR b.valid_to   >= a.valid_from)
+WHERE a.is_active = 1
+ORDER BY a.customer_id, a.article_id, a.id;
+```
+
+**2. Active overrides whose validity window changes the resolved price.** Every row is an override that was being quoted when it should not have been, or the reverse:
+
+```sql
+SELECT o.id,
+       o.customer_id,
+       o.article_id,
+       o.valid_from,
+       o.valid_to,
+       o.custom_price AS custom_price_base100,
+       CASE
+           WHEN o.valid_to   IS NOT NULL AND o.valid_to   <  CURDATE()
+               THEN 'EXPIRED - was still being quoted'
+           WHEN o.valid_from IS NOT NULL AND o.valid_from >  CURDATE()
+               THEN 'NOT YET IN FORCE - was already being quoted'
+           WHEN o.valid_to   IS NOT NULL AND o.valid_to   =  CURDATE()
+               THEN 'LAST DAY IS TODAY - was ignored all day, now applies'
+       END AS impact
+FROM article_overrides o
+WHERE o.is_active = 1
+  AND (   (o.valid_to   IS NOT NULL AND o.valid_to   <= CURDATE())
+       OR (o.valid_from IS NOT NULL AND o.valid_from >  CURDATE()) )
+ORDER BY o.customer_id, o.article_id, o.id;
+```
+
+**What these queries do NOT reproduce.** There is no equivalent of "what the old resolver would have quoted". It applied no ordering, so among two overlapping candidates the row it returned was whatever the engine handed back first; that choice was never recorded and cannot be reconstructed after the fact. Query 1 tells you where the ambiguity is, not how it was resolved. Deciding which override of a conflicting pair survives is the consumer's act — the package repairs nothing, because choosing one is choosing a price.
+
+### Changed
+
+- Every save of an **active** `ArticleOverride` now costs one extra `SELECT` (the overlap check of the `saving` hook). Irrelevant per row, worth knowing for a bulk import: seed such loads through `ArticleOverrideService::setOverride()` if the overlap must be enforced, or through `ArticleOverride::withoutEvents(...)` if you are deliberately reproducing legacy state.
+
 ## [6.13.0] - 2026-08-19
 
 **Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`. **Read Fixed before upgrading: recurring invoice amounts can change.** Run the impact query below **before** updating, and pause the recurring run while you do.

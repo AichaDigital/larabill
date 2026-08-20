@@ -9,13 +9,13 @@ use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Database\Factories\ArticleFactory;
 use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Enums\ItemType;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Spatie\Translatable\HasTranslations;
 
@@ -36,9 +36,9 @@ use Spatie\Translatable\HasTranslations;
  * @property int|null $unit_measure_id
  * @property bool $is_active
  * @property array<string, mixed>|null $metadata
- * @property Carbon|null $created_at
- * @property Carbon|null $updated_at
- * @property Carbon|null $deleted_at
+ * @property \Illuminate\Support\Carbon|null $created_at
+ * @property \Illuminate\Support\Carbon|null $updated_at
+ * @property \Illuminate\Support\Carbon|null $deleted_at
  * @property-read TaxGroup|null $taxGroup
  * @property-read UnitMeasure|null $unitMeasure
  * @property-read \Illuminate\Database\Eloquent\Collection|ArticlePrice[] $prices
@@ -370,22 +370,37 @@ class Article extends Model
     }
 
     /**
-     * Get active price override for a customer.
+     * Resolve the override in force for a customer at a given instant.
+     *
+     * Single resolution path (AID-974 D3): validity comes from the shared scope,
+     * and the order is deterministic — most recent start wins, id breaks ties.
+     * NULL sorts lowest in MySQL and SQLite, so a dated row beats a legacy
+     * open-start one. Predictability, not intent-guessing: the real fix is not
+     * having the duplicate, which ArticleOverrideService guarantees.
+     *
+     * `$at` is the ordinary `Carbon\Carbon`, not `Illuminate\Support\Carbon`:
+     * that is what `scopeValidAt()`, `scopeOverlapping()` and
+     * `ArticleOverrideService::setOverride()` already take, and the Illuminate
+     * subclass satisfies it. The stricter type would reject a plain Carbon and
+     * the contract snapshot freezes it, so narrowing it later costs a major.
      */
-    public function getActiveOverrideFor(int|string $customerId): ?ArticleOverride
+    public function resolveOverrideFor(int|string $customerId, Carbon $at): ?ArticleOverride
     {
         return $this->overrides()
             ->where('customer_id', $customerId)
             ->where('is_active', true)
-            ->where(function ($query) {
-                $query->whereNull('valid_from')
-                    ->orWhere('valid_from', '<=', now());
-            })
-            ->where(function ($query) {
-                $query->whereNull('valid_to')
-                    ->orWhere('valid_to', '>=', now());
-            })
+            ->validAt($at)
+            ->orderByDesc('valid_from')
+            ->orderByDesc('id')
             ->first();
+    }
+
+    /**
+     * Get active price override for a customer.
+     */
+    public function getActiveOverrideFor(int|string $customerId): ?ArticleOverride
+    {
+        return $this->resolveOverrideFor($customerId, now());
     }
 
     /**
