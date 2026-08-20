@@ -56,13 +56,16 @@ class PricingService
 
     /**
      * Get active override for customer.
+     *
+     * Delegates to the single resolution path (AID-974 D3): this read used to
+     * filter on `is_active` alone, with no order, so it quoted expired
+     * overrides and picked at random among duplicates. Every public entry
+     * point of this service funnels through here, so all of them inherit
+     * validity and deterministic order from the model.
      */
     public function getActiveOverride(Article $article, int|string $customerId): ?ArticleOverride
     {
-        return $article->overrides()
-            ->active()
-            ->forCustomer($customerId)
-            ->first();
+        return $article->getActiveOverrideFor($customerId);
     }
 
     /**

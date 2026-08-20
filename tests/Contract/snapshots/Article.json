@@ -279,6 +279,24 @@
             "returnType": "bool",
             "static": false
         },
+        "resolveOverrideFor": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "customerId",
+                    "type": "string|int",
+                    "variadic": false
+                },
+                {
+                    "name": "at",
+                    "type": "Carbon\\Carbon",
+                    "variadic": false
+                }
+            ],
+            "returnType": "?AichaDigital\\Larabill\\Models\\ArticleOverride",
+            "static": false
+        },
         "validateInstanceIdentifier": {
             "api": false,
             "deprecated": false,
