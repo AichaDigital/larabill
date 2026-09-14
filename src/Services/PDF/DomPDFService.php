@@ -13,9 +13,10 @@ use AichaDigital\Larabill\Models\InvoiceItem;
 use AichaDigital\Larabill\Models\InvoiceTemplate;
 use Dompdf\Dompdf;
 use Dompdf\Options;
+use Illuminate\Contracts\View\Factory as ViewFactory;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Facades\View;
+use InvalidArgumentException;
 
 /**
  * DomPDF service for generating PDF invoices
@@ -662,6 +663,21 @@ class DomPDFService
      */
     protected function renderTemplate(string $template, array $data): string
     {
-        return View::make($template, $data)->render();
+        // The view name is runtime data — the template registry's
+        // `template_path` (ADR-011) — so nothing proves statically that it
+        // exists, and a seeded row once pointed at a blade that never did
+        // (AID-450). Checking first narrows it to a real view (AID-1305) and
+        // keeps the failure the framework already raised: an
+        // InvalidArgumentException naming the view, propagated raw to the
+        // PDFService frontier (AID-535). The check goes through the view
+        // factory contract, which is where the existence check is declared to
+        // narrow the name; the facade does not carry that declaration.
+        $views = app(ViewFactory::class);
+
+        if (! $views->exists($template)) {
+            throw new InvalidArgumentException("View [{$template}] not found.");
+        }
+
+        return $views->make($template, $data)->render();
     }
 }

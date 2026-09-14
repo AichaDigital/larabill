@@ -233,6 +233,8 @@ it('logs the original exception before translating it into the failure contract'
         'template_name' => null,
     ]);
     // Force a render failure: point the invoice at a view that does not exist.
+    // renderTemplate() checks the view exists before making it (AID-1305).
+    View::shouldReceive('exists')->andReturn(true);
     View::shouldReceive('make')->andThrow(new RuntimeException('boom from the depths'));
 
     $result = (new PDFService)->generatePDF($invoice);
@@ -284,6 +286,8 @@ it('logs a failed generation exactly once, at the frontier (AID-535)', function 
         'status'        => InvoiceStatus::DRAFT->value,
         'user_id'       => TestCase::USER_UUID_1,
     ]);
+    // renderTemplate() checks the view exists before making it (AID-1305).
+    View::shouldReceive('exists')->andReturn(true);
     View::shouldReceive('make')->andThrow(new RuntimeException('render exploded once'));
 
     $result = (new PDFService)->generatePDF($invoice);
@@ -302,6 +306,8 @@ it('does not retry with the local connector when generation fails', function () 
         'status'        => InvoiceStatus::DRAFT->value,
         'user_id'       => TestCase::USER_UUID_1,
     ]);
+    // renderTemplate() checks the view exists before making it (AID-1305).
+    View::shouldReceive('exists')->andReturn(true);
     View::shouldReceive('make')->andThrow(new RuntimeException('render exploded'));
 
     $result = (new PDFService)->generatePDF($invoice);

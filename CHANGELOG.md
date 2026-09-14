@@ -92,6 +92,7 @@ ORDER BY o.customer_id, o.article_id, o.id;
 ### Changed
 
 - Every save of an **active** `ArticleOverride` now costs one extra `SELECT` (the overlap check of the `saving` hook). Irrelevant per row, worth knowing for a bulk import: seed such loads through `ArticleOverrideService::setOverride()` if the overlap must be enforced, or through `ArticleOverride::withoutEvents(...)` if you are deliberately reproducing legacy state.
+- **PDF rendering now checks that the template view exists before rendering it, and the failure message always names the view as requested (AID-1305).** The view name is runtime data — the template registry's `template_path` (ADR-011) — and static analysis (larastan 3.12) now requires proving it before rendering. A missing view still fails with an `InvalidArgumentException`, still propagated to the `PDFService` frontier, and `Invoice::generatePDF()` still returns `success => false`. What changes is the text in its `error` key, and only for namespaced names. **Old:** a missing `larabill::pdf.invoice.x` read `View [pdf.invoice.x] not found.` (namespace dropped), and an unknown namespace read `No hint path defined for [ns].` (view not named). **New:** both read `View [<the name you asked for>] not found.`, which is what a plain name already produced. Only relevant if you match on that message.
 
 ## [6.13.0] - 2026-08-19
 
