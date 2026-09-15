@@ -4,6 +4,8 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+## [6.14.0] - 2026-09-15
+
 **Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`. **Read Fixed before upgrading: quoted prices can change, and saving an override that overlaps an active one now throws.** Run the impact queries below **before** updating.
 
 ### Added
