@@ -367,26 +367,45 @@ class UserTaxProfile extends Model implements LegallyRetainable
     // ========================================
 
     /**
-     * Update all users linked to the old profile to point to this new profile.
+     * Point every user linked to a closed profile of this owner at this new profile.
      *
      * Called automatically after creating a new active profile.
+     *
+     * It relinks from ANY closed profile of the owner, not from "the previous"
+     * one (AID-1301). `valid_until` is a date that closeActiveForOwner() stamps
+     * from the NEW profile's `valid_from - 1 day`, so two successive creations
+     * taking effect on the same date close their predecessors with the same
+     * value: picking one by `valid_until` let the engine break the tie and left
+     * linked users on a closed profile. A closed profile is, by
+     * definition, one nobody should still be using, so this also repairs a user
+     * stranded on an older one. Soft-deleted profiles stay out of scope.
+     *
+     * One mass update: it fires no events on the consumer's user model, exactly
+     * as before. With no closed profile (the owner's first one) the users table
+     * is not queried at all, as before either. The closed ids are read first
+     * and passed as values, not embedded as a subquery: the fiscal profiles and
+     * the consumer's users are two models that may not share a connection, and
+     * the previous implementation never assumed they did. Declared ceiling: one
+     * bound parameter per closed profile of this owner (plus two), against the
+     * engine's per-statement limit — an owner accumulates one closed profile
+     * per fiscal data change, so real counts are in the units. The profile creation
+     * as a whole is NOT atomic — closing the previous profile, inserting this
+     * one and this relink are separate writes.
      */
     protected function updateLinkedUsersToNewProfile(): void
     {
-        // Find the previous profile for the same owner
-        $previousProfile = static::where('owner_user_id', $this->owner_user_id)
-            ->where('id', '!=', $this->id)
+        $closedProfileIds = static::query()
+            ->where('owner_user_id', $this->owner_user_id)
             ->whereNotNull('valid_until')
-            ->orderBy('valid_until', 'desc')
-            ->first();
+            ->pluck('id');
 
-        if (! $previousProfile) {
+        if ($closedProfileIds->isEmpty()) {
             return;
         }
 
-        // Update all users pointing to the old profile
         $userModel = ModelMappingService::getModelClass('user');
-        $userModel::where('current_tax_profile_id', $previousProfile->id)
+
+        $userModel::whereIn('current_tax_profile_id', $closedProfileIds)
             ->update(['current_tax_profile_id' => $this->id]);
     }
 
