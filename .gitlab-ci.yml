@@ -151,8 +151,8 @@ pest:
 # AID-700 — DOS MOTORES, no uno. Hasta aquí este job solo hablaba con MySQL, y
 # eso dejó sin cubrir una divergencia REAL: el primer uso de una serie fiscal
 # tomaba un gap lock sobre el rango vacío, y el ciclo de locks resultante mataba
-# 31 de 32 procesos concurrentes en MariaDB 11.4 mientras MySQL 9 aguantaba
-# (su umbral está entre 48 y 64). El defecto era del patrón, no del motor, pero
+# 31 de 32 procesos concurrentes en MariaDB 11.4 mientras MySQL aguantaba más
+# (medido entonces contra la serie 9: umbral entre 48 y 64). El defecto era del patrón, no del motor, pero
 # solo un motor lo exponía a la escala que se prueba. Mientras la matriz tenga
 # un solo motor, cualquier parámetro de concurrencia está calibrado contra una
 # sola realidad.
@@ -173,9 +173,16 @@ db-integration:
   # soportadas; el paquete declara la semántica y no se acopla a la elección
   # del motor. La tercera entrada es la que ejercita ese camino: sin ella, el
   # combo driver=mariadb + MariaDB >= 10.7 no lo cubre nadie.
+  #
+  # AID-1319 — FRENADA DE MOTORES del operador: MySQL SOLO 8.4 y MariaDB SOLO
+  # 10.11/11.4, aunque existan LTS posteriores (MySQL 9.7 y MariaDB 11.8/12.3 lo
+  # son). Motivo: muchos paneles de hosting no tratan esas series de forma
+  # nativa. «Es LTS» NO es razón para subir. De junio a septiembre de 2026 esta
+  # matriz corrió contra `mysql:9` sin que nada lo parara; por eso la frenada se
+  # impone abajo con una guarda sobre la versión que RESPONDE, no con esta nota.
   parallel:
     matrix:
-      - DB_IMAGE: "mysql:9"
+      - DB_IMAGE: "mysql:8.4"
         LARABILL_TEST_MYSQL_DRIVER: "mysql"
       - DB_IMAGE: "mariadb:11.4"
         LARABILL_TEST_MYSQL_DRIVER: "mysql"
@@ -229,6 +236,10 @@ db-integration:
     # cuál de los dos caminos se ejercitó.
     - |
       php -r 'echo "motor bajo prueba: ".(new PDO("mysql:host=".getenv("LARABILL_TEST_MYSQL_HOST").";port=".getenv("LARABILL_TEST_MYSQL_PORT"), getenv("LARABILL_TEST_MYSQL_USERNAME"), getenv("LARABILL_TEST_MYSQL_PASSWORD")))->query("SELECT VERSION()")->fetchColumn()." | driver: ".(getenv("LARABILL_TEST_MYSQL_DRIVER") ?: "mysql (default)").PHP_EOL;'
+    # AID-1319 — guarda de la frenada: falla si el servidor que responde no es
+    # MySQL 8.4.x ni MariaDB 10.11.x/11.4.x, se llame como se llame la imagen.
+    - |
+      php -r '$v = (new PDO("mysql:host=".getenv("LARABILL_TEST_MYSQL_HOST").";port=".getenv("LARABILL_TEST_MYSQL_PORT"), getenv("LARABILL_TEST_MYSQL_USERNAME"), getenv("LARABILL_TEST_MYSQL_PASSWORD")))->query("SELECT VERSION()")->fetchColumn(); $ok = stripos($v, "mariadb") !== false ? (bool) preg_match("/^(10\\.11|11\\.4)\\./", $v) : (bool) preg_match("/^8\\.4\\./", $v); if (! $ok) { fwrite(STDERR, "Motor fuera de la frenada (MySQL 8.4 / MariaDB 10.11-11.4): ".$v.PHP_EOL); exit(1); } echo "frenada de motores: OK (".$v.")".PHP_EOL;'
     - |
       set -o pipefail
       ./vendor/bin/pest tests/Integration/Mysql/ tests/Integration/InstallMysql/ tests/Integration/UpgradePath/ --ci 2>&1 | tee /tmp/db-pest.log

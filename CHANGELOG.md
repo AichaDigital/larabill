@@ -4,6 +4,11 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- **`composer.json` now declares the supported database engines in `extra.requirements`: `mysql >=8.4 <9.0` and `mariadb 10.11.* || 11.4.*` (AID-1319).** Informational — Composer does not enforce it — but it states the operator's engine freeze where consumers and tooling can read it. MySQL 9.x and MariaDB 11.8/12.x are outside it even though they are LTS releases: many hosting panels do not handle them natively.
+- The package's own CI now tests MySQL against **8.4** instead of `mysql:9`, which it had been running since June 2026, and fails the job if the server that answers is outside the freeze. No runtime change: the MySQL 9 results recorded in earlier entries (for example v6.9.1) remain what was measured at the time.
+
 ## [6.14.0] - 2026-09-15
 
 **Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`. **Read Fixed before upgrading: quoted prices can change, and saving an override that overlaps an active one now throws.** Run the impact queries below **before** updating.
