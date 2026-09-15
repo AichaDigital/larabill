@@ -12,6 +12,18 @@
       "description": "Hold Pest at 4.x: Pest 5 requires php ^8.4, and this package's floor is ^8.3 because it supports Laravel 12 and 13 (L13 itself requires ^8.3). Raising the floor would evict consumers running a Laravel line that is still alive, so dev tooling does not get to force it. Revisit when the supported Laravel lines reach EOL and the PHP floor can rise on its own terms — not before.",
       "matchPackageNames": ["pestphp/**"],
       "allowedVersions": "<5"
+    },
+    {
+      "description": "Engine freeze (operator decision, AID-1319): the CI MySQL service stays on the 8.4 line. MySQL 9.7 is LTS, but LTS is NOT the criterion here — many hosting panels do not handle MySQL 9 natively, so the whole stack is frozen on 8.4. A mysql:9 image ran in this CI from June to September 2026 through a Renovate bump nobody stopped; moving the line is a human decision, never a bot proposal.",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["mysql"],
+      "allowedVersions": "<8.5"
+    },
+    {
+      "description": "Engine freeze (operator decision, AID-1319): the CI MariaDB service stays on the 11.4 line. MariaDB 11.8 and 12.3 are LTS, but LTS is NOT the criterion here — the stack is frozen on 10.11/11.4 for hosting-panel compatibility. Moving the line is a human decision, never a bot proposal.",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["mariadb"],
+      "allowedVersions": "<11.5"
     }
   ]
 }

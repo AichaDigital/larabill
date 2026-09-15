@@ -27,7 +27,7 @@ PROBE_SAME_DAY driver=mysql   server=11.4.13-MariaDB   (idéntico)
 PROBE_SAME_DAY driver=mariadb server=11.4.13-MariaDB   (idéntico)
 ```
 
-Los tres motores locales eligen P0 como «anterior» ante el empate: el hook relinka a quien apunte a P0 (nadie, ya están en P1) y el delegado se queda en **P1, cerrado**. Coincide con la sonda del consumidor (`delegate=2 delegate_profile_active=no`). MySQL 9 no está accesible en local hoy; lo cubre el job `db-integration` de CI.
+Los tres motores locales eligen P0 como «anterior» ante el empate: el hook relinka a quien apunte a P0 (nadie, ya están en P1) y el delegado se queda en **P1, cerrado**. Coincide con la sonda del consumidor (`delegate=2 delegate_profile_active=no`). MySQL 9 no está accesible en local hoy; lo cubre el job `db-integration` de CI. *(Corrección 2026-09-15, AID-1319: ese job corría contra `mysql:9`, fuera de la frenada del operador —MySQL solo 8.4—; pasa a `mysql:8.4`, y el harness completo quedó en verde contra MySQL 8.4.10 en local.)*
 
 **Consecuencia en el consumidor:** el cliente se repara porque `CustomerEdit` escribe su puntero a mano; sus delegados quedan facturando con un perfil fiscal cerrado hasta la siguiente edición que, por azar del motor, los alcance.
 
@@ -184,7 +184,7 @@ foreach ($repairable as [$userId, $closedId, $ownerId, [$activeId]]) {
 
 ### D5 — Verificación por motor, con sensibilidad medida
 
-Quién gana el empate lo decide el motor, así que el test de regresión vive **en dos sitios**: la suite SQLite (rápida, rojo verificado hoy) y `tests/Integration/Mysql/` (MySQL 9 + MariaDB 11.4 × 2 drivers en CI). La sensibilidad se prueba **revirtiendo el fix** y comprobando el rojo en cada motor accesible — SQLite y MariaDB 11.4 × 2 drivers en local; MySQL 8.4 de Herd (`3384`) solo si está arrancado y con usuario dedicado, y en ese caso se comprueba el recuento de omitidos antes de dar el verde por bueno; MySQL 9 en CI. No se extrapola de un motor a otro (lección AID-836).
+Quién gana el empate lo decide el motor, así que el test de regresión vive **en dos sitios**: la suite SQLite (rápida, rojo verificado hoy) y `tests/Integration/Mysql/` (MySQL 9 + MariaDB 11.4 × 2 drivers en CI; *corregido en AID-1319: MySQL 8.4*). La sensibilidad se prueba **revirtiendo el fix** y comprobando el rojo en cada motor accesible — SQLite y MariaDB 11.4 × 2 drivers en local; MySQL 8.4 de Herd (`3384`) solo si está arrancado y con usuario dedicado, y en ese caso se comprueba el recuento de omitidos antes de dar el verde por bueno; MySQL 9 en CI. No se extrapola de un motor a otro (lección AID-836).
 
 ### D6 — AID-967 va en un MR separado *(cerrada: no)*
 

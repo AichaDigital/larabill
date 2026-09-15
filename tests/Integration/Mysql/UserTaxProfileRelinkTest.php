@@ -16,7 +16,8 @@ use Illuminate\Support\Facades\Schema;
  * Which closed profile won the `valid_until` tie was decided by the engine's
  * traversal, so the SQLite regression alone proves nothing about MySQL or
  * MariaDB (lesson AID-836). This pins the sequence of the ticket against the
- * engines CI runs: MySQL 9 and MariaDB 11.4 with both drivers.
+ * engines CI runs: MySQL 8.4 and MariaDB 11.4 with both drivers (the operator's
+ * engine freeze, AID-1319).
  *
  * The harness creates a minimal consumer `users` table without
  * `current_tax_profile_id`. The column is a consumer contract

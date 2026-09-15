@@ -121,6 +121,10 @@
             "aliases": {
                 "Larabill": "AichaDigital\\Larabill\\Facades\\Larabill"
             }
+        },
+        "requirements": {
+            "mysql": ">=8.4 <9.0",
+            "mariadb": "10.11.* || 11.4.*"
         }
     },
     "minimum-stability": "dev",
