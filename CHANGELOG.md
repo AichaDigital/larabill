@@ -36,6 +36,17 @@ All notable changes to `larabill` will be documented in this file.
 
   Note that the existing unique index `(customer_id, article_id, valid_from)` already rejected **one** class of this — two active rows sharing the exact same non-null `valid_from` — but nothing when the dates merely differ, and `NULL` starts never deduplicate at all. An index cannot express "no two active ranges intersect", which is why the invariant lives in the application layer, exactly as decided for article prices in ADR-012.
 
+- **A new tax profile now relinks every user of a closed profile of its owner, not just the users of one "previous" profile (AID-1301).** The class has always promised that *"all linked users are updated to point to the new profile"*; the `created` hook kept that promise only when there was no tie. **Old:** it picked a single previous profile ordering by `valid_until` alone. `valid_until` is a `date` stamped as `valid_from - 1 day`, taken from the **new** profile's `valid_from`, so two successive creations whose new profiles take effect on the **same date** close their respective predecessors with the same `valid_until`; the engine broke the tie, and — measured on SQLite and MariaDB 11.4 with both drivers — it picked the older one: users linked to the owner's profile were left pointing at a **closed** profile. The owner's own pointer was only right where the consumer wrote it by hand, as the reference consumer's customer edit screen does. **New:** one mass update moves every user whose `current_tax_profile_id` points at **any** closed (`valid_until` not null) profile of the owner to the new one. With a single closed profile, old and new behave identically.
+
+  Precise scope, so nobody has to find out by experiment:
+
+  - **Wider than the tie, on purpose.** A user stranded on an *older* closed profile of the owner — for instance by this very defect — is moved to the active profile on the owner's next profile change. A closed profile is, by definition, one nobody should still be using.
+  - **Soft-deleted profiles stay out.** A user pointing at a closed profile that was later soft-deleted is not relinked, exactly as before.
+  - **No user model events.** The relink is still a single query-builder `update()`: your user model's `saving`/`updating`/`updated` do not fire for it, as before.
+  - **The owner's first link is not made here.** With no closed profile, nobody is relinked and the users table is not queried at all, exactly as before — so creating a first profile still works on a users table without `current_tax_profile_id`. Linking the owner on its first profile is AID-967, tracked separately.
+  - **Declared ceiling: the number of closed profiles of one owner.** The closed ids are read first and bound one placeholder each, so the relink needs one parameter per closed profile of that owner, plus two. Engines cap parameters per statement: 32,766 measured through this hook on SQLite 3.45, and 65,535 in the prepared-statement code of MySQL 8.4 and MariaDB 11.4 (read in their sources, not executed); past that, creating the owner's next profile fails with a database error. An owner accumulates one closed profile per fiscal data change, so real counts sit in the units or tens.
+  - **The creation as a whole is still not atomic**, and this release does not change that. `UserTaxProfile::createForOwner()` calls `create()` without opening a transaction, so closing the previous active profile, inserting the new one and this relink are three separate writes. A failure between them can leave the owner with no active profile, or the users still on the closed one; two concurrent creations for the same owner can leave two active profiles. Wrap the call in your own transaction if that matters to you.
+
 ### Impact queries — run them BEFORE updating
 
 Raw SQL on purpose: there is **no** `larabill:diagnose-*` command for overrides and there will not be one. Unlike ADR-012, where real consumer databases held legacy duplicates, the measurement here returned zero rows, and a command would be `@api` surface to maintain forever with nothing to diagnose. A pre-upgrade gate shipped *inside* the release it polices cannot be run before the upgrade, so these two queries are the substitute — they need nothing installed.
@@ -88,6 +99,79 @@ ORDER BY o.customer_id, o.article_id, o.id;
 ```
 
 **What these queries do NOT reproduce.** There is no equivalent of "what the old resolver would have quoted". It applied no ordering, so among two overlapping candidates the row it returned was whatever the engine handed back first; that choice was never recorded and cannot be reconstructed after the fact. Query 1 tells you where the ambiguity is, not how it was resolved. Deciding which override of a conflicting pair survives is the consumer's act — the package repairs nothing, because choosing one is choosing a price.
+
+### Users left on a closed tax profile — optional diagnosis and repair (AID-1301)
+
+Nothing to run before updating: the fix does not touch persisted data, and it repairs a stranded user on the owner's next profile change. If you want to find — and, if you choose, repair — users stuck on a closed profile **now**, this recipe does it with Eloquent and the user model your installation resolves. **Publishing it is not a recommendation to execute it:** read the diagnosis first.
+
+Three rules govern it. It **only repairs when the destination is unambiguous** — the owner has exactly one active profile. An owner with **zero** active profiles, or with **two or more** (data seeded around `createForOwner()`, or the concurrent creations described above), has no single right answer, so those users are reported as anomalies and **left untouched**. At write time it **checks the destination again**: if the owner's single active profile is no longer the one diagnosed — deleted, replaced, or joined by another — that user is skipped. And each pointer is rewritten **only if it is still the closed profile that was diagnosed**; if something changed it in between, that user is skipped.
+
+Those checks narrow the window, they do not close it: the re-check and the write are two statements, so a profile change landing exactly between them is not seen. Run the repair when nobody is editing fiscal data, or inside your own transaction with the locking your application needs.
+
+It reads users through the user model your installation resolves and fiscal profiles through `UserTaxProfile`, **never in the same statement**, so it works when the two live on different connections. The price is one profile lookup per user with a pointer, which is fine for a one-off maintenance run. Like the hook, it skips soft-deleted profiles and fires no user model events.
+
+```php
+use AichaDigital\Larabill\Models\UserTaxProfile;
+
+$userModel = config('larabill.models.user');
+$userModel = is_string($userModel) && class_exists($userModel)
+    ? $userModel
+    : config('larabill.user_model');
+
+$repairable = [];
+$anomalies  = [];
+
+$userModel::query()
+    ->whereNotNull('current_tax_profile_id')
+    ->lazyById()
+    ->each(function ($user) use (&$repairable, &$anomalies): void {
+        $closedProfile = UserTaxProfile::query()
+            ->whereKey($user->current_tax_profile_id)
+            ->whereNotNull('valid_until')
+            ->first();
+
+        if ($closedProfile === null) {
+            return;
+        }
+
+        $active = UserTaxProfile::query()
+            ->active()
+            ->forOwner($closedProfile->owner_user_id)
+            ->limit(2)
+            ->pluck('id');
+
+        $row = [$user->getKey(), $closedProfile->getKey(), $closedProfile->owner_user_id, $active->all()];
+
+        if ($active->count() === 1) {
+            $repairable[] = $row;
+        } else {
+            $anomalies[] = $row;
+        }
+    });
+
+// Diagnosis: inspect $repairable and $anomalies before deciding anything.
+
+// Optional repair — unambiguous destinations only, re-checked at write time,
+// and only if the pointer is still the one diagnosed. Anomalies are never touched.
+foreach ($repairable as [$userId, $closedId, $ownerId, [$activeId]]) {
+    $active = UserTaxProfile::query()
+        ->active()
+        ->forOwner($ownerId)
+        ->limit(2)
+        ->pluck('id');
+
+    if ($active->all() !== [$activeId]) {
+        continue;
+    }
+
+    $userModel::query()
+        ->whereKey($userId)
+        ->where('current_tax_profile_id', $closedId)
+        ->update(['current_tax_profile_id' => $activeId]);
+}
+```
+
+This exact code is executed by the package's test suite (`tests/Unit/Models/UserTaxProfileRelinkTest.php`) against a repairable user, an owner with no active profile, an owner with two, a pointer changed between diagnosis and repair, a destination deleted, replaced or joined by a second active profile between diagnosis and repair, and a user model on a different connection than the fiscal tables. A test also fails if the recipe printed here and the one it executes drift apart.
 
 ### Changed
 
