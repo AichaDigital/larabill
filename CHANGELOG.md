@@ -4,9 +4,17 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+## [6.14.2] - 2026-09-27
+
+**Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`. **Identical code to v6.14.1** — this release exists because Packagist permanently blocks re-tagged versions: the v6.14.1 tag had to be moved right after its release (its prepare commit missed the upgrade-manifest re-stamp), and Packagist keeps serving v6.14.1 a stale dist (missing the 2-line `release-migration-manifest.json` stamp) with an "Upstream re-tag blocked" warning. **Install v6.14.2, not v6.14.1**, on any channel — GitLab, the GitHub mirror and Packagist all serve it from a fresh, never-moved tag.
+
+### Fixed
+
+- **`tests/Contract/release-migration-manifest.json` reads `release: 6.14.2`, `upgrade_base: 6.14.1`.** Pure release metadata — no `src/`, `config/` or `database/` change since v6.14.1, verified by the full CI matrix and the contract preflight.
+
 ## [6.14.1] - 2026-09-27
 
-**Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`. **Security release: read Fixed before upgrading** — database failure messages no longer carry raw SQL, binding values or stack traces through the recurring-billing and PDF failure paths.
+**Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`. **Security release: read Fixed before upgrading** — database failure messages no longer carry raw SQL, binding values or stack traces through the recurring-billing and PDF failure paths. **Do not install v6.14.1 from Packagist**: its dist predates the manifest-stamp fix below (Packagist blocks re-tagged versions) — install v6.14.2 instead.
 
 ### Fixed
 
