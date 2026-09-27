@@ -9,6 +9,7 @@ use AichaDigital\Larabill\Services\PDF\DefaultPDFConnector;
 use AichaDigital\Larabill\Services\PDF\DomPDFService;
 use AichaDigital\Larabill\Services\PDF\PDFService;
 use AichaDigital\Larabill\Tests\TestCase;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\View;
@@ -348,4 +349,254 @@ it('publishes no url for a private invoice', function () {
     expect($result['pdf_url'])->toBeNull()
         ->and($invoice->getPDFUrl())->toBeNull()
         ->and(json_encode($result))->not->toContain('storage/invoices');
+});
+
+// --- AID-1442: the frontier must not leak query data through the exception ---
+// message. Database exceptions (QueryException / PDOException) interpolate
+// binding values into getMessage(); the consumer copies result['error'] into
+// its own log and the operations mail. The failure contract keeps class,
+// SQLSTATE and driver code only; non-database exceptions keep their message.
+
+it('sanitises a QueryException in the frontier result and log line (AID-1442)', function () {
+    Log::spy();
+    $bindingSentinel = 'zqx.binding@example.test';
+    $infoSentinel    = 'zqx.errorinfo2.driver msg';
+
+    // strict_types: the Exception constructor takes an int code, so the
+    // SQLSTATE '23000' is passed as int — getCode() stringifies to the same
+    // value a real PDO failure reports. errorInfo is populated the way a real
+    // failure carries it, so metadata precedence over getMessage() and the
+    // getCode() fallback is actually exercised (P2 of the AID-1442 gate).
+    $queryException = new QueryException(
+        'conn',
+        'insert into t (email) values (?)',
+        [$bindingSentinel],
+        new PDOException('driver msg with '.$bindingSentinel, 23000),
+    );
+    $queryException->errorInfo = ['23000', 1062, $infoSentinel];
+
+    $engine = new class($queryException) extends DomPDFService
+    {
+        public function __construct(private readonly Throwable $failure)
+        {
+            parent::__construct([]);
+        }
+
+        /**
+         * @param  array<string, mixed>|null  $qrData
+         * @return array<string, mixed>
+         */
+        public function generatePDF(Invoice $invoice, ?array $qrData = null): array
+        {
+            throw $this->failure;
+        }
+    };
+
+    $invoice = Invoice::factory()->create([
+        'fiscal_number' => 'AID1442-1',
+        'serie'         => InvoiceSerieType::INVOICE->value,
+        'status'        => InvoiceStatus::DRAFT->value,
+        'user_id'       => TestCase::USER_UUID_1,
+    ]);
+
+    $result = (new PDFService([], null, $engine))->generatePDF($invoice);
+
+    $expected = 'Illuminate\Database\QueryException: query failed (SQLSTATE 23000, driver code 1062)';
+
+    expect($result['success'])->toBeFalse()
+        ->and($result['error'])->toBe($expected)
+        // Neither the interpolated binding nor errorInfo[2] may appear.
+        ->and($result['error'])->not->toContain($bindingSentinel)
+        ->and($result['error'])->not->toContain($infoSentinel)
+        // The result shape is unchanged: no new keys join the contract.
+        ->and(array_keys($result))->toBe(['success', 'error', 'connector_used', 'generated_at']);
+
+    $loggedContext = null;
+    Log::shouldHaveReceived('error')->withArgs(function (string $message, array $context) use (&$loggedContext) {
+        $loggedContext = $context;
+
+        return true;
+    })->once();
+
+    expect($loggedContext['exception'])->toBe($expected)
+        ->and($loggedContext['exception'])->not->toContain($bindingSentinel)
+        ->and($loggedContext['exception'])->not->toContain($infoSentinel);
+});
+
+it('sanitises a wrapped QueryException and names the wrapper class (AID-1442)', function () {
+    Log::spy();
+    $bindingSentinel = 'zqx.binding@example.test';
+    $infoSentinel    = 'zqx.errorinfo2.driver msg';
+
+    $queryException = new QueryException(
+        'conn',
+        'insert into t (email) values (?)',
+        [$bindingSentinel],
+        new PDOException('driver msg with '.$bindingSentinel, 23000),
+    );
+    $queryException->errorInfo = ['23000', 1062, $infoSentinel];
+    $failure                   = new RuntimeException('wrapper around a failed query', 0, $queryException);
+
+    $engine = new class($failure) extends DomPDFService
+    {
+        public function __construct(private readonly Throwable $failure)
+        {
+            parent::__construct([]);
+        }
+
+        /**
+         * @param  array<string, mixed>|null  $qrData
+         * @return array<string, mixed>
+         */
+        public function generatePDF(Invoice $invoice, ?array $qrData = null): array
+        {
+            throw $this->failure;
+        }
+    };
+
+    $invoice = Invoice::factory()->create([
+        'fiscal_number' => 'AID1442-2',
+        'serie'         => InvoiceSerieType::INVOICE->value,
+        'status'        => InvoiceStatus::DRAFT->value,
+        'user_id'       => TestCase::USER_UUID_1,
+    ]);
+
+    $result = (new PDFService([], null, $engine))->generatePDF($invoice);
+
+    expect($result['success'])->toBeFalse()
+        ->and($result['error'])->toBe('RuntimeException: query failed (SQLSTATE 23000, driver code 1062)')
+        ->and($result['error'])->not->toContain($bindingSentinel)
+        ->and($result['error'])->not->toContain($infoSentinel)
+        ->and($result['error'])->not->toContain('wrapper around a failed query');
+});
+
+it('sanitises a bare PDOException in the chain (AID-1442)', function () {
+    Log::spy();
+    $infoSentinel = 'zqx.errorinfo2.driver msg';
+
+    // Real PDO failures carry the SQLSTATE as a string (PHP sets it
+    // internally, bypassing the int the constructor declares); '08006' has a
+    // leading zero, so it is injected by reflection to exercise the string
+    // cast of getCode(). errorInfo is populated so the metadata extraction is
+    // exercised, not the getCode() fallback alone (P2 of the AID-1442 gate).
+    $failure = new PDOException('driver blew up with '.$infoSentinel);
+    (new ReflectionProperty(PDOException::class, 'code'))->setValue($failure, '08006');
+    $failure->errorInfo = ['08006', 7, $infoSentinel];
+
+    $engine = new class($failure) extends DomPDFService
+    {
+        public function __construct(private readonly Throwable $failure)
+        {
+            parent::__construct([]);
+        }
+
+        /**
+         * @param  array<string, mixed>|null  $qrData
+         * @return array<string, mixed>
+         */
+        public function generatePDF(Invoice $invoice, ?array $qrData = null): array
+        {
+            throw $this->failure;
+        }
+    };
+
+    $invoice = Invoice::factory()->create([
+        'fiscal_number' => 'AID1442-3',
+        'serie'         => InvoiceSerieType::INVOICE->value,
+        'status'        => InvoiceStatus::DRAFT->value,
+        'user_id'       => TestCase::USER_UUID_1,
+    ]);
+
+    $result = (new PDFService([], null, $engine))->generatePDF($invoice);
+
+    expect($result['success'])->toBeFalse()
+        ->and($result['error'])->toBe('PDOException: database driver failure (SQLSTATE 08006, driver code 7)')
+        ->and($result['error'])->not->toContain($infoSentinel);
+});
+
+it('gives a QueryException priority over the whole chain, even wrapped by a PDOException (AID-1442)', function () {
+    Log::spy();
+    $bindingSentinel = 'zqx.binding@example.test';
+    $pdoSentinel     = 'zqx.pdo-message.driver msg';
+    $infoSentinel    = 'zqx.errorinfo2.driver msg';
+
+    // P2 regression of the AID-1442 gate: the outer PDOException used to win
+    // the walk and report "database driver failure (SQLSTATE 0, driver code
+    // n/a)", discarding the query's real metadata underneath it.
+    $queryException = new QueryException(
+        'conn',
+        'insert into t (email) values (?)',
+        [$bindingSentinel],
+        new PDOException($pdoSentinel, 23000),
+    );
+    $queryException->errorInfo = ['23000', 1062, $infoSentinel];
+    $failure                   = new PDOException('driver blew up over a failed query with '.$pdoSentinel, 0, $queryException);
+
+    $engine = new class($failure) extends DomPDFService
+    {
+        public function __construct(private readonly Throwable $failure)
+        {
+            parent::__construct([]);
+        }
+
+        /**
+         * @param  array<string, mixed>|null  $qrData
+         * @return array<string, mixed>
+         */
+        public function generatePDF(Invoice $invoice, ?array $qrData = null): array
+        {
+            throw $this->failure;
+        }
+    };
+
+    $invoice = Invoice::factory()->create([
+        'fiscal_number' => 'AID1442-5',
+        'serie'         => InvoiceSerieType::INVOICE->value,
+        'status'        => InvoiceStatus::DRAFT->value,
+        'user_id'       => TestCase::USER_UUID_1,
+    ]);
+
+    $result = (new PDFService([], null, $engine))->generatePDF($invoice);
+
+    expect($result['success'])->toBeFalse()
+        // The caught class is named, but the QUERY's metadata wins: "query
+        // failed" with its SQLSTATE and driver code, never SQLSTATE 0 / n/a.
+        ->and($result['error'])->toBe('PDOException: query failed (SQLSTATE 23000, driver code 1062)')
+        ->and($result['error'])->not->toContain($bindingSentinel)
+        ->and($result['error'])->not->toContain($pdoSentinel)
+        ->and($result['error'])->not->toContain($infoSentinel)
+        ->and($result['error'])->not->toContain('database driver failure');
+});
+
+it('keeps the own message of a non-database failure (AID-1442)', function () {
+    $failure = new RuntimeException('render exploded, own message kept');
+
+    $engine = new class($failure) extends DomPDFService
+    {
+        public function __construct(private readonly Throwable $failure)
+        {
+            parent::__construct([]);
+        }
+
+        /**
+         * @param  array<string, mixed>|null  $qrData
+         * @return array<string, mixed>
+         */
+        public function generatePDF(Invoice $invoice, ?array $qrData = null): array
+        {
+            throw $this->failure;
+        }
+    };
+
+    $invoice = Invoice::factory()->create([
+        'fiscal_number' => 'AID1442-4',
+        'serie'         => InvoiceSerieType::INVOICE->value,
+        'status'        => InvoiceStatus::DRAFT->value,
+        'user_id'       => TestCase::USER_UUID_1,
+    ]);
+
+    $result = (new PDFService([], null, $engine))->generatePDF($invoice);
+
+    expect($result['success'])->toBeFalse()
+        ->and($result['error'])->toContain('render exploded, own message kept');
 });

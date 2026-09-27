@@ -9,6 +9,7 @@ use AichaDigital\Larabill\Exceptions\MissingFiscalVerificationQrException;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Support\FiscalQrImage;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 
@@ -133,22 +134,70 @@ class PDFService
             // exception itself carries their context (e.g. the failing view's
             // name). No fallback: retrying with another connector after a
             // failure only fabricated a plausible result and buried the cause.
+            // Database failures are sanitised before leaving the package:
+            // their message carries the raw SQL with interpolated bindings,
+            // and the consumer forwards this string to its own log and the
+            // operations mail (AID-1442).
+            $failureMessage = $this->safeFailureMessage($e);
+
             Log::error('larabill: invoice PDF generation failed', [
                 'invoice_id'         => $invoice->id,
                 'invoice_number'     => $invoice->fiscal_number,
                 'connector_type'     => $connectorType,
                 'exception_class'    => $e::class,
-                'exception'          => $e->getMessage(),
+                'exception'          => $failureMessage,
                 'exception_location' => $e->getFile().':'.$e->getLine(),
             ]);
 
             return [
                 'success'        => false,
-                'error'          => $e->getMessage(),
+                'error'          => $failureMessage,
                 'connector_used' => $connectorType,
                 'generated_at'   => now()->toISOString(),
             ];
         }
+    }
+
+    /**
+     * Sanitise a failure message before it leaves the frontier (AID-1442).
+     *
+     * Database exceptions interpolate binding values into their message:
+     * QueryException renders the SQL with the bindings substituted, and the
+     * wrapped PDOException's message (with the driver's own text) rides along
+     * as part of it. The consumer copies the returned `error` string into its
+     * own log and into the operations mail, so no query value, raw SQL or
+     * driver message may leave the package. Database failures report the
+     * caught exception's class, the SQLSTATE and the driver code only;
+     * anything else (FiscalContentMissingException, render failures, raw
+     * Errors) keeps its own message, which is package-controlled.
+     */
+    private function safeFailureMessage(\Throwable $e): string
+    {
+        // A QueryException anywhere in the chain wins over the ENTIRE chain,
+        // even when a plain PDOException wraps it (a PDOException whose
+        // previous is a QueryException): the query carries the real SQLSTATE
+        // and driver code, while the outer driver failure reports a useless
+        // SQLSTATE 0. Two passes — the first pass must not stop at an outer
+        // PDOException before reaching the query underneath it.
+        for ($current = $e; $current !== null; $current = $current->getPrevious()) {
+            if ($current instanceof QueryException) {
+                $sqlState   = $current->errorInfo[0] ?? (string) $current->getCode();
+                $driverCode = $current->errorInfo[1] ?? null;
+
+                return sprintf('%s: query failed (SQLSTATE %s, driver code %s)', $e::class, $sqlState, $driverCode ?? 'n/a');
+            }
+        }
+
+        for ($current = $e; $current !== null; $current = $current->getPrevious()) {
+            if ($current instanceof \PDOException) {
+                $sqlState   = $current->errorInfo[0] ?? (string) $current->getCode();
+                $driverCode = $current->errorInfo[1] ?? null;
+
+                return sprintf('%s: database driver failure (SQLSTATE %s, driver code %s)', $e::class, $sqlState, $driverCode ?? 'n/a');
+            }
+        }
+
+        return $e->getMessage();
     }
 
     /**
