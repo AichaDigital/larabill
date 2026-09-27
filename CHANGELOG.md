@@ -4,6 +4,10 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+## [6.14.1] - 2026-09-27
+
+**Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`. **Security release: read Fixed before upgrading** — database failure messages no longer carry raw SQL, binding values or stack traces through the recurring-billing and PDF failure paths.
+
 ### Fixed
 
 - **`RecurringBillingService` no longer leaks query data through its failure reporting (AID-1442 follow-up).** **Old:** when a service's emission failed with a database exception, `processRecurringBilling()` returned the exception's raw message in `results['errors'][*]['error']` and logged it — with the SQL and the interpolated binding values, the same leak AID-1442 closed at the PDF frontier — and its log line additionally carried the full stack trace. A throwing `RecurringBillingFailed`/`RecurringBillingCompleted` listener was logged the same way, and the package's own default-registered `AlertBillingFailure` listener logged the raw `Throwable::getMessage()` — the `QueryException` SQL with interpolated binding values — plus the full stack trace from the `RecurringBillingFailed` event into the error log of every installation. **New:** all four sites report the sanitised payload (`<caught class>: query failed (SQLSTATE ..., driver code ...)` for a `QueryException` anywhere in the chain, `<caught class>: database driver failure (SQLSTATE ..., driver code ...)` for a bare `PDOException`, own message otherwise) via the shared `DatabaseFailureSanitiser` (`@internal`) — the three `RecurringBillingService` sites and the package's own `AlertBillingFailure` listener, whose docblock now states the sanitisation contract — and the raw stack trace no longer rides any of the four log lines. The full `Throwable` still travels on `RecurringBillingFailed` for consumer triage (a consumer listener may log or forward it at its own discretion). The `errors` array's shape is unchanged (`error` is still a string).
