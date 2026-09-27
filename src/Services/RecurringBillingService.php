@@ -19,6 +19,7 @@ use AichaDigital\Larabill\Models\ArticleServiceStatus;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\InvoiceItem;
 use AichaDigital\Larabill\Models\UserTaxProfile;
+use AichaDigital\Larabill\Support\DatabaseFailureSanitiser;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -144,11 +145,14 @@ final class RecurringBillingService
 
             } catch (\Throwable $e) {
                 $results['failed']++;
+                // Sanitised before it reaches the consumer-visible results
+                // array (AID-1442 follow-up): a QueryException's message
+                // carries the raw SQL with interpolated bindings.
                 $results['errors'][] = [
                     'service_id'  => $service->id,
                     'customer_id' => $service->customer_id,
                     'article_id'  => $service->article_id,
-                    'error'       => $e->getMessage(),
+                    'error'       => DatabaseFailureSanitiser::message($e),
                 ];
 
                 $this->dispatchBestEffort(
@@ -157,11 +161,13 @@ final class RecurringBillingService
                     ])
                 );
 
-                // Log error for monitoring
+                // Log error for monitoring. Sanitised class + SQLSTATE +
+                // driver code is the triage payload (AID-1442 follow-up); the
+                // full Throwable rides RecurringBillingFailed for consumer
+                // triage, so the raw stack trace does not need to be logged.
                 Log::error('Recurring billing failed', [
                     'service_id' => $service->id,
-                    'error'      => $e->getMessage(),
-                    'trace'      => $e->getTraceAsString(),
+                    'error'      => DatabaseFailureSanitiser::message($e),
                 ]);
             }
         }
@@ -262,7 +268,7 @@ final class RecurringBillingService
             $dispatch();
         } catch (\Throwable $e) {
             Log::error('Recurring billing event listener failed', [
-                'error' => $e->getMessage(),
+                'error' => DatabaseFailureSanitiser::message($e),
             ]);
         }
     }

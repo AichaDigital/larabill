@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Listeners;
 
 use AichaDigital\Larabill\Events\RecurringBillingFailed;
+use AichaDigital\Larabill\Support\DatabaseFailureSanitiser;
 use Illuminate\Support\Facades\Log;
 
 /**
@@ -14,6 +15,13 @@ use Illuminate\Support\Facades\Log;
  * - Alerting administrators
  * - Creating support tickets
  * - Implementing retry strategies
+ *
+ * Sanitisation contract (AID-1442 follow-up): the log line reports the same
+ * sanitised payload as the rest of the failure path — a QueryException
+ * anywhere in the chain yields its class, the SQLSTATE and the driver code
+ * only, never the raw message (which interpolates binding values into the
+ * SQL), never the driver text, and no stack trace. The full Throwable still
+ * rides the event for consumer triage; it must not be logged here.
  *
  * @internal Implementation detail — may change without a major version (AID-413).
  */
@@ -29,9 +37,8 @@ final class AlertBillingFailure
             'customer_id'         => $event->service->customer_id,
             'article_id'          => $event->service->article_id,
             'instance_identifier' => $event->service->instance_identifier,
-            'error'               => $event->getErrorMessage(),
+            'error'               => DatabaseFailureSanitiser::message($event->exception),
             'context'             => $event->context,
-            'trace'               => $event->exception->getTraceAsString(),
         ]);
 
         // TODO: Implement alerting mechanisms
