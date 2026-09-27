@@ -95,3 +95,5 @@ docs/reports/*
 
 # Local scripts
 ./PUBLISH.sh
+# Local Pi runtime state
+.atl/

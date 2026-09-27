@@ -4,6 +4,10 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`PDFService` no longer leaks query data through the failure contract (AID-1442).** **Old:** when PDF generation failed with a database exception in the chain, `generatePDF()` returned the exception's raw message in `result['error']` and logged it — and a `QueryException`'s message contains the SQL **with the binding values interpolated** (plus the driver's own message from the wrapped `PDOException`). The consumer copies that string into its own log and into the operations mail, so query values were leaving the package. **New:** database failures are sanitised at the frontier in both places (the `exception` key of the log context and the returned `error`): a `QueryException` anywhere in the exception chain yields `<caught class>: query failed (SQLSTATE ..., driver code ...)` — with priority over the whole chain, so a `PDOException` wrapping a `QueryException` reports the query's metadata too, not the driver failure's useless SQLSTATE 0 —, and a bare `PDOException` (no `QueryException` anywhere underneath) yields `<caught class>: database driver failure (SQLSTATE ..., driver code ...)` — never the message, the raw SQL, the bindings or `errorInfo[2]`. Non-database exceptions (`FiscalContentMissingException`, render failures, raw `Error`s) keep their own message, exactly as before. The `@api` result shape of `Invoice::generatePDF()` is unchanged (`error` is still a string; no keys added or removed), and consumers forwarding `result['error']` to logs or mail no longer receive query values.
+
 ### Changed
 
 - **`composer.json` now declares the supported database engines in `extra.requirements`: `mysql >=8.4 <9.0` and `mariadb 10.11.* || 11.4.*` (AID-1319).** Informational — Composer does not enforce it — but it states the operator's engine freeze where consumers and tooling can read it. MySQL 9.x and MariaDB 11.8/12.x are outside it even though they are LTS releases: many hosting panels do not handle them natively.
