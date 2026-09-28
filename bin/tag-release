@@ -5,6 +5,12 @@
 # Usage: bin/tag-release <version>
 # Example: bin/tag-release 0.7.0
 #
+# The PHP binary used for the contract preflight and the manifest sync is
+# LARABILL_PHP_BIN (default "php"). If the machine's default `php` is not the
+# binary this package's flow runs on (e.g. the local flow is pinned to php83),
+# run: LARABILL_PHP_BIN=php83 bin/tag-release <version> — the preflight can
+# fail spuriously under the wrong binary (AID-1460).
+#
 # The script will:
 #   1. Validate that CHANGELOG.md contains an entry for the version
 #   2. Create an annotated git tag v<version>
@@ -15,6 +21,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 CHANGELOG="${SCRIPT_DIR}/CHANGELOG.md"
+PHP_BIN="${LARABILL_PHP_BIN:-php}"
 
 # --- Argument validation ---
 
@@ -69,18 +76,21 @@ if [[ ! -x "${SCRIPT_DIR}/vendor/bin/pest" ]]; then
     exit 1
 fi
 
-echo "Running contract preflight (tests/Unit/Contract)..."
-
-if ! "${SCRIPT_DIR}/vendor/bin/pest" tests/Unit/Contract >/dev/null 2>&1; then
+echo "Running contract preflight (tests/Unit/Contract) using PHP binary: ${PHP_BIN}"
+if ! "$PHP_BIN" "${SCRIPT_DIR}/vendor/bin/pest" tests/Unit/Contract >/dev/null 2>&1; then
     echo "ERROR: contract tests failed. The snapshots or the release manifest are out of sync."
-    echo "Run 'vendor/bin/pest tests/Unit/Contract' to see the failure; regenerate via"
+    echo "Run '${PHP_BIN} vendor/bin/pest tests/Unit/Contract' to see the failure; regenerate via"
     echo "bin/sync-contract-snapshots (snapshots) or bin/sync-upgrade-manifest (manifest),"
     echo "review the diff, and commit BEFORE tagging."
+    echo ""
+    echo "If the tests pass under a different PHP binary (e.g. the machine default is not"
+    echo "the binary this package's flow runs on), re-run with:"
+    echo "  LARABILL_PHP_BIN=php83 bin/tag-release ${VERSION}"
     exit 1
 fi
 
 echo "Refreshing the upgrade manifest for ${VERSION}..."
-php "${SCRIPT_DIR}/bin/sync-upgrade-manifest"
+"$PHP_BIN" "${SCRIPT_DIR}/bin/sync-upgrade-manifest"
 
 if [[ -n "$(git status --porcelain -- tests/Contract/release-migration-manifest.json)" ]]; then
     echo "ERROR: the upgrade manifest changed for this release."

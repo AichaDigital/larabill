@@ -4,6 +4,10 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`bin/tag-release` runs its contract preflight and manifest sync through the `LARABILL_PHP_BIN` PHP binary (default `php`).** **Old:** the preflight invoked `vendor/bin/pest` via its shebang and `bin/sync-upgrade-manifest` via bare `php` — both resolving to the machine's default interpreter, which can differ from the binary the package's flow runs on and fail the contract suite spuriously (measured on release day: same commit, 1/7 failed under the default `php` 8.5, 7/7 passed under `php83`). **New:** both invocations go through `LARABILL_PHP_BIN` (documented in the script header), the preflight announces which binary it is using, and a failed preflight now prints the exact re-run command (`LARABILL_PHP_BIN=php83 bin/tag-release <version>`) when the wrong binary is the likely cause.
+
 ## [6.14.2] - 2026-09-27
 
 **Ships migrations: no** — upgrade is a plain `composer update aichadigital/larabill`. **Identical code to v6.14.1** — this release exists because Packagist permanently blocks re-tagged versions: the v6.14.1 tag had to be moved right after its release (its prepare commit missed the upgrade-manifest re-stamp), and Packagist keeps serving v6.14.1 a stale dist (missing the 2-line `release-migration-manifest.json` stamp) with an "Upstream re-tag blocked" warning. **Install v6.14.2, not v6.14.1**, on any channel — GitLab, the GitHub mirror and Packagist all serve it from a fresh, never-moved tag.
