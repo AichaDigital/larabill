@@ -8,8 +8,10 @@ use AichaDigital\Larabill\Exceptions\FiscalIntegrityException;
 use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\UserTaxProfile;
 use AichaDigital\Larabill\Notifications\FiscalIntegrityAlert;
+use AichaDigital\Larabill\Support\DatabaseFailureSanitiser;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Notification;
+use Throwable;
 
 /**
  * FiscalIntegrityChecker Service
@@ -194,30 +196,26 @@ class FiscalIntegrityChecker
     }
 
     /**
-     * Send notification to admin users.
+     * Send the alert to the configured admin email(s).
+     *
+     * Uses Laravel's on-demand notifiable (\Illuminate\Notifications\AnonymousNotifiable,
+     * a named serializable class) routed to the mail channel only: PHP anonymous
+     * classes are not serializable, so the previous anonymous class could never
+     * reach a real queue connection (AID-1464). The framework skips the database
+     * channel for on-demand notifiables; a persistent admin inbox needs a decided
+     * recipient identity, not a list of emails, and is tracked separately.
+     *
+     * A delivery failure is logged (sanitised reason) and never masks the
+     * \FiscalIntegrityException the caller intends to throw.
      */
     protected function notifyAdmins(FiscalIntegrityException $exception): void
-    {
-        $adminNotifiable = $this->getAdminNotifiable();
-
-        if ($adminNotifiable !== null) {
-            Notification::send($adminNotifiable, new FiscalIntegrityAlert($exception));
-        }
-    }
-
-    /**
-     * Get the notifiable entity for admin notifications.
-     *
-     * Uses config to determine admin email(s).
-     */
-    protected function getAdminNotifiable(): ?object
     {
         $adminEmail = config('larabill.admin.email');
 
         if (empty($adminEmail)) {
             Log::warning('No admin email configured for fiscal integrity alerts. Set LARABILL_ADMIN_EMAIL in .env');
 
-            return null;
+            return;
         }
 
         // Support multiple emails separated by comma
@@ -225,25 +223,14 @@ class FiscalIntegrityChecker
             ? $adminEmail
             : array_map('trim', explode(',', $adminEmail));
 
-        return new class($emails)
-        {
-            /**
-             * @param  array<int, string>  $emails
-             */
-            public function __construct(protected array $emails) {}
-
-            /**
-             * @return array<int, string>
-             */
-            public function routeNotificationForMail(): array
-            {
-                return $this->emails;
-            }
-
-            public function getKey(): string
-            {
-                return implode(',', $this->emails);
-            }
-        };
+        try {
+            Notification::route('mail', $emails)
+                ->notify(FiscalIntegrityAlert::fromException($exception));
+        } catch (Throwable $e) {
+            Log::error('Failed to deliver fiscal integrity alert.', [
+                'reason'         => DatabaseFailureSanitiser::message($e),
+                'fiscal_context' => $exception->context(),
+            ]);
+        }
     }
 }

@@ -23,6 +23,16 @@ use Lorisleiva\Actions\Concerns\AsAction;
  *
  * Runs as: direct call — `VerifyVatNumber::run($vatNumber, $countryCode)`.
  *
+ * **Queue warning (AID-1464):** because of `AsAction`, `VerifyVatNumber::dispatch()`
+ * is available and wraps this action in a `JobDecorator` that serializes its
+ * arguments verbatim — the VAT/NIF number would travel in plaintext into the
+ * `jobs` (and `failed_jobs`) payloads, with no encryption by default. Prefer the
+ * direct `::run()` call (the current consumer path). Adding `ShouldBeEncrypted`
+ * to this action is NOT sufficient protection: Laravel inspects the queued
+ * `JobDecorator`, not the wrapped action, when deciding to encrypt a payload.
+ * The async path (payload encryption or argument minimisation) is evaluated in
+ * its own ticket — do not assume dispatch is safe because the sync path is.
+ *
  * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 final class VerifyVatNumber
