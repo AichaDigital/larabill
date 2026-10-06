@@ -7,6 +7,7 @@ namespace AichaDigital\Larabill\Notifications;
 use AichaDigital\Larabill\Exceptions\FiscalIntegrityException;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
@@ -15,6 +16,11 @@ use Illuminate\Notifications\Notification;
  *
  * Sends critical alert when fiscal configuration integrity is compromised.
  * Delivered via email and database channels.
+ *
+ * Carries scalar context only (severity, affected user id, duplicate config
+ * ids, package message): the queue serializes this object verbatim into the
+ * `jobs`/`failed_jobs` payloads, so no exception object, model or stack trace
+ * may travel with it (AID-1464).
  *
  * Uses queue if available, falls back to sync if not configured.
  *
@@ -26,11 +32,43 @@ class FiscalIntegrityAlert extends Notification implements ShouldQueue
 {
     use Queueable;
 
+    /**
+     * @param  array<int, string|int>  $duplicateConfigIds
+     */
     public function __construct(
-        protected FiscalIntegrityException $exception
+        protected string $severity,
+        protected ?string $affectedUserId,
+        protected array $duplicateConfigIds,
+        protected string $message,
     ) {
         // Use default connection (sync if not configured)
         $this->onConnection(config('queue.default', 'sync'));
+    }
+
+    /**
+     * Build the notification from the fiscal integrity exception, keeping only
+     * queue-safe scalars (AID-1464).
+     */
+    public static function fromException(FiscalIntegrityException $exception): self
+    {
+        $duplicateConfigIds = [];
+
+        foreach ($exception->getDuplicateConfigs() as $duplicateConfig) {
+            $id = $duplicateConfig instanceof Model
+                ? $duplicateConfig->getKey()
+                : null;
+
+            if (is_int($id) || is_string($id)) {
+                $duplicateConfigIds[] = $id;
+            }
+        }
+
+        return new self(
+            $exception->getSeverity(),
+            $exception->getAffectedUserId(),
+            $duplicateConfigIds,
+            $exception->getMessage(),
+        );
     }
 
     /**
@@ -52,18 +90,18 @@ class FiscalIntegrityAlert extends Notification implements ShouldQueue
             ->error()
             ->subject($this->getSubject())
             ->greeting(__('larabill::notifications.fiscal_integrity.greeting'))
-            ->line($this->exception->getMessage());
+            ->line($this->message);
 
-        if ($this->exception->isGlobal()) {
+        if ($this->isGlobal()) {
             $mail->line(__('larabill::notifications.fiscal_integrity.global_impact'));
         } else {
             $mail->line(__('larabill::notifications.fiscal_integrity.atomic_impact', [
-                'user_id' => $this->exception->getAffectedUserId(),
+                'user_id' => $this->affectedUserId,
             ]));
         }
 
         $mail->line(__('larabill::notifications.fiscal_integrity.duplicate_ids', [
-            'ids' => $this->exception->getDuplicateConfigs()->pluck('id')->implode(', '),
+            'ids' => implode(', ', $this->duplicateConfigIds),
         ]));
 
         $mail->action(
@@ -85,13 +123,21 @@ class FiscalIntegrityAlert extends Notification implements ShouldQueue
     {
         return [
             'type'                 => 'fiscal_integrity_alert',
-            'severity'             => $this->exception->getSeverity(),
-            'is_global'            => $this->exception->isGlobal(),
-            'affected_user_id'     => $this->exception->getAffectedUserId(),
-            'duplicate_config_ids' => $this->exception->getDuplicateConfigs()->pluck('id')->toArray(),
-            'message'              => $this->exception->getMessage(),
+            'severity'             => $this->severity,
+            'is_global'            => $this->isGlobal(),
+            'affected_user_id'     => $this->affectedUserId,
+            'duplicate_config_ids' => $this->duplicateConfigIds,
+            'message'              => $this->message,
             'created_at'           => now()->toIso8601String(),
         ];
+    }
+
+    /**
+     * Whether this is a global (company-level) integrity issue.
+     */
+    protected function isGlobal(): bool
+    {
+        return $this->severity === FiscalIntegrityException::SEVERITY_GLOBAL;
     }
 
     /**
@@ -99,7 +145,7 @@ class FiscalIntegrityAlert extends Notification implements ShouldQueue
      */
     protected function getSubject(): string
     {
-        if ($this->exception->isGlobal()) {
+        if ($this->isGlobal()) {
             return __('larabill::notifications.fiscal_integrity.subject_global');
         }
 
@@ -114,11 +160,11 @@ class FiscalIntegrityAlert extends Notification implements ShouldQueue
         // Use config or default to admin path
         $basePath = config('larabill.admin.path', '/admin');
 
-        if ($this->exception->isGlobal()) {
+        if ($this->isGlobal()) {
             return url($basePath.'/company-fiscal-configs');
         }
 
-        return url($basePath.'/users/'.$this->exception->getAffectedUserId().'/edit');
+        return url($basePath.'/users/'.$this->affectedUserId.'/edit');
     }
 
     /**
