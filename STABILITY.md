@@ -25,6 +25,8 @@
 
 3. **Deprecation before removal, one full major apart.** Public surface (`@api`) is never removed in the release that deprecates it: it is marked `@deprecated` with its replacement in major `N`, and removed no earlier than major `N+1`. Deprecated surface keeps working until removed.
 
+   - **Qualified exception (2026-10-07, operator decision, gate rounds 2–3 of AID-953/949/952):** the `BillingFrequency` cases `WEEKLY` and `BIWEEKLY` are the one narrowing inside the 7.0 shim layer: their shim inputs emit `E_USER_DEPRECATED` and throw `LegacyCadenceUnsupportedException` instead of forwarding. Imperative, measured: zero instances in the migration corpus (survey 2026-08-12, AID-895), the cadence domain is defined as months 1–12 / years 1–10 (ADR-015), and the data preflight loud-aborts any weekly/biweekly row, so no 7.0 installation can hold such data. Documented in `UPGRADE-7.0.md`. No other shim narrows.
+
 4. **The public surface is explicit and machine-guarded.** Every class is tagged `@api` (supported, covered by this contract) or `@internal` (may change in any release) — see `docs/api-surface.md` in the repository. The guarantees are enforced in CI, not by good intentions:
 
    - golden-master snapshots of the seven contract models (columns, casts, relations, scopes, method signatures) fail CI on any drift (`tests/Contract/snapshots/`);
