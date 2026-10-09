@@ -84,7 +84,10 @@ class InvoiceService
      *     payment_terms?: int|null,
      *     template_name?: string|null,
      *     proforma_id?: string|null,
-     *     is_roi_taxed?: bool
+     *     rectifies_invoice_id?: string|null,
+     *     is_roi_taxed?: bool,
+     *     customer_snapshot?: string|null,
+     *     user_tax_profile_id?: string|null
      * }  $invoiceData
      * @param  array{
      *     make_immutable?: bool,
@@ -109,15 +112,34 @@ class InvoiceService
                 throw new \RuntimeException('No valid CompanyFiscalConfig found for invoice creation');
             }
 
-            // Get user tax profile for billable user
-            $userTaxProfile = UserTaxProfile::getValidForOwnerAt(
-                $billableUser->id,
-                now()
-            );
+            // Get user tax profile for billable user. AID-971: when a FROZEN
+            // customer snapshot is supplied (the rectificative path — ADR-014),
+            // the CURRENT profile is deliberately NOT resolved: the recipient
+            // is the original's. The referenced profile must still resolve —
+            // findOrFail fails loud, never a silent fallback (AID-589).
+            $frozenCustomerSnapshot = $invoiceData['customer_snapshot'] ?? null;
 
-            // Determine invoice type and serie
+            if ($frozenCustomerSnapshot !== null) {
+                $userTaxProfile = ($invoiceData['user_tax_profile_id'] ?? null) !== null
+                    ? UserTaxProfile::query()->findOrFail($invoiceData['user_tax_profile_id'])
+                    : null;
+            } else {
+                $userTaxProfile = UserTaxProfile::getValidForOwnerAt(
+                    $billableUser->id,
+                    now()
+                );
+            }
+
+            // Determine invoice type and serie. 'rectificative' (AID-971,
+            // ADR-014) selects the RECTIFICATIVE fiscal type — the artifact is
+            // linked via rectifies_invoice_id, which travels untouched to the
+            // created model and is what VerifactuAdapter maps to R1.
             $invoiceType = $invoiceData['type'] ?? 'invoice';
-            $serieType   = $invoiceType === 'proforma' ? InvoiceSerieType::PROFORMA : InvoiceSerieType::INVOICE;
+            $serieType   = match ($invoiceType) {
+                'proforma'      => InvoiceSerieType::PROFORMA,
+                'rectificative' => InvoiceSerieType::RECTIFICATIVE,
+                default         => InvoiceSerieType::INVOICE,
+            };
             $serie       = $serieType->value;
             $status      = isset($invoiceData['status']) ? $this->mapStatusToEnum($invoiceData['status']) : InvoiceStatus::DRAFT->value;
 
@@ -148,7 +170,8 @@ class InvoiceService
                 'user_id'                   => $userId,
                 'company_fiscal_config_id'  => $companyConfig->id,
                 'user_tax_profile_id'       => $userTaxProfile?->id,
-                'proforma_id'               => $invoiceData['proforma_id'] ?? null,
+                'proforma_id'               => $invoiceData['proforma_id']          ?? null,
+                'rectifies_invoice_id'      => $invoiceData['rectifies_invoice_id'] ?? null,
                 // AID-929: the consumer DECLARES the reverse-charge
                 // qualification (AID-309 doctrine — the package consumes the
                 // flag, it never infers it from a live VIES lookup). Absent
@@ -184,7 +207,13 @@ class InvoiceService
 
             // Generate encrypted snapshots
             $invoice->issuer_snapshot   = $this->generateIssuerSnapshot($companyConfig);
-            $invoice->customer_snapshot = $this->generateBillableUserSnapshot($billableUser, $userTaxProfile);
+            // AID-971 (ADR-014): a supplied customer snapshot travels VERBATIM —
+            // the rectificative reuses the original's frozen recipient even if
+            // the fiscal profile changed since emission. Absent → generate the
+            // snapshot from the billable user and its current profile, exactly
+            // as before (byte-for-byte unchanged path).
+            $invoice->customer_snapshot = $frozenCustomerSnapshot
+                ?? $this->generateBillableUserSnapshot($billableUser, $userTaxProfile);
             $invoice->fiscal_snapshot   = $this->generateFiscalSnapshot($invoice, $companyConfig, $userTaxProfile);
 
             $invoice->save();
