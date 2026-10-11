@@ -18,12 +18,20 @@
 #
 # Usage:  bin/sync-contract-snapshots
 # Exit:   0 in-sync or regenerated with CHANGELOG entry; 1 otherwise.
+#
+# The PHP binary used for the pest invocation is LARABILL_PHP_BIN (default
+# "php"), the same override bin/tag-release honours. If the machine's default
+# `php` is not the binary this package's flow runs on (e.g. the local flow is
+# pinned to php83), run: LARABILL_PHP_BIN=php83 bin/sync-contract-snapshots —
+# the snapshots can drift spuriously under the wrong binary (AID-1460: the
+# default `php` 8.5 produces self→FQCN drift in the regenerated JSON).
 
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 SNAPSHOTS_REL="tests/Contract/snapshots"
 CHANGELOG="${ROOT}/CHANGELOG.md"
+PHP_BIN="${LARABILL_PHP_BIN:-php}"
 
 cd "${ROOT}"
 
@@ -34,8 +42,8 @@ fi
 
 # --- 1. Regenerate ---------------------------------------------------------
 
-echo "Regenerating contract snapshots..."
-LARABILL_REGENERATE_CONTRACT=1 vendor/bin/pest tests/Unit/Contract >/dev/null
+echo "Regenerating contract snapshots (PHP binary: ${PHP_BIN})..."
+LARABILL_REGENERATE_CONTRACT=1 "$PHP_BIN" vendor/bin/pest tests/Unit/Contract >/dev/null
 
 if [[ -z "$(git status --porcelain -- "${SNAPSHOTS_REL}")" ]]; then
     echo "Contract snapshots already in sync — nothing to do."

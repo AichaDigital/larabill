@@ -25,6 +25,7 @@
         "code",
         "cost_price",
         "description",
+        "guarantee_days",
         "is_active",
         "item_type",
         "metadata",
@@ -39,6 +40,7 @@
     "with": [],
     "casts": {
         "cost_price": "AichaDigital\\Lara100\\Casts\\FixedDecimalCast:2",
+        "guarantee_days": "integer",
         "is_active": "boolean",
         "item_type": "AichaDigital\\Larabill\\Enums\\ItemType",
         "metadata": "array"
@@ -141,7 +143,7 @@
         },
         "scopeRecurring": {
             "api": false,
-            "deprecated": false,
+            "deprecated": true,
             "parameters": [
                 {
                     "name": "query",
@@ -189,11 +191,24 @@
         },
         "getBillingDaysInAdvanceFor": {
             "api": false,
-            "deprecated": false,
+            "deprecated": true,
             "parameters": [
                 {
                     "name": "frequency",
                     "type": "AichaDigital\\Larabill\\Enums\\BillingFrequency",
+                    "variadic": false
+                }
+            ],
+            "returnType": "?int",
+            "static": false
+        },
+        "getBillingDaysInAdvanceForInterval": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "interval",
+                    "type": "?AichaDigital\\Larabill\\ValueObjects\\BillingInterval",
                     "variadic": false
                 }
             ],
@@ -209,7 +224,7 @@
         },
         "getEffectivePriceFor": {
             "api": false,
-            "deprecated": false,
+            "deprecated": true,
             "parameters": [
                 {
                     "name": "customerId",
@@ -227,11 +242,24 @@
         },
         "getPriceFor": {
             "api": false,
-            "deprecated": false,
+            "deprecated": true,
             "parameters": [
                 {
                     "name": "frequency",
                     "type": "AichaDigital\\Larabill\\Enums\\BillingFrequency",
+                    "variadic": false
+                }
+            ],
+            "returnType": "?float",
+            "static": false
+        },
+        "getPriceForInterval": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "interval",
+                    "type": "?AichaDigital\\Larabill\\ValueObjects\\BillingInterval",
                     "variadic": false
                 }
             ],
@@ -260,7 +288,7 @@
         },
         "isRecurring": {
             "api": false,
-            "deprecated": false,
+            "deprecated": true,
             "parameters": [],
             "returnType": "bool",
             "static": false

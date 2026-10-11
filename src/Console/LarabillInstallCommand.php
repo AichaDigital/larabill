@@ -73,6 +73,20 @@ class LarabillInstallCommand extends Command
         '038' => 'remove_phantom_proforma_simple_invoice_template',
         // === PROFORMA LINK BACKFILL (AID-555) ===
         '039' => 'backfill_invoice_proforma_link',
+        // === CADENCE RE-KEY (ADR-015 / AID-952) ===
+        '040' => 'rekey_article_prices_cadence',
+        '041' => 'rekey_article_service_status_cadence',
+        // === CAUSE VOCABULARY (ADR-015 / AID-949) — table first, then its FK ===
+        '042' => 'create_agreement_causes',
+        '043' => 'add_closure_cause_id_to_article_service_status_table',
+        // === STATUS PROGRAM (ADR-015 / AID-949) — after causes/FK: the §4.2 mapping reads the vocabulary ===
+        '044' => 'apply_agreement_status_program',
+        // === MODALITY (ADR-015 / AID-953) — after the status program: modality derives from the slice-2b cadence columns ===
+        '045' => 'add_modality_to_article_service_status',
+        // === GUARANTEE (ADR-015 / AID-953) — capability + snapshot + registry + settlement key ===
+        '046' => 'add_guarantee_capability_and_registry',
+        // === IMPORT SUPPORT (ADR-015 / AID-895) — invoices.is_historical + agreement origin_key UNIQUE ===
+        '047' => 'add_import_support_columns',
     ];
 
     public function handle(): int

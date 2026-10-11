@@ -3,10 +3,10 @@
 declare(strict_types=1);
 
 use AichaDigital\Lara100\ValueObjects\FixedDecimal;
-use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Exceptions\OverlappingArticlePriceException;
 use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticlePrice;
+use AichaDigital\Larabill\ValueObjects\BillingInterval;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -20,25 +20,24 @@ beforeEach(function () {
     $this->article = Article::factory()->withoutPrices()->create();
 });
 
-/** Seeds one active MONTHLY price with the given range. */
+/** Seeds one active 1-month price with the given range. */
 function aid601SeedPrice(Article $article, ?string $from, ?string $to, bool $active = true): ArticlePrice
 {
     return ArticlePrice::factory()->for($article)->create([
-        'billing_frequency' => BillingFrequency::MONTHLY,
-        'price'             => FixedDecimal::ofUnscaled(2900, 2),
-        'valid_from'        => $from,
-        'valid_to'          => $to,
-        'is_active'         => $active,
+        'price'      => FixedDecimal::ofUnscaled(2900, 2),
+        'valid_from' => $from,
+        'valid_to'   => $to,
+        'is_active'  => $active,
     ]);
 }
 
-/** Runs the scope for a MONTHLY candidate with the given range. */
+/** Runs the scope for a 1-month candidate with the given range. */
 function aid601Overlaps(Article $article, ?string $from, ?string $to): int
 {
     return ArticlePrice::query()
         ->overlapping(
             $article->id,
-            BillingFrequency::MONTHLY,
+            new BillingInterval('month', 1),
             $from === null ? null : Carbon::parse($from),
             $to   === null ? null : Carbon::parse($to),
         )
@@ -93,15 +92,27 @@ it('ignores inactive rows entirely', function () {
     expect(aid601Overlaps($this->article, null, null))->toBe(0);
 });
 
-it('ignores rows of another billing frequency', function () {
+it('ignores rows of another billing cadence', function () {
     ArticlePrice::factory()->for($this->article)->create([
-        'billing_frequency' => BillingFrequency::YEARLY,
-        'price'             => FixedDecimal::ofUnscaled(29000, 2),
-        'valid_from'        => null,
-        'valid_to'          => null,
+        'billing_unit'     => 'year',
+        'billing_quantity' => 1,
+        'price'            => FixedDecimal::ofUnscaled(29000, 2),
+        'valid_from'       => null,
+        'valid_to'         => null,
     ]);
 
     expect(aid601Overlaps($this->article, null, null))->toBe(0);
+});
+
+it('matches the NULL cadence only against itself (one-time prices)', function () {
+    // A one-time price is a NULL cadence: it overlaps another one-time price,
+    // never a month/year cadence.
+    ArticlePrice::factory()->for($this->article)->oneTime()->create();
+
+    expect(ArticlePrice::query()
+        ->overlapping($this->article->id, null, null, null)
+        ->count())->toBe(1)
+        ->and(aid601Overlaps($this->article, null, null))->toBe(0);
 });
 
 it('ignores rows of another article', function () {

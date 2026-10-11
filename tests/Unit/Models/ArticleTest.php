@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Enums\ItemType;
+use AichaDigital\Larabill\Exceptions\InvalidBillingIntervalException;
 use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticleOverride;
 use AichaDigital\Larabill\Models\ArticlePrice;
@@ -220,9 +221,9 @@ describe('Article type helpers', function () {
 
         // Verify test setup: each article has exactly 1 price
         expect($recurring->prices)->toHaveCount(1, 'Setup: recurring should have 1 price')
-            ->and($recurring->prices->first()->billing_frequency)->toBe(BillingFrequency::MONTHLY, 'Setup: should be MONTHLY')
+            ->and($recurring->prices->first()->billing_unit)->toBe('month', 'Setup: should be 1 month')
             ->and($oneTime->prices)->toHaveCount(1, 'Setup: oneTime should have 1 price')
-            ->and($oneTime->prices->first()->billing_frequency)->toBe(BillingFrequency::ONE_TIME, 'Setup: should be ONE_TIME');
+            ->and($oneTime->prices->first()->billing_unit)->toBeNull('Setup: should be one-time (NULL cadence)');
 
         expect($recurring->isRecurring())->toBeTrue()
             ->and($oneTime->isRecurring())->toBeFalse();
@@ -290,10 +291,13 @@ describe('Article pricing', function () {
             ->monthly(2900)
             ->create();
 
-        // Verify test setup: only 1 price (MONTHLY)
+        // Verify test setup: only 1 price (1 month)
         expect($article->prices)->toHaveCount(1, 'Setup verification: should have exactly 1 price');
 
-        expect($article->getPriceFor(BillingFrequency::WEEKLY))->toBeNull();
+        // WEEKLY is outside the ADR-015 cadence domain: the lookup fails loud
+        // (qualified STABILITY.md §3 exception) instead of returning null.
+        expect(fn () => $article->getPriceFor(BillingFrequency::WEEKLY))
+            ->toThrow(InvalidBillingIntervalException::class);
     });
 
     it('gets available frequencies', function () {
@@ -336,7 +340,6 @@ describe('Article pricing', function () {
         ArticlePrice::factory()
             ->for($article)
             ->create([
-                'billing_frequency'       => BillingFrequency::MONTHLY,
                 'price'                   => cents(2900),
                 'billing_days_in_advance' => 7,
             ]);

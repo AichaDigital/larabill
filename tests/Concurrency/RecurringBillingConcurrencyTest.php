@@ -3,9 +3,8 @@
 declare(strict_types=1);
 
 use AichaDigital\Larabill\Contracts\Services\RecurringEmissionHookContract;
-use AichaDigital\Larabill\Enums\BillingFrequency;
+use AichaDigital\Larabill\Enums\AgreementStatus;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
-use AichaDigital\Larabill\Enums\ServiceStatus;
 use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticleServiceStatus;
 use AichaDigital\Larabill\Models\CompanyFiscalConfig;
@@ -214,8 +213,8 @@ it('concurrent recurring runs over the SAME service emit exactly one invoice, on
         'article_id'          => $article->id,
         'instance_identifier' => 'fork-race.example.test',
         'started_at'          => now()->subMonth()->toDateString(),
-        'billing_frequency'   => BillingFrequency::MONTHLY,
-        'status'              => ServiceStatus::ACTIVE,
+        'billing_unit'        => 'month', 'billing_quantity' => 1,
+        'status'              => AgreementStatus::ACTIVE,
         'next_billing_date'   => $periodStart,
         'effective_price'     => cents(2900),
     ]);

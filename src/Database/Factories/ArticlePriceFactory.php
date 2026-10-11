@@ -8,6 +8,7 @@ use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticlePrice;
+use AichaDigital\Larabill\ValueObjects\BillingInterval;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
@@ -24,6 +25,11 @@ class ArticlePriceFactory extends Factory
     /**
      * Define the model's default state.
      *
+     * The default cadence is deterministic (1 month) — never random: cadence
+     * is guard-governing (the AID-601 overlap invariant keys on it), and the
+     * house rule forbids randomElement on guard-governing fields (AID-508).
+     * Tests declaring another cadence set it explicitly.
+     *
      * Note: Uses withoutPrices() to avoid creating duplicate prices when
      * ArticlePrice is being created explicitly.
      */
@@ -31,7 +37,8 @@ class ArticlePriceFactory extends Factory
     {
         return [
             'article_id'               => Article::factory()->withoutPrices(),
-            'billing_frequency'        => BillingFrequency::MONTHLY,
+            'billing_unit'             => 'month',
+            'billing_quantity'         => 1,
             'price'                    => FixedDecimal::ofUnscaled($this->faker->numberBetween(1000, 50000), 2), // €10 to €500
             'billing_days_in_advance'  => null,
             'valid_from'               => null,
@@ -41,12 +48,39 @@ class ArticlePriceFactory extends Factory
     }
 
     /**
-     * Set the billing frequency.
+     * Convert a legacy `BillingFrequency` into the ADR-015 cadence columns at
+     * the seeding boundary (AID-952). WEEKLY/BIWEEKLY throw — the new domain
+     * cannot represent them, so no fixture can either.
+     *
+     * @return array{billing_unit: string|null, billing_quantity: int|null}
+     */
+    public static function cadenceAttributes(BillingFrequency $frequency): array
+    {
+        $interval = BillingInterval::fromLegacyFrequency($frequency->value);
+
+        return [
+            'billing_unit'     => $interval?->unit,
+            'billing_quantity' => $interval?->quantity,
+        ];
+    }
+
+    /**
+     * Set the billing cadence from a legacy frequency. ONE_TIME becomes the
+     * NULL cadence.
      */
     public function frequency(BillingFrequency $frequency): static
     {
-        return $this->state(fn (array $attributes) => [
-            'billing_frequency' => $frequency,
+        return $this->state(fn () => self::cadenceAttributes($frequency));
+    }
+
+    /**
+     * Set the billing cadence directly, in the ADR-015 domain.
+     */
+    public function interval(?BillingInterval $interval): static
+    {
+        return $this->state(fn () => [
+            'billing_unit'     => $interval?->unit,
+            'billing_quantity' => $interval?->quantity,
         ]);
     }
 
@@ -71,7 +105,7 @@ class ArticlePriceFactory extends Factory
     }
 
     /**
-     * One-time price (no recurrence).
+     * One-time price (NULL cadence, no recurrence).
      */
     public function oneTime(): static
     {
@@ -79,23 +113,7 @@ class ArticlePriceFactory extends Factory
     }
 
     /**
-     * Weekly billing frequency.
-     */
-    public function weekly(): static
-    {
-        return $this->frequency(BillingFrequency::WEEKLY);
-    }
-
-    /**
-     * Biweekly billing frequency.
-     */
-    public function biweekly(): static
-    {
-        return $this->frequency(BillingFrequency::BIWEEKLY);
-    }
-
-    /**
-     * Monthly billing frequency.
+     * Monthly billing cadence (1 month).
      */
     public function monthly(): static
     {
@@ -103,7 +121,7 @@ class ArticlePriceFactory extends Factory
     }
 
     /**
-     * Bimonthly billing frequency.
+     * Bimonthly billing cadence (2 months).
      */
     public function bimonthly(): static
     {
@@ -111,7 +129,7 @@ class ArticlePriceFactory extends Factory
     }
 
     /**
-     * Quarterly billing frequency.
+     * Quarterly billing cadence (3 months).
      */
     public function quarterly(): static
     {
@@ -119,7 +137,7 @@ class ArticlePriceFactory extends Factory
     }
 
     /**
-     * Semiannual billing frequency.
+     * Semiannual billing cadence (6 months).
      */
     public function semiannual(): static
     {
@@ -127,7 +145,7 @@ class ArticlePriceFactory extends Factory
     }
 
     /**
-     * Yearly billing frequency.
+     * Yearly billing cadence (1 year).
      */
     public function yearly(): static
     {
@@ -135,7 +153,7 @@ class ArticlePriceFactory extends Factory
     }
 
     /**
-     * Biennial billing frequency.
+     * Biennial billing cadence (2 years).
      */
     public function biennial(): static
     {
@@ -143,7 +161,7 @@ class ArticlePriceFactory extends Factory
     }
 
     /**
-     * Triennial billing frequency.
+     * Triennial billing cadence (3 years).
      */
     public function triennial(): static
     {

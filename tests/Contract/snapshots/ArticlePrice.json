@@ -16,7 +16,8 @@
     "fillable": [
         "article_id",
         "billing_days_in_advance",
-        "billing_frequency",
+        "billing_quantity",
+        "billing_unit",
         "is_active",
         "price",
         "valid_from",
@@ -28,7 +29,7 @@
     "with": [],
     "casts": {
         "billing_days_in_advance": "integer",
-        "billing_frequency": "AichaDigital\\Larabill\\Enums\\BillingFrequency",
+        "billing_quantity": "integer",
         "is_active": "boolean",
         "price": "AichaDigital\\Lara100\\Casts\\FixedDecimalCast:2",
         "valid_from": "date",
@@ -88,7 +89,7 @@
             "returnType": "void",
             "static": false
         },
-        "scopeForFrequency": {
+        "scopeForInterval": {
             "api": false,
             "deprecated": false,
             "parameters": [
@@ -98,8 +99,8 @@
                     "variadic": false
                 },
                 {
-                    "name": "frequency",
-                    "type": "AichaDigital\\Larabill\\Enums\\BillingFrequency",
+                    "name": "interval",
+                    "type": "?AichaDigital\\Larabill\\ValueObjects\\BillingInterval",
                     "variadic": false
                 }
             ],
@@ -121,8 +122,8 @@
                     "variadic": false
                 },
                 {
-                    "name": "frequency",
-                    "type": "AichaDigital\\Larabill\\Enums\\BillingFrequency",
+                    "name": "interval",
+                    "type": "?AichaDigital\\Larabill\\ValueObjects\\BillingInterval",
                     "variadic": false
                 },
                 {
@@ -178,6 +179,13 @@
             "deprecated": false,
             "parameters": [],
             "returnType": "?float",
+            "static": false
+        },
+        "interval": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "?AichaDigital\\Larabill\\ValueObjects\\BillingInterval",
             "static": false
         },
         "isCurrentlyValid": {

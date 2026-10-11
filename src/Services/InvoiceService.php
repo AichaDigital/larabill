@@ -85,6 +85,8 @@ class InvoiceService
      *     template_name?: string|null,
      *     proforma_id?: string|null,
      *     rectifies_invoice_id?: string|null,
+     *     settlement_operation_key?: string|null,
+     *     is_historical?: bool,
      *     is_roi_taxed?: bool,
      *     customer_snapshot?: string|null,
      *     user_tax_profile_id?: string|null
@@ -172,6 +174,17 @@ class InvoiceService
                 'user_tax_profile_id'       => $userTaxProfile?->id,
                 'proforma_id'               => $invoiceData['proforma_id']          ?? null,
                 'rectifies_invoice_id'      => $invoiceData['rectifies_invoice_id'] ?? null,
+                // ADR-015 §3.4 (guarantee settlement): the deterministic
+                // operation key of an idempotent settlement claim, stamped at
+                // creation — the UNIQUE index on this column is what serialises
+                // concurrent issuances (collision-and-adoption). Absent key =>
+                // null, so nothing changes for callers that ignore it.
+                'settlement_operation_key'  => $invoiceData['settlement_operation_key'] ?? null,
+                // AID-895 (ADR-015 §2.5, import support): the importer sets
+                // this on EVERY document migrated from the legacy system.
+                // Absent key => false (the additive-input pattern), so
+                // nothing changes for callers that ignore it.
+                'is_historical'             => $invoiceData['is_historical'] ?? false,
                 // AID-929: the consumer DECLARES the reverse-charge
                 // qualification (AID-309 doctrine — the package consumes the
                 // flag, it never infers it from a live VIES lookup). Absent

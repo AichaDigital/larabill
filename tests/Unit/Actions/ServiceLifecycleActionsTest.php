@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 use AichaDigital\Larabill\Actions\ProcessPendingCancellations;
 use AichaDigital\Larabill\Actions\ProcessServiceExpiration;
-use AichaDigital\Larabill\Enums\BillingFrequency;
-use AichaDigital\Larabill\Enums\CancellationType;
-use AichaDigital\Larabill\Enums\ServiceStatus;
+use AichaDigital\Larabill\Enums\AgreementStatus;
 use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticleServiceStatus;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -25,7 +23,7 @@ it('can process expired services via action', function () {
     ArticleServiceStatus::factory()->count(2)->create([
         'customer_id' => $customer->id,
         'article_id'  => $article->id,
-        'status'      => ServiceStatus::ACTIVE,
+        'status'      => AgreementStatus::ACTIVE,
         'expires_at'  => now()->subDay(),
     ]);
 
@@ -48,12 +46,11 @@ it('can process pending cancellations via action', function () {
     $article  = Article::factory()->service()->monthly(2900)->create();
 
     ArticleServiceStatus::factory()->count(3)->create([
-        'customer_id'               => $customer->id,
-        'article_id'                => $article->id,
-        'billing_frequency'         => BillingFrequency::MONTHLY,
-        'status'                    => ServiceStatus::ACTIVE,
-        'cancellation_type'         => CancellationType::END_OF_PERIOD,
-        'cancellation_effective_at' => now()->subDay(),
+        'customer_id'        => $customer->id,
+        'article_id'         => $article->id,
+        'billing_unit'       => 'month', 'billing_quantity' => 1,
+        'status'             => AgreementStatus::ACTIVE,
+        'close_scheduled_at' => now()->subDay(),
     ]);
 
     $result = ProcessPendingCancellations::run();

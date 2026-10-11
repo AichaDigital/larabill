@@ -2,8 +2,7 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Enums\BillingFrequency;
-use AichaDigital\Larabill\Enums\ServiceStatus;
+use AichaDigital\Larabill\Enums\AgreementStatus;
 use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticleServiceStatus;
 use AichaDigital\Larabill\Models\CompanyFiscalConfig;
@@ -49,8 +48,8 @@ it('bills one full unit per recurring service line', function () {
     ArticleServiceStatus::factory()->create([
         'customer_id'       => $customer->id,
         'article_id'        => $article->id,
-        'billing_frequency' => BillingFrequency::MONTHLY,
-        'status'            => ServiceStatus::ACTIVE,
+        'billing_unit'      => 'month', 'billing_quantity' => 1,
+        'status'            => AgreementStatus::ACTIVE,
         'next_billing_date' => now()->addDays(7),
         'effective_price'   => cents(2900),
     ]);

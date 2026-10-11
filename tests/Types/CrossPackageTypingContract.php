@@ -12,7 +12,7 @@ use AichaDigital\Larabill\Models\UserTaxProfile;
 use AichaDigital\Larabill\Services\InvoiceNumberingService;
 use Illuminate\Database\Eloquent\Builder;
 
-function articleServiceStatusExposesEnumStatus(ArticleServiceStatus $service): int
+function articleServiceStatusExposesEnumStatus(ArticleServiceStatus $service): string
 {
     return $service->status->value;
 }

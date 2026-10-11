@@ -39,6 +39,9 @@ class ArticleFactory extends Factory
             'tax_group_id'      => null,
             'unit_measure_id'   => null,
             'is_active'         => true,
+            // Deterministic default (AID-508/AID-558): no guarantee window
+            // unless a test declares one via withGuarantee().
+            'guarantee_days'    => null,
             'metadata'          => [],
         ];
     }
@@ -53,14 +56,27 @@ class ArticleFactory extends Factory
             if ($article->prices()->count() === 0) {
                 ArticlePrice::factory()
                     ->for($article)
-                    ->create([
-                        'billing_frequency' => $article->isService()
-                            ? BillingFrequency::MONTHLY
-                            : BillingFrequency::ONE_TIME,
-                        'price' => FixedDecimal::ofUnscaled($this->faker->numberBetween(1000, 50000), 2),
-                    ]);
+                    ->create(array_merge(
+                        ArticlePriceFactory::cadenceAttributes(
+                            $article->isService()
+                                ? BillingFrequency::MONTHLY
+                                : BillingFrequency::ONE_TIME,
+                        ),
+                        ['price' => FixedDecimal::ofUnscaled($this->faker->numberBetween(1000, 50000), 2)],
+                    ));
             }
         });
+    }
+
+    /**
+     * Give the product a guarantee refund window of `$days` (ADR-015 §2.6
+     * capability). Deterministic — the days are the argument, never random.
+     */
+    public function withGuarantee(int $days): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'guarantee_days' => $days,
+        ]);
     }
 
     /**
@@ -95,11 +111,13 @@ class ArticleFactory extends Factory
 
             ArticlePrice::factory()
                 ->for($article)
-                ->create([
-                    'billing_frequency'        => $frequency,
-                    'price'                    => FixedDecimal::ofUnscaled($price, 2),
-                    'billing_days_in_advance'  => $daysInAdvance,
-                ]);
+                ->create(array_merge(
+                    ArticlePriceFactory::cadenceAttributes($frequency),
+                    [
+                        'price'                   => FixedDecimal::ofUnscaled($price, 2),
+                        'billing_days_in_advance' => $daysInAdvance,
+                    ],
+                ));
         });
     }
 
@@ -132,10 +150,10 @@ class ArticleFactory extends Factory
 
                 ArticlePrice::factory()
                     ->for($article)
-                    ->create([
-                        'billing_frequency' => $frequency,
-                        'price'             => FixedDecimal::ofUnscaled((int) $price, 2),
-                    ]);
+                    ->create(array_merge(
+                        ArticlePriceFactory::cadenceAttributes($frequency),
+                        ['price' => FixedDecimal::ofUnscaled((int) $price, 2)],
+                    ));
             }
         });
     }

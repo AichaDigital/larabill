@@ -2,8 +2,7 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Enums\BillingFrequency;
-use AichaDigital\Larabill\Enums\ServiceStatus;
+use AichaDigital\Larabill\Enums\AgreementStatus;
 use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticleServiceStatus;
 use AichaDigital\Larabill\Models\CompanyFiscalConfig;
@@ -54,8 +53,8 @@ it('settles on the amount actually invoiced, not on a price revised afterwards',
     $service = ArticleServiceStatus::factory()->create([
         'customer_id'         => $this->customer->id,
         'article_id'          => $article->id,
-        'billing_frequency'   => BillingFrequency::MONTHLY,
-        'status'              => ServiceStatus::ACTIVE,
+        'billing_unit'        => 'month', 'billing_quantity' => 1,
+        'status'              => AgreementStatus::ACTIVE,
         'next_billing_date'   => now(),
         'effective_price'     => cents(2400),
         'current_override_id' => null,
@@ -90,8 +89,8 @@ it('falls back to the contract price when no emitted line covers the period', fu
     $service = ArticleServiceStatus::factory()->create([
         'customer_id'       => $this->customer->id,
         'article_id'        => $article->id,
-        'billing_frequency' => BillingFrequency::MONTHLY,
-        'status'            => ServiceStatus::ACTIVE,
+        'billing_unit'      => 'month', 'billing_quantity' => 1,
+        'status'            => AgreementStatus::ACTIVE,
         'next_billing_date' => '2026-03-01',
         'effective_price'   => cents(2400),
         'refund_unused'     => true,

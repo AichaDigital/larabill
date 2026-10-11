@@ -73,8 +73,15 @@ final class SettlementService
      *                            rate. An explicit amount on a multi-rate
      *                            original is refused — the rate distribution
      *                            would be invented (AID-589 doctrine).
+     * @param  string|null  $settlementOperationKey  the deterministic settlement
+     *                                               operation key of an idempotent settlement claim
+     *                                               (ADR-015 §3.4, guarantee): stamped on the
+     *                                               rectificative at creation, where the UNIQUE
+     *                                               index serialises concurrent issuances of the
+     *                                               same claim (collision-and-adoption). Null = no
+     *                                               claim — the plain rectificative path, unchanged.
      */
-    public function rectify(Invoice $original, ?int $amount = null): Invoice
+    public function rectify(Invoice $original, ?int $amount = null, ?string $settlementOperationKey = null): Invoice
     {
         $this->assertRectifiable($original);
 
@@ -98,8 +105,12 @@ final class SettlementService
             'billable_user_id'     => $billableUserId,
             'type'                 => 'rectificative',
             'rectifies_invoice_id' => $original->id,
-            'status'               => InvoiceStatus::SENT->value,
-            'items'                => $items,
+            // ADR-015 §3.4: the claim's deterministic key, stamped INSIDE the
+            // issuance transaction (gate round 11 P1) so a committed Phase 1
+            // is always adoptable by key afterwards.
+            'settlement_operation_key' => $settlementOperationKey,
+            'status'                   => InvoiceStatus::SENT->value,
+            'items'                    => $items,
             // Same operation, same qualification (AID-929): a reverse-charge
             // original must produce a reverse-charge rectificative.
             'is_roi_taxed'         => (bool) $original->is_roi_taxed,

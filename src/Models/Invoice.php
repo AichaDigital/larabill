@@ -60,6 +60,7 @@ use Illuminate\Support\Facades\Crypt;
  * @property int|null $user_tax_profile_id FK to user_tax_profiles (ADR-003)
  * @property string|null $proforma_id UUID if converted from proforma
  * @property string|null $rectifies_invoice_id UUID if rectificative
+ * @property string|null $settlement_operation_key Deterministic settlement operation key (ADR-015 §3.4, guarantee): `guarantee_ops:{registry_row_uuid}`. UNIQUE on this table — the serialisation point of idempotent settlement issuance: a second issuance for the same claim collides on this index and ADOPTS the existing artifact instead of issuing a duplicate fiscal correction. NULL for every document minted outside a guarantee settlement.
  * @property string|null $issuer_snapshot Encrypted issuer data (v0.4.0)
  * @property string|null $customer_snapshot Encrypted customer data (v0.4.0)
  * @property string|null $fiscal_snapshot Encrypted fiscal context (v0.4.0)
@@ -69,6 +70,7 @@ use Illuminate\Support\Facades\Crypt;
  * @property Carbon|null $fiscal_verified_at (v0.4.0)
  * @property array<string, mixed>|null $fiscal_verification_metadata (v0.4.0)
  * @property bool $is_roi_taxed ROI reverse charge
+ * @property bool $is_historical Imported-document flag (ADR-015 §2.5): true on EVERY document migrated from the legacy system
  * @property string $type invoice|proforma|rectificative
  * @property FixedDecimal $taxable_amount Base amount before tax
  * @property float $tax_amount Calculated tax
@@ -152,6 +154,7 @@ class Invoice extends Model implements LegallyRetainable
         'user_tax_profile_id',
         'proforma_id',
         'rectifies_invoice_id',
+        'settlement_operation_key',
         'issuer_snapshot',
         'customer_snapshot',
         'fiscal_snapshot',
@@ -161,6 +164,7 @@ class Invoice extends Model implements LegallyRetainable
         'fiscal_verified_at',
         'fiscal_verification_metadata',
         'is_roi_taxed',
+        'is_historical',
         'taxable_amount',
         'total_tax_amount',
         'total_amount',
@@ -201,6 +205,7 @@ class Invoice extends Model implements LegallyRetainable
             'total_amount'                 => FixedDecimalCast::class.':2', // €12.34 ↔ 1234
             'fiscal_verification_metadata' => 'array',
             'is_roi_taxed'                 => 'boolean',
+            'is_historical'                => 'boolean',
         ];
     }
 

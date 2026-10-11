@@ -3,10 +3,9 @@
 declare(strict_types=1);
 
 use AichaDigital\Larabill\Contracts\Services\RecurringEmissionHookContract;
-use AichaDigital\Larabill\Enums\BillingFrequency;
+use AichaDigital\Larabill\Enums\AgreementStatus;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
-use AichaDigital\Larabill\Enums\ServiceStatus;
 use AichaDigital\Larabill\Events\RecurringBillingCompleted;
 use AichaDigital\Larabill\Events\RecurringBillingFailed;
 use AichaDigital\Larabill\Events\RecurringInvoiceGenerated;
@@ -56,8 +55,8 @@ beforeEach(function () {
     $this->service = ArticleServiceStatus::factory()->create([
         'customer_id'       => $this->customer->id,
         'article_id'        => $this->article->id,
-        'billing_frequency' => BillingFrequency::MONTHLY,
-        'status'            => ServiceStatus::ACTIVE,
+        'billing_unit'      => 'month', 'billing_quantity' => 1,
+        'status'            => AgreementStatus::ACTIVE,
         'next_billing_date' => now()->addDays(7),
         'effective_price'   => cents(2900),
     ]);
@@ -311,7 +310,7 @@ describe('atomic boundary (contract 3, 5, 6)', function () {
 
         DB::table('article_service_status')
             ->where('id', $this->service->id)
-            ->update(['status' => ServiceStatus::SUSPENDED->value]);
+            ->update(['status' => AgreementStatus::SUSPENDED->value]);
 
         $method = new ReflectionMethod(RecurringBillingService::class, 'emitWithinBoundary');
         $result = $method->invoke(($this->billingService)(), $stale, now(), null);
@@ -426,8 +425,8 @@ describe('best-effort events (D9)', function () {
         ArticleServiceStatus::factory()->create([
             'customer_id'       => $orphanCustomer->id,
             'article_id'        => $this->article->id,
-            'billing_frequency' => BillingFrequency::MONTHLY,
-            'status'            => ServiceStatus::ACTIVE,
+            'billing_unit'      => 'month', 'billing_quantity' => 1,
+            'status'            => AgreementStatus::ACTIVE,
             'next_billing_date' => now()->addDays(7),
             'effective_price'   => cents(2900),
         ]);
@@ -469,8 +468,8 @@ describe('best-effort events (D9)', function () {
         ArticleServiceStatus::factory()->create([
             'customer_id'       => $secondCustomer->id,
             'article_id'        => $this->article->id,
-            'billing_frequency' => BillingFrequency::MONTHLY,
-            'status'            => ServiceStatus::ACTIVE,
+            'billing_unit'      => 'month', 'billing_quantity' => 1,
+            'status'            => AgreementStatus::ACTIVE,
             'next_billing_date' => now()->addDays(7),
             'effective_price'   => cents(2900),
         ]);

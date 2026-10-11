@@ -3,8 +3,10 @@
 declare(strict_types=1);
 
 use AichaDigital\Larabill\Enums\BillingFrequency;
+use AichaDigital\Larabill\Exceptions\InvalidBillingIntervalException;
 use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticlePrice;
+use AichaDigital\Larabill\ValueObjects\BillingInterval;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -14,20 +16,29 @@ describe('ArticlePrice creation', function () {
     it('can create an article price', function () {
         $article = Article::factory()->withoutPrices()->create();
         $price   = ArticlePrice::factory()->for($article)->create([
-            'billing_frequency' => BillingFrequency::MONTHLY,
-            'price'             => cents(2900),
+            'price' => cents(2900),
         ]);
 
         expect($price->exists)->toBeTrue()
-            ->and($price->billing_frequency)->toBe(BillingFrequency::MONTHLY)
+            ->and($price->billing_unit)->toBe('month')
+            ->and($price->billing_quantity)->toBe(1)
             ->and($price->price->unscaledValue())->toBe(2900);
     });
 
-    it('casts billing_frequency to enum', function () {
-        $price = ArticlePrice::factory()->monthly()->create();
+    it('stores the cadence as unit and quantity columns', function () {
+        $price = ArticlePrice::factory()->quarterly()->create();
 
-        expect($price->billing_frequency)->toBeInstanceOf(BillingFrequency::class)
-            ->and($price->billing_frequency)->toBe(BillingFrequency::MONTHLY);
+        expect($price->billing_unit)->toBe('month')
+            ->and($price->billing_quantity)->toBe(3)
+            ->and($price->interval()?->label())->toBe('3 months');
+    });
+
+    it('stores a one-time price as the NULL cadence', function () {
+        $price = ArticlePrice::factory()->oneTime()->create();
+
+        expect($price->billing_unit)->toBeNull()
+            ->and($price->billing_quantity)->toBeNull()
+            ->and($price->interval())->toBeNull();
     });
 
     it('casts price to Base100Int (integer)', function () {
@@ -117,15 +128,60 @@ describe('ArticlePrice scopes', function () {
         expect($current)->toHaveCount(1);
     });
 
-    it('scopes by frequency', function () {
+    it('keeps a price valid on its LAST valid day (valid_to is a date, not a datetime — AID-1592)', function () {
+        // valid_to is a DATE cast: midnight of the last valid day. Comparing
+        // it against now() with a time component dropped the price at the
+        // first second of that day — the pre-existing 6.x defect.
+        ArticlePrice::factory()->create([
+            'valid_from' => now()->subMonth(),
+            'valid_to'   => Carbon::today(),
+            'is_active'  => true,
+        ]);
+
+        // Expired yesterday and future remain excluded — the boundary is
+        // day-granular, not just widened.
+        ArticlePrice::factory()->expired()->create();
+        ArticlePrice::factory()->future()->create();
+
+        $current = ArticlePrice::currentlyValid()->get();
+
+        expect($current)->toHaveCount(1)
+            ->and($current->first()->valid_to->toDateString())->toBe(Carbon::today()->toDateString());
+    });
+
+    it('keeps the price on Article::activePrices() on its LAST valid day too (AID-1592, second site)', function () {
+        Carbon::setTestNow(Carbon::today()->setTime(11, 30)); // mid-morning: now() > midnight of today
+
+        ArticlePrice::factory()->create([
+            'valid_from' => now()->subMonth(),
+            'valid_to'   => Carbon::today(),
+            'is_active'  => true,
+        ]);
+
+        $active = Article::factory()->create()->activePrices()->get();
+
+        expect($active)->toHaveCount(1);
+    })->after(fn () => Carbon::setTestNow());
+
+    it('scopes by cadence', function () {
         ArticlePrice::factory()->monthly()->count(2)->create();
         ArticlePrice::factory()->yearly()->create();
 
-        $monthly = ArticlePrice::forFrequency(BillingFrequency::MONTHLY)->get();
-        $yearly  = ArticlePrice::forFrequency(BillingFrequency::YEARLY)->get();
+        $monthly = ArticlePrice::forInterval(new BillingInterval('month', 1))->get();
+        $yearly  = ArticlePrice::forInterval(new BillingInterval('year', 1))->get();
 
         expect($monthly)->toHaveCount(2)
             ->and($yearly)->toHaveCount(1);
+    });
+
+    it('scopes the NULL cadence exactly, without matching month/1 rows', function () {
+        ArticlePrice::factory()->oneTime()->create();
+        ArticlePrice::factory()->monthly()->create();
+
+        $oneTime = ArticlePrice::forInterval(null)->get();
+
+        expect($oneTime)->toHaveCount(1)
+            ->and($oneTime->first()->billing_unit)->toBeNull();
     });
 
     it('scopes by article', function () {
@@ -239,10 +295,8 @@ describe('ArticlePrice calculations', function () {
 });
 
 describe('ArticlePrice factory', function () {
-    it('creates prices with all frequency types', function () {
+    it('creates prices with every legacy-representable cadence', function () {
         $oneTime    = ArticlePrice::factory()->oneTime()->create();
-        $weekly     = ArticlePrice::factory()->weekly()->create();
-        $biweekly   = ArticlePrice::factory()->biweekly()->create();
         $monthly    = ArticlePrice::factory()->monthly()->create();
         $bimonthly  = ArticlePrice::factory()->bimonthly()->create();
         $quarterly  = ArticlePrice::factory()->quarterly()->create();
@@ -251,17 +305,22 @@ describe('ArticlePrice factory', function () {
         $biennial   = ArticlePrice::factory()->biennial()->create();
         $triennial  = ArticlePrice::factory()->triennial()->create();
 
-        expect($oneTime->billing_frequency)->toBe(BillingFrequency::ONE_TIME)
-            ->and($weekly->billing_frequency)->toBe(BillingFrequency::WEEKLY)
-            ->and($biweekly->billing_frequency)->toBe(BillingFrequency::BIWEEKLY)
-            ->and($monthly->billing_frequency)->toBe(BillingFrequency::MONTHLY)
-            ->and($bimonthly->billing_frequency)->toBe(BillingFrequency::BIMONTHLY)
-            ->and($quarterly->billing_frequency)->toBe(BillingFrequency::QUARTERLY)
-            ->and($semiannual->billing_frequency)->toBe(BillingFrequency::SEMIANNUAL)
-            ->and($yearly->billing_frequency)->toBe(BillingFrequency::YEARLY)
-            ->and($biennial->billing_frequency)->toBe(BillingFrequency::BIENNIAL)
-            ->and($triennial->billing_frequency)->toBe(BillingFrequency::TRIENNIAL);
+        expect([$oneTime->billing_unit, $oneTime->billing_quantity])->toBe([null, null])
+            ->and([$monthly->billing_unit, $monthly->billing_quantity])->toBe(['month', 1])
+            ->and([$bimonthly->billing_unit, $bimonthly->billing_quantity])->toBe(['month', 2])
+            ->and([$quarterly->billing_unit, $quarterly->billing_quantity])->toBe(['month', 3])
+            ->and([$semiannual->billing_unit, $semiannual->billing_quantity])->toBe(['month', 6])
+            ->and([$yearly->billing_unit, $yearly->billing_quantity])->toBe(['year', 1])
+            ->and([$biennial->billing_unit, $biennial->billing_quantity])->toBe(['year', 2])
+            ->and([$triennial->billing_unit, $triennial->billing_quantity])->toBe(['year', 3]);
     });
+
+    it('rejects the retired WEEKLY and BIWEEKLY cadences at the seeding boundary', function (BillingFrequency $frequency) {
+        ArticlePrice::factory()->frequency($frequency)->make();
+    })->throws(InvalidBillingIntervalException::class)->with([
+        'WEEKLY'   => BillingFrequency::WEEKLY,
+        'BIWEEKLY' => BillingFrequency::BIWEEKLY,
+    ]);
 
     it('can set validity periods', function () {
         $from = Carbon::parse('2024-01-01');

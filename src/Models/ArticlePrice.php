@@ -7,8 +7,8 @@ namespace AichaDigital\Larabill\Models;
 use AichaDigital\Lara100\Casts\FixedDecimalCast;
 use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Database\Factories\ArticlePriceFactory;
-use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Exceptions\OverlappingArticlePriceException;
+use AichaDigital\Larabill\ValueObjects\BillingInterval;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -18,13 +18,16 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 /**
  * Article Price Model
  *
- * Represents a price for an article at a specific billing frequency.
+ * Represents a price for an article at a specific billing cadence — the
+ * ADR-015 interval domain (unit + quantity) since the AID-952 re-key; a NULL
+ * cadence is a one-time price, which is real persisted state.
  * Allows the same article to have different prices based on billing cycle
- * (e.g., monthly: €29, quarterly: €79, yearly: €290).
+ * (e.g., 1 month: €29, 3 months: €79, 1 year: €290).
  *
  * @property int $id
  * @property int $article_id
- * @property BillingFrequency $billing_frequency
+ * @property string|null $billing_unit 'month'|'year'; NULL = one-time (ADR-015)
+ * @property int|null $billing_quantity 1-12 (months) / 1-10 (years); NULL = one-time
  * @property FixedDecimal $price
  * @property int|null $billing_days_in_advance
  * @property \Illuminate\Support\Carbon|null $valid_from
@@ -51,7 +54,8 @@ class ArticlePrice extends Model
      */
     protected $fillable = [
         'article_id',
-        'billing_frequency',
+        'billing_unit',
+        'billing_quantity',
         'price',
         'billing_days_in_advance',
         'valid_from',
@@ -63,12 +67,12 @@ class ArticlePrice extends Model
      * The attributes that should be cast.
      */
     protected $casts = [
-        'billing_frequency'        => BillingFrequency::class,
-        'price'                    => FixedDecimalCast::class.':2',
-        'billing_days_in_advance'  => 'integer',
-        'valid_from'               => 'date',
-        'valid_to'                 => 'date',
-        'is_active'                => 'boolean',
+        'billing_quantity'        => 'integer',
+        'price'                   => FixedDecimalCast::class.':2',
+        'billing_days_in_advance' => 'integer',
+        'valid_from'              => 'date',
+        'valid_to'                => 'date',
+        'is_active'               => 'boolean',
     ];
 
     /**
@@ -95,7 +99,7 @@ class ArticlePrice extends Model
             $conflicts = self::query()
                 ->overlapping(
                     $price->article_id,
-                    $price->billing_frequency,
+                    $price->interval(),
                     $price->valid_from,
                     $price->valid_to,
                 )
@@ -121,6 +125,17 @@ class ArticlePrice extends Model
     public function article(): BelongsTo
     {
         return $this->belongsTo(Article::class);
+    }
+
+    /**
+     * This price's cadence as the ADR-015 value object. NULL for a one-time
+     * price — null cadence is a real state, not an absent one.
+     */
+    public function interval(): ?BillingInterval
+    {
+        return $this->billing_unit === null
+            ? null
+            : new BillingInterval($this->billing_unit, (int) $this->billing_quantity);
     }
 
     /**
@@ -153,24 +168,34 @@ class ArticlePrice extends Model
     /**
      * Scope to filter currently valid prices.
      *
+     * Day-granular on purpose (AID-1592): `valid_from`/`valid_to` are DATE
+     * casts, so a price valid until today stays valid THROUGH the whole
+     * last day — comparing against `now()` with a time component dropped it
+     * at the first second of that day (pre-existing 6.x defect). The
+     * parameterised sibling `scopeValidAt()` takes its `$date` as-is.
+     *
      * @param  Builder<static>  $query
      */
     public function scopeCurrentlyValid(Builder $query): void
     {
+        $today = Carbon::today();
+
         $query->where('is_active', true)
-            ->where(function ($q) {
+            ->where(function ($q) use ($today) {
                 $q->whereNull('valid_from')
-                    ->orWhere('valid_from', '<=', now());
+                    ->orWhere('valid_from', '<=', $today);
             })
-            ->where(function ($q) {
+            ->where(function ($q) use ($today) {
                 $q->whereNull('valid_to')
-                    ->orWhere('valid_to', '>=', now());
+                    ->orWhere('valid_to', '>=', $today);
             });
     }
 
     /**
-     * Scope to the ACTIVE rows of one (article, frequency) whose validity range
-     * intersects the candidate range. NULL is an open end on both sides.
+     * Scope to the ACTIVE rows of one (article, cadence) whose validity range
+     * intersects the candidate range. NULL is an open end on both sides, and a
+     * NULL `$interval` matches the NULL cadence (one-time) exactly — a NULL
+     * cadence never overlaps a month/year cadence.
      *
      * Single source of truth for the non-overlap invariant (AID-601): used by
      * the saving hook and by ArticlePriceService. Deliberately pure — it does
@@ -182,13 +207,19 @@ class ArticlePrice extends Model
     public function scopeOverlapping(
         Builder $query,
         int $articleId,
-        BillingFrequency $frequency,
+        ?BillingInterval $interval,
         ?Carbon $validFrom,
         ?Carbon $validTo,
     ): void {
         $query->where('article_id', $articleId)
-            ->where('billing_frequency', $frequency)
             ->where('is_active', true);
+
+        if ($interval === null) {
+            $query->whereNull('billing_unit')->whereNull('billing_quantity');
+        } else {
+            $query->where('billing_unit', $interval->unit)
+                ->where('billing_quantity', $interval->quantity);
+        }
 
         // candidate.from <= existing.to  (either side NULL ⇒ always true)
         if ($validFrom !== null) {
@@ -206,13 +237,21 @@ class ArticlePrice extends Model
     }
 
     /**
-     * Scope to filter by billing frequency.
+     * Scope to filter by billing cadence. NULL matches the one-time (NULL
+     * cadence) prices exactly.
      *
      * @param  Builder<static>  $query
      */
-    public function scopeForFrequency(Builder $query, BillingFrequency $frequency): void
+    public function scopeForInterval(Builder $query, ?BillingInterval $interval): void
     {
-        $query->where('billing_frequency', $frequency);
+        if ($interval === null) {
+            $query->whereNull('billing_unit')->whereNull('billing_quantity');
+
+            return;
+        }
+
+        $query->where('billing_unit', $interval->unit)
+            ->where('billing_quantity', $interval->quantity);
     }
 
     /**
@@ -284,23 +323,18 @@ class ArticlePrice extends Model
 
     /**
      * Calculate monthly equivalent price for comparison.
-     * Useful for displaying "equivalent to €X/month" on longer frequencies.
+     * Useful for displaying "equivalent to €X/month" on longer cadences.
+     * A one-time price (NULL cadence) has no monthly equivalent.
      */
     public function getMonthlyEquivalent(): ?float
     {
-        $months = $this->billing_frequency->months();
-
-        if ($months === null) {
-            // For weekly/biweekly, calculate based on approximate 4.33 weeks/month
-            $days = $this->billing_frequency->days();
-            if ($days === null) {
-                return null; // ONE_TIME has no monthly equivalent
-            }
-
-            // Convert to monthly: price * (30 / days). Display approximation in
-            // base-100 cents; read the unscaled cents and keep the float ratio math.
-            return $this->price->unscaledValue() * (30 / $days);
+        if ($this->billing_unit === null) {
+            return null; // one-time (NULL cadence) has no monthly equivalent
         }
+
+        $months = $this->billing_unit === 'month'
+            ? $this->billing_quantity
+            : $this->billing_quantity * 12;
 
         return $this->price->unscaledValue() / $months;
     }
@@ -310,11 +344,13 @@ class ArticlePrice extends Model
      */
     public function getYearlyEquivalent(): ?float
     {
-        $days = $this->billing_frequency->approximateDays();
+        $interval = $this->interval();
 
-        if ($days === null) {
-            return null; // ONE_TIME has no yearly equivalent
+        if ($interval === null) {
+            return null; // one-time (NULL cadence) has no yearly equivalent
         }
+
+        $days = $interval->approximateDays();
 
         return $this->price->unscaledValue() * (365 / $days);
     }

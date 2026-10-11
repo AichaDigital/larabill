@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Enums;
 
 /**
+ * Retired cancellation-type enum — DEPRECATED compatibility shim (ADR-015 §5).
+ *
+ * @deprecated since 7.0.0, use the cause vocabulary (`agreement_causes` / `AgreementCause`) with the close/suspend API (`close()` / `suspend()`) — see UPGRADE-7.0.md
+ *
  * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 enum CancellationType: int

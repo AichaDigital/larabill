@@ -8,6 +8,7 @@ use AichaDigital\Larabill\Contracts\Services\RecurringEmissionHookContract;
 use AichaDigital\Larabill\DataTransferObjects\BillingDetails;
 use AichaDigital\Larabill\DataTransferObjects\InvoiceItemMetadata;
 use AichaDigital\Larabill\DataTransferObjects\SourceReference;
+use AichaDigital\Larabill\Enums\AgreementModality;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Events\RecurringBillingCompleted;
@@ -311,8 +312,41 @@ final class RecurringBillingService
             return false;
         }
 
-        // Get days in advance from ArticlePrice for the service's frequency, or global config
-        $daysInAdvance = $service->article->getBillingDaysInAdvanceFor($service->billing_frequency)
+        // ── Modality gate (ADR-015 §3.2 tail / §3.3) ──
+        // `non_billable` never emits at all — a legitimate state (§2.5 Free
+        // Account import), refused quietly.
+        if ($service->modality === AgreementModality::NON_BILLABLE) {
+            return false;
+        }
+
+        // `one_time` emits exactly once AT CONTRACTING and is never re-billed
+        // by the recurrent engine: the NULL cadence is outside this engine's
+        // domain. A healthy one_time agreement (next_billing_date NULL) never
+        // reaches this gate — the window query filters it out — so reaching
+        // it means a billing date survived on a one-time agreement. The 7.0
+        // modality migration clears exactly that 6.x legacy artifact
+        // (AID-1595: NULL-cadence rows get next_billing_date = NULL), so
+        // this gate is unreachable through the supported upgrade path; it
+        // stays as DEFENSE IN DEPTH for rows written after the migration
+        // against the data contract (one_time ⟺ NULL cadence, no DB
+        // constraint). It fails LOUD, never approximated; the whole run
+        // aborts so the corruption is impossible to overlook.
+        if ($service->modality === AgreementModality::ONE_TIME || $service->billingInterval() === null) {
+            throw new \RuntimeException(sprintf(
+                'Agreement %s carries modality `%s` with a NULL cadence — outside the recurrent engine\'s '
+                .'domain (ADR-015 §3.2 tail). A one_time agreement is emitted exactly once at contracting and '
+                .'must carry next_billing_date = NULL; a non_billable agreement never emits. Fix the agreement\'s '
+                .'modality/cadence pair before running the engine again.',
+                $service->getKey(),
+                $service->modality->value,
+            ));
+        }
+
+        // Get days in advance from ArticlePrice for the agreement's cadence,
+        // or global config. Interval-native since slice 2b (AID-952): the
+        // agreement's cadence is unit/quantity, and the interval-keyed lookup
+        // covers cadences with no legacy enum case too.
+        $daysInAdvance = $service->article->getBillingDaysInAdvanceForInterval($service->billingInterval())
             ?? config('larabill.recurring_billing.days_in_advance', 7);
 
         // Calculate the date when we should start generating the invoice
@@ -321,7 +355,18 @@ final class RecurringBillingService
         $generateDate = $nextBillingDate->copy()->subDays($daysInAdvance);
 
         // Compare dates as strings to avoid time component issues
-        return $date->toDateString() >= $generateDate->toDateString();
+        if ($date->toDateString() < $generateDate->toDateString()) {
+            return false;
+        }
+
+        // Scheduled close (ADR-015 §3.2) and closed-term expiry (§3.3): the
+        // emission gate never emits a period reaching beyond either limit —
+        // EITHER exclusion refuses on its own. A scheduled close inside the
+        // billing window is not billed (the materialiser closes it on the
+        // scheduled date); a closed-term agreement is not billed past its
+        // `expires_at` (the materialiser closes it at expiry).
+        return ! $service->periodReachesBeyondScheduledClose()
+            && ! $service->periodReachesBeyondExpiry();
     }
 
     /**
@@ -418,7 +463,9 @@ final class RecurringBillingService
             ),
             pricingDetails: $pricingDetails,
             billingDetails: new BillingDetails(
-                billingCycle: $service->billing_frequency->label(),
+                // Interval-native label (ADR-015): "3 months", "2 years". A NULL
+                // cadence (one-time agreement) keeps the legacy ONE_TIME label.
+                billingCycle: $service->billingInterval()?->label() ?? 'One-time',
                 periodStart: $periodStart,
                 periodEnd: $periodEnd,
                 nextBillingDate: $nextBillingDate,
@@ -448,9 +495,13 @@ final class RecurringBillingService
     }
 
     /**
-     * Calculate period end based on service billing frequency
+     * Calculate period end based on the agreement's cadence
      *
-     * Uses the BillingFrequency enum's addToDate method and subtracts 1 day
+     * Resolves the ADR-015 interval (unit + quantity) and delegates to
+     * `BillingInterval::addToDate()` — whose overflow semantics are PINNED to
+     * the old `BillingFrequency::addToDate()` math — then subtracts 1 day.
+     * A NULL cadence (one-time agreement) keeps the legacy ONE_TIME
+     * behaviour: the date comes back unchanged before the day is subtracted.
      */
     protected function calculatePeriodEnd(ArticleServiceStatus $service): Carbon
     {
@@ -461,14 +512,15 @@ final class RecurringBillingService
 
         $start = $next->copy();
 
-        // Use the enum's addToDate method which handles all frequencies
-        return $service->billing_frequency->addToDate($start)->subDay();
+        return ($service->billingInterval()?->addToDate($start) ?? $start->copy())->subDay();
     }
 
     /**
-     * Calculate next billing date using the service's billing frequency
+     * Calculate next billing date using the agreement's cadence
      *
-     * Delegates to the BillingFrequency enum's addToDate method
+     * Delegates to the model, which resolves the ADR-015 interval
+     * (unit + quantity) and schedules through `BillingInterval::addToDate()`
+     * with the pinned overflow semantics (spec §2.4).
      */
     protected function calculateNextBillingDate(ArticleServiceStatus $service): Carbon
     {
@@ -477,10 +529,26 @@ final class RecurringBillingService
 
     /**
      * Update service next billing date after invoice generation
+     *
+     * Renewal behaviour (ADR-015 §3.3): an `auto` agreement advances after
+     * emission exactly as always (scheduling invariance). A `closed_term`
+     * agreement NEVER advances past `expires_at` — when the computed next
+     * period start would fall beyond the term end, there is no further
+     * billable period, and the advance clears `next_billing_date` instead
+     * of planting a phantom date past the term. Expiry closure itself is
+     * T2's single locked materialiser's business — never duplicated here.
      */
     protected function updateNextBillingDate(ArticleServiceStatus $service): void
     {
         $nextDate = $this->calculateNextBillingDate($service);
+
+        if ($service->isClosedTerm()
+            && $service->expires_at !== null
+            && $nextDate->startOfDay()->gt($service->expires_at->startOfDay())) {
+            $service->update(['next_billing_date' => null]);
+
+            return;
+        }
 
         $service->update([
             'next_billing_date' => $nextDate,

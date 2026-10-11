@@ -2,8 +2,9 @@
 
 declare(strict_types=1);
 
+use AichaDigital\Larabill\Enums\AgreementStatus;
 use AichaDigital\Larabill\Enums\BillingFrequency;
-use AichaDigital\Larabill\Enums\ServiceStatus;
+use AichaDigital\Larabill\Exceptions\InvalidBillingIntervalException;
 use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticleOverride;
 use AichaDigital\Larabill\Models\ArticlePrice;
@@ -55,8 +56,8 @@ describe('RecurringBillingService basic processing', function () {
         ArticleServiceStatus::factory()->create([
             'customer_id'       => $customer->id,
             'article_id'        => $article->id,
-            'billing_frequency' => BillingFrequency::MONTHLY,
-            'status'            => ServiceStatus::ACTIVE,
+            'billing_unit'      => 'month', 'billing_quantity' => 1,
+            'status'            => AgreementStatus::ACTIVE,
             'next_billing_date' => now()->addDays(7),
             'effective_price'   => cents(2900),
         ]);
@@ -82,8 +83,8 @@ describe('RecurringBillingService basic processing', function () {
         ArticleServiceStatus::factory()->create([
             'customer_id'       => $customer->id,
             'article_id'        => $article->id,
-            'billing_frequency' => BillingFrequency::MONTHLY,
-            'status'            => ServiceStatus::ACTIVE,
+            'billing_unit'      => 'month', 'billing_quantity' => 1,
+            'status'            => AgreementStatus::ACTIVE,
             'next_billing_date' => now()->addDays(7), // Due in 7 days
             'effective_price'   => cents(2900),
         ]);
@@ -102,8 +103,8 @@ describe('RecurringBillingService basic processing', function () {
         ArticleServiceStatus::factory()->create([
             'customer_id'       => $customer->id,
             'article_id'        => $article->id,
-            'billing_frequency' => BillingFrequency::MONTHLY,
-            'status'            => ServiceStatus::ACTIVE,
+            'billing_unit'      => 'month', 'billing_quantity' => 1,
+            'status'            => AgreementStatus::ACTIVE,
             'next_billing_date' => now()->addDays(30), // Not due yet
         ]);
 
@@ -121,7 +122,7 @@ describe('RecurringBillingService basic processing', function () {
         ArticleServiceStatus::factory()->create([
             'customer_id'       => $customer->id,
             'article_id'        => $article->id,
-            'billing_frequency' => BillingFrequency::MONTHLY,
+            'billing_unit'      => 'month', 'billing_quantity' => 1,
             'next_billing_date' => now()->addDays(7),
         ]);
 
@@ -141,8 +142,8 @@ describe('RecurringBillingService basic processing', function () {
         ArticleServiceStatus::factory()->create([
             'customer_id'       => $customer->id,
             'article_id'        => $article->id,
-            'billing_frequency' => BillingFrequency::MONTHLY,
-            'status'            => ServiceStatus::ACTIVE,
+            'billing_unit'      => 'month', 'billing_quantity' => 1,
+            'status'            => AgreementStatus::ACTIVE,
             'next_billing_date' => now()->addDays(7),
         ]);
 
@@ -150,8 +151,8 @@ describe('RecurringBillingService basic processing', function () {
         ArticleServiceStatus::factory()->create([
             'customer_id'       => $customer->id,
             'article_id'        => $article->id,
-            'billing_frequency' => BillingFrequency::MONTHLY,
-            'status'            => ServiceStatus::CANCELLED,
+            'billing_unit'      => 'month', 'billing_quantity' => 1,
+            'status'            => AgreementStatus::CLOSED,
             'next_billing_date' => now()->addDays(7),
         ]);
 
@@ -159,8 +160,8 @@ describe('RecurringBillingService basic processing', function () {
         ArticleServiceStatus::factory()->create([
             'customer_id'       => $customer->id,
             'article_id'        => $article->id,
-            'billing_frequency' => BillingFrequency::MONTHLY,
-            'status'            => ServiceStatus::SUSPENDED,
+            'billing_unit'      => 'month', 'billing_quantity' => 1,
+            'status'            => AgreementStatus::SUSPENDED,
             'next_billing_date' => now()->addDays(7),
         ]);
 
@@ -180,7 +181,7 @@ describe('RecurringBillingService days_in_advance configuration', function () {
         ArticleServiceStatus::factory()->create([
             'customer_id'       => $customer->id,
             'article_id'        => $article->id,
-            'billing_frequency' => BillingFrequency::MONTHLY,
+            'billing_unit'      => 'month', 'billing_quantity' => 1,
             'next_billing_date' => now()->addDays(7),
         ]);
 
@@ -197,7 +198,6 @@ describe('RecurringBillingService days_in_advance configuration', function () {
 
         // Create price with specific days_in_advance
         ArticlePrice::factory()->for($article)->create([
-            'billing_frequency'       => BillingFrequency::MONTHLY,
             'price'                   => cents(2900),
             'billing_days_in_advance' => 15,
         ]);
@@ -205,7 +205,7 @@ describe('RecurringBillingService days_in_advance configuration', function () {
         ArticleServiceStatus::factory()->create([
             'customer_id'       => $customer->id,
             'article_id'        => $article->id,
-            'billing_frequency' => BillingFrequency::MONTHLY,
+            'billing_unit'      => 'month', 'billing_quantity' => 1,
             'next_billing_date' => now()->addDays(15),
         ]);
 
@@ -224,7 +224,7 @@ describe('RecurringBillingService billing period calculations', function () {
         ArticleServiceStatus::factory()->create([
             'customer_id'       => $customer->id,
             'article_id'        => $article->id,
-            'billing_frequency' => BillingFrequency::MONTHLY,
+            'billing_unit'      => 'month', 'billing_quantity' => 1,
             'next_billing_date' => $nextBillingDate,
         ]);
 
@@ -246,7 +246,7 @@ describe('RecurringBillingService billing period calculations', function () {
         ArticleServiceStatus::factory()->create([
             'customer_id'       => $customer->id,
             'article_id'        => $article->id,
-            'billing_frequency' => BillingFrequency::QUARTERLY,
+            'billing_unit'      => 'month', 'billing_quantity' => 3,
             'next_billing_date' => $nextBillingDate,
         ]);
 
@@ -267,7 +267,7 @@ describe('RecurringBillingService billing period calculations', function () {
         ArticleServiceStatus::factory()->create([
             'customer_id'       => $customer->id,
             'article_id'        => $article->id,
-            'billing_frequency' => BillingFrequency::YEARLY,
+            'billing_unit'      => 'year', 'billing_quantity' => 1,
             'next_billing_date' => $nextBillingDate,
         ]);
 
@@ -280,28 +280,17 @@ describe('RecurringBillingService billing period calculations', function () {
             ->and($item->service_date_to->toDateString())->toBe('2025-01-14');
     });
 
-    it('calculates weekly billing period correctly', function () {
-        $customer        = ($this->makeCustomer)();
-        $article         = Article::factory()->create();
-
-        ArticlePrice::factory()->for($article)->weekly()->create(['price' => cents(500)]);
-
-        $nextBillingDate = Carbon::parse('2024-01-15');
-
-        ArticleServiceStatus::factory()->create([
-            'customer_id'       => $customer->id,
-            'article_id'        => $article->id,
-            'billing_frequency' => BillingFrequency::WEEKLY,
-            'next_billing_date' => $nextBillingDate,
-        ]);
-
-        $this->service->processRecurringBilling(Carbon::parse('2024-01-08'));
-
-        $invoice = Invoice::latest()->first();
-        $item    = $invoice->items()->first();
-
-        expect($item->service_date_from->toDateString())->toBe('2024-01-15')
-            ->and($item->service_date_to->toDateString())->toBe('2024-01-21');
+    it('fails loud when a fixture tries to seed a retired WEEKLY agreement', function () {
+        // ADR-015 slice 2b retired the agreement-side cadence column: the model
+        // carries unit/quantity, and every state seeding goes through the §4.1
+        // bridge, which throws for WEEKLY/BIWEEKLY (qualified STABILITY.md §3
+        // exception). A weekly agreement can no longer even be written — the
+        // migration preflight blocks stored rows, the seeding boundary blocks
+        // new ones.
+        // state() is lazy: the bridge only runs when the factory materialises
+        // the model, so the guard is exercised through make().
+        expect(fn () => ArticleServiceStatus::factory()->frequency(BillingFrequency::WEEKLY)->make())
+            ->toThrow(InvalidBillingIntervalException::class);
     });
 });
 
@@ -314,7 +303,7 @@ describe('RecurringBillingService next_billing_date updates', function () {
         $service = ArticleServiceStatus::factory()->create([
             'customer_id'       => $customer->id,
             'article_id'        => $article->id,
-            'billing_frequency' => BillingFrequency::MONTHLY,
+            'billing_unit'      => 'month', 'billing_quantity' => 1,
             'next_billing_date' => $originalDate,
         ]);
 
@@ -346,7 +335,7 @@ describe('RecurringBillingService pricing', function () {
         ArticleServiceStatus::factory()->create([
             'customer_id'         => $customer->id,
             'article_id'          => $article->id,
-            'billing_frequency'   => BillingFrequency::MONTHLY,
+            'billing_unit'        => 'month', 'billing_quantity' => 1,
             'next_billing_date'   => now()->addDays(7),
             'effective_price'     => cents(2400),
             'current_override_id' => $override->id,
@@ -369,7 +358,7 @@ describe('RecurringBillingService metadata', function () {
         $service = ArticleServiceStatus::factory()->create([
             'customer_id'         => $customer->id,
             'article_id'          => $article->id,
-            'billing_frequency'   => BillingFrequency::MONTHLY,
+            'billing_unit'        => 'month', 'billing_quantity' => 1,
             'instance_identifier' => 'example.com',
             'next_billing_date'   => now()->addDays(7),
         ]);
@@ -401,8 +390,8 @@ describe('RecurringBillingService idempotency', function () {
         $service = ArticleServiceStatus::factory()->create([
             'customer_id'       => $customer->id,
             'article_id'        => $article->id,
-            'billing_frequency' => BillingFrequency::MONTHLY,
-            'status'            => ServiceStatus::ACTIVE,
+            'billing_unit'      => 'month', 'billing_quantity' => 1,
+            'status'            => AgreementStatus::ACTIVE,
             'next_billing_date' => $billingDate,
             'effective_price'   => cents(2900),
         ]);
@@ -422,14 +411,14 @@ describe('RecurringBillingService idempotency', function () {
         $service->refresh();
 
         // Verify service state after reset
-        expect($service->status)->toBe(ServiceStatus::ACTIVE)
+        expect($service->status)->toBe(AgreementStatus::ACTIVE)
             ->and($service->next_billing_date->toDateString())->toBe($billingDate->toDateString());
 
         // Verify the service can be found in the billing window
         $windowEnd    = $processingDate->copy()->addDays(30)->toDateString();
         $foundService = ArticleServiceStatus::query()
             ->with(['article', 'customer', 'currentOverride'])
-            ->where('status', ServiceStatus::ACTIVE)
+            ->where('status', AgreementStatus::ACTIVE)
             ->whereNotNull('next_billing_date')
             ->whereRaw('DATE(next_billing_date) <= ?', [$windowEnd])
             ->first();
@@ -452,8 +441,8 @@ describe('RecurringBillingService idempotency', function () {
         $service = ArticleServiceStatus::factory()->create([
             'customer_id'       => $customer->id,
             'article_id'        => $article->id,
-            'billing_frequency' => BillingFrequency::MONTHLY,
-            'status'            => ServiceStatus::ACTIVE,
+            'billing_unit'      => 'month', 'billing_quantity' => 1,
+            'status'            => AgreementStatus::ACTIVE,
             'next_billing_date' => Carbon::parse('2024-01-15'),
         ]);
 
@@ -482,7 +471,7 @@ describe('RecurringBillingService error handling', function () {
         ArticleServiceStatus::factory()->create([
             'customer_id'       => 99999, // Non-existent customer
             'article_id'        => $article->id,
-            'billing_frequency' => BillingFrequency::MONTHLY,
+            'billing_unit'      => 'month', 'billing_quantity' => 1,
             'next_billing_date' => now()->addDays(7),
         ]);
 
@@ -490,7 +479,7 @@ describe('RecurringBillingService error handling', function () {
         ArticleServiceStatus::factory()->create([
             'customer_id'       => $customer->id,
             'article_id'        => $article->id,
-            'billing_frequency' => BillingFrequency::MONTHLY,
+            'billing_unit'      => 'month', 'billing_quantity' => 1,
             'next_billing_date' => now()->addDays(7),
         ]);
 

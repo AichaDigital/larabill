@@ -9,6 +9,7 @@ use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Database\Factories\ArticleFactory;
 use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Enums\ItemType;
+use AichaDigital\Larabill\ValueObjects\BillingInterval;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -35,6 +36,7 @@ use Spatie\Translatable\HasTranslations;
  * @property int|null $tax_group_id
  * @property int|null $unit_measure_id
  * @property bool $is_active
+ * @property int|null $guarantee_days Guarantee refund window in days (ADR-015 §2.6 product capability); NULL/0 = no window
  * @property array<string, mixed>|null $metadata
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property \Illuminate\Support\Carbon|null $updated_at
@@ -85,6 +87,7 @@ class Article extends Model
         'tax_group_id',
         'unit_measure_id',
         'is_active',
+        'guarantee_days',
         'metadata',
     ];
 
@@ -92,10 +95,11 @@ class Article extends Model
      * The attributes that should be cast.
      */
     protected $casts = [
-        'item_type'  => ItemType::class,
-        'cost_price' => FixedDecimalCast::class.':2',
-        'is_active'  => 'boolean',
-        'metadata'   => 'array',
+        'item_type'      => ItemType::class,
+        'cost_price'     => FixedDecimalCast::class.':2',
+        'is_active'      => 'boolean',
+        'guarantee_days' => 'integer',
+        'metadata'       => 'array',
     ];
 
     /**
@@ -135,15 +139,20 @@ class Article extends Model
      */
     public function activePrices(): HasMany
     {
+        // Day-granular on purpose (AID-1592): valid_from/valid_to are DATE
+        // casts — a price valid until today stays valid THROUGH the whole
+        // last day. Comparing against now() (with time) dropped it at 00:00.
+        $today = Carbon::today();
+
         return $this->prices()
             ->where('is_active', true)
-            ->where(function ($q) {
+            ->where(function ($q) use ($today) {
                 $q->whereNull('valid_from')
-                    ->orWhere('valid_from', '<=', now());
+                    ->orWhere('valid_from', '<=', $today);
             })
-            ->where(function ($q) {
+            ->where(function ($q) use ($today) {
                 $q->whereNull('valid_to')
-                    ->orWhere('valid_to', '>=', now());
+                    ->orWhere('valid_to', '>=', $today);
             });
     }
 
@@ -208,15 +217,33 @@ class Article extends Model
     }
 
     /**
-     * Scope to filter articles that have recurring prices.
+     * Scope to filter articles that can carry RECURRING agreements (ADR-015
+     * §5 mapping row: modality-based derivation).
+     *
+     * @deprecated since 7.0.0, use the modality-based derivation (agreements declare `modality = recurring`; articles derive from their cadence-bearing active prices) — see UPGRADE-7.0.md
+     *
+     * Chosen reading — modality is declared on AGREEMENTS only (§2.1), so
+     * the article side has no modality column to read: the derivation is
+     * evaluated through the cadence domain of the article's active prices.
+     * An agreement contracted on this article carries `recurring` modality
+     * exactly when the catalogue holds a cadence-bearing price to schedule
+     * it against; the `one_time` modality maps to the NULL-cadence price
+     * (real persisted data, §2.3/§4.1); `non_billable` agreements never
+     * consult the catalogue at all (§2.5). Hence: ≥1 active price with a
+     * non-NULL cadence ⇔ the article can hold recurring agreements.
      *
      * @param  Builder<Article>  $query
      */
     public function scopeRecurring(Builder $query): void
     {
+        $this->triggerLegacyDeprecation(
+            'Article::scopeRecurring()',
+            'the modality-based derivation (agreement `modality = recurring`)',
+        );
+
         $query->whereHas('activePrices', function ($q): void {
             /** @var Builder<ArticlePrice> $q */
-            $q->where('billing_frequency', '!=', BillingFrequency::ONE_TIME);
+            $q->whereNotNull('billing_unit');
         });
     }
 
@@ -247,12 +274,23 @@ class Article extends Model
     }
 
     /**
-     * Check if this article has any recurring prices.
+     * Check if this article can carry recurring agreements (ADR-015 §5: the
+     * modality-based derivation of the retired frequency reading — see
+     * `scopeRecurring()` for the chosen reading: modality lives on
+     * agreements (§2.1), so the article side is derived from the cadence
+     * domain of its active prices).
+     *
+     * @deprecated since 7.0.0, use the modality-based derivation (agreement `modality = recurring`) — see UPGRADE-7.0.md
      */
     public function isRecurring(): bool
     {
+        $this->triggerLegacyDeprecation(
+            'Article::isRecurring()',
+            'the modality-based derivation (agreement `modality = recurring`)',
+        );
+
         return $this->activePrices()
-            ->where('billing_frequency', '!=', BillingFrequency::ONE_TIME)
+            ->whereNotNull('billing_unit')
             ->exists();
     }
 
@@ -303,14 +341,49 @@ class Article extends Model
 
     /**
      * Get price for a specific billing frequency.
+     *
+     * The lookup resolves through the ADR-015 interval domain.
+     * WEEKLY/BIWEEKLY inputs throw: the new cadence domain cannot represent
+     * them (qualified STABILITY.md §3 exception).
+     *
+     * @deprecated since 7.0.0, use getPriceForInterval() — see UPGRADE-7.0.md.
      */
     public function getPriceFor(BillingFrequency $frequency): ?float
     {
-        // Eloquent's value() hydrates the casted attribute, so price comes back
-        // as a FixedDecimal; expose the raw base-100 cents to preserve the
-        // ?float contract and the int-cents expectations of every caller.
-        return $this->activePrices()
-            ->where('billing_frequency', $frequency)
+        return $this->getPriceForInterval(BillingInterval::fromLegacyFrequency($frequency->value));
+    }
+
+    /**
+     * Resolve the deterministic price of one cadence — the interval-keyed
+     * read of the price catalogue (ADR-015 §2.3).
+     *
+     * A NULL interval matches the NULL cadence exactly: the one-time price,
+     * which is real persisted data (legacy ONE_TIME).
+     */
+    public function getPriceForInterval(?BillingInterval $interval): ?float
+    {
+        return $this->resolvePriceForInterval($interval);
+    }
+
+    /**
+     * Resolve the deterministic price of one cadence — the interval-keyed
+     * body of `getPriceFor()`.
+     *
+     * Eloquent's value() hydrates the casted attribute, so price comes back
+     * as a FixedDecimal; expose the raw base-100 cents to preserve the
+     * ?float contract and the int-cents expectations of every caller.
+     */
+    private function resolvePriceForInterval(?BillingInterval $interval): ?float
+    {
+        $query = $this->activePrices();
+
+        if ($interval === null) {
+            $query->whereNull('billing_unit')->whereNull('billing_quantity');
+        } else {
+            $query->where('billing_unit', $interval->unit)->where('billing_quantity', $interval->quantity);
+        }
+
+        return $query
             // Deterministic pick when a legacy database still holds overlapping
             // rows (AID-601): most recent start wins, id breaks the tie. NULL
             // sorts lowest in MySQL and SQLite, so a dated row beats an
@@ -324,12 +397,17 @@ class Article extends Model
     /**
      * Get all available billing frequencies for this article.
      *
+     * Each cadence is bridged back through the interval domain. A cadence
+     * without a legacy equivalent throws — the bridge fails loud instead of
+     * silently dropping the cadence from a read.
+     *
      * @return Collection<int, BillingFrequency>
      */
     public function getAvailableFrequencies(): Collection
     {
         return $this->activePrices()
-            ->pluck('billing_frequency')
+            ->get(['billing_unit', 'billing_quantity'])
+            ->map(fn (ArticlePrice $price): BillingFrequency => $price->interval()?->toLegacyFrequency() ?? BillingFrequency::ONE_TIME)
             ->unique()
             ->values();
     }
@@ -341,7 +419,8 @@ class Article extends Model
      */
     public function getDefaultPrice(): ?float
     {
-        $oneTimePrice = $this->getPriceFor(BillingFrequency::ONE_TIME);
+        // NULL cadence IS the ONE_TIME price in the ADR-015 interval domain.
+        $oneTimePrice = $this->getPriceForInterval(null);
 
         if ($oneTimePrice !== null) {
             return $oneTimePrice;
@@ -356,6 +435,8 @@ class Article extends Model
     /**
      * Get the effective price for a customer at a specific frequency.
      * Checks for active overrides first, falls back to standard price.
+     *
+     * @deprecated since 7.0.0, use PricingService::getEffectivePriceForInterval() — see UPGRADE-7.0.md.
      */
     public function getEffectivePriceFor(int|string|null $customerId, BillingFrequency $frequency): ?float
     {
@@ -412,13 +493,40 @@ class Article extends Model
     }
 
     /**
-     * Get billing days in advance for a specific frequency.
+     * Get billing days in advance for a specific frequency. The lookup
+     * resolves through the interval domain.
+     *
+     * @deprecated since 7.0.0, use getBillingDaysInAdvanceForInterval() — see UPGRADE-7.0.md.
      */
     public function getBillingDaysInAdvanceFor(BillingFrequency $frequency): ?int
     {
-        return $this->activePrices()
-            ->where('billing_frequency', $frequency)
-            ->value('billing_days_in_advance');
+        return $this->getBillingDaysInAdvanceForInterval(BillingInterval::fromLegacyFrequency($frequency->value));
+    }
+
+    /**
+     * Get billing days in advance for one cadence — the interval-keyed read
+     * of the price catalogue (ADR-015 §2.3).
+     *
+     * This is the interval-native path the recurring engine uses (the
+     * agreement's cadence is unit/quantity since slice 2b): the inverse
+     * enum bridge is NOT applied here, so cadences inside the new domain but
+     * outside the legacy image (e.g. month/5) resolve their per-cadence
+     * advance window instead of throwing.
+     *
+     * A NULL interval matches the NULL cadence exactly: the one-time price's
+     * window (legacy ONE_TIME).
+     */
+    public function getBillingDaysInAdvanceForInterval(?BillingInterval $interval): ?int
+    {
+        $query = $this->activePrices();
+
+        if ($interval === null) {
+            $query->whereNull('billing_unit')->whereNull('billing_quantity');
+        } else {
+            $query->where('billing_unit', $interval->unit)->where('billing_quantity', $interval->quantity);
+        }
+
+        return $query->value('billing_days_in_advance');
     }
 
     /**
@@ -429,5 +537,20 @@ class Article extends Model
     protected static function newFactory()
     {
         return ArticleFactory::new();
+    }
+
+    /**
+     * ONE legacy-deprecation emitter for this class's shim paths (ADR-015
+     * §5): every delegating public path emits the same-shaped
+     * `E_USER_DEPRECATED` through here. Internal code never calls legacy
+     * paths, so nothing internal emits.
+     */
+    private function triggerLegacyDeprecation(string $method, string $replacement): void
+    {
+        trigger_error(sprintf(
+            '%s is deprecated since larabill 7.0.0, use %s instead — see UPGRADE-7.0.md.',
+            $method,
+            $replacement,
+        ), E_USER_DEPRECATED);
     }
 }

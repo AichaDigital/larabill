@@ -168,6 +168,33 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Agreement plan change (ADR-015 §3.5, major 7.0.0)
+    |--------------------------------------------------------------------------
+    |
+    | The company policy for changing an agreement's plan. The only new
+    | consumer-visible config key of the whole major (ADR-015 §5).
+    */
+    'agreements' => [
+        'plan_change' => [
+            // 'restart' (default): the successor runs its FULL term from the
+            // change date (renewal = auto, no forced end).
+            // 'align_end': the successor runs only until the predecessor's
+            // term end (requires a closed-term predecessor — an auto-renewing
+            // agreement has no previous end date to align to and the
+            // combination is rejected, never reinterpreted).
+            //
+            // The effective default lives at the READ POINT
+            // (PlanChangeService::resolvePolicy reads
+            // config('larabill.agreements.plan_change.policy', 'restart')):
+            // mergeConfigFrom is shallow (AID-589), so a consumer whose
+            // published config predates this key still gets the spec default.
+            // Any other value throws PlanChangeNotAllowedException loud.
+            'policy' => env('LARABILL_PLAN_CHANGE_POLICY', 'restart'),
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Admin Notifications Configuration
     |--------------------------------------------------------------------------
     |

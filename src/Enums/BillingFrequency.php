@@ -12,6 +12,10 @@ use Carbon\Carbon;
  * Represents all possible billing frequencies for articles and services.
  * Integer values are ordered by period length for logical sorting.
  *
+ * Retired closed cadence enum — DEPRECATED compatibility shim (ADR-015 §5).
+ *
+ * @deprecated since 7.0.0, use `BillingInterval` (unit + quantity; `ONE_TIME` → NULL cadence + modality) — see UPGRADE-7.0.md
+ *
  * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 enum BillingFrequency: int

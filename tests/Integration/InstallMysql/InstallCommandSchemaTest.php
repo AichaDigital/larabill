@@ -61,6 +61,7 @@ describe('larabill:install — production install path on MySQL (AID-287)', func
             'eu_sales_thresholds',
             'grouped_payments',
             'grouped_payment_invoice',
+            'agreement_causes',
         ];
 
         foreach ($expectedTables as $table) {
@@ -68,12 +69,24 @@ describe('larabill:install — production install path on MySQL (AID-287)', func
                 ->toBeTrue("Table `{$table}` missing after production install order");
         }
 
-        // Every $migrationOrder entry (24 create + 8 modifiers + 2 data
-        // backfills, AID-390/AID-555) applied cleanly. AID-307 adds the
-        // invoices series unique-index swap; AID-429 adds the prefix widening;
-        // AID-450 adds the phantom-template cleanup; AID-555 adds the
-        // proforma-link backfill.
-        expect($this->appliedMigrationCount())->toBe(36);
+        // Every $migrationOrder entry (25 create + 8 modifiers + 2 data
+        // backfills AID-390/AID-555 + the two ADR-015 cadence re-keys + the
+        // ADR-015 cause vocabulary: table + closure_cause_id FK + the AID-949
+        // slice B status program + the AID-953 modality column + the AID-953
+        // guarantee capability + snapshot + registry + settlement key + the
+        // AID-895 import-support columns: invoices.is_historical + the
+        // article_service_status.origin_key UNIQUE idempotency key) applied
+        // cleanly. AID-307 adds the invoices
+        // series unique-index swap; AID-429 adds the prefix widening; AID-450
+        // adds the phantom-template cleanup; AID-555 adds the proforma-link
+        // backfill; AID-952 re-keys the article_prices and
+        // article_service_status cadence; AID-949 adds the agreement_causes
+        // vocabulary, the closure_cause_id FK and the §4.2 status program;
+        // AID-953 adds the modality column, then the guarantee capability +
+        // snapshot + registry + settlement key; AID-895 adds the import
+        // support columns (invoices.is_historical, article_service_status
+        // .origin_key UNIQUE).
+        expect($this->appliedMigrationCount())->toBe(44);
 
         // The package defines inter-table FK constraints (e.g. invoice_items →
         // invoices, tax_group_tax_rate → tax_groups/tax_rates). They could only

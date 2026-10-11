@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use AichaDigital\Larabill\DataTransferObjects\InvoiceItemMetadata;
+use AichaDigital\Larabill\Enums\AgreementStatus;
 use AichaDigital\Larabill\Enums\BillingFrequency;
-use AichaDigital\Larabill\Enums\ServiceStatus;
 use AichaDigital\Larabill\Exceptions\MissingContractPriceException;
 use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticleOverride;
@@ -51,8 +51,8 @@ beforeEach(function () {
     $this->contractFor = fn (Article $article, int $contractPrice, ?int $overrideId = null) => ArticleServiceStatus::factory()->create([
         'customer_id'         => $this->customer->id,
         'article_id'          => $article->id,
-        'billing_frequency'   => BillingFrequency::MONTHLY,
-        'status'              => ServiceStatus::ACTIVE,
+        'billing_unit'        => 'month', 'billing_quantity' => 1,
+        'status'              => AgreementStatus::ACTIVE,
         'next_billing_date'   => now()->addDays(7),
         'effective_price'     => cents($contractPrice),
         'current_override_id' => $overrideId,
@@ -72,8 +72,8 @@ describe('the engine bills the contract (D1)', function () {
         ArticleServiceStatus::factory()->create([
             'customer_id'         => $this->customer->id,
             'article_id'          => $article->id,
-            'billing_frequency'   => BillingFrequency::MONTHLY,
-            'status'              => ServiceStatus::ACTIVE,
+            'billing_unit'        => 'month', 'billing_quantity' => 1,
+            'status'              => AgreementStatus::ACTIVE,
             'next_billing_date'   => now()->addDays(7),
             'effective_price'     => cents(4500),
             'current_override_id' => null,

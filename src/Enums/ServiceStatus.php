@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Enums;
 
 /**
+ * Retired service-status enum — DEPRECATED compatibility shim (ADR-015 §5).
+ *
+ * @deprecated since 7.0.0, use `AgreementStatus` (string-backed: pending/active/suspended/guarantee/closed) — see UPGRADE-7.0.md
+ *
  * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
 enum ServiceStatus: int

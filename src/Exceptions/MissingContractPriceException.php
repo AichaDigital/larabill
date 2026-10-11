@@ -46,4 +46,21 @@ final class MissingContractPriceException extends RuntimeException
             'ArticleServiceStatus::updateEffectivePrice() derives it from the catalogue or an override.'
         );
     }
+
+    /**
+     * A successor contract (e.g. the ADR-015 §3.5 plan change) could not
+     * resolve its contractual price: no explicit price was passed and the
+     * new plan's catalogue carries no price for the requested cadence.
+     * Guessing a price for a NEW contract would invent a business value the
+     * consumer owns — same doctrine as AID-589 with the fiscal series.
+     */
+    public static function forNewAgreement(string $articleLabel, string $cadenceLabel): self
+    {
+        return new self(
+            "Cannot create the successor agreement for plan [{$articleLabel}]: no explicit contractual ".
+            "price was passed and the catalogue carries no price for the requested cadence ({$cadenceLabel}). ".
+            'Set an ArticlePrice for that cadence, or pass the successorEffectivePrice explicitly — '.
+            'a zero price is valid and is billed as zero.'
+        );
+    }
 }
