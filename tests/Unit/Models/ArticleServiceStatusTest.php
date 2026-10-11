@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
+use AichaDigital\Larabill\Enums\AgreementStatus;
 use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Enums\CancellationType;
-use AichaDigital\Larabill\Enums\ServiceStatus;
+use AichaDigital\Larabill\Models\AgreementCause;
 use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticleOverride;
 use AichaDigital\Larabill\Models\ArticleServiceStatus;
@@ -23,7 +24,7 @@ it('can create a service status', function () {
     $service = ArticleServiceStatus::factory()->create([
         'customer_id'         => $customer->id,
         'article_id'          => $article->id,
-        'billing_frequency'   => BillingFrequency::MONTHLY,
+        'billing_unit'        => 'month', 'billing_quantity' => 1,
         'instance_identifier' => 'example.com',
     ]);
 
@@ -62,15 +63,19 @@ it('can create and scope service statuses for UUID customer IDs', function () {
 it('casts status to enum', function () {
     $service = ArticleServiceStatus::factory()->active()->create();
 
-    expect($service->status)->toBeInstanceOf(ServiceStatus::class)
-        ->and($service->status)->toBe(ServiceStatus::ACTIVE);
+    expect($service->status)->toBeInstanceOf(AgreementStatus::class)
+        ->and($service->status)->toBe(AgreementStatus::ACTIVE);
 });
 
-it('casts cancellation_type to enum', function () {
-    $service = ArticleServiceStatus::factory()->cancelled(CancellationType::IMMEDIATE)->create();
+it('retires the cancellation_type column — the original type survives in the cancellation metadata', function () {
+    expect(Schema::hasColumn('article_service_status', 'cancellation_type'))->toBeFalse();
 
-    expect($service->cancellation_type)->toBeInstanceOf(CancellationType::class)
-        ->and($service->cancellation_type)->toBe(CancellationType::IMMEDIATE);
+    $service = ArticleServiceStatus::factory()->create(['next_billing_date' => now()->addMonth()]);
+    $service->cancel(CancellationType::IMMEDIATE);
+
+    // The legacy @api event payload keeps the type; the closure metadata
+    // carries it for the deferred-materialisation re-dispatch (ADR-015 §5).
+    expect($service->fresh()->metadata['cancellation']['type'])->toBe(CancellationType::IMMEDIATE->value);
 });
 
 it('casts dates correctly', function () {
@@ -111,7 +116,7 @@ it('has article relationship', function () {
     $article = Article::factory()->service()->monthly(2900)->create();
     $service = ArticleServiceStatus::factory()->create([
         'article_id'        => $article->id,
-        'billing_frequency' => BillingFrequency::MONTHLY,
+        'billing_unit'      => 'month', 'billing_quantity' => 1,
     ]);
 
     expect($service->article)->toBeInstanceOf(Article::class)
@@ -187,11 +192,11 @@ it('scopes for article', function () {
 
     ArticleServiceStatus::factory()->count(2)->create([
         'article_id'        => $article1->id,
-        'billing_frequency' => BillingFrequency::MONTHLY,
+        'billing_unit'      => 'month', 'billing_quantity' => 1,
     ]);
     ArticleServiceStatus::factory()->count(3)->create([
         'article_id'        => $article2->id,
-        'billing_frequency' => BillingFrequency::MONTHLY,
+        'billing_unit'      => 'month', 'billing_quantity' => 1,
     ]);
 
     $services = ArticleServiceStatus::forArticle($article1->id)->get();
@@ -203,7 +208,7 @@ it('scopes with specific status', function () {
     ArticleServiceStatus::factory()->active()->count(2)->create();
     ArticleServiceStatus::factory()->suspended()->count(3)->create();
 
-    $suspended = ArticleServiceStatus::withStatus(ServiceStatus::SUSPENDED)->get();
+    $suspended = ArticleServiceStatus::withStatus(AgreementStatus::SUSPENDED)->get();
 
     expect($suspended)->toHaveCount(3);
 });
@@ -213,20 +218,23 @@ it('can activate a service', function () {
 
     $service->activate();
 
-    expect($service->fresh()->status)->toBe(ServiceStatus::ACTIVE);
+    expect($service->fresh()->status)->toBe(AgreementStatus::ACTIVE);
 });
 
-it('can suspend a service', function () {
+it('can suspend a service through the close/suspend API', function () {
     $service = ArticleServiceStatus::factory()->active()->create();
+    $cause   = AgreementCause::findActive(AgreementCause::SCOPE_SUSPENDED, 'unpaid');
 
-    $service->suspend('Payment failed');
+    $service->suspend($cause, 'Payment failed');
 
-    expect($service->fresh()->status)->toBe(ServiceStatus::SUSPENDED)
+    expect($service->fresh()->status)->toBe(AgreementStatus::SUSPENDED)
+        ->and($service->fresh()->closure_cause_id)->toBe($cause->id)
         ->and($service->fresh()->metadata['suspension']['reason'])->toBe('Payment failed');
 });
 
-it('can cancel a service immediately', function () {
-    $service = ArticleServiceStatus::factory()->active()->create([
+it('can cancel a service immediately (shim forwards to close with the legacy_cancellation cause)', function () {
+    $legacyCause = AgreementCause::findActive(AgreementCause::SCOPE_CLOSED, 'legacy_cancellation');
+    $service     = ArticleServiceStatus::factory()->active()->create([
         'next_billing_date' => now()->addMonth(),
     ]);
 
@@ -234,14 +242,16 @@ it('can cancel a service immediately', function () {
 
     $fresh = $service->fresh();
 
-    expect($fresh->status)->toBe(ServiceStatus::CANCELLED)
-        ->and($fresh->cancellation_type)->toBe(CancellationType::IMMEDIATE)
+    expect($fresh->status)->toBe(AgreementStatus::CLOSED)
+        ->and($fresh->closure_cause_id)->toBe($legacyCause->id)
         ->and($fresh->refund_unused)->toBeFalse()
         ->and($fresh->next_billing_date)->toBeNull()
-        ->and($fresh->cancellation_effective_at->isToday())->toBeTrue();
+        ->and($fresh->cancellation_effective_at->isToday())->toBeTrue()
+        ->and($fresh->metadata['cancellation']['type'])->toBe(CancellationType::IMMEDIATE->value);
 });
 
-it('can cancel a service at end of period', function () {
+it('can cancel a service at end of period (scheduled close through the shim)', function () {
+    $legacyCause = AgreementCause::findActive(AgreementCause::SCOPE_CLOSED, 'legacy_cancellation');
     $nextBilling = now()->addMonth();
     $service     = ArticleServiceStatus::factory()->active()->create([
         'next_billing_date' => $nextBilling,
@@ -251,30 +261,36 @@ it('can cancel a service at end of period', function () {
 
     $fresh = $service->fresh();
 
-    expect($fresh->status)->toBe(ServiceStatus::ACTIVE) // Stays active until end
-        ->and($fresh->cancellation_type)->toBe(CancellationType::END_OF_PERIOD)
+    expect($fresh->status)->toBe(AgreementStatus::ACTIVE) // Stays active until the scheduled date
+        ->and($fresh->close_scheduled_at->format('Y-m-d'))->toBe($nextBilling->format('Y-m-d'))
+        ->and($fresh->closure_cause_id)->toBe($legacyCause->id)
         ->and($fresh->refund_unused)->toBeFalse()
         ->and($fresh->cancellation_effective_at->format('Y-m-d'))->toBe($nextBilling->format('Y-m-d'));
 });
 
-it('can cancel a service with notice period', function () {
+it('can cancel a service with notice period (scheduled close, refund flag kept)', function () {
     $service = ArticleServiceStatus::factory()->active()->create();
 
     $service->cancel(CancellationType::NOTICE_PERIOD, 'Customer request');
 
     $fresh = $service->fresh();
 
-    expect($fresh->cancellation_type)->toBe(CancellationType::NOTICE_PERIOD)
+    expect($fresh->status)->toBe(AgreementStatus::ACTIVE)
+        ->and($fresh->close_scheduled_at)->not->toBeNull()
+        ->and($fresh->metadata['cancellation']['type'])->toBe(CancellationType::NOTICE_PERIOD->value)
         ->and($fresh->refund_unused)->toBeTrue()
         ->and($fresh->cancellation_effective_at)->not->toBeNull();
 });
 
-it('can expire a service', function () {
+it('can expire a service — expiry CLOSES with the fulfilment cause (ADR-015 §4.2 rewire)', function () {
     $service = ArticleServiceStatus::factory()->active()->create();
 
     $service->expire();
 
-    expect($service->fresh()->status)->toBe(ServiceStatus::EXPIRED)
+    $fulfilment = AgreementCause::query()->where('key', 'fulfilment')->firstOrFail();
+
+    expect($service->fresh()->status)->toBe(AgreementStatus::CLOSED)
+        ->and($service->fresh()->closure_cause_id)->toBe($fulfilment->id)
         ->and($service->fresh()->next_billing_date)->toBeNull();
 });
 
@@ -282,7 +298,7 @@ it('calculates next billing date monthly', function () {
     $article = Article::factory()->monthly(2900)->create();
     $service = ArticleServiceStatus::factory()->create([
         'article_id'        => $article->id,
-        'billing_frequency' => BillingFrequency::MONTHLY,
+        'billing_unit'      => 'month', 'billing_quantity' => 1,
         'next_billing_date' => Carbon::parse('2024-01-15'),
     ]);
 
@@ -295,7 +311,7 @@ it('calculates next billing date quarterly', function () {
     $article = Article::factory()->quarterly(7900)->create();
     $service = ArticleServiceStatus::factory()->create([
         'article_id'        => $article->id,
-        'billing_frequency' => BillingFrequency::QUARTERLY,
+        'billing_unit'      => 'month', 'billing_quantity' => 3,
         'next_billing_date' => Carbon::parse('2024-01-15'),
     ]);
 
@@ -308,7 +324,7 @@ it('calculates next billing date yearly', function () {
     $article = Article::factory()->yearly(29000)->create();
     $service = ArticleServiceStatus::factory()->create([
         'article_id'        => $article->id,
-        'billing_frequency' => BillingFrequency::YEARLY,
+        'billing_unit'      => 'year', 'billing_quantity' => 1,
         'next_billing_date' => Carbon::parse('2024-01-15'),
     ]);
 
@@ -331,7 +347,7 @@ it('updates effective price from override', function () {
     $service = ArticleServiceStatus::factory()->create([
         'customer_id'       => $customer->id,
         'article_id'        => $article->id,
-        'billing_frequency' => BillingFrequency::MONTHLY,
+        'billing_unit'      => 'month', 'billing_quantity' => 1,
         'effective_price'   => cents(2900),
     ]);
 
@@ -346,7 +362,7 @@ it('updates effective price to base when no override', function () {
 
     $service = ArticleServiceStatus::factory()->create([
         'article_id'        => $article->id,
-        'billing_frequency' => BillingFrequency::MONTHLY,
+        'billing_unit'      => 'month', 'billing_quantity' => 1,
         'effective_price'   => cents(2400),
     ]);
 
@@ -444,4 +460,22 @@ it('factory creates service with external reference', function () {
         ->create();
 
     expect($service->external_reference)->toBe('stripe_sub_123');
+});
+
+it('resolves the closureCause relation (ADR-015 slice A, additive)', function () {
+    $cause = AgreementCause::query()->where('key', 'fraud')->firstOrFail();
+
+    $service = ArticleServiceStatus::factory()->create([
+        'closure_cause_id' => $cause->id,
+    ]);
+
+    expect($service->closureCause->is($cause))->toBeTrue()
+        ->and($service->closure_cause_id)->toBe($cause->id);
+});
+
+it('keeps closureCause nullable — a closed agreement without cause is a legal state (ADR-015 §2.2)', function () {
+    $service = ArticleServiceStatus::factory()->create(['closure_cause_id' => null]);
+
+    expect($service->closureCause)->toBeNull()
+        ->and($service->closure_cause_id)->toBeNull();
 });

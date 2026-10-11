@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Models\Article;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -16,14 +15,15 @@ uses(RefreshDatabase::class);
 function aid601InsertRawPrice(int $articleId, ?string $from, ?string $to, int $price = 2900, bool $active = true): void
 {
     DB::table('article_prices')->insert([
-        'article_id'        => $articleId,
-        'billing_frequency' => BillingFrequency::MONTHLY->value,
-        'price'             => $price,
-        'valid_from'        => $from,
-        'valid_to'          => $to,
-        'is_active'         => $active,
-        'created_at'        => now(),
-        'updated_at'        => now(),
+        'article_id'       => $articleId,
+        'billing_unit'     => 'month',
+        'billing_quantity' => 1,
+        'price'            => $price,
+        'valid_from'       => $from,
+        'valid_to'         => $to,
+        'is_active'        => $active,
+        'created_at'       => now(),
+        'updated_at'       => now(),
     ]);
 }
 

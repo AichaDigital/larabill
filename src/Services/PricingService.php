@@ -10,6 +10,7 @@ use AichaDigital\Larabill\Exceptions\MissingContractPriceException;
 use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticleOverride;
 use AichaDigital\Larabill\Models\ArticleServiceStatus;
+use AichaDigital\Larabill\ValueObjects\BillingInterval;
 
 /**
  * PricingService
@@ -24,10 +25,34 @@ class PricingService
     /**
      * Get the effective price for a customer at a specific frequency.
      * Returns the ArticlePrice for the frequency if no customer or no active override exists.
+     *
+     * @deprecated since 7.0.0, use `PricingService::getEffectivePriceForInterval()` — see UPGRADE-7.0.md
+     *
+     * The `BillingFrequency`-typed signature bridges through the interval domain.
      */
     public function getEffectivePrice(Article $article, BillingFrequency $frequency, int|string|null $customerId): ?float
     {
-        $basePrice = $article->getPriceFor($frequency);
+        $this->triggerLegacyDeprecation(
+            'PricingService::getEffectivePrice()',
+            'PricingService::getEffectivePriceForInterval()',
+        );
+
+        return $this->getEffectivePriceForInterval(
+            $article,
+            BillingInterval::fromLegacyFrequency($frequency->value),
+            $customerId,
+        );
+    }
+
+    /**
+     * Get the effective price for a customer at one cadence — the
+     * interval-native body (ADR-015 §5: same entry points over
+     * `BillingInterval`). A NULL interval matches the NULL cadence (one-time
+     * price) exactly.
+     */
+    public function getEffectivePriceForInterval(Article $article, ?BillingInterval $interval, int|string|null $customerId): ?float
+    {
+        $basePrice = $article->getPriceForInterval($interval);
 
         if ($basePrice === null) {
             return null;
@@ -43,13 +68,13 @@ class PricingService
     }
 
     /**
-     * Get the effective price for a service (uses the service's billing frequency).
+     * Get the effective price for a service (uses the agreement's cadence).
      */
     public function getEffectivePriceForService(ArticleServiceStatus $service): ?float
     {
-        return $this->getEffectivePrice(
+        return $this->getEffectivePriceForInterval(
             $service->article,
-            $service->billing_frequency,
+            $service->billingInterval(),
             $service->customer_id
         );
     }
@@ -100,13 +125,40 @@ class PricingService
 
     /**
      * Create pricing details DTO for an article, frequency and customer.
+     *
+     * @deprecated since 7.0.0, use `PricingService::createPricingDetailsForInterval()` — see UPGRADE-7.0.md
+     *
+     * The `BillingFrequency`-typed signature bridges through the interval domain.
      */
     public function createPricingDetails(
         Article $article,
         BillingFrequency $frequency,
         int|string|null $customerId
     ): PricingDetails {
-        $basePrice    = $article->getPriceFor($frequency) ?? 0.0;
+        $this->triggerLegacyDeprecation(
+            'PricingService::createPricingDetails()',
+            'PricingService::createPricingDetailsForInterval()',
+        );
+
+        return $this->createPricingDetailsForInterval(
+            $article,
+            BillingInterval::fromLegacyFrequency($frequency->value),
+            $customerId,
+        );
+    }
+
+    /**
+     * Create pricing details DTO for an article, cadence and customer — the
+     * interval-native body (ADR-015 §5: same entry points over
+     * `BillingInterval`). A NULL interval matches the NULL cadence (one-time
+     * price) exactly.
+     */
+    public function createPricingDetailsForInterval(
+        Article $article,
+        ?BillingInterval $interval,
+        int|string|null $customerId
+    ): PricingDetails {
+        $basePrice    = $article->getPriceForInterval($interval) ?? 0.0;
         $override     = $customerId ? $this->getActiveOverride($article, $customerId) : null;
         $appliedPrice = $override?->custom_price?->unscaledValue() ?? $basePrice;
 
@@ -124,13 +176,13 @@ class PricingService
     }
 
     /**
-     * Create pricing details DTO for a service (uses service's billing frequency).
+     * Create pricing details DTO for a service (uses the agreement's cadence).
      */
     public function createPricingDetailsForService(ArticleServiceStatus $service): PricingDetails
     {
-        return $this->createPricingDetails(
+        return $this->createPricingDetailsForInterval(
             $service->article,
-            $service->billing_frequency,
+            $service->billingInterval(),
             $service->customer_id
         );
     }
@@ -210,5 +262,20 @@ class PricingService
         $margin = $this->calculateProfitMargin($article, $price);
 
         return round(($margin / $price) * 100, 2);
+    }
+
+    /**
+     * ONE legacy-deprecation emitter for this class's shim paths (ADR-015
+     * §5): every delegating public path emits the same-shaped
+     * `E_USER_DEPRECATED` through here. Internal code never calls legacy
+     * paths, so nothing internal emits.
+     */
+    private function triggerLegacyDeprecation(string $method, string $replacement): void
+    {
+        trigger_error(sprintf(
+            '%s is deprecated since larabill 7.0.0, use %s instead — see UPGRADE-7.0.md.',
+            $method,
+            $replacement,
+        ), E_USER_DEPRECATED);
     }
 }

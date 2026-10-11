@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Database\Factories;
 
 use AichaDigital\Lara100\ValueObjects\FixedDecimal;
+use AichaDigital\Larabill\Database\Factories\ArticlePriceFactory as CadenceBridge;
+use AichaDigital\Larabill\Enums\AgreementModality;
+use AichaDigital\Larabill\Enums\AgreementStatus;
 use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Enums\CancellationType;
-use AichaDigital\Larabill\Enums\ServiceStatus;
+use AichaDigital\Larabill\Models\AgreementCause;
 use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticleOverride;
 use AichaDigital\Larabill\Models\ArticleServiceStatus;
+use AichaDigital\Larabill\ValueObjects\BillingInterval;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -38,12 +42,26 @@ class ArticleServiceStatusFactory extends Factory
             'started_at'                => now(),
             'next_billing_date'         => now()->addMonth(),
             'expires_at'                => null,
-            'status'                    => ServiceStatus::ACTIVE,
-            'cancellation_type'         => null,
+            // Deterministic defaults on every guard-governing field (AID-508/
+            // AID-558): the string state domain, the accounting axis, the
+            // renewal attribute (expires_at is NULL here → auto) and the
+            // modality (the default cadence below is cadence-bearing →
+            // recurring; the oneTime()/nonBillable() states override it).
+            'status'                    => AgreementStatus::ACTIVE,
+            'account_status'            => 'up_to_date',
+            'renewal'                   => 'auto',
+            'modality'                  => AgreementModality::RECURRING,
+            'close_scheduled_at'        => null,
             'cancellation_requested_at' => null,
             'cancellation_effective_at' => null,
             'refund_unused'             => false,
-            'billing_frequency'         => BillingFrequency::MONTHLY,
+            // Deterministic default cadence: the legacy default was MONTHLY,
+            // mapped through the §4.1 bridge (month/1). No randomElement —
+            // the cadence participates in scheduling math.
+            ...CadenceBridge::cadenceAttributes(BillingFrequency::MONTHLY),
+            // Deterministic default (AID-508/AID-558): the guarantee snapshot
+            // is only written at contracting; a fixture declares one explicitly.
+            'guarantee_days'            => null,
             'effective_price'           => FixedDecimal::ofUnscaled(2900, 2), // Default €29.00
             'current_override_id'       => null,
             'external_reference'        => null,
@@ -53,12 +71,51 @@ class ArticleServiceStatusFactory extends Factory
     }
 
     /**
-     * Set billing frequency.
+     * Set billing cadence from a legacy frequency. The `BillingFrequency`
+     * parameter is kept until the shim slice (ADR-015 §5): the state emits
+     * unit/quantity through the §4.1 bridge, so ONE_TIME becomes the NULL
+     * cadence and WEEKLY/BIWEEKLY throw — no fixture can hold a cadence the
+     * new domain cannot represent. The modality follows the cadence domain
+     * (§4.1): NULL cadence → `one_time`, cadence-bearing → `recurring`.
      */
     public function frequency(BillingFrequency $frequency): static
     {
+        $interval = BillingInterval::fromLegacyFrequency($frequency->value);
+
         return $this->state(fn (array $attributes) => [
-            'billing_frequency' => $frequency,
+            ...CadenceBridge::cadenceAttributes($frequency),
+            'modality' => $interval === null ? AgreementModality::ONE_TIME : AgreementModality::RECURRING,
+        ]);
+    }
+
+    /**
+     * A one-time agreement (ADR-015 §3.3): NULL cadence + `one_time`
+     * modality, and NO next_billing_date — it emits exactly once at
+     * contracting and never again. The healthy shape the emission gate
+     * expects; a fixture with a billing date on a one_time agreement is the
+     * corrupt state the gate refuses loud.
+     */
+    public function oneTime(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            ...CadenceBridge::cadenceAttributes(BillingFrequency::ONE_TIME),
+            'modality'          => AgreementModality::ONE_TIME,
+            'next_billing_date' => null,
+        ]);
+    }
+
+    /**
+     * The import contract (ADR-015 §2.5 Free Account): `non_billable`
+     * modality is NEVER derived from legacy data — the consumer/importer
+     * sets it explicitly. It never emits, so it carries no next_billing_date
+     * and no cadence.
+     */
+    public function nonBillable(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            ...CadenceBridge::cadenceAttributes(BillingFrequency::ONE_TIME),
+            'modality'          => AgreementModality::NON_BILLABLE,
+            'next_billing_date' => null,
         ]);
     }
 
@@ -92,7 +149,7 @@ class ArticleServiceStatusFactory extends Factory
     public function active(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status' => ServiceStatus::ACTIVE,
+            'status' => AgreementStatus::ACTIVE,
         ]);
     }
 
@@ -102,18 +159,20 @@ class ArticleServiceStatusFactory extends Factory
     public function pending(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status'            => ServiceStatus::PENDING,
+            'status'            => AgreementStatus::PENDING,
             'next_billing_date' => null,
         ]);
     }
 
     /**
-     * Indicate that the service is suspended.
+     * Indicate that the service is suspended. Cause NULL — a legacy-shaped
+     * fixture (imported suspended rows carry no cause, ADR-015 §2.2); the
+     * narrative stays in the suspension metadata.
      */
     public function suspended(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status'   => ServiceStatus::SUSPENDED,
+            'status'   => AgreementStatus::SUSPENDED,
             'metadata' => [
                 'suspension' => [
                     'suspended_at' => now()->toIso8601String(),
@@ -124,29 +183,56 @@ class ArticleServiceStatusFactory extends Factory
     }
 
     /**
-     * Indicate that the service is cancelled.
+     * Indicate that the agreement sits in the transient guarantee window
+     * (ADR-015 §3.4, slice 2): the refund claim is open, the agreement is
+     * neither billed nor closed until the consumer confirms (or rejects) the
+     * refund.
+     */
+    public function guarantee(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => AgreementStatus::GUARANTEE,
+        ]);
+    }
+
+    /**
+     * Indicate that the service is cancelled — ALIGNED to the close/suspend
+     * semantics (ADR-014 Enmienda 1, third replica site): the agreement is
+     * CLOSED with the seeded `legacy_cancellation` cause, the original
+     * `CancellationType` survives in the cancellation metadata, and the
+     * legacy refund flag rides the same policy as the shim (`NOTICE_PERIOD`
+     * requires refund).
      */
     public function cancelled(?CancellationType $type = null): static
     {
         $type = $type ?? CancellationType::IMMEDIATE;
 
         return $this->state(fn (array $attributes) => [
-            'status'                    => ServiceStatus::CANCELLED,
-            'cancellation_type'         => $type,
+            'status'                    => AgreementStatus::CLOSED,
+            'closure_cause_id'          => AgreementCause::findActive(AgreementCause::SCOPE_CLOSED, 'legacy_cancellation')->id,
             'cancellation_requested_at' => now()->subDays(5),
             'cancellation_effective_at' => now(),
             'refund_unused'             => $type->requiresRefund(),
             'next_billing_date'         => null,
+            'metadata'                  => [
+                'cancellation' => [
+                    'type'         => $type->value,
+                    'requested_at' => now()->subDays(5)->toIso8601String(),
+                ],
+            ],
         ]);
     }
 
     /**
-     * Indicate that the service is expired.
+     * Indicate that the service is expired — ALIGNED to the §4.2 rewire:
+     * expiry CLOSES the agreement with the seeded `fulfilment` cause (the
+     * retired EXPIRED state is gone).
      */
     public function expired(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status'            => ServiceStatus::EXPIRED,
+            'status'            => AgreementStatus::CLOSED,
+            'closure_cause_id'  => AgreementCause::findActive(AgreementCause::SCOPE_CLOSED, 'fulfilment')->id,
             'expires_at'        => now()->subDays(1),
             'next_billing_date' => null,
         ]);
@@ -158,7 +244,7 @@ class ArticleServiceStatusFactory extends Factory
     public function dueForBilling(): static
     {
         return $this->state(fn (array $attributes) => [
-            'status'            => ServiceStatus::ACTIVE,
+            'status'            => AgreementStatus::ACTIVE,
             'next_billing_date' => now()->subDay(),
         ]);
     }
@@ -194,16 +280,21 @@ class ArticleServiceStatusFactory extends Factory
     }
 
     /**
-     * Set for a specific article with frequency.
+     * Set for a specific article with cadence. The `BillingFrequency`
+     * parameter is kept until the shim slice (ADR-015 §5) and bridges through
+     * the §4.1 mapping; the modality follows the cadence domain, as in
+     * `frequency()`.
      */
     public function forArticle(Article $article, ?BillingFrequency $frequency = null): static
     {
         $frequency = $frequency                        ?? BillingFrequency::MONTHLY;
         $price     = $article->getPriceFor($frequency) ?? 2900;
+        $interval  = BillingInterval::fromLegacyFrequency($frequency->value);
 
         return $this->state(fn (array $attributes) => [
             'article_id'        => $article->id,
-            'billing_frequency' => $frequency,
+            ...CadenceBridge::cadenceAttributes($frequency),
+            'modality'          => $interval === null ? AgreementModality::ONE_TIME : AgreementModality::RECURRING,
             'effective_price'   => FixedDecimal::ofUnscaled((int) $price, 2),
         ]);
     }
@@ -246,7 +337,8 @@ class ArticleServiceStatusFactory extends Factory
         return $this->state(fn (array $attributes) => [
             'instance_identifier' => $domainName,
             'instance_name'       => "Domain {$domainName}",
-            'billing_frequency'   => BillingFrequency::YEARLY, // Domains are typically yearly
+            // Domains are typically yearly (legacy YEARLY → year/1).
+            ...CadenceBridge::cadenceAttributes(BillingFrequency::YEARLY),
             'instance_data'       => [
                 'domain' => [
                     'name'           => $domainName,

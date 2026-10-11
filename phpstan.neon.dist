@@ -57,6 +57,54 @@ parameters:
         -
             identifier: argument.templateType
             path: src/Services/CacheService.php
+        # T7 deprecated-shim layer (ADR-015 §5): the shim layer and the legacy
+        # bridge USE the retired symbols by design — `BillingInterval` bridges
+        # from them, the Article transitional signatures keep them, and the
+        # cancel() shims dispatch the legacy event. These usages die with the
+        # shims in 8.0. NOT baseline entries — curated, path-scoped, removed
+        # with the shim removal.
+        -
+            identifier: classConstant.deprecatedEnum
+            paths:
+                - src/ValueObjects/BillingInterval.php
+                - src/Models/Article.php
+        -
+            identifier: property.deprecatedEnum
+            paths:
+                - src/ValueObjects/BillingInterval.php
+                - src/Models/Article.php
+        -
+            identifier: parameter.deprecatedEnum
+            paths:
+                - src/ValueObjects/BillingInterval.php
+                - src/Models/Article.php
+        -
+            identifier: return.deprecatedEnum
+            paths:
+                - src/ValueObjects/BillingInterval.php
+                - src/Models/Article.php
+        # Package-internal callers of deprecated delegating paths that keep
+        # working until the 8.0 shim removal (ADR-015 §5):
+        #   - ProcessPendingCancellations (larabill:process-cancellations)
+        #     still calls the subsumed processPendingCancellations();
+        #   - RecurringBillingService still delegates scheduling through
+        #     ArticleServiceStatus::calculateNextBillingDate().
+        # Migrating both to the new-model entry points is part of the 8.0
+        # removal, not of the shim slice.
+        -
+            identifier: method.deprecated
+            paths:
+                - src/Actions/ProcessPendingCancellations.php
+                - src/Services/RecurringBillingService.php
+        # The cancel() shim re-dispatches the legacy @api ServiceCancelled
+        # event (including deferred materialisation) so existing listeners
+        # keep receiving their cancellations — gate round 10 P1.
+        -
+            identifier: staticMethod.deprecatedClass
+            path: src/Services/ServiceLifecycleService.php
+        -
+            identifier: staticMethod.deprecatedEnum
+            path: src/Services/ServiceLifecycleService.php
 
     # Basic strict rules that are supported
     checkMissingCallableSignature: true

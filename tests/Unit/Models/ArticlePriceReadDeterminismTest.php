@@ -30,7 +30,8 @@ it('returns the most recent price when legacy duplicates exist', function () {
     foreach ($rows as $row) {
         DB::table('article_prices')->insert([
             'article_id'        => $article->id,
-            'billing_frequency' => BillingFrequency::MONTHLY->value,
+            'billing_unit'      => 'month',
+            'billing_quantity'  => 1,
             'price'             => $row['price'],
             'valid_from'        => $row['valid_from'],
             'valid_to'          => null,

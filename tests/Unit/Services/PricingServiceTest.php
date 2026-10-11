@@ -255,7 +255,7 @@ it('creates pricing details for service', function () {
     $service = ArticleServiceStatus::factory()->create([
         'customer_id'       => $customer->id,
         'article_id'        => $article->id,
-        'billing_frequency' => BillingFrequency::MONTHLY,
+        'billing_unit'      => 'month', 'billing_quantity' => 1,
     ]);
 
     $details = $this->service->createPricingDetailsForService($service);

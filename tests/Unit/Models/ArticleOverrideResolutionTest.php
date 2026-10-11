@@ -238,7 +238,7 @@ it('freezes the deterministic winner into the contract on revision', function ()
     $service = ArticleServiceStatus::factory()->create([
         'customer_id'       => $this->customer->id,
         'article_id'        => $article->id,
-        'billing_frequency' => BillingFrequency::MONTHLY,
+        'billing_unit'      => 'month', 'billing_quantity' => 1,
         'effective_price'   => cents(2900),
     ]);
 

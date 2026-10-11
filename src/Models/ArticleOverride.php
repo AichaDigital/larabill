@@ -299,9 +299,16 @@ class ArticleOverride extends Model
     /**
      * Get the discount amount compared to base price.
      * Note: Requires a billing frequency to determine the base price.
+     *
+     * @deprecated since 7.0.0, resolve the base price over `BillingInterval` (`Article::getPriceForInterval()` / `PricingService::getEffectivePriceForInterval()`) and subtract `custom_price` — see UPGRADE-7.0.md
      */
     public function getDiscountAmount(BillingFrequency $frequency): float
     {
+        $this->triggerLegacyDeprecation(
+            'ArticleOverride::getDiscountAmount()',
+            'the interval-keyed reads (`Article::getPriceForInterval()` + `custom_price`)',
+        );
+
         $basePrice = $this->article->getPriceFor($frequency) ?? 0.0;
 
         // getPriceFor() reads the raw base-100 cents column; custom_price is a
@@ -312,9 +319,16 @@ class ArticleOverride extends Model
     /**
      * Get the discount percentage compared to base price.
      * Note: Requires a billing frequency to determine the base price.
+     *
+     * @deprecated since 7.0.0, resolve the base price over `BillingInterval` (`Article::getPriceForInterval()` / `PricingService::getEffectivePriceForInterval()`) and subtract `custom_price` — see UPGRADE-7.0.md
      */
     public function getDiscountPercentage(BillingFrequency $frequency): int
     {
+        $this->triggerLegacyDeprecation(
+            'ArticleOverride::getDiscountPercentage()',
+            'the interval-keyed reads (`Article::getPriceForInterval()` + `custom_price`)',
+        );
+
         $basePrice = $this->article->getPriceFor($frequency);
 
         if ($basePrice === null || $basePrice === 0.0 || $basePrice === 0) {
@@ -330,5 +344,20 @@ class ArticleOverride extends Model
     protected static function newFactory(): ArticleOverrideFactory
     {
         return ArticleOverrideFactory::new();
+    }
+
+    /**
+     * ONE legacy-deprecation emitter for this class's shim paths (ADR-015
+     * §5): every delegating public path emits the same-shaped
+     * `E_USER_DEPRECATED` through here. Internal code never calls legacy
+     * paths, so nothing internal emits.
+     */
+    private function triggerLegacyDeprecation(string $method, string $replacement): void
+    {
+        trigger_error(sprintf(
+            '%s is deprecated since larabill 7.0.0, use %s instead — see UPGRADE-7.0.md.',
+            $method,
+            $replacement,
+        ), E_USER_DEPRECATED);
     }
 }

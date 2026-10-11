@@ -122,10 +122,11 @@ it('serialises concurrent first writes so exactly one active price survives', fu
     // Re-read committed state on a fresh connection.
     DB::purge('testing');
 
-    // The invariant: exactly ONE active price for that (article, frequency).
+    // The invariant: exactly ONE active price for that (article, cadence).
     expect(
         ArticlePrice::where('article_id', $article->id)
-            ->where('billing_frequency', BillingFrequency::MONTHLY)
+            ->where('billing_unit', 'month')
+            ->where('billing_quantity', 1)
             ->where('is_active', true)
             ->count()
     )->toBe(1);
