@@ -198,7 +198,7 @@
                     "variadic": false
                 }
             ],
-            "returnType": "self",
+            "returnType": "AichaDigital\\Larabill\\Models\\UserTaxProfile",
             "static": true
         },
         "getActiveForOwner": {
@@ -211,7 +211,7 @@
                     "variadic": false
                 }
             ],
-            "returnType": "?self",
+            "returnType": "?AichaDigital\\Larabill\\Models\\UserTaxProfile",
             "static": true
         },
         "getFullAddressAttribute": {
@@ -243,7 +243,7 @@
                     "variadic": false
                 }
             ],
-            "returnType": "?self",
+            "returnType": "?AichaDigital\\Larabill\\Models\\UserTaxProfile",
             "static": true
         },
         "getValidityRangeAttribute": {

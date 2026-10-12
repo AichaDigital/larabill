@@ -167,7 +167,7 @@
                     "variadic": false
                 }
             ],
-            "returnType": "self",
+            "returnType": "AichaDigital\\Larabill\\Models\\EuSalesThreshold",
             "static": false
         },
         "addSalesAmount": {
@@ -185,7 +185,7 @@
                     "variadic": false
                 }
             ],
-            "returnType": "self",
+            "returnType": "AichaDigital\\Larabill\\Models\\EuSalesThreshold",
             "static": false
         },
         "addSalesForCountry": {
@@ -203,7 +203,7 @@
                     "variadic": false
                 }
             ],
-            "returnType": "self",
+            "returnType": "AichaDigital\\Larabill\\Models\\EuSalesThreshold",
             "static": false
         },
         "calculateTotal": {
@@ -262,7 +262,7 @@
                     "default": "NULL"
                 }
             ],
-            "returnType": "?self",
+            "returnType": "?AichaDigital\\Larabill\\Models\\EuSalesThreshold",
             "static": true
         },
         "getBreakdownByCountryAttribute": {
@@ -357,7 +357,7 @@
                     "default": "NULL"
                 }
             ],
-            "returnType": "self",
+            "returnType": "AichaDigital\\Larabill\\Models\\EuSalesThreshold",
             "static": true
         },
         "getRemainingThresholdAmount": {
@@ -502,14 +502,14 @@
             "api": false,
             "deprecated": false,
             "parameters": [],
-            "returnType": "self",
+            "returnType": "AichaDigital\\Larabill\\Models\\EuSalesThreshold",
             "static": false
         },
         "markThresholdExceeded": {
             "api": false,
             "deprecated": false,
             "parameters": [],
-            "returnType": "self",
+            "returnType": "AichaDigital\\Larabill\\Models\\EuSalesThreshold",
             "static": false
         },
         "resetForNewYear": {
@@ -522,14 +522,14 @@
                     "variadic": false
                 }
             ],
-            "returnType": "self",
+            "returnType": "AichaDigital\\Larabill\\Models\\EuSalesThreshold",
             "static": false
         },
         "resetSalesAmounts": {
             "api": false,
             "deprecated": false,
             "parameters": [],
-            "returnType": "self",
+            "returnType": "AichaDigital\\Larabill\\Models\\EuSalesThreshold",
             "static": false
         }
     }
