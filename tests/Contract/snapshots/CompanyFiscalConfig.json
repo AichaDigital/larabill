@@ -135,14 +135,14 @@
                     "variadic": false
                 }
             ],
-            "returnType": "self",
+            "returnType": "AichaDigital\\Larabill\\Models\\CompanyFiscalConfig",
             "static": true
         },
         "getActive": {
             "api": false,
             "deprecated": false,
             "parameters": [],
-            "returnType": "?self",
+            "returnType": "?AichaDigital\\Larabill\\Models\\CompanyFiscalConfig",
             "static": true
         },
         "getFullAddressAttribute": {
@@ -169,7 +169,7 @@
                     "variadic": false
                 }
             ],
-            "returnType": "?self",
+            "returnType": "?AichaDigital\\Larabill\\Models\\CompanyFiscalConfig",
             "static": true
         },
         "getValidityRangeAttribute": {

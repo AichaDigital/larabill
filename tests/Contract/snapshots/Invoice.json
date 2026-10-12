@@ -253,7 +253,7 @@
             "api": false,
             "deprecated": false,
             "parameters": [],
-            "returnType": "self",
+            "returnType": "AichaDigital\\Larabill\\Models\\Invoice",
             "static": false
         },
         "casts": {

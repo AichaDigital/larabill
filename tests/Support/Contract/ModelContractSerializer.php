@@ -325,10 +325,10 @@ final class ModelContractSerializer
             'api'        => (bool) preg_match('/@api\b/', $docComment),
             'deprecated' => (bool) preg_match('/@deprecated\b/', $docComment),
             'parameters' => array_map(
-                fn (ReflectionParameter $parameter): array => $this->describeParameter($parameter),
+                fn (ReflectionParameter $parameter): array => $this->describeParameter($parameter, $method->getDeclaringClass()),
                 $method->getParameters(),
             ),
-            'returnType' => $this->typeToString($method->getReturnType()),
+            'returnType' => $this->typeToString($method->getReturnType(), $method->getDeclaringClass()),
             'static'     => $method->isStatic(),
         ];
     }
@@ -336,11 +336,11 @@ final class ModelContractSerializer
     /**
      * @return array<string, mixed>
      */
-    private function describeParameter(ReflectionParameter $parameter): array
+    private function describeParameter(ReflectionParameter $parameter, ?ReflectionClass $declaring = null): array
     {
         $described = [
             'name'     => $parameter->getName(),
-            'type'     => $this->typeToString($parameter->getType()),
+            'type'     => $this->typeToString($parameter->getType(), $declaring),
             'variadic' => $parameter->isVariadic(),
         ];
 
@@ -356,8 +356,16 @@ final class ModelContractSerializer
     /**
      * Hand-rolled type stringification: `(string) ReflectionType` output has
      * changed across PHP versions, so it can never feed a golden master.
+     *
+     * AID-1616: `ReflectionNamedType::getName()` for `self`/`parent`/`static`
+     * ALSO changed across PHP versions — PHP ≤ 8.4 returns the bare keyword,
+     * PHP ≥ 8.5 returns the resolved class name. Normalise to the RESOLVED
+     * class name in every version so the golden master pins the declaration,
+     * not the PHP runtime that happens to serialise it. `self` resolves to
+     * the method's DECLARING class (where the return type is written), which
+     * is exactly what PHP ≥ 8.5 reports.
      */
-    private function typeToString(?ReflectionType $type): ?string
+    private function typeToString(?ReflectionType $type, ?ReflectionClass $declaring = null): ?string
     {
         if ($type === null) {
             return null;
@@ -365,6 +373,13 @@ final class ModelContractSerializer
 
         if ($type instanceof ReflectionNamedType) {
             $name = $type->getName();
+
+            if ($declaring !== null && in_array($name, ['self', 'static', 'parent'], true)) {
+                $name = match ($name) {
+                    'parent' => $declaring->getParentClass() !== false ? $declaring->getParentClass()->getName() : $declaring->getName(),
+                    default  => $declaring->getName(),
+                };
+            }
 
             if ($type->allowsNull() && $name !== 'null' && $name !== 'mixed') {
                 return '?'.$name;
