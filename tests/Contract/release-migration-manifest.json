@@ -1,6 +1,6 @@
 {
-    "release": "7.0.0",
-    "upgrade_base": "6.14.2",
+    "release": "7.1.0",
+    "upgrade_base": "7.0.0",
     "migrations": [
         {
             "name": "2024_12_01_000000_create_tax_rates_table.php",
@@ -185,42 +185,42 @@
         {
             "name": "2026_10_09_000001_rekey_article_prices_cadence.php",
             "sha256": "c598a972b361d3061fd91feb9c006477ed739a47d1f02afed9f3b32325417bef",
-            "in_base": false
+            "in_base": true
         },
         {
             "name": "2026_10_09_000002_rekey_article_service_status_cadence.php",
             "sha256": "49e9d401b3eb9f839eaa183a9245df539aeb0e9431ea74e50b8d98576ca4d577",
-            "in_base": false
+            "in_base": true
         },
         {
             "name": "2026_10_09_000003_create_agreement_causes.php",
             "sha256": "5b9cadbfc3f34f7c6257ad76154bde3ebe9160562bcaf75eec7c8fcf5aae3968",
-            "in_base": false
+            "in_base": true
         },
         {
             "name": "2026_10_09_000004_add_closure_cause_id_to_article_service_status_table.php",
             "sha256": "0db7c52cd7366fcf2a07dfe89f2a1513d3f65ef618fb9164a868184d74f0e008",
-            "in_base": false
+            "in_base": true
         },
         {
             "name": "2026_10_09_000005_apply_agreement_status_program.php",
             "sha256": "97f96700b1780c27c0b857fd9899f097f5f519d731a8a2caaf4722f9bd929286",
-            "in_base": false
+            "in_base": true
         },
         {
             "name": "2026_10_09_000006_add_modality_to_article_service_status_table.php",
             "sha256": "11df7955736619aa9542c00206c72912b3857396cad79066d7c2fa6f7cebf2c0",
-            "in_base": false
+            "in_base": true
         },
         {
             "name": "2026_10_09_000007_add_guarantee_capability_and_registry.php",
             "sha256": "39b7b5c3a2211ab343c5f25d8271903f0a0b88bfa1e1ac73206970cac4e5dafd",
-            "in_base": false
+            "in_base": true
         },
         {
             "name": "2026_10_09_000008_add_import_support_columns.php",
             "sha256": "10c30c8c0dd94d376dc64893f26dfe0b6bed219a3b79fb652fe85679ddb38d7a",
-            "in_base": false
+            "in_base": true
         },
         {
             "name": "2026_10_12_000001_drop_customer_article_instance_unique.php",

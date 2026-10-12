@@ -2,7 +2,7 @@
 
 All notable changes to `larabill` will be documented in this file.
 
-## [Unreleased]
+## [7.1.0] - 2026-10-12
 
 > **Ships migrations: yes** — upgrade with the standard ritual: `composer update aichadigital/larabill` + `php artisan larabill:install` (idempotent, publishes only the ONE new migration 048) + `php artisan migrate`. **`migrate:fresh` is never part of the path.** The migration is provably data-safe DDL (AID-398): it only relaxes a constraint — no row is rejected, no data is transformed, no backfill or preflight applies.
 
