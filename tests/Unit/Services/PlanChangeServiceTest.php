@@ -229,6 +229,30 @@ describe('eligibility (ADR-015 §3.5, gate rounds 6 P2 / 7 P1 #4 / 10 P2)', func
     });
 });
 
+describe('instance re-contracting (AID-1611)', function () {
+    it('returns to the original plan (A → B → A): the closed first agreement does not block the round trip', function () {
+        // The successor copies the predecessor's `instance_identifier`
+        // (createSuccessor()), so the THIRD agreement (article A, same
+        // instance) collides with the FIRST (closed) under the retired
+        // `customer_article_instance_unique` index.
+        $agreement = planChangeAgreement(['instance_identifier' => 'roundtrip.example.test']);
+        $articleA  = $agreement->article;
+        $planB     = planChangeNewPlan();
+
+        $successorB = $this->service->changePlan($agreement, $planB, new BillingInterval('month', 1));
+        $successorA = $this->service->changePlan($successorB, $articleA, new BillingInterval('month', 1));
+
+        expect($successorB)->toBeInstanceOf(ArticleServiceStatus::class)
+            ->and($successorA)->toBeInstanceOf(ArticleServiceStatus::class)
+            ->and($successorA->article_id)->toBe($articleA->id)
+            ->and($successorA->instance_identifier)->toBe('roundtrip.example.test')
+            ->and($successorA->metadata['plan_change']['predecessor_agreement_id'])->toBe($successorB->id)
+            ->and(ArticleServiceStatus::query()
+                ->where('instance_identifier', 'roundtrip.example.test')
+                ->count())->toBe(3);
+    });
+});
+
 describe('fiscal artifact (ADR-014:43-46,74-76 — the abono is an ordinary F1, NOT an R1)', function () {
     it('issues the liquidation as an ordinary invoice with a negative first line and rectifies_invoice_id NULL', function () {
         $customer  = TestUser::factory()->create();

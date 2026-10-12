@@ -38,7 +38,12 @@ describe('Larabill fresh install on MySQL — UUID-first contract (ADR-006)', fu
         expect($this->getUniqueIndexColumns('article_overrides', 'customer_article_override_unique'))
             ->toBe(['customer_id', 'article_id', 'valid_from']);
 
+        // AID-1611: the instance identifier is a LABEL, not an identity — the
+        // retired `customer_article_instance_unique` constraint is gone and a
+        // PLAIN composite index keeps the lookups fast.
         expect($this->getUniqueIndexColumns('article_service_status', 'customer_article_instance_unique'))
+            ->toBe([])
+            ->and($this->getIndexColumns('article_service_status', 'customer_article_instance_index'))
             ->toBe(['customer_id', 'article_id', 'instance_identifier']);
 
         // ─────────────────────────────────────────────────────────────────────

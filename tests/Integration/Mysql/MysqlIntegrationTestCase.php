@@ -251,6 +251,24 @@ abstract class MysqlIntegrationTestCase extends Orchestra
     }
 
     /**
+     * Columns of a NON-unique index, in order (AID-1611 — the plain composite
+     * replacement of the retired instance-identity UNIQUE).
+     *
+     * @return array<int, string>
+     */
+    protected function getIndexColumns(string $table, string $indexName): array
+    {
+        $rows = DB::select(
+            'SELECT COLUMN_NAME AS name FROM information_schema.STATISTICS
+             WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND INDEX_NAME = ? AND NON_UNIQUE = 1
+             ORDER BY SEQ_IN_INDEX ASC',
+            [env('LARABILL_TEST_MYSQL_DATABASE'), $table, $indexName]
+        );
+
+        return array_map(fn (object $r): string => $r->name, $rows);
+    }
+
+    /**
      * @return array<int, string>
      */
     protected function getUniqueIndexColumns(string $table, string $indexName): array

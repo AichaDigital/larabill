@@ -221,6 +221,11 @@
             "name": "2026_10_09_000008_add_import_support_columns.php",
             "sha256": "10c30c8c0dd94d376dc64893f26dfe0b6bed219a3b79fb652fe85679ddb38d7a",
             "in_base": false
+        },
+        {
+            "name": "2026_10_12_000001_drop_customer_article_instance_unique.php",
+            "sha256": "955ca287351557ded43e7479b50505057d9e8b777a8d0db4a7a1f72c013c1911",
+            "in_base": false
         }
     ]
 }

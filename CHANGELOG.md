@@ -4,6 +4,12 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+> **Ships migrations: yes** — upgrade with the standard ritual: `composer update aichadigital/larabill` + `php artisan larabill:install` (idempotent, publishes only the ONE new migration 048) + `php artisan migrate`. **`migrate:fresh` is never part of the path.** The migration is provably data-safe DDL (AID-398): it only relaxes a constraint — no row is rejected, no data is transformed, no backfill or preflight applies.
+
+### Changed
+
+- **The instance identifier is a label, not an identity (AID-1611).** **Old:** `article_service_status` enforced `customer_article_instance_unique` on `(customer_id, article_id, instance_identifier)` across the agreement's WHOLE lifetime — and since `CLOSED` is terminal (ADR-015 §3.1), a closed agreement permanently blocked re-contracting the same resource: a re-hire, a rescue after the low, the plan change A → B → A (`PlanChangeService::createSuccessor()` re-contracts the same instance name) and the WHMCS import (which must bring several same-named services, even live at once). **New:** the UNIQUE constraint is DROPPED (migration 048) and a PLAIN composite index (`customer_article_instance_index`, same columns) keeps the lookups fast. A contract's identity is its row id — and, for imported agreements, the UNIQUE `origin_key` (migration 047), the importer's real idempotency key. **Behaviour note:** a consumer that relied on the duplicate `QueryException` as a duplicate detector stops seeing it — enforcing "one live contract per resource" is the vertical's/consumer's rule, not the package's (operator decision 2026-10-11, option A). No config default is touched; `origin_key`, the terminal `CLOSED` state and the plain `instance_identifier` index are untouched.
+
 ## [7.0.0] - 2026-10-11
 
 > ⚠️ **BREAKING RELEASE — read [UPGRADE-7.0.md](UPGRADE-7.0.md) before upgrading.** This major reshapes the agreement model (ADR-015): cadence becomes a unit + quantity model, service states become a five-state lifecycle with a table-backed cause vocabulary, agreements gain modality/renewal/accounting attributes, and the package gains a guarantee refund window, a configurable plan-change policy and import-support columns. Your 6.x application code keeps working through the deprecated shim layer documented below and in UPGRADE-7.0.md — the shims are removed in **8.0**.
