@@ -87,6 +87,7 @@ class LarabillInstallCommand extends Command
         '046' => 'add_guarantee_capability_and_registry',
         // === IMPORT SUPPORT (ADR-015 / AID-895) — invoices.is_historical + agreement origin_key UNIQUE ===
         '047' => 'add_import_support_columns',
+        '048' => 'drop_customer_article_instance_unique',
     ];
 
     public function handle(): int

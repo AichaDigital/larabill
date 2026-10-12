@@ -85,8 +85,9 @@ describe('larabill:install — production install path on MySQL (AID-287)', func
         // AID-953 adds the modality column, then the guarantee capability +
         // snapshot + registry + settlement key; AID-895 adds the import
         // support columns (invoices.is_historical, article_service_status
-        // .origin_key UNIQUE).
-        expect($this->appliedMigrationCount())->toBe(44);
+        // .origin_key UNIQUE); AID-1611 drops the instance-identity UNIQUE
+        // and adds its plain composite replacement.
+        expect($this->appliedMigrationCount())->toBe(45);
 
         // The package defines inter-table FK constraints (e.g. invoice_items →
         // invoices, tax_group_tax_rate → tax_groups/tax_rates). They could only
