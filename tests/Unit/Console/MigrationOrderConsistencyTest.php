@@ -42,7 +42,18 @@ function larabillTimestampedPhp(string $name): ?string
 {
     $matches = glob(larabillMigrationsDir()."/[0-9]*_{$name}.php") ?: [];
 
-    return $matches[0] ?? null;
+    if ($matches !== []) {
+        return $matches[0];
+    }
+
+    // AID-1617: some shipped migrations carry a filename suffix after the
+    // $migrationOrder name (e.g. `add_modality_to_article_service_status` →
+    // `..._add_modality_to_article_service_status_table.php`). Fall back to a
+    // PREFIX match, but ONLY when it is unambiguous — two candidate sources
+    // resolve to nothing rather than to a guess.
+    $loose = glob(larabillMigrationsDir()."/[0-9]*_{$name}*.php") ?: [];
+
+    return count($loose) === 1 ? $loose[0] : null;
 }
 
 // Stubs that intentionally modify the CONSUMER's users table: they have a `.php.stub`
@@ -101,12 +112,21 @@ it('keeps each table .php.stub byte-identical to its .php (ADR-007 — run bin/s
         $stub = larabillMigrationsDir()."/{$name}.php.stub";
         $php  = larabillTimestampedPhp($name);
 
-        if ($php === null || ! file_exists($stub)) {
-            continue; // existence is covered by the other tests
+        if (! file_exists($stub)) {
+            continue; // missing stubs are covered by the first test
         }
 
         if (in_array($name, LARABILL_KNOWN_SCHEMA_DIVERGENCES, true)) {
             continue; // must stay empty — see the constant's note
+        }
+
+        // AID-1617: an unresolvable .php source must fail LOUD. The silent
+        // skip that lived here hid `add_modality_to_article_service_status`
+        // from byte-identity verification for its entire shipped life.
+        if ($php === null) {
+            $drift[] = "{$name} (no resolvable timestamped .php source)";
+
+            continue;
         }
 
         // The `.php.stub` is a derived artifact of its timestamped `.php` (ADR-007):

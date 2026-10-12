@@ -52,7 +52,18 @@ foreach ($stubs as $stub) {
     }
 
     $matches = glob($migrationsDir."/[0-9]*_{$name}.php") ?: [];
-    $php     = $matches[0] ?? null;
+
+    if ($matches !== []) {
+        $php = $matches[0];
+    } else {
+        // AID-1617: some shipped migrations carry a filename suffix after the
+        // $migrationOrder name (e.g. `add_modality_to_article_service_status`
+        // → `..._add_modality_to_article_service_status_table.php`). Fall back
+        // to a PREFIX match, but ONLY when it is unambiguous — two candidate
+        // sources resolve to nothing rather than to a guess.
+        $loose = glob($migrationsDir."/[0-9]*_{$name}*.php") ?: [];
+        $php   = count($loose) === 1 ? $loose[0] : null;
+    }
 
     if ($php === null) {
         $missing[] = $name;
