@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use AichaDigital\Larabill\Enums\ItemType;
 use AichaDigital\Larabill\Models\Article;
+use AichaDigital\Larabill\Tests\Support\UpgradePath\ManifestBase;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
@@ -60,10 +61,11 @@ beforeEach(function () {
     $baseDir       = sys_get_temp_dir().'/larabill-rekey-base-'.Str::random(8);
     File::ensureDirectoryExists($baseDir);
 
-    foreach ($manifest['migrations'] as $entry) {
-        if ($entry['in_base']) {
-            copy("{$migrationsDir}/{$entry['name']}", "{$baseDir}/{$entry['name']}");
-        }
+    // AID-1619: slice base = migrations ordered BEFORE the slice (the real
+    // "just before" state of a sequential consumer), never the manifest's
+    // current `in_base` set — release stamps flip slices into the base.
+    foreach (ManifestBase::migrationsBefore('rekey_article_prices_cadence') as $name) {
+        copy("{$migrationsDir}/{$name}", "{$baseDir}/{$name}");
     }
 
     $this->createUsersTable();

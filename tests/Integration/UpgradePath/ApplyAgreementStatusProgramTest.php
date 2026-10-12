@@ -1,6 +1,7 @@
 <?php
 
 use AichaDigital\Larabill\Enums\ItemType;
+use AichaDigital\Larabill\Tests\Support\UpgradePath\ManifestBase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
@@ -61,15 +62,12 @@ beforeEach(function () {
     $baseDir       = sys_get_temp_dir().'/larabill-status-program-base-'.Str::random(8);
     File::ensureDirectoryExists($baseDir);
 
-    foreach ($manifest['migrations'] as $entry) {
-        $inSliceA = in_array($entry['name'], [
-            '2026_10_09_000003_create_agreement_causes.php',
-            '2026_10_09_000004_add_closure_cause_id_to_article_service_status_table.php',
-        ], true);
-
-        if ($entry['in_base'] || $inSliceA) {
-            copy("{$migrationsDir}/{$entry['name']}", "{$baseDir}/{$entry['name']}");
-        }
+    // AID-1619: slice base = migrations ordered BEFORE the slice (includes
+    // the cadence re-key pair 040/041 and the cause vocabulary 042/043),
+    // never the manifest's current `in_base` set — release stamps flip
+    // slices into the base.
+    foreach (ManifestBase::migrationsBefore('apply_agreement_status_program') as $name) {
+        copy("{$migrationsDir}/{$name}", "{$baseDir}/{$name}");
     }
 
     $this->createUsersTable();
@@ -124,7 +122,10 @@ function statusProgramSeedRow(string $instance, string $status, array $overrides
         'cancellation_requested_at' => null,
         'cancellation_effective_at' => null,
         'refund_unused'             => false,
-        'billing_frequency'         => 3, // monthly — a real 6.x row always carried a cadence
+        'billing_unit'              => 'month', 'billing_quantity' => 1,
+        // AID-1619: the base now runs BEFORE the status program, which means
+        // the cadence re-key (041) has already applied — the row carries the
+        // unit+quantity shape, not the legacy billing_frequency int.
         'effective_price'           => 2900,
         'instance_data'             => json_encode(['marker' => 'keep-me']),
         'metadata'                  => json_encode(['marker' => 'keep-me']),

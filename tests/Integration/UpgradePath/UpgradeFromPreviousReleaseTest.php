@@ -102,10 +102,23 @@ it('upgrades a populated previous-release database to HEAD preserving consumer d
         'is_active' => true, 'created_at' => $now, 'updated_at' => $now,
     ]);
 
+    // AID-1619: the seeds follow the shape of the CURRENT manifest base. A
+    // v6.14.2 base carries the legacy `billing_frequency` int; a v7.0.0-or-
+    // later base carries the unit+quantity pair (the §4.1 mapping the 7.0.0
+    // stamp materialised). ONE_TIME is a NULL cadence in both worlds.
+    $legacyCadence = Schema::hasColumn('article_prices', 'billing_frequency');
+    $cadenceShapes = $legacyCadence
+        ? [['billing_frequency' => 0], ['billing_frequency' => 3], ['billing_frequency' => 0]]
+        : [
+            ['billing_unit' => null, 'billing_quantity' => null],
+            ['billing_unit' => 'year', 'billing_quantity' => 3],
+            ['billing_unit' => null, 'billing_quantity' => null],
+        ];
+
     DB::table('article_prices')->insert([
-        ['article_id' => $articleId, 'billing_frequency' => 0, 'price' => 2500, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
-        ['article_id' => $articleId, 'billing_frequency' => 3, 'price' => 900, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
-        ['article_id' => $secondArticleId, 'billing_frequency' => 0, 'price' => 1500, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now],
+        array_merge($cadenceShapes[0], ['article_id' => $articleId, 'price' => 2500, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now]),
+        array_merge($cadenceShapes[1], ['article_id' => $articleId, 'price' => 900, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now]),
+        array_merge($cadenceShapes[2], ['article_id' => $secondArticleId, 'price' => 1500, 'is_active' => true, 'created_at' => $now, 'updated_at' => $now]),
     ]);
 
     $issuerSnapshotPlaintext = json_encode(['business_name' => 'Acme SL', 'tax_id' => 'ESB12345678']);
