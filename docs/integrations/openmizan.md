@@ -2,7 +2,7 @@
 
 - **Status:** contract principles decided; the exact API payload is fixed by the openmizan spec for AID-1607 and this document is updated when that spec is approved.
 - **Tracking:** larabill AID-1609; openmizan AID-1607 (issued documents over the API), AID-1578 (API publication), AID-1608 (collections).
-- **Last reviewed:** 2026-10-11, against larabill `origin/main` `cb8e856` and clientes `0c3aead`.
+- **Last reviewed:** 2026-10-12, against larabill `origin/main` `c72de2e` and clientes `0c3aead` (citation audit: art. 6 RD 1619/2012 checked against the BOE consolidated text).
 
 This document is the communication channel between larabill and openmizan. It states what openmizan will do with the invoices larabill issues, and what larabill has to make operational before a consumer (first one: Clientes) can feed openmizan in production.
 
@@ -18,7 +18,7 @@ This document is the communication channel between larabill and openmizan. It st
 - **Structured number.** Each issued invoice carries its series code (larabill's `prefix`), its numbering year (`fiscal_year`) and its integer correlative (`series_number`), plus the formatted number as printed on the invoice. openmizan never parses the formatted string; larabill's `InvoiceNumber` value object already exposes the three pieces.
 - **One series per document type.** Invoices and rectificatives live in separate series, as larabill already separates them.
 - **Strict sequence per series and year.** The next number accepted is exactly the last one recorded plus one (or the declared opening number when a series starts mid-year).
-- **Chronological consistency.** An issue date earlier than the previous number's issue date in the same series is rejected (art. 6 RD 1619/2012).
+- **Chronological consistency.** An issue date earlier than the previous number's issue date in the same series is rejected. The normative anchor for the numbering itself is art. 6.1.a) RD 1619/2012 — numbering within a series MUST be correlative (the RD does not literally mandate date ordering; that rule is openmizan's own acceptance check, consistent with correlative numbering and the VeriFactu registration practice).
 - **Sent at issuance, with the Verifactu data.** The issuer does not wait for the AEAT response. A record the AEAT rejects is fixed upstream by subsanación; a wrong invoice is fixed with a rectificative.
 - **Verifactu is per company and one-way.** Once the company is obliged, it stays obliged; an issued invoice without Verifactu data is rejected for an obliged company.
 - **Revenue account per line.** Each invoice line carries the revenue account code (group 7XX) chosen by the product configuration in the billing program. openmizan validates that the account exists; it does not choose it. Tax accounts are group 47XX.
