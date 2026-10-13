@@ -193,3 +193,63 @@ describe('BillingInterval::toLegacyFrequency — the reverse bridge (ADR-015, tr
         (new BillingInterval('month', 5))->toLegacyFrequency();
     })->throws(InvalidArgumentException::class);
 });
+
+describe('BillingInterval long-cadence invariance (AID-1613, year/4-10)', function () {
+    // The 7.0 domain admits years 1-10; the reference consumer (clientes,
+    // MR !336) imports 4-, 5- and 9-year domain records at their EXACT
+    // cadence. These pins are live contracts after the cutover: scheduling
+    // at N > 3 must behave exactly like scheduling at N <= 3.
+
+    it('adds N years exactly for every cadence in the long tail', function (int $quantity, string $expectedDate) {
+        $result = (new BillingInterval('year', $quantity))->addToDate(new Carbon('2026-03-15'));
+
+        expect($result->toDateString())->toBe($expectedDate);
+    })->with([
+        'year/4'  => [4, '2030-03-15'],
+        'year/5'  => [5, '2031-03-15'],
+        'year/6'  => [6, '2032-03-15'],
+        'year/7'  => [7, '2033-03-15'],
+        'year/8'  => [8, '2034-03-15'],
+        'year/9'  => [9, '2035-03-15'],
+        'year/10' => [10, '2036-03-15'],
+    ]);
+
+    it('round-trips add/subtract without drift across the long tail', function (int $quantity, Carbon $seed) {
+        $interval = new BillingInterval('year', $quantity);
+
+        $added        = $interval->addToDate($seed);
+        $roundTripped = $interval->subtractFromDate($added);
+
+        expect($roundTripped->toDateString())->toBe($seed->toDateString());
+    })->with([
+        // Leap-safe multipliers: 2024+4=2028 and 2024+8=2032 are leap years,
+        // so Feb 29 survives both legs (no overflow, exact identity).
+        'year/4 from a leap day'   => [4, new Carbon('2024-02-29')],
+        'year/8 from a leap day'   => [8, new Carbon('2024-02-29')],
+        'year/5 from Feb 28'       => [5, new Carbon('2026-02-28')],
+        'year/9 from Dec 31'       => [9, new Carbon('2026-12-31')],
+    ]);
+
+    it('overflows a leap seed symmetrically when the target year is not leap', function () {
+        // Same pinned engine semantics as the year/1 case above: a leap seed
+        // landing on a non-leap target overflows to Mar 1 on the way out, and
+        // the return leg comes back to Mar 1 — the round-trip through an
+        // overflow is NOT an identity, by design (documented asymmetry).
+        $interval = new BillingInterval('year', 10);
+
+        $added        = $interval->addToDate(new Carbon('2024-02-29'));
+        $roundTripped = $interval->subtractFromDate($added);
+
+        expect($added->toDateString())->toBe('2034-03-01')
+            ->and($roundTripped->toDateString())->toBe('2024-03-01');
+    });
+
+    it('labels every long cadence as a plural year phrase', function (int $quantity, string $label) {
+        expect((new BillingInterval('year', $quantity))->label())->toBe($label);
+    })->with([
+        'year/4'  => [4, '4 years'],
+        'year/5'  => [5, '5 years'],
+        'year/9'  => [9, '9 years'],
+        'year/10' => [10, '10 years'],
+    ]);
+});
