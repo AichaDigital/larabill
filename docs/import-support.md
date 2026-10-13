@@ -107,10 +107,32 @@ Source WHMCS billing cycles map deterministically:
 | `One Time` | NULL cadence + `one_time` modality |
 | `Free Account` | `non_billable` modality |
 
-**Unrepresentable source cadences stay BLOCKED**: the 15 long-period domain
-records and any unknown cycle string keep their original value (consumer
-side), appear as `unsupported` in the importer report, and are **never
-approximated** to a schedulable interval.
+**Long-period cycles are representable and are imported EXACT**: the 7.0
+cadence domain is months 1-12 / years 1-10 (`BillingInterval` validates it),
+so a 4-, 5- or 9-year period constructs exactly (`BillingInterval('year', 9)`).
+Larabill imposes NO import-time block on them and nothing in `src/` rejects a
+representable cadence: the reference consumer (`clientes`, MR !336) imports
+the 15 long-period domain records at their exact cadence plus `year/1..year/10`
+price rows — there is NO `unsupported` landing for representable cycles.
+Truly unknown cycle strings keep their original value (consumer side), appear
+as `unsupported` in the importer report, and are **never approximated** to a
+schedulable interval.
+
+> **AID-1613 re-adjudication (2026-10-12, operator decision — option B
+> without the mapping change; supersedes the 2026-10-11 option-A note):** the
+> original wording called long cycles «unrepresentable» (a fossil of the
+> legacy bridge, which tops at 3 years) and then «BLOCKED» (an import-time
+> decision). Both are retired — the block existed only in this document, never
+> in code. The one live hazard is the transitional legacy bridge
+> `BillingInterval::toLegacyFrequency()`, reachable only through
+> `Article::getAvailableFrequencies()` (no production caller in larabill or
+> in the reference consumer as of 2026-10-12): it fails loud for cadences
+> without a legacy equivalent (year/4-10). Per the operator's recommendation
+> (2026-10-12) it will be deprecated with the ADR-015 shim pattern
+> (`@deprecated` + `E_USER_*` notice, retired in 8.0). Scheduling at
+> year/4-10 is pinned by invariance tests (`addToDate`/`subtractFromDate`,
+> next-due computation, `processScheduledClosures`, `RecurringBillingService`)
+> — after the cutover these are live contracts.
 
 ## The metadata promise — a declared reading
 
