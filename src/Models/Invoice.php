@@ -9,8 +9,11 @@ use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Concerns\HasUserRelation;
 use AichaDigital\Larabill\Concerns\HasUuid;
 use AichaDigital\Larabill\Database\Factories\InvoiceFactory;
+use AichaDigital\Larabill\Enums\FiscalSubmissionStatus;
+use AichaDigital\Larabill\Enums\InvoiceDocumentStatus;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
+use AichaDigital\Larabill\Exceptions\InvoiceDocumentCoherenceException;
 use AichaDigital\Larabill\Services\FiscalIntegrityChecker;
 use AichaDigital\Larabill\Services\ModelMappingService;
 use AichaDigital\Larabill\Services\PDF\PDFService;
@@ -43,17 +46,21 @@ use Illuminate\Support\Facades\Crypt;
  * - Support for proforma→invoice and rectificative invoices
  *
  * @property string $id UUID (string or binary based on config)
- * @property string $fiscal_number Complete display number (FAC-2025-000047)
+ * @property string|null $fiscal_number Complete display number (FAC-2025-000047); NULL on DRAFT/PREPARED/CANCELLED fiscal rows (ADR-016 §8.2 C4)
  * @property string $prefix User customizable prefix
  * @property InvoiceSerieType $serie Invoice series type enum
- * @property int $series_number Pure correlative number
- * @property int $fiscal_year Calculated fiscal year
- * @property Carbon $invoice_date Legal date on PDF
- * @property Carbon $issued_at Technical chronological timestamp
+ * @property int|null $series_number Pure correlative number; NULL until issuance (ADR-016 §8.2 C4)
+ * @property int|null $fiscal_year Calculated fiscal year; NULL until issuance (ADR-016 §8.2 C4)
+ * @property Carbon|null $invoice_date Legal date on PDF; NULL until issuance (ADR-016 §8.2 C4)
+ * @property Carbon|null $issued_at Technical chronological timestamp; NULL until issuance (ADR-016 §8.2 C4)
  * @property Carbon|null $service_date Service/delivery date
  * @property Carbon|null $due_date Payment due date
  * @property Carbon|null $paid_at Actual payment timestamp
  * @property InvoiceStatus $status Invoice status enum
+ * @property InvoiceDocumentStatus|null $invoice_document_status Document axis (ADR-016 §5.1): DRAFT/PREPARED/ISSUED/CANCELLED on fiscal rows; NULL on proforma rows
+ * @property FiscalSubmissionStatus|null $fiscal_submission_status Fiscal submission axis (ADR-016 §5.3): set at issuance only
+ * @property Carbon|null $document_cancelled_at Cancellation instant of the document axis (ADR-016 §8.1 audit trail)
+ * @property string|null $document_cancelled_by Actor of the document cancellation (ADR-016 §8.1 audit trail)
  * @property int|string $user_id
  * @property string|null $billable_user_id UUID FK to users - User being billed (ADR-003)
  * @property int|null $company_fiscal_config_id FK to company_fiscal_configs (ADR-001)
@@ -131,7 +138,70 @@ class Invoice extends Model implements LegallyRetainable
                 $invoice->snapshotFiscalConfigs();
             }
         });
+
+        // ADR-016 §8.2 (PR-1, AID-1627): the row-level coherence of the document
+        // axis is enforced at the application layer on EVERY engine — SQLite
+        // cannot ALTER-add a CHECK, and this guard is its only enforcement
+        // (MySQL additionally carries the named database CHECK, added by the
+        // `backfill_invoice_document_status` migration). The guard evaluates
+        // the SAME clause set over the merged (persisted + dirty) attribute
+        // state, so an incoherent birth AND an incoherent mutation are both
+        // rejected. Bulk/query-builder and external SQL operations remain
+        // outside the guarantee (ADR-016 §6.5 / v7 §10 limit).
+        static::saving(function (Invoice $invoice): void {
+            $invoice->assertDocumentAxisCoherence();
+        });
+
+        // ADR-016 §6.5 (PR-2, AID-1627): the attribute-assignment + save()
+        // bypass v7 names as D8 is closed at the model-event layer. The guard
+        // reads the PERSISTED state (not the dirty copy), so `$row->field =
+        // X; $row->save();` cannot smuggle fiscal content past the update()
+        // override. The grouped-payment collection path stays deliberate (the
+        // named methods below only touch collection fields) and the issuance
+        // transition is the one legitimate writer of the five number/issuance
+        // fields on an already-protected row.
+        static::updating(function (Invoice $invoice): void {
+            $invoice->assertFiscalContentLocked();
+        });
+
+        // ADR-016 §6.5: the deletion hole (§1.1.2) closes at the model-event
+        // layer too — an ISSUED row is a consumed correlative and a PREPARED
+        // conversion-born row is released only through cancelPreparedInvoice().
+        // Neither is ever deleted. Bulk/query-builder and external SQL remain
+        // documented outside the guarantee (v7 §10 limit, verbatim).
+        static::deleting(function (Invoice $invoice): void {
+            $invoice->assertDeletable();
+        });
     }
+
+    /**
+     * The issuance-transition authorization (ADR-016 §6.5, implementation-gate
+     * round 2): a DRAFT/PREPARED -> ISSUED transition through the public
+     * Eloquent API is only legal when the NAMED writer performs it. Shape
+     * validation cannot distinguish `issue()`'s write from a forged coherent
+     * ISSUED shape (a fabricated number persisted without advancing the
+     * counter), so the writer carries this per-process authorization flag.
+     *
+     * @internal issue() is the only in-package caller.
+     *
+     * @template T
+     *
+     * @param  callable(): T  $write
+     * @return T
+     */
+    public static function withIssuanceAuthorization(callable $write): mixed
+    {
+        $previous                           = self::$issuanceTransitionAuthorized;
+        self::$issuanceTransitionAuthorized = true;
+
+        try {
+            return $write();
+        } finally {
+            self::$issuanceTransitionAuthorized = $previous; // reentrant-safe (gate round 3)
+        }
+    }
+
+    private static bool $issuanceTransitionAuthorized = false;
 
     /**
      * The attributes that are mass assignable.
@@ -148,6 +218,10 @@ class Invoice extends Model implements LegallyRetainable
         'due_date',
         'paid_at',
         'status',
+        'invoice_document_status',
+        'fiscal_submission_status',
+        'document_cancelled_at',
+        'document_cancelled_by',
         'user_id',
         'billable_user_id',
         'company_fiscal_config_id',
@@ -191,6 +265,9 @@ class Invoice extends Model implements LegallyRetainable
         return [
             'serie'                        => InvoiceSerieType::class, // PHP Enum
             'status'                       => InvoiceStatus::class,    // PHP Enum
+            'invoice_document_status'      => InvoiceDocumentStatus::class, // PHP Enum (ADR-016 §5.1)
+            'fiscal_submission_status'     => FiscalSubmissionStatus::class, // PHP Enum (ADR-016 §5.3)
+            'document_cancelled_at'        => 'datetime',
             'fiscal_year'                  => 'integer',
             'invoice_date'                 => 'date',
             'issued_at'                    => 'datetime',
@@ -250,6 +327,393 @@ class Invoice extends Model implements LegallyRetainable
     }
 
     /**
+     * Assert this row (persisted state merged with the pending changes)
+     * satisfies the ADR-016 §8.2 document-axis coherence clause set.
+     *
+     * Called from the `saving` hook on every engine; the MySQL CHECK enforces
+     * the same clauses a second time, over the stored values.
+     *
+     * @throws InvoiceDocumentCoherenceException
+     */
+    public function assertDocumentAxisCoherence(): void
+    {
+        self::assertDocumentAxisCoherentRow(array_merge($this->getRawOriginal(), $this->getAttributes()));
+    }
+
+    /**
+     * Assert one raw row satisfies the ADR-016 §8.2 clause set — every clause
+     * must be TRUE (the set is NULL-safe, so no clause can evaluate UNKNOWN).
+     *
+     * Clause names reference the spec's §16 gate adjudications (V9, V10, V11,
+     * V12, V13, S4-r, S5) so a finding and its landing stay traceable.
+     *
+     * @param  array<string, mixed>  $row  Raw attributes (DB-shaped values: ints, strings, NULLs)
+     *
+     * @throws InvoiceDocumentCoherenceException
+     */
+    public static function assertDocumentAxisCoherentRow(array $row): void
+    {
+        $violations = self::documentAxisViolations($row);
+
+        if ($violations !== []) {
+            throw InvoiceDocumentCoherenceException::violating($violations, $row);
+        }
+    }
+
+    /**
+     * Evaluate the §8.2 clause set over one raw row.
+     *
+     * @param  array<string, mixed>  $row
+     * @return array<int, array{id: string, description: string}> Violated clauses; empty when the row is coherent
+     */
+    private static function documentAxisViolations(array $row): array
+    {
+        $violations = [];
+
+        $doc         = self::normalizeAxisValue($row['invoice_document_status'] ?? null);
+        $serie       = self::normalizeAxisValue($row['serie'] ?? null);
+        $submission  = self::normalizeAxisValue($row['fiscal_submission_status'] ?? null);
+        $cancelledAt = $row['document_cancelled_at'] ?? null;
+        $cancelledBy = $row['document_cancelled_by'] ?? null;
+
+        $fiveFields  = ['fiscal_number', 'series_number', 'fiscal_year', 'invoice_date', 'issued_at'];
+        $fiveNotNull = true;
+        $fiveAllNull = true;
+        foreach ($fiveFields as $field) {
+            $isNull      = ($row[$field] ?? null) === null;
+            $fiveNotNull = $fiveNotNull && ! $isNull;
+            $fiveAllNull = $fiveAllNull && $isNull;
+        }
+
+        // C1 (B4): document-status enum domain.
+        if ($doc !== null && ! in_array($doc, InvoiceDocumentStatus::checkDomainValues(), true)) {
+            $violations[] = ['id' => 'C1', 'description' => 'invoice_document_status out of domain'];
+        }
+
+        // V11: serie enum domain (InvoiceSerieType), derived from the enum —
+        // never hand-listed.
+        if ($serie !== null && ! in_array($serie, array_map(
+            static fn (InvoiceSerieType $type): int => $type->value,
+            InvoiceSerieType::cases(),
+        ), true)) {
+            $violations[] = ['id' => 'V11', 'description' => 'serie out of domain'];
+        }
+
+        // C2: axis biconditional — serie = PROFORMA ⇔ document status NULL.
+        // Both operands are non-nullable booleans; no UNKNOWN path.
+        if (($serie === InvoiceSerieType::PROFORMA->value) !== ($doc === null)) {
+            $violations[] = ['id' => 'C2', 'description' => 'the document axis exists only for fiscal rows (serie = PROFORMA ⇔ invoice_document_status IS NULL)'];
+        }
+
+        // C3 (V10): proforma fields — one-directional implication: a proforma
+        // row's five number/issuance fields are ALL NOT NULL.
+        if ($serie === InvoiceSerieType::PROFORMA->value && ! $fiveNotNull) {
+            $violations[] = ['id' => 'C3', 'description' => 'proforma rows carry all five number/issuance fields NOT NULL'];
+        }
+
+        // C4 (V12): fiscal-row coherence, guarded by the NULL-safe antecedent.
+        if ($doc !== null) {
+            if (($doc === InvoiceDocumentStatus::ISSUED->value) !== $fiveNotNull) {
+                $violations[] = ['id' => 'C4', 'description' => 'fiscal rows bind invoice_document_status = ISSUED to all five number/issuance fields NOT NULL (and every other status to all NULL)'];
+            }
+            if ((in_array($doc, [InvoiceDocumentStatus::DRAFT->value, InvoiceDocumentStatus::PREPARED->value, InvoiceDocumentStatus::CANCELLED->value], true)) !== $fiveAllNull) {
+                $violations[] = ['id' => 'C4', 'description' => 'fiscal rows bind DRAFT/PREPARED/CANCELLED to all five number/issuance fields NULL'];
+            }
+
+            // C5: a CANCELLED fiscal row carries its cancellation instant.
+            if ($doc === InvoiceDocumentStatus::CANCELLED->value && $cancelledAt === null) {
+                $violations[] = ['id' => 'C5', 'description' => 'invoice_document_status = CANCELLED requires document_cancelled_at NOT NULL'];
+            }
+
+            // C6 (V12): submission biconditional, fiscal rows only, NULL-safe.
+            if (($doc === InvoiceDocumentStatus::ISSUED->value) !== ($submission !== null)) {
+                $violations[] = ['id' => 'C6', 'description' => 'fiscal rows bind invoice_document_status = ISSUED to fiscal_submission_status NOT NULL (and every other status to NULL)'];
+            }
+        }
+
+        // V9: submission enum domain.
+        if ($submission !== null && ! in_array($submission, FiscalSubmissionStatus::checkDomainValues(), true)) {
+            $violations[] = ['id' => 'V9', 'description' => 'fiscal_submission_status out of domain'];
+        }
+
+        // S5 (round 5): proforma hygiene — NULL-safe implication. A doc-NULL row
+        // carries NO lifecycle metadata of any axis.
+        if ($doc === null && ($submission !== null || $cancelledAt !== null || $cancelledBy !== null)) {
+            $violations[] = ['id' => 'S5', 'description' => 'proforma (doc-NULL) rows carry no submission or cancellation metadata'];
+        }
+
+        // S4-r (round 5 residual): an actor without a cancellation instant is
+        // the rejected misleading shape; the reverse (instant without actor)
+        // is the specified direct-draft cancellation and stays valid.
+        if ($cancelledBy !== null && $cancelledAt === null) {
+            $violations[] = ['id' => 'S4-r', 'description' => 'document_cancelled_by requires document_cancelled_at'];
+        }
+
+        // V13 (round 8): the inverse of the cancellation rule — cancellation
+        // metadata on a non-CANCELLED row claims a cancellation that never happened.
+        if ($cancelledAt !== null && $doc !== InvoiceDocumentStatus::CANCELLED->value) {
+            $violations[] = ['id' => 'V13', 'description' => 'document_cancelled_at requires invoice_document_status = CANCELLED'];
+        }
+
+        return $violations;
+    }
+
+    /**
+     * The header fields that constitute FISCAL CONTENT (ADR-016 §6.5): once a
+     * row is fiscally protected (persisted `is_immutable` OR persisted
+     * document status ISSUED), none of these may change through any public
+     * Eloquent operation — the `update()` override covered mass updates, and
+     * this guard closes the attribute-assignment + `save()` bypass (v7 D8).
+     *
+     * Deliberately NOT here: collection state (`status`, `paid_at`), the
+     * document/submission axis fields (the lifecycle transitions are their
+     * named writers), the fiscal-verification result fields and the conversion
+     * mirror fields — those have their own deliberate paths.
+     */
+    private const FISCAL_CONTENT_FIELDS = [
+        'fiscal_number',
+        'prefix',
+        'serie',
+        'series_number',
+        'fiscal_year',
+        'invoice_date',
+        'issued_at',
+        'service_date',
+        'taxable_amount',
+        'total_tax_amount',
+        'total_amount',
+        'is_roi_taxed',
+        'issuer_snapshot',
+        'customer_snapshot',
+        'fiscal_snapshot',
+        'company_fiscal_config_id',
+        'user_tax_profile_id',
+        'billable_user_id',
+        'user_id',
+        'proforma_id',
+        'rectifies_invoice_id',
+        'settlement_operation_key',
+    ];
+
+    /**
+     * The two number/issuance-eligible persisted states that make a write
+     * carrying the five number/issuance fields an ISSUANCE transition — the
+     * one legitimate writer of those fields on a fiscally protected row
+     * (ADR-016 §6; e.g. `issue()` on a draft sealed with `make_immutable`).
+     *
+     * @return list<int>
+     */
+    private static function issuanceEligibleDocumentStatuses(): array
+    {
+        return [
+            InvoiceDocumentStatus::DRAFT->value,
+            InvoiceDocumentStatus::PREPARED->value,
+        ];
+    }
+
+    /**
+     * Close the D8 save() bypass (ADR-016 §6.5): reject any mutation of
+     * fiscal-content fields on a row whose PERSISTED state is fiscally
+     * protected (immutable, or already ISSUED) — except the issuance
+     * transition itself, which is the named writer of the five
+     * number/issuance fields.
+     *
+     * Called from the `updating` hook. Reads getRawOriginal(), never the
+     * dirty copy, so the persisted state is what governs.
+     *
+     * @throws \Exception with the house message convention when blocked
+     */
+    public function assertFiscalContentLocked(): void
+    {
+        $originalDoc = $this->getRawOriginal('invoice_document_status');
+        $protected   = (bool) $this->getRawOriginal('is_immutable')
+            || (is_int($originalDoc) && $originalDoc === InvoiceDocumentStatus::ISSUED->value);
+        $dirtyKeys   = array_keys($this->getDirty());
+
+        // The issuance transition (DRAFT/PREPARED -> dirty ISSUED) is audited
+        // on EVERY row, protected or not: a DRAFT or PREPARED row is not
+        // protected, so without this pre-check the transition would bypass the
+        // whole guard (implementation-gate finding 1, measured on the tree —
+        // the bundled-mutation scenario saved without throwing). The
+        // transition authorizes ONLY the issuance write set — the five
+        // number/issuance fields plus the two axis fields — never arbitrary
+        // fiscal content bundled into the same save (that would mint an
+        // issued-looking document with mutated amounts and a bypassed
+        // counter). And a transition OUT of anything else (e.g. CANCELLED ->
+        // ISSUED) is a forged issuance: issue() is the only writer, and it
+        // only ever starts from DRAFT/PREPARED.
+        $transitionsToIssued = $this->isDirty('invoice_document_status')
+            && ($this->getAttributes()['invoice_document_status'] ?? null) === InvoiceDocumentStatus::ISSUED->value;
+
+        if ($transitionsToIssued) {
+            // Round 2: shape is not authorization. Without the named writer's
+            // flag, a coherent ISSUED shape could be persisted while the
+            // counter never moved — the correlative provenance lives only in
+            // issue().
+            if (! self::$issuanceTransitionAuthorized) {
+                throw new \Exception(sprintf(
+                    'Cannot transition invoice [%s] to ISSUED through the public API: issue() is the named writer of the issuance transition (ADR-016 §6.5).',
+                    (string) $this->getKey(),
+                ));
+            }
+
+            if (! in_array($originalDoc, self::issuanceEligibleDocumentStatuses(), true)) {
+                throw new \Exception(sprintf(
+                    'Cannot transition invoice [%s] to ISSUED from persisted document status [%s]: issue() is the named writer and only ever starts from DRAFT/PREPARED (ADR-016 §6).',
+                    (string) $this->getKey(),
+                    (string) InvoiceDocumentStatus::tryFrom(is_int($originalDoc) ? $originalDoc : -1)?->name,
+                ));
+            }
+
+            $mutated = array_intersect($dirtyKeys, self::FISCAL_CONTENT_FIELDS);
+            $usurped = array_diff($mutated, self::issuanceTransitionFields());
+
+            if ($usurped !== []) {
+                throw new \Exception(sprintf(
+                    'Cannot bundle fiscal-content changes (%s) into an issuance transition (ADR-016 §6.5: only the issuance write set may change when a DRAFT/PREPARED row transitions to ISSUED — issue() is its named writer).',
+                    implode(', ', $usurped),
+                ));
+            }
+
+            // Gate round 3, finding 1: the write-set allowlist proves SHAPE,
+            // not provenance. The counter is the proof: issue() advances it
+            // in the same transaction, so a legitimate transition can only
+            // claim a series_number the control row has actually allocated.
+            // A forged coherent shape claiming an unallocated number is
+            // rejected here (and one claiming an allocated number collides
+            // with the fiscal_number UNIQUE). Residual: bulk/external SQL
+            // stays outside the guarantee; the R4 gap report is the
+            // detective control for anything that slips through.
+            $provenance = InvoiceSeriesControl::query()
+                ->where('prefix', $this->getAttributes()['prefix'])
+                ->where('serie', $this->getAttributes()['serie'])
+                ->where('fiscal_year', $this->getAttributes()['fiscal_year'])
+                ->where('last_number', '>=', $this->getAttributes()['series_number'])
+                ->exists();
+
+            if (! $provenance) {
+                throw new \Exception(sprintf(
+                    'Cannot persist invoice [%s] as ISSUED with series_number [%s]: the series control has no allocation at or above it — issue() is the only writer that advances the counter (ADR-016 §6, AID-390).',
+                    (string) $this->getKey(),
+                    (string) $this->getAttributes()['series_number'],
+                ));
+            }
+
+            return;
+        }
+
+        if (! $protected) {
+            return;
+        }
+
+        $mutated = array_intersect($dirtyKeys, self::FISCAL_CONTENT_FIELDS);
+
+        if ($mutated !== []) {
+            throw new \Exception(sprintf(
+                'Cannot change fiscal content (%s) of a fiscally protected invoice (ADR-016 §6.5: immutable or ISSUED rows are closed to fiscal mutation through any public operation).',
+                implode(', ', $mutated),
+            ));
+        }
+    }
+
+    /**
+     * The write set the issuance transition may carry (ADR-016 §6.5,
+     * implementation-gate finding 1): the five number/issuance fields plus
+     * the two lifecycle axis fields. `issue()` is the named writer.
+     *
+     * @return list<string>
+     */
+    private static function issuanceTransitionFields(): array
+    {
+        return [
+            'fiscal_number',
+            'series_number',
+            'fiscal_year',
+            'invoice_date',
+            'issued_at',
+            'invoice_document_status',
+            'fiscal_submission_status',
+            // AID-1649: the THREE fiscal-context snapshots are REGENERATED at
+            // issuance from the same instant and rows (the birth snapshots
+            // froze the draft's context), so they belong to the issuance
+            // write set.
+            'issuer_snapshot',
+            'customer_snapshot',
+            'fiscal_snapshot',
+        ];
+    }
+
+    /**
+     * The deletion guard (ADR-016 §6.5): an ISSUED row is a consumed
+     * correlative — deleting it would be the unexplained gap of §1.1.2 — and
+     * a PREPARED conversion-born row is released only through
+     * cancelPreparedInvoice(), never deleted. DRAFT and CANCELLED rows stay
+     * deletable (the operator's cleanup surface, unchanged from v6).
+     *
+     * @throws \Exception with the house message convention when blocked
+     */
+    public function assertDeletable(): void
+    {
+        $doc = $this->getRawOriginal('invoice_document_status');
+
+        if ($doc === InvoiceDocumentStatus::ISSUED->value) {
+            throw new \Exception(sprintf(
+                'Cannot delete invoice [%s]: its document status is ISSUED — the correlative was consumed and no deletion path exists for issued documents (ADR-016 §6.5).',
+                (string) $this->getKey(),
+            ));
+        }
+
+        if ($doc === InvoiceDocumentStatus::PREPARED->value) {
+            throw new \Exception(sprintf(
+                'Cannot delete invoice [%s]: its document status is PREPARED — release it through cancelPreparedInvoice() instead (ADR-016 §6.5/§10).',
+                (string) $this->getKey(),
+            ));
+        }
+
+        // Implementation-gate finding 2 (2026-10-13): a proforma mid-conversion
+        // (CONVERTING) owns a linked PREPARED child. Deleting the parent would
+        // null the child's proforma_id (nullOnDelete), stranding it: invisible
+        // to stalledPreparations(), un-cancellable, issued without the proforma
+        // lock. Cancel the prepared document first — the guard's own path — and
+        // the parent returns to DRAFT.
+        if ($this->getRawOriginal('status') === InvoiceStatus::CONVERTING->value) {
+            throw new \Exception(sprintf(
+                'Cannot delete invoice [%s]: it is CONVERTING — cancel its prepared document through cancelPreparedInvoice() first (ADR-016 §6.5/§10).',
+                (string) $this->getKey(),
+            ));
+        }
+    }
+
+    /**
+     * Normalize one raw axis value for clause evaluation.
+     *
+     * Raw attributes arrive as ints (DB, mass assignment of enum cases),
+     * numeric strings (some DB drivers) or enum instances; anything
+     * unrepresentable maps to -1 so it fails every domain clause instead of
+     * being silently treated as NULL.
+     */
+    private static function normalizeAxisValue(mixed $value): ?int
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if ($value instanceof \BackedEnum) {
+            return (int) $value->value;
+        }
+
+        if (is_int($value)) {
+            return $value;
+        }
+
+        if (is_string($value) && preg_match('/^-?\d+$/', $value) === 1) {
+            return (int) $value;
+        }
+
+        return -1;
+    }
+
+    /**
      * Mark this invoice PAID as part of a grouped payment (AID-30).
      *
      * Collection state (status + paid_at) is NOT fiscal content, so this is a
@@ -293,16 +757,12 @@ class Invoice extends Model implements LegallyRetainable
             'fiscal_verification_metadata',
         ];
         $attributeKeys              = array_keys($attributes);
-        $isConversionUpdate         = isset($attributes['converted_invoice_id']) || isset($attributes['converted_at']);
         $isFiscalVerificationUpdate = array_intersect($attributeKeys, $fiscalVerificationFields) !== [];
-        $isOnlyConversionFields     = empty(array_diff($attributeKeys, $conversionFields));
-        $isOnlyFiscalFields         = empty(array_diff($attributeKeys, $fiscalVerificationFields));
+        $isOnlyConversionFields     = ! empty($attributeKeys) && empty(array_diff($attributeKeys, $conversionFields));
+        $isOnlyFiscalFields         = ! empty($attributeKeys) && empty(array_diff($attributeKeys, $fiscalVerificationFields));
 
         if ($this->is_immutable
-            && ! (
-                ($isConversionUpdate && $isOnlyConversionFields)
-                || ($isFiscalVerificationUpdate && $isOnlyFiscalFields)
-            )) {
+            && ! ($isOnlyConversionFields || $isOnlyFiscalFields)) {
             throw new \Exception('Cannot update an immutable invoice');
         }
 
@@ -665,6 +1125,25 @@ class Invoice extends Model implements LegallyRetainable
         return $query->where('serie', InvoiceSerieType::RECTIFICATIVE->value);
     }
 
+    /**
+     * Scope for the stalled preparations of the ADR-016 lifecycle (§11.3):
+     * conversion-born documents sitting at PREPARED — the state
+     * `convertAndIssue()` leaves behind when its issuance transaction fails
+     * and the caller never resumed it. Every row here awaits either `issue()`
+     * or `cancelPreparedInvoice()`; the deeper deadline reporting is R4's
+     * (AID-1631). The artisan report `larabill:stalled-preparations` reads
+     * this scope.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeStalledPreparations(Builder $query): Builder
+    {
+        return $query
+            ->where('invoice_document_status', InvoiceDocumentStatus::PREPARED->value)
+            ->whereNotNull('proforma_id');
+    }
+
     // ========================================
     // TAX CALCULATION METHODS
     // ========================================
@@ -779,7 +1258,8 @@ class Invoice extends Model implements LegallyRetainable
      * @param  CompanyFiscalConfig  $config  Active company config at invoice date
      * @return string Encrypted JSON snapshot
      */
-    protected function generateIssuerSnapshot(CompanyFiscalConfig $config): string
+    /** @internal Called by issue() to freeze the issuer context at the issuance instant (ADR-001). */
+    public function generateIssuerSnapshot(CompanyFiscalConfig $config): string
     {
         $data = [
             'config_id'         => $config->id,
@@ -803,13 +1283,53 @@ class Invoice extends Model implements LegallyRetainable
     }
 
     /**
+     * Aggregate the lines' immutable taxes_applied entries into the frozen
+     * per-rate base/amount pairs the fiscal snapshot carries (AID-534).
+     *
+     * @return array<int, array{source_rate_id: mixed, name: mixed, rate: mixed, base: int, amount: int}>
+     */
+    private function aggregateTaxRulesApplied(): array
+    {
+        $rules = [];
+
+        foreach ($this->items as $item) {
+            $entries = is_array($item->taxes_applied) ? $item->taxes_applied : [];
+
+            foreach ($entries as $entry) {
+                if (! is_array($entry)) {
+                    continue;
+                }
+
+                $sourceRateId = $entry['source_rate_id'] ?? null;
+                $name         = $entry['name']           ?? null;
+                $rate         = $entry['rate']           ?? null;
+                $key          = (string) json_encode([$sourceRateId, $name, $rate]);
+
+                $rules[$key] ??= [
+                    'source_rate_id' => $sourceRateId,
+                    'name'           => $name,
+                    'rate'           => $rate,
+                    'base'           => 0,
+                    'amount'         => 0,
+                ];
+
+                $rules[$key]['base']   += $item->taxable_amount->unscaledValue();
+                $rules[$key]['amount'] += (int) ($entry['amount'] ?? 0);
+            }
+        }
+
+        return array_values($rules);
+    }
+
+    /**
      * Generate encrypted billable user snapshot (ADR-001 + ADR-003).
      *
      * @param  Model  $billableUser  The user being billed
      * @param  UserTaxProfile|null  $taxProfile  User's tax profile at invoice date
      * @return string Encrypted JSON snapshot
      */
-    protected function generateBillableUserSnapshot(Model $billableUser, ?UserTaxProfile $taxProfile): string
+    /** @internal Called by issue() to freeze the customer context at the issuance instant (ADR-001). */
+    public function generateBillableUserSnapshot(Model $billableUser, ?UserTaxProfile $taxProfile): string
     {
         $data = [
             'billable_user_id'     => $billableUser->id,
@@ -847,9 +1367,19 @@ class Invoice extends Model implements LegallyRetainable
      * @param  UserTaxProfile|null  $customerProfile  Customer's tax profile
      * @return string Encrypted JSON snapshot
      */
-    protected function generateFiscalContextSnapshot(CompanyFiscalConfig $companyConfig, ?UserTaxProfile $customerProfile): string
+    /**
+     * The ONE fiscal-context snapshot generator (ADR-016 AID-1649 resolution):
+     * both birth paths (the creating hook and the service's row builder) and
+     * issue()'s regeneration call this, so an issued document owns the same
+     * key set whichever way it was born (AID-328: one vocabulary per snapshot;
+     * the AID-929/1649 drift history is the proof of why).
+     *
+     * @internal issue() and the service's row builder are the external callers.
+     */
+    public function generateFiscalContextSnapshot(CompanyFiscalConfig $companyConfig, ?UserTaxProfile $customerProfile): string
     {
         $data = [
+            'tax_rules_applied'        => $this->aggregateTaxRulesApplied(),
             'fiscal_year'              => $this->fiscal_year   ?? now()->year,
             'serie'                    => $this->serie?->value ?? $this->serie,
             'series_number'            => $this->series_number,

@@ -23,9 +23,12 @@
         "converted_at",
         "converted_invoice_id",
         "customer_snapshot",
+        "document_cancelled_at",
+        "document_cancelled_by",
         "due_date",
         "fiscal_number",
         "fiscal_snapshot",
+        "fiscal_submission_status",
         "fiscal_verification_hash",
         "fiscal_verification_id",
         "fiscal_verification_metadata",
@@ -34,6 +37,7 @@
         "fiscal_year",
         "immutable_at",
         "invoice_date",
+        "invoice_document_status",
         "is_historical",
         "is_immutable",
         "is_roi_taxed",
@@ -62,12 +66,15 @@
     "appends": [],
     "with": [],
     "casts": {
+        "document_cancelled_at": "datetime",
         "due_date": "date",
+        "fiscal_submission_status": "AichaDigital\\Larabill\\Enums\\FiscalSubmissionStatus",
         "fiscal_verification_metadata": "array",
         "fiscal_verified_at": "datetime",
         "fiscal_year": "integer",
         "immutable_at": "datetime",
         "invoice_date": "date",
+        "invoice_document_status": "AichaDigital\\Larabill\\Enums\\InvoiceDocumentStatus",
         "is_historical": "boolean",
         "is_immutable": "boolean",
         "is_roi_taxed": "boolean",
@@ -229,6 +236,19 @@
             "returnType": "Illuminate\\Database\\Eloquent\\Builder",
             "static": false
         },
+        "scopeStalledPreparations": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "query",
+                    "type": "Illuminate\\Database\\Eloquent\\Builder",
+                    "variadic": false
+                }
+            ],
+            "returnType": "Illuminate\\Database\\Eloquent\\Builder",
+            "static": false
+        },
         "scopeStatus": {
             "api": false,
             "deprecated": false,
@@ -249,6 +269,40 @@
         }
     },
     "methods": {
+        "assertDeletable": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "void",
+            "static": false
+        },
+        "assertDocumentAxisCoherence": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "void",
+            "static": false
+        },
+        "assertDocumentAxisCoherentRow": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "row",
+                    "type": "array",
+                    "variadic": false
+                }
+            ],
+            "returnType": "void",
+            "static": true
+        },
+        "assertFiscalContentLocked": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "void",
+            "static": false
+        },
         "calculateTotals": {
             "api": false,
             "deprecated": false,
@@ -261,6 +315,55 @@
             "deprecated": false,
             "parameters": [],
             "returnType": "array",
+            "static": false
+        },
+        "generateBillableUserSnapshot": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "billableUser",
+                    "type": "Illuminate\\Database\\Eloquent\\Model",
+                    "variadic": false
+                },
+                {
+                    "name": "taxProfile",
+                    "type": "?AichaDigital\\Larabill\\Models\\UserTaxProfile",
+                    "variadic": false
+                }
+            ],
+            "returnType": "string",
+            "static": false
+        },
+        "generateFiscalContextSnapshot": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "companyConfig",
+                    "type": "AichaDigital\\Larabill\\Models\\CompanyFiscalConfig",
+                    "variadic": false
+                },
+                {
+                    "name": "customerProfile",
+                    "type": "?AichaDigital\\Larabill\\Models\\UserTaxProfile",
+                    "variadic": false
+                }
+            ],
+            "returnType": "string",
+            "static": false
+        },
+        "generateIssuerSnapshot": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "config",
+                    "type": "AichaDigital\\Larabill\\Models\\CompanyFiscalConfig",
+                    "variadic": false
+                }
+            ],
+            "returnType": "string",
             "static": false
         },
         "generatePDF": {
@@ -535,6 +638,19 @@
             "parameters": [],
             "returnType": "array",
             "static": false
+        },
+        "withIssuanceAuthorization": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "write",
+                    "type": "callable",
+                    "variadic": false
+                }
+            ],
+            "returnType": "mixed",
+            "static": true
         }
     }
 }

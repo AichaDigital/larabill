@@ -2,10 +2,15 @@
 
 declare(strict_types=1);
 
+use AichaDigital\Larabill\Enums\InvoiceDocumentStatus;
+use AichaDigital\Larabill\Enums\InvoiceSerieType;
+use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Services\InvoiceService;
+use AichaDigital\Larabill\Support\RegionalContext;
 use AichaDigital\Larabill\Tests\Models\TestUser;
+use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Crypt;
 
@@ -121,4 +126,118 @@ it('freezes a false reverse-charge qualification rather than omitting the key', 
 
     expect(aid534FiscalSnapshot($invoice))->toHaveKey('is_roi_applied')
         ->and(aid534FiscalSnapshot($invoice)['is_roi_applied'])->toBeFalse();
+});
+
+it('regenerates the fiscal snapshot at issuance from the same instant as the correlative (AID-1649)', function () {
+    $service = app(InvoiceService::class);
+
+    // §7.2: the explicit draft births with the PROVISIONAL snapshot — null
+    // number, the draft's fiscal year and date baked in. The issued row must
+    // NOT keep it: issue() regenerates from the issuance instant (the same
+    // generator the birth used, AID-328).
+    $draft    = $service->createInvoice([
+        'billable_user_id' => $this->customer->id,
+        'items'            => [['description' => 'Item', 'quantity' => 100, 'base_price' => 1000]],
+        'status'           => 'draft',
+    ]);
+    $birthSnapshot = aid534FiscalSnapshot($draft);
+    expect($birthSnapshot['fiscal_number'])->toBeNull()
+        ->and($birthSnapshot['series_number'])->toBeNull();
+
+    $issued = $service->issue($draft);
+    $data   = aid534FiscalSnapshot($issued);
+
+    expect($data['fiscal_number'])->toBe($issued->fiscal_number)
+        ->and($data['series_number'])->toBe($issued->series_number)
+        ->and($data['fiscal_year'])->toBe($issued->fiscal_year)
+        ->and($data['fiscal_year'])->toBe(RegionalContext::getFiscalYear($issued->issued_at))
+        ->and(Carbon::parse($data['invoice_date'])->toDateString())->toBe($issued->invoice_date->toDateString())
+        ->and($issued->invoice_document_status)->toBe(InvoiceDocumentStatus::ISSUED);
+});
+
+it('regenerates the snapshot on the conversion path too: the PREPARED birth snapshot dies at issuance (AID-1649)', function () {
+    $service = app(InvoiceService::class);
+
+    $proforma  = $service->createProforma([
+        'billable_user_id' => $this->customer->id,
+        'items'            => [['description' => 'Item', 'quantity' => 100, 'base_price' => 1000]],
+    ]);
+    $prepared = $service->convertProformaToInvoice($proforma)->invoice;
+    expect(aid534FiscalSnapshot($prepared)['fiscal_number'])->toBeNull();
+
+    $issued = $service->issue($prepared);
+    $data   = aid534FiscalSnapshot($issued);
+
+    expect($data['fiscal_number'])->toBe($issued->fiscal_number)
+        ->and($data['fiscal_year'])->toBe($issued->fiscal_year);
+});
+
+it('keeps ONE vocabulary: a hook-born draft issued by issue() carries the unified key set (AID-1649, gate by clientes)', function () {
+    $service = app(InvoiceService::class);
+
+    // The clientes production path: the draft is born through ELOQUENT (the
+    // creating hook and its generator), then issued. Every context key the
+    // hook's generator carried must survive the issuance regeneration.
+    $draft = new Invoice([
+        'fiscal_number'            => null,
+        'prefix'                   => 'FAC',
+        'serie'                    => InvoiceSerieType::INVOICE->value,
+        'series_number'            => null,
+        'fiscal_year'              => null,
+        'invoice_date'             => null,
+        'issued_at'                => null,
+        'invoice_document_status'  => InvoiceDocumentStatus::DRAFT,
+        'status'                   => InvoiceStatus::DRAFT,
+        'user_id'                  => $this->customer->id,
+        'billable_user_id'         => $this->customer->id,
+        'is_roi_taxed'             => true,
+    ]);
+    $draft->save();
+
+    $issued = $service->issue($draft);
+    $data   = aid534FiscalSnapshot($issued);
+
+    expect($data)->toHaveKeys([
+        'is_intra_community', 'issuer_is_oss', 'customer_is_vat_reg',
+        'company_fiscal_config_id', 'user_tax_profile_id', 'currency',
+        'tax_rules_applied', 'is_roi_applied', 'fiscal_year', 'fiscal_number',
+        'series_number', 'invoice_date', 'issuer_country', 'customer_country',
+    ])
+        ->and($data['is_roi_applied'])->toBeTrue()
+        ->and($data['company_fiscal_config_id'])->toBe($issued->company_fiscal_config_id)
+        ->and($data['fiscal_number'])->toBe($issued->fiscal_number);
+});
+
+it('issues the SAME snapshot key set whichever way the document was born (AID-328 closure)', function () {
+    $service = app(InvoiceService::class);
+
+    $keys = fn (Invoice $issued): array => array_keys(aid534FiscalSnapshot($issued));
+
+    // Service-born (createInvoice + issue).
+    $serviceBorn = $service->issue($service->createInvoice([
+        'billable_user_id' => $this->customer->id,
+        'items'            => [['description' => 'Item', 'quantity' => 100, 'base_price' => 1000]],
+    ]));
+
+    // Conversion-born (PREPARED + issue).
+    $proforma = $service->createProforma([
+        'billable_user_id' => $this->customer->id,
+        'items'            => [['description' => 'Item', 'quantity' => 100, 'base_price' => 1000]],
+    ]);
+    $conversionBorn = $service->issue($service->convertProformaToInvoice($proforma)->invoice);
+
+    // Hook-born (Eloquent draft + issue).
+    $hookBorn = new Invoice([
+        'prefix'                   => 'FAC',
+        'serie'                    => InvoiceSerieType::INVOICE->value,
+        'invoice_document_status'  => InvoiceDocumentStatus::DRAFT,
+        'status'                   => InvoiceStatus::DRAFT,
+        'user_id'                  => $this->customer->id,
+        'billable_user_id'         => $this->customer->id,
+    ]);
+    $hookBorn->save();
+    $hookIssued = $service->issue($hookBorn);
+
+    expect($keys($serviceBorn))->toBe($keys($conversionBorn))
+        ->and($keys($serviceBorn))->toBe($keys($hookIssued));
 });

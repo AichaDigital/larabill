@@ -6,7 +6,6 @@ use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\Invoice;
-use AichaDigital\Larabill\Models\InvoiceItem;
 use AichaDigital\Larabill\Services\PDF\DomPDFService;
 use AichaDigital\Larabill\Tests\TestCase;
 
@@ -38,7 +37,7 @@ function makeContentInvoice(): Invoice
         'total_amount'     => cents(12100),
     ]);
 
-    InvoiceItem::factory()->create([
+    quietInvoiceItem([
         'invoice_id'       => $invoice->id,
         'description'      => 'Hosting anual Probe',
         'quantity'         => cents(150),      // 1.50 units
@@ -131,7 +130,7 @@ it('breaks the tax down per rate on a mixed-rate invoice', function () {
         'total_tax_amount' => cents(2600),
         'total_amount'     => cents(17600),
     ]);
-    InvoiceItem::factory()->create([
+    quietInvoiceItem([
         'invoice_id'       => $invoice->id,
         'description'      => 'Standard rate line',
         'quantity'         => cents(100),
@@ -141,7 +140,7 @@ it('breaks the tax down per rate on a mixed-rate invoice', function () {
         'total_amount'     => cents(12100),
         'taxes_applied'    => [['source_rate_id' => 1, 'name' => 'IVA 21%', 'rate' => 2100, 'amount' => 2100]],
     ]);
-    InvoiceItem::factory()->create([
+    quietInvoiceItem([
         'invoice_id'       => $invoice->id,
         'description'      => 'Reduced rate line',
         'quantity'         => cents(100),
@@ -171,7 +170,7 @@ it('returns an empty breakdown for an invoice with no taxes', function () {
         'total_tax_amount' => cents(0),
         'total_amount'     => cents(10000),
     ]);
-    InvoiceItem::factory()->create([
+    quietInvoiceItem([
         'invoice_id'       => $invoice->id,
         'description'      => 'Exempt line',
         'quantity'         => cents(100),
@@ -188,9 +187,13 @@ it('returns an empty breakdown for an invoice with no taxes', function () {
 
 it('formats a rate with decimals, which an int cannot carry', function () {
     $invoice = makeContentInvoice();
-    $invoice->items()->first()->update([
+    // Fixture write on a protected row's line: the documented
+    // outside-the-guarantee surface (§6.5/v7 §10) — the update() override and
+    // the model-event guard are both public-facing; a fixture goes quiet.
+    $item = $invoice->items()->first();
+    $item->fill([
         'taxes_applied' => [['source_rate_id' => 9, 'name' => 'Recargo 5,2%', 'rate' => 520, 'amount' => 520]],
-    ]);
+    ])->saveQuietly();
 
     $breakdown = invoiceTotalsFor($invoice->fresh())['tax_breakdown'];
 

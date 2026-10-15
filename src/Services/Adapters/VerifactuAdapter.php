@@ -146,6 +146,13 @@ class VerifactuAdapter
 
         $issueDate = $rectified->issued_at ?? $rectified->invoice_date;
 
+        // The five issuance fields are nullable since ADR-016 §8.2 C4; a
+        // rectified document always carries them (it references an ISSUED
+        // invoice). Defensive typed exit for corrupt rows — nothing to report.
+        if ($issueDate === null) {
+            return [];
+        }
+
         return [[
             // NumSerieFactura the rectified invoice was registered with:
             // real series (prefix) + correlative number (AID-307), matching how

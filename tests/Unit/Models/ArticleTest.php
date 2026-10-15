@@ -10,7 +10,6 @@ use AichaDigital\Larabill\Models\ArticleOverride;
 use AichaDigital\Larabill\Models\ArticlePrice;
 use AichaDigital\Larabill\Models\ArticleServiceStatus;
 use AichaDigital\Larabill\Models\Invoice;
-use AichaDigital\Larabill\Models\InvoiceItem;
 use AichaDigital\Larabill\Models\TaxGroup;
 use AichaDigital\Larabill\Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -118,7 +117,7 @@ describe('Article relationships', function () {
         $article = Article::factory()->create();
         $invoice = Invoice::factory()->create(['user_id' => TestCase::USER_UUID_1]);
 
-        InvoiceItem::factory()->create([
+        quietInvoiceItem([
             'invoice_id'  => $invoice->id,
             'article_id'  => $article->id,
             'description' => 'Article invoice line',

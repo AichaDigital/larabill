@@ -8,6 +8,7 @@ use AichaDigital\Lara100\Casts\FixedDecimalCast;
 use AichaDigital\Lara100\RoundingMode;
 use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Database\Factories\InvoiceItemFactory;
+use AichaDigital\Larabill\Enums\InvoiceDocumentStatus;
 use AichaDigital\Larabill\Enums\ItemType;
 use AichaDigital\Larabill\Services\ModelMappingService;
 use Carbon\Carbon;
@@ -59,6 +60,54 @@ class InvoiceItem extends Model
 {
     /** @use HasFactory<InvoiceItemFactory> */
     use HasFactory;
+
+    /**
+     * Boot the model (ADR-016 §6.5, PR-2): no line mutation of any kind —
+     * create, update or delete — on a fiscally protected invoice (persisted
+     * `is_immutable` OR persisted document status ISSUED), through any public
+     * operation. v7 §7.2's line-level half of D8; the header half is the
+     * `Invoice` `updating` guard shipped in the same PR. Raw SQL and
+     * query-builder mass operations remain outside this guarantee — the
+     * DB-level half of D8 was cancelled in AID-468.
+     */
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::saving(function (InvoiceItem $item): void {
+            if ($item->parentInvoiceIsProtected()) {
+                throw new \Exception(sprintf(
+                    'Cannot write invoice lines of a fiscally protected invoice (ADR-016 §6.5: immutable or ISSUED documents are closed to line mutation through any public operation).',
+                ));
+            }
+        });
+
+        static::deleting(function (InvoiceItem $item): void {
+            if ($item->parentInvoiceIsProtected()) {
+                throw new \Exception(sprintf(
+                    'Cannot delete invoice lines of a fiscally protected invoice (ADR-016 §6.5: immutable or ISSUED documents are closed to line mutation through any public operation).',
+                ));
+            }
+        });
+    }
+
+    /**
+     * Whether the parent invoice's PERSISTED state is fiscally protected
+     * (ADR-016 §6.5): immutable, or document status ISSUED.
+     */
+    public function parentInvoiceIsProtected(): bool
+    {
+        $invoice = $this->invoice()->getResults();
+
+        if ($invoice === null) {
+            return false;
+        }
+
+        $originalDoc = $invoice->getRawOriginal('invoice_document_status');
+
+        return (bool) $invoice->getRawOriginal('is_immutable')
+            || (is_int($originalDoc) && $originalDoc === InvoiceDocumentStatus::ISSUED->value);
+    }
 
     /**
      * The UUID columns for this model.
@@ -122,7 +171,9 @@ class InvoiceItem extends Model
      *
      * Same pattern as Invoice::update() (AID-558, D8): the fiscal content of
      * a frozen invoice is protected at the line level too. save() stays as
-     * the deliberate internal door, mirroring the header guard. Raw SQL and
+     * the deliberate internal door for mutable documents — since ADR-016 §6.5
+     * (PR-2) the `saving` guard above closes it on protected ones (immutable
+     * or ISSUED), reading the parent's persisted state. Raw SQL and
      * query-builder mass updates remain outside this guarantee — the DB-level
      * half of D8 was cancelled in AID-468.
      *
@@ -131,7 +182,13 @@ class InvoiceItem extends Model
      */
     public function update(array $attributes = [], array $options = []): bool
     {
-        if ($this->invoice?->is_immutable) {
+        $invoice = $this->invoice()->getResults();
+
+        $originalDoc = $invoice?->getRawOriginal('invoice_document_status');
+
+        if ($invoice !== null
+            && ((bool) $invoice->getRawOriginal('is_immutable')
+                || (is_int($originalDoc) && $originalDoc === InvoiceDocumentStatus::ISSUED->value))) {
             throw new \Exception('Cannot update items of an immutable invoice');
         }
 

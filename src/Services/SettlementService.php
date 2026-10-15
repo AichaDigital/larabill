@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services;
 
+use AichaDigital\Larabill\Enums\InvoiceDocumentStatus;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Exceptions\InvalidRectificationAmountException;
@@ -65,6 +66,12 @@ final class SettlementService
      * The resulting document is born sealed (status SENT, immutable), exactly
      * like the recurring engine's emissions (AID-836).
      *
+     * ADR-016 §7.3: when a settlement operation key is supplied, the route is
+     * KEYED and carries the adoption-resume promise — an existing document
+     * born from the same claim is adopted verbatim, and a durable unnumbered
+     * DRAFT (a two-phase issuance casualty) is resumed by `issue()` instead
+     * of minting a second artifact.
+     *
      * @param  Invoice  $original  an emitted (non-draft, non-proforma) invoice
      * @param  int|null  $amount  base-100 unscaled difference base; strictly
      *                            negative (e.g. -5000 = correct €-50.00 of base).
@@ -84,6 +91,14 @@ final class SettlementService
     public function rectify(Invoice $original, ?int $amount = null, ?string $settlementOperationKey = null): Invoice
     {
         $this->assertRectifiable($original);
+
+        // §7.3: the keyed adoption-resume branch runs BEFORE any creation —
+        // a committed claim is adopted (or its durable draft resumed), never
+        // issued twice. Unkeyed calls are byte-for-byte unchanged.
+        $adopted = $this->adoptOrResumeByKey($settlementOperationKey, InvoiceStatus::SENT);
+        if ($adopted !== null) {
+            return $adopted;
+        }
 
         if ($amount !== null && $amount >= 0) {
             throw InvalidRectificationAmountException::forAmount($amount);
@@ -202,8 +217,14 @@ final class SettlementService
      *                                     (or no items at all) — larabill does
      *                                     not invent the distribution (AID-589).
      */
-    public function settleUnconsumed(Invoice $original, int $amount, array $items = [], bool $isRoiTaxed = false, ?int $creditArticleId = null): Invoice
-    {
+    public function settleUnconsumed(
+        Invoice $original,
+        int $amount,
+        array $items = [],
+        bool $isRoiTaxed = false,
+        ?int $creditArticleId = null,
+        ?string $settlementOperationKey = null
+    ): Invoice {
         $this->assertSettleable($original);
 
         if ($amount <= 0) {
@@ -218,6 +239,15 @@ final class SettlementService
             );
         }
 
+        // §7.3 (round 2, B3): the optional key input makes this route KEYED and
+        // grants it the adoption-resume promise. Until a key is supplied the
+        // route carries NO resume promise — a phase-2 failure leaves a draft
+        // no retry can deterministically find (documented in UPGRADE-8.0.md).
+        $adopted = $this->adoptOrResumeByKey($settlementOperationKey, InvoiceStatus::SENT);
+        if ($adopted !== null) {
+            return $adopted;
+        }
+
         return $this->invoiceService->createInvoice([
             'billable_user_id' => $billableUserId,
             // An ordinary invoice: type 'invoice' → INVOICE serie, prefix from
@@ -230,7 +260,61 @@ final class SettlementService
             // the consumer. NOT frozen from the original — the credit line
             // bills the current context by design.
             'is_roi_taxed'     => $isRoiTaxed,
+            // §7.3: the claim's deterministic key, stamped at creation — the
+            // UNIQUE index serialises concurrent issuances and a durable draft
+            // carrying it is resumable by key (the additive input, PR-2).
+            'settlement_operation_key' => $settlementOperationKey,
         ], ['make_immutable' => true]);
+    }
+
+    /**
+     * §7.3 — the keyed adoption-resume branch (PR-2). With the two-phase
+     * `createInvoice()` contract, a phase-2 failure leaves a durable
+     * UNNUMBERED DRAFT carrying the settlement operation key; the adopting
+     * retry must detect it by key and RESUME issuance (`issue()`) instead of
+     * treating it as a completed artifact — and instead of minting a second
+     * one, which the UNIQUE index would refuse anyway (collision-and-adoption,
+     * ADR-015 §3.4). The key itself, its UNIQUE index and the claim semantics
+     * are untouched.
+     *
+     * Scoped to KEYED routes (round 2, B3): a null key means the caller made
+     * no claim and gets no resume promise.
+     *
+     * @param  string|null  $settlementOperationKey  the claim's deterministic key
+     * @param  InvoiceStatus  $intendedCollectionStatus  the collection stamp the
+     *                                                   route's issued path would carry (the resumed issuance stamps it
+     *                                                   post-issuance, exactly like the createInvoice issued path)
+     */
+    protected function adoptOrResumeByKey(?string $settlementOperationKey, InvoiceStatus $intendedCollectionStatus): ?Invoice
+    {
+        if ($settlementOperationKey === null || $settlementOperationKey === '') {
+            return null;
+        }
+
+        $existing = Invoice::query()
+            ->where('settlement_operation_key', $settlementOperationKey)
+            ->first();
+
+        if ($existing === null) {
+            return null; // no claim in flight — create normally
+        }
+
+        // A durable unnumbered DRAFT is a two-phase casualty: resume issuance.
+        // Two concurrent resumes serialise on the invoice row lock (§6.3) —
+        // exactly one number, both callers return the same artifact.
+        if ($existing->invoice_document_status === InvoiceDocumentStatus::DRAFT) {
+            $issued = $this->invoiceService->issue($existing);
+
+            if ($intendedCollectionStatus !== InvoiceStatus::DRAFT) {
+                $issued->status = $intendedCollectionStatus;
+                $issued->save();
+            }
+
+            return $issued->fresh() ?? $issued;
+        }
+
+        // Already issued (or any other committed state): adopted verbatim.
+        return $existing;
     }
 
     /**

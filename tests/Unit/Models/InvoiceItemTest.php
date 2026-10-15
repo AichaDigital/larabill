@@ -18,7 +18,7 @@ beforeEach(function () {
 });
 
 it('can create an invoice item', function () {
-    $item = InvoiceItem::factory()->create([
+    $item = quietInvoiceItem([
         'invoice_id'        => $this->invoice->id,
         'item_type'         => ItemType::GOOD,
         'description'       => 'Test Product',
@@ -39,7 +39,7 @@ it('can create an invoice item', function () {
 });
 
 it('can cast item_type as enum', function () {
-    $item = InvoiceItem::factory()->create([
+    $item = quietInvoiceItem([
         'invoice_id' => $this->invoice->id,
         'item_type'  => ItemType::SERVICE,
     ]);
@@ -49,7 +49,7 @@ it('can cast item_type as enum', function () {
 });
 
 it('can cast monetary values using FixedDecimal', function () {
-    $item = InvoiceItem::factory()->create([
+    $item = quietInvoiceItem([
         'invoice_id'       => $this->invoice->id,
         'unit_price'       => cents(1234), // €12.34
         'taxable_amount'   => cents(2468), // €24.68
@@ -64,7 +64,7 @@ it('can cast monetary values using FixedDecimal', function () {
 });
 
 it('can cast quantity using FixedDecimal', function () {
-    $item = InvoiceItem::factory()->create([
+    $item = quietInvoiceItem([
         'invoice_id' => $this->invoice->id,
         'quantity'   => cents(150), // 1.50 units
     ]);
@@ -73,7 +73,7 @@ it('can cast quantity using FixedDecimal', function () {
 });
 
 it('belongs to an invoice', function () {
-    $item = InvoiceItem::factory()->create([
+    $item = quietInvoiceItem([
         'invoice_id' => $this->invoice->id,
     ]);
 
@@ -84,7 +84,7 @@ it('belongs to an invoice', function () {
 // Removed: 'it belongs to a unit measure' - UnitMeasure not implemented in v0.4.0
 
 it('can calculate taxable amount', function () {
-    $item = InvoiceItem::factory()->create([
+    $item = quietInvoiceItem([
         'invoice_id' => $this->invoice->id,
         'quantity'   => cents(300),  // 3.00 units
         'unit_price' => cents(1550), // €15.50
@@ -96,7 +96,7 @@ it('can calculate taxable amount', function () {
 });
 
 it('can calculate taxable amount with decimal quantity', function () {
-    $item = InvoiceItem::factory()->create([
+    $item = quietInvoiceItem([
         'invoice_id' => $this->invoice->id,
         'quantity'   => cents(250),  // 2.50 units
         'unit_price' => cents(1000), // €10.00
@@ -113,7 +113,7 @@ it('can store taxes_applied as array', function () {
         ['source_rate_id' => 2, 'name' => 'GST', 'rate' => 500, 'amount' => 100],
     ];
 
-    $item = InvoiceItem::factory()->create([
+    $item = quietInvoiceItem([
         'invoice_id'    => $this->invoice->id,
         'taxes_applied' => $taxesApplied,
     ]);
@@ -128,7 +128,7 @@ it('can get tax breakdown', function () {
         ['source_rate_id' => 1, 'name' => 'VAT', 'rate' => 2100, 'amount' => 420],
     ];
 
-    $item = InvoiceItem::factory()->create([
+    $item = quietInvoiceItem([
         'invoice_id'    => $this->invoice->id,
         'taxes_applied' => $taxesApplied,
     ]);
@@ -141,7 +141,7 @@ it('can get tax breakdown', function () {
 });
 
 it('returns empty array for tax breakdown when taxes_applied is null', function () {
-    $item = InvoiceItem::factory()->create([
+    $item = quietInvoiceItem([
         'invoice_id'    => $this->invoice->id,
         'taxes_applied' => null,
     ]);
@@ -152,11 +152,11 @@ it('returns empty array for tax breakdown when taxes_applied is null', function 
 });
 
 it('can scope goods only', function () {
-    InvoiceItem::factory()->create([
+    quietInvoiceItem([
         'invoice_id' => $this->invoice->id,
         'item_type'  => ItemType::GOOD,
     ]);
-    InvoiceItem::factory()->create([
+    quietInvoiceItem([
         'invoice_id' => $this->invoice->id,
         'item_type'  => ItemType::SERVICE,
     ]);
@@ -168,11 +168,11 @@ it('can scope goods only', function () {
 });
 
 it('can scope services only', function () {
-    InvoiceItem::factory()->create([
+    quietInvoiceItem([
         'invoice_id' => $this->invoice->id,
         'item_type'  => ItemType::GOOD,
     ]);
-    InvoiceItem::factory()->create([
+    quietInvoiceItem([
         'invoice_id' => $this->invoice->id,
         'item_type'  => ItemType::SERVICE,
     ]);
@@ -184,12 +184,12 @@ it('can scope services only', function () {
 });
 
 it('can scope items with service dates', function () {
-    InvoiceItem::factory()->create([
+    quietInvoiceItem([
         'invoice_id'        => $this->invoice->id,
         'service_date_from' => now(),
         'service_date_to'   => now()->addDays(7),
     ]);
-    InvoiceItem::factory()->create([
+    quietInvoiceItem([
         'invoice_id'        => $this->invoice->id,
         'service_date_from' => null,
         'service_date_to'   => null,
@@ -206,7 +206,7 @@ it('can store service dates', function () {
     $from = now();
     $to   = now()->addDays(30);
 
-    $item = InvoiceItem::factory()->create([
+    $item = quietInvoiceItem([
         'invoice_id'        => $this->invoice->id,
         'item_type'         => ItemType::SERVICE,
         'service_date_from' => $from,
@@ -225,7 +225,7 @@ it('can store metadata', function () {
         'warranty'     => '2 years',
     ];
 
-    $item = InvoiceItem::factory()->create([
+    $item = quietInvoiceItem([
         'invoice_id' => $this->invoice->id,
         'metadata'   => $metadata,
     ]);
@@ -235,7 +235,7 @@ it('can store metadata', function () {
 });
 
 it('can store internal_code', function () {
-    $item = InvoiceItem::factory()->create([
+    $item = quietInvoiceItem([
         'invoice_id'    => $this->invoice->id,
         'internal_code' => 'SKU-12345',
     ]);
@@ -244,7 +244,7 @@ it('can store internal_code', function () {
 });
 
 it('can have null internal_code', function () {
-    $item = InvoiceItem::factory()->create([
+    $item = quietInvoiceItem([
         'invoice_id'    => $this->invoice->id,
         'internal_code' => null,
     ]);
@@ -253,7 +253,7 @@ it('can have null internal_code', function () {
 });
 
 it('can have null unit_measure_id', function () {
-    $item = InvoiceItem::factory()->create([
+    $item = quietInvoiceItem([
         'invoice_id'      => $this->invoice->id,
         'unit_measure_id' => null,
     ]);
@@ -263,7 +263,7 @@ it('can have null unit_measure_id', function () {
 });
 
 it('uses binary UUID for invoice_id', function () {
-    $item = InvoiceItem::factory()->create([
+    $item = quietInvoiceItem([
         'invoice_id' => $this->invoice->id,
     ]);
 
@@ -273,8 +273,8 @@ it('uses binary UUID for invoice_id', function () {
 });
 
 it('has auto-incrementing integer id', function () {
-    $item1 = InvoiceItem::factory()->create(['invoice_id' => $this->invoice->id]);
-    $item2 = InvoiceItem::factory()->create(['invoice_id' => $this->invoice->id]);
+    $item1 = quietInvoiceItem(['invoice_id' => $this->invoice->id]);
+    $item2 = quietInvoiceItem(['invoice_id' => $this->invoice->id]);
 
     expect($item1->id)->toBeInt()
         ->and($item2->id)->toBeInt()
@@ -282,7 +282,7 @@ it('has auto-incrementing integer id', function () {
 });
 
 it('calculates taxable amount with precision', function () {
-    $item = InvoiceItem::factory()->create([
+    $item = quietInvoiceItem([
         'invoice_id' => $this->invoice->id,
         'quantity'   => cents(333),  // 3.33 units
         'unit_price' => cents(999),  // €9.99
@@ -296,7 +296,7 @@ it('calculates taxable amount with precision', function () {
 });
 
 it('can create service item with service dates', function () {
-    $item = InvoiceItem::factory()->create([
+    $item = quietInvoiceItem([
         'invoice_id'        => $this->invoice->id,
         'item_type'         => ItemType::SERVICE,
         'description'       => 'Consulting Services',
@@ -310,15 +310,15 @@ it('can create service item with service dates', function () {
 });
 
 it('can create multiple items for same invoice', function () {
-    InvoiceItem::factory()->count(3)->create([
+    InvoiceItem::withoutEvents(fn () => InvoiceItem::factory()->count(3)->create([
         'invoice_id' => $this->invoice->id,
-    ]);
+    ]));
 
     expect($this->invoice->items()->count())->toBe(3);
 });
 
 it('stores total amounts correctly', function () {
-    $item = InvoiceItem::factory()->create([
+    $item = quietInvoiceItem([
         'invoice_id'       => $this->invoice->id,
         'quantity'         => cents(200),   // 2.00 units
         'unit_price'       => cents(5000),  // €50.00

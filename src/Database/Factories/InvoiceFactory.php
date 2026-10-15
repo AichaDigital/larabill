@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Database\Factories;
 
 use AichaDigital\Lara100\ValueObjects\FixedDecimal;
+use AichaDigital\Larabill\Enums\FiscalSubmissionStatus;
+use AichaDigital\Larabill\Enums\InvoiceDocumentStatus;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Models\Invoice;
@@ -54,6 +56,20 @@ class InvoiceFactory extends Factory
                 InvoiceStatus::PAID->value,
                 InvoiceStatus::OVERDUE->value,
             ]),
+
+            // ADR-016 §8.2/§8.5 (PR-1, AID-1627): a fiscal numbered fixture IS
+            // the legacy/transitional shape — the number WAS consumed at birth
+            // — so it stamps the document axis ISSUED with the backfill's
+            // submission value. Both values are deterministic (AID-558
+            // discipline): a test that needs another document state declares
+            // it, never inherits it from a dice roll. A test creating a
+            // PROFORMA row declares it with the proforma() state — the §8.2
+            // enforcer rejects both the unstamped fiscal shape and the
+            // stamped proforma shape.
+            'invoice_document_status'  => InvoiceDocumentStatus::ISSUED->value,
+            'fiscal_submission_status' => FiscalSubmissionStatus::LEGACY_UNKNOWN->value,
+            'document_cancelled_at'    => null,
+            'document_cancelled_by'    => null,
 
             // Relations (ADR-001 + ADR-003: CompanyFiscalConfig + UserTaxProfile architecture)
             'user_id'                   => null, // Owner of invoice (issuer)
@@ -175,6 +191,12 @@ class InvoiceFactory extends Factory
                 'prefix'        => 'PRO',
                 'serie'         => InvoiceSerieType::PROFORMA->value,
                 'status'        => InvoiceStatus::DRAFT->value,
+                // ADR-016 §8.2: the document axis does not exist on proforma
+                // rows — both lifecycle axes explicitly NULL (the §8.2 CHECK
+                // biconditional requires it; stating it makes the fixture's
+                // shape explicit instead of incidental).
+                'invoice_document_status'  => null,
+                'fiscal_submission_status' => null,
             ];
         });
     }

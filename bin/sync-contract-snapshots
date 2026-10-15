@@ -5,8 +5,10 @@
 #
 # The ModelContractSnapshotTest fails CI whenever the public surface of the
 # contract models (columns, casts, relations, scopes, methods) drifts from
-# the committed snapshots (AID-412, boundary spec §4.2). A legitimate contract
-# change therefore goes through this script, which:
+# the committed snapshots (AID-412, boundary spec §4.2) — and, since ADR-016
+# §12 (V5), the ServiceContractSnapshotTest does the same for the service-
+# signature surface of InvoiceService and InvoiceNumberingService. A
+# legitimate contract change therefore goes through this script, which:
 #
 #   1. Regenerates the snapshots (LARABILL_REGENERATE_CONTRACT=1).
 #   2. If they changed, REQUIRES a non-empty `## [Unreleased]` CHANGELOG

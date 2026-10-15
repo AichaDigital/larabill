@@ -13,6 +13,7 @@ describe('InvoiceStatus Enum', function () {
         expect(InvoiceStatus::CANCELLED->value)->toBe(4);
         expect(InvoiceStatus::PENDING->value)->toBe(5);
         expect(InvoiceStatus::CONVERTED->value)->toBe(6);
+        expect(InvoiceStatus::CONVERTING->value)->toBe(7);
     });
 
     it('returns correct labels', function () {
@@ -29,13 +30,14 @@ describe('InvoiceStatus Enum', function () {
         expect(InvoiceStatus::CANCELLED->canBeEdited())->toBeFalse();
         expect(InvoiceStatus::PENDING->canBeEdited())->toBeFalse();
         expect(InvoiceStatus::CONVERTED->canBeEdited())->toBeFalse();
+        expect(InvoiceStatus::CONVERTING->canBeEdited())->toBeFalse();
     });
 
     it('converts to array', function () {
         $array = InvoiceStatus::toArray();
 
         expect($array)->toBeArray();
-        expect($array)->toHaveCount(7); // Updated from 5 to 7
-        expect($array)->toHaveKeys([0, 1, 2, 3, 4, 5, 6]); // Added 5, 6
+        expect($array)->toHaveCount(8); // ADR-016 §5.2: 7 + CONVERTING
+        expect($array)->toHaveKeys([0, 1, 2, 3, 4, 5, 6, 7]);
     });
 });

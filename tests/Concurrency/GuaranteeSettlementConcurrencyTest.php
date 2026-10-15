@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Enums\AgreementStatus;
+use AichaDigital\Larabill\Enums\InvoiceDocumentStatus;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Models\AgreementGuaranteeOperation;
@@ -251,4 +252,33 @@ it('adopts a committed Phase-1 issuance on retry after a Phase-2 failure', funct
 
     expect($again?->id)->toBe($winner->id)
         ->and(Invoice::query()->where('settlement_operation_key', $key)->count())->toBe(1);
+})->group('concurrency');
+
+it('resumes a committed Phase-1 durable DRAFT on retry: the registry never links an unnumbered artifact (gate round 2)', function () {
+    [$agreement, $operation] = guaranteeSettlementFixture();
+    $original                = $operation->originalInvoice;
+    $key                     = app(GuaranteeService::class)->operationKey($operation);
+
+    // The winner: Phase 1 committed ONLY the durable unnumbered DRAFT (the
+    // issuance phase failed) and the process died before Phase 2.
+    $winnerDraft = app(InvoiceService::class)->createInvoice([
+        'billable_user_id'         => (string) $original->billable_user_id,
+        'type'                     => 'rectificative',
+        'rectifies_invoice_id'     => $original->id,
+        'settlement_operation_key' => $key,
+        'status'                   => 'draft',
+    ]);
+
+    expect($winnerDraft->invoice_document_status)->toBe(InvoiceDocumentStatus::DRAFT)
+        ->and($winnerDraft->fiscal_number)->toBeNull();
+
+    // The loser's settle(): rectify()'s keyed resume branch issues the DRAFT
+    // (never a second artifact) and the registry links an ISSUED document.
+    $adopted = app(GuaranteeService::class)->settle($operation);
+
+    expect($adopted?->id)->toBe($winnerDraft->id)
+        ->and($adopted?->refresh()->invoice_document_status)->toBe(InvoiceDocumentStatus::ISSUED)
+        ->and($adopted?->refresh()->fiscal_number)->not->toBeNull()
+        ->and(Invoice::query()->where('settlement_operation_key', $key)->count())->toBe(1)
+        ->and($operation->fresh()->rectifies_invoice_id)->toBe($winnerDraft->id);
 })->group('concurrency');

@@ -1,0 +1,150 @@
+{
+    "class": "AichaDigital\\Larabill\\Services\\InvoiceService",
+    "interfaces": [],
+    "publicMethods": {
+        "__construct": {
+            "returnType": null,
+            "static": false,
+            "parameters": [
+                {
+                    "name": "$taxCalculationService",
+                    "type": "AichaDigital\\Larabill\\Services\\TaxCalculationService",
+                    "default": null
+                },
+                {
+                    "name": "$fiscalVerification",
+                    "type": "?AichaDigital\\Larabill\\Contracts\\Services\\FiscalVerificationContract",
+                    "default": null
+                },
+                {
+                    "name": "$fiscalChangeDetector",
+                    "type": "?AichaDigital\\Larabill\\Services\\FiscalChangeDetector",
+                    "default": null
+                },
+                {
+                    "name": "$invoiceNumbering",
+                    "type": "?AichaDigital\\Larabill\\Services\\InvoiceNumberingService",
+                    "default": null
+                },
+                {
+                    "name": "$seriesResolver",
+                    "type": "?AichaDigital\\Larabill\\Services\\InvoiceSeriesResolver",
+                    "default": null
+                }
+            ]
+        },
+        "canConvertProformaSafely": {
+            "returnType": "bool",
+            "static": false,
+            "parameters": [
+                {
+                    "name": "$proforma",
+                    "type": "AichaDigital\\Larabill\\Models\\Invoice",
+                    "default": null
+                }
+            ]
+        },
+        "cancelPreparedInvoice": {
+            "returnType": "AichaDigital\\Larabill\\Models\\Invoice",
+            "static": false,
+            "parameters": [
+                {
+                    "name": "$invoice",
+                    "type": "AichaDigital\\Larabill\\Models\\Invoice",
+                    "default": null
+                },
+                {
+                    "name": "$actor",
+                    "type": "string",
+                    "default": null
+                }
+            ]
+        },
+        "convertAndIssue": {
+            "returnType": "AichaDigital\\Larabill\\DTO\\ProformaConversionResult",
+            "static": false,
+            "parameters": [
+                {
+                    "name": "$proforma",
+                    "type": "AichaDigital\\Larabill\\Models\\Invoice",
+                    "default": null
+                },
+                {
+                    "name": "$options",
+                    "type": "array",
+                    "default": "[]"
+                }
+            ]
+        },
+        "convertProformaToInvoice": {
+            "returnType": "AichaDigital\\Larabill\\DTO\\ProformaConversionResult",
+            "static": false,
+            "parameters": [
+                {
+                    "name": "$proforma",
+                    "type": "AichaDigital\\Larabill\\Models\\Invoice",
+                    "default": null
+                },
+                {
+                    "name": "$options",
+                    "type": "array",
+                    "default": "[]"
+                }
+            ]
+        },
+        "createInvoice": {
+            "returnType": "AichaDigital\\Larabill\\Models\\Invoice",
+            "static": false,
+            "parameters": [
+                {
+                    "name": "$invoiceData",
+                    "type": "array",
+                    "default": null
+                },
+                {
+                    "name": "$options",
+                    "type": "array",
+                    "default": "[]"
+                }
+            ]
+        },
+        "createProforma": {
+            "returnType": "AichaDigital\\Larabill\\Models\\Invoice",
+            "static": false,
+            "parameters": [
+                {
+                    "name": "$invoiceData",
+                    "type": "array",
+                    "default": null
+                },
+                {
+                    "name": "$options",
+                    "type": "array",
+                    "default": "[]"
+                }
+            ]
+        },
+        "getProformaFiscalChanges": {
+            "returnType": "array",
+            "static": false,
+            "parameters": [
+                {
+                    "name": "$proforma",
+                    "type": "AichaDigital\\Larabill\\Models\\Invoice",
+                    "default": null
+                }
+            ]
+        },
+        "issue": {
+            "returnType": "AichaDigital\\Larabill\\Models\\Invoice",
+            "static": false,
+            "parameters": [
+                {
+                    "name": "$invoice",
+                    "type": "AichaDigital\\Larabill\\Models\\Invoice",
+                    "default": null
+                }
+            ]
+        }
+    }
+}

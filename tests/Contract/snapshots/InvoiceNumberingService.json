@@ -1,0 +1,96 @@
+{
+    "class": "AichaDigital\\Larabill\\Services\\InvoiceNumberingService",
+    "interfaces": [],
+    "publicMethods": {
+        "generateNumber": {
+            "returnType": "AichaDigital\\Larabill\\ValueObjects\\InvoiceNumber",
+            "static": false,
+            "parameters": [
+                {
+                    "name": "$prefix",
+                    "type": "string",
+                    "default": null
+                },
+                {
+                    "name": "$serie",
+                    "type": "int",
+                    "default": null
+                },
+                {
+                    "name": "$userId",
+                    "type": "string|int|null",
+                    "default": null
+                },
+                {
+                    "name": "$issuedAt",
+                    "type": "?Carbon\\Carbon",
+                    "default": null
+                }
+            ]
+        },
+        "generateNumberInTransaction": {
+            "returnType": "AichaDigital\\Larabill\\ValueObjects\\InvoiceNumber",
+            "static": false,
+            "parameters": [
+                {
+                    "name": "$prefix",
+                    "type": "string",
+                    "default": null
+                },
+                {
+                    "name": "$serie",
+                    "type": "int",
+                    "default": null
+                },
+                {
+                    "name": "$userId",
+                    "type": "string|int|null",
+                    "default": null
+                },
+                {
+                    "name": "$issuedAt",
+                    "type": "?Carbon\\Carbon",
+                    "default": null
+                }
+            ]
+        },
+        "getCurrentFiscalYear": {
+            "returnType": "int",
+            "static": false,
+            "parameters": [
+                {
+                    "name": "$date",
+                    "type": "?Carbon\\Carbon",
+                    "default": null
+                }
+            ]
+        },
+        "getCurrentFiscalYearData": {
+            "returnType": "array",
+            "static": false,
+            "parameters": [
+                {
+                    "name": "$date",
+                    "type": "?Carbon\\Carbon",
+                    "default": null
+                }
+            ]
+        },
+        "isWithinFiscalYear": {
+            "returnType": "bool",
+            "static": false,
+            "parameters": [
+                {
+                    "name": "$date",
+                    "type": "Carbon\\Carbon",
+                    "default": null
+                },
+                {
+                    "name": "$fiscalYear",
+                    "type": "int",
+                    "default": null
+                }
+            ]
+        }
+    }
+}

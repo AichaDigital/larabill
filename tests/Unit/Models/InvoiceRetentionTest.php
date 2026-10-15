@@ -39,7 +39,7 @@ describe('Invoice retention contract', function () {
     });
 
     it('carries no retention for a proforma (not a fiscal document)', function () {
-        $invoice = Invoice::factory()->make([
+        $invoice = Invoice::factory()->proforma()->make([
             'serie'        => InvoiceSerieType::PROFORMA->value,
             'invoice_date' => '2023-05-15',
         ]);

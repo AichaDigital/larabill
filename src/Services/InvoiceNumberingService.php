@@ -43,58 +43,115 @@ class InvoiceNumberingService
      * Uses database transaction with pessimistic lock to ensure atomicity.
      * Creates series control on first use (idempotently under concurrency).
      *
+     * ADR-016 §6.1: this wrapper KEEPS its own `DB::transaction` (direct
+     * callers keep their atomicity contract, AID-390) and delegates the
+     * counter work to the internal transaction-less path. `issue()` does not
+     * come through here — it calls `generateNumberInTransaction()` inside its
+     * ambient transaction, so the counter move and the row stamping commit
+     * (or roll back) as ONE unit.
+     *
      * @param  string  $prefix  User customizable prefix (FAC, PRO, RECT, etc.)
      * @param  int  $serie  InvoiceSerieType enum value (0=proforma, 1=invoice, 2=rectificative)
      * @param  int|string|null  $userId  ISSUER scope for multi-issuer setups
      *                                   (null = global issuer series). Never
      *                                   the billed customer (see ADR-003:
      *                                   customers are billable_user_id).
+     * @param  Carbon|null  $issuedAt  the issuance instant the
+     *                                 number belongs to (ADR-016 §6.1/§6.2).
+     *                                 Governs the fiscal-year resolution
+     *                                 (counter row AND first-use range), the
+     *                                 annual-reset comparison and the
+     *                                 `{{TIMESTAMP}}` placeholder. Null (the
+     *                                 default) keeps the v6 behavior: `now()`.
      * @return InvoiceNumber Invoice number value object (string-castable for backward compat)
      */
-    public function generateNumber(string $prefix, int $serie, int|string|null $userId = null): InvoiceNumber
-    {
-        $scopeId = $this->normalizeScope($userId);
+    public function generateNumber(
+        string $prefix,
+        int $serie,
+        int|string|null $userId = null,
+        ?Carbon $issuedAt = null
+    ): InvoiceNumber {
+        return DB::transaction(
+            fn (): InvoiceNumber => $this->generateNumberInTransaction($prefix, $serie, $userId, $issuedAt),
+            3,
+        );
+    }
 
-        return DB::transaction(function () use ($prefix, $serie, $userId, $scopeId) {
-            $fiscalYearData = $this->getCurrentFiscalYearData();
-            $fiscalYear     = $fiscalYearData['year'];
-
-            $control = $this->getOrCreateControlForUpdate($prefix, $serie, $fiscalYear, $scopeId);
-
-            // Handle annual reset: when the stored fiscal year differs, the counter
-            // restarts from start_number. Computed locally; the reset is persisted
-            // by the update below ($fiscalYearData).
-            $lastNumber = $control->last_number;
-            if ($control->reset_annually && $control->fiscal_year !== $fiscalYear) {
-                $lastNumber = $control->start_number - 1;
-            }
-
-            $nextNumber = $lastNumber + 1;
-
-            $control->update([
-                'last_number'       => $nextNumber,
-                'fiscal_year'       => $fiscalYear,
-                'fiscal_year_start' => $fiscalYearData['start']->toDateString(),
-                'fiscal_year_end'   => $fiscalYearData['end']->toDateString(),
-                'last_used_at'      => now(),
-            ]);
-
-            // Format number
-            $formatted = $this->formatNumber(
-                $control->number_format,
-                $prefix,
-                $fiscalYear,
-                $nextNumber,
-                $userId
+    /**
+     * Generate the next fiscal number WITHOUT opening a transaction of its own
+     * (ADR-016 §6.1, round 1 finding S1): the counter read/advance runs inside
+     * the CALLER's ambient transaction — this is what `issue()` calls, so the
+     * issuance stamps and the correlative commit or roll back together.
+     *
+     * When it is the OUTERMOST transaction that owns deadlock retry (Laravel
+     * raises `DeadlockException` at transaction level > 1 instead of retrying),
+     * that ownership stays with the caller exactly as scoped in spec §6/B2 —
+     * this method never opens nor retries a transaction itself.
+     *
+     * @internal Implementation detail of the ADR-016 issuance path — call it
+     *           ONLY from inside an open database transaction; callers outside
+     *           one throw loud. May change without a major version (AID-413).
+     *
+     * @param  string  $prefix  User customizable prefix (FAC, PRO, RECT, etc.)
+     * @param  int  $serie  InvoiceSerieType enum value
+     * @param  int|string|null  $userId  ISSUER scope (null = global issuer series)
+     * @param  Carbon|null  $issuedAt  the issuance instant (see generateNumber)
+     */
+    public function generateNumberInTransaction(
+        string $prefix,
+        int $serie,
+        int|string|null $userId = null,
+        ?Carbon $issuedAt = null
+    ): InvoiceNumber {
+        if (DB::transactionLevel() < 1) {
+            throw new \LogicException(
+                'generateNumberInTransaction() assumes an AMBIENT database transaction (ADR-016 §6.1). Use generateNumber() — it opens its own.'
             );
+        }
 
-            return new InvoiceNumber(
-                formatted: $formatted,
-                prefix: $prefix,
-                fiscalYear: $fiscalYear,
-                seriesNumber: $nextNumber,
-            );
-        }, 3);
+        $scopeId        = $this->normalizeScope($userId);
+        $instant        = $issuedAt ?? now();
+        $fiscalYearData = $this->getCurrentFiscalYearData($instant);
+        $fiscalYear     = $fiscalYearData['year'];
+
+        $control = $this->getOrCreateControlForUpdate($prefix, $serie, $fiscalYear, $scopeId, $instant);
+
+        // Handle annual reset: when the stored fiscal year differs, the counter
+        // restarts from start_number. Computed locally; the reset is persisted
+        // by the update below ($fiscalYearData).
+        $lastNumber = $control->last_number;
+        if ($control->reset_annually && $control->fiscal_year !== $fiscalYear) {
+            $lastNumber = $control->start_number - 1;
+        }
+
+        $nextNumber = $lastNumber + 1;
+
+        $control->update([
+            'last_number'       => $nextNumber,
+            'fiscal_year'       => $fiscalYear,
+            'fiscal_year_start' => $fiscalYearData['start']->toDateString(),
+            'fiscal_year_end'   => $fiscalYearData['end']->toDateString(),
+            'last_used_at'      => now(),
+        ]);
+
+        // Format number — {{TIMESTAMP}} formats the ISSUANCE instant, never a
+        // fresh now() (round 2 finding B1): a 23:59:59 issuance that reaches
+        // numbering after midnight must not advance into the new day/year.
+        $formatted = $this->formatNumber(
+            $control->number_format,
+            $prefix,
+            $fiscalYear,
+            $nextNumber,
+            $userId,
+            $instant
+        );
+
+        return new InvoiceNumber(
+            formatted: $formatted,
+            prefix: $prefix,
+            fiscalYear: $fiscalYear,
+            seriesNumber: $nextNumber,
+        );
     }
 
     /**
@@ -132,11 +189,12 @@ class InvoiceNumberingService
         string $prefix,
         int $serie,
         int $fiscalYear,
-        string $scopeId
+        string $scopeId,
+        ?Carbon $instant = null
     ): InvoiceSeriesControl {
         if (! $this->controlQuery($prefix, $serie, $fiscalYear, $scopeId)->exists()) {
             try {
-                $this->createSeriesControl($prefix, $serie, $fiscalYear, $scopeId);
+                $this->createSeriesControl($prefix, $serie, $fiscalYear, $scopeId, $instant);
             } catch (UniqueConstraintViolationException) {
                 // Lost the creation race to a concurrent transaction.
             }
@@ -213,13 +271,18 @@ class InvoiceNumberingService
         string $prefix,
         int $fiscalYear,
         int $number,
-        int|string|null $userId = null
+        int|string|null $userId = null,
+        ?Carbon $instant = null
     ): string {
         $replacements = [
             '{{PREFIX}}'    => $prefix,
             '{{YEAR}}'      => (string) $fiscalYear,
             '{{NUMBER}}'    => str_pad((string) $number, 6, '0', STR_PAD_LEFT),
-            '{{TIMESTAMP}}' => now()->format('YmdHis'),
+            // ADR-016 §6.1 (round 2, B1): {{TIMESTAMP}} formats the ISSUANCE
+            // instant the caller passed — never a fresh now(). A 23:59:59
+            // issuance that reaches numbering after midnight must not advance
+            // the formatted number into the next day/fiscal year.
+            '{{TIMESTAMP}}' => ($instant ?? now())->format('YmdHis'),
             '{{USER_ID}}'   => $userId !== null ? (string) $userId : '',
         ];
 
@@ -237,14 +300,20 @@ class InvoiceNumberingService
      * @param  int  $serie  Serie type
      * @param  int  $fiscalYear  Fiscal year
      * @param  string  $scopeId  Normalized issuer scope (user UUID or GLOBAL_SCOPE)
+     * @param  Carbon|null  $instant  the issuance instant — its
+     *                                fiscal year derives the STORED range (ADR-016 §6.1, round 3
+     *                                finding B1-residual: the first-use range used to come from an
+     *                                argument-less read, keying a boundary-straddling first use to one
+     *                                year with the next one's range). Null = now() (the v6 behavior).
      */
     protected function createSeriesControl(
         string $prefix,
         int $serie,
         int $fiscalYear,
-        string $scopeId
+        string $scopeId,
+        ?Carbon $instant = null
     ): InvoiceSeriesControl {
-        $fiscalYearData = $this->getCurrentFiscalYearData();
+        $fiscalYearData = $this->getCurrentFiscalYearData($instant);
 
         // Continuity seed (AID-390): invoices issued by the legacy numbering
         // paths (rand()/cache/MAX+1) predate any control row. The counter

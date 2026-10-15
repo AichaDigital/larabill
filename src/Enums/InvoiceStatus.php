@@ -17,13 +17,14 @@ namespace AichaDigital\Larabill\Enums;
  */
 enum InvoiceStatus: int
 {
-    case DRAFT     = 0;
-    case SENT      = 1;
-    case PAID      = 2;
-    case OVERDUE   = 3;
-    case CANCELLED = 4;
-    case PENDING   = 5;
-    case CONVERTED = 6;
+    case DRAFT      = 0;
+    case SENT       = 1;
+    case PAID       = 2;
+    case OVERDUE    = 3;
+    case CANCELLED  = 4;
+    case PENDING    = 5;
+    case CONVERTED  = 6;
+    case CONVERTING = 7;
 
     /**
      * Get human-readable label
@@ -31,13 +32,14 @@ enum InvoiceStatus: int
     public function label(): string
     {
         return match ($this) {
-            self::DRAFT     => __('larabill::enums.status.draft'),
-            self::SENT      => __('larabill::enums.status.sent'),
-            self::PAID      => __('larabill::enums.status.paid'),
-            self::OVERDUE   => __('larabill::enums.status.overdue'),
-            self::CANCELLED => __('larabill::enums.status.cancelled'),
-            self::PENDING   => __('larabill::enums.status.pending'),
-            self::CONVERTED => __('larabill::enums.status.converted'),
+            self::DRAFT      => __('larabill::enums.status.draft'),
+            self::SENT       => __('larabill::enums.status.sent'),
+            self::PAID       => __('larabill::enums.status.paid'),
+            self::OVERDUE    => __('larabill::enums.status.overdue'),
+            self::CANCELLED  => __('larabill::enums.status.cancelled'),
+            self::PENDING    => __('larabill::enums.status.pending'),
+            self::CONVERTED  => __('larabill::enums.status.converted'),
+            self::CONVERTING => __('larabill::enums.status.converting'),
         };
     }
 
@@ -58,13 +60,14 @@ enum InvoiceStatus: int
     public static function toArray(): array
     {
         return [
-            self::DRAFT->value     => self::DRAFT->label(),
-            self::SENT->value      => self::SENT->label(),
-            self::PAID->value      => self::PAID->label(),
-            self::OVERDUE->value   => self::OVERDUE->label(),
-            self::CANCELLED->value => self::CANCELLED->label(),
-            self::PENDING->value   => self::PENDING->label(),
-            self::CONVERTED->value => self::CONVERTED->label(),
+            self::DRAFT->value      => self::DRAFT->label(),
+            self::SENT->value       => self::SENT->label(),
+            self::PAID->value       => self::PAID->label(),
+            self::OVERDUE->value    => self::OVERDUE->label(),
+            self::CANCELLED->value  => self::CANCELLED->label(),
+            self::PENDING->value    => self::PENDING->label(),
+            self::CONVERTED->value  => self::CONVERTED->label(),
+            self::CONVERTING->value => self::CONVERTING->label(),
         ];
     }
 }

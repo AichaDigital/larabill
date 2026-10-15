@@ -17,7 +17,7 @@ it('can have items relationship', function () {
     $user    = TestUser::factory()->create();
     $invoice = Invoice::factory()->create(['user_id' => $user->id]);
 
-    InvoiceItem::factory()->count(3)->create(['invoice_id' => $invoice->id]);
+    InvoiceItem::withoutEvents(fn () => InvoiceItem::factory()->count(3)->create(['invoice_id' => $invoice->id]));
 
     expect($invoice->items)->toHaveCount(3);
 });

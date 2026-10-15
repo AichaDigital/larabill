@@ -35,6 +35,25 @@ final class InvalidInvoiceStatusException extends InvalidArgumentException
     }
 
     /**
+     * The requested collection state is a LIFECYCLE OUTCOME, not a birth input
+     * (ADR-016 §7.2, rounds 9/10 V14/V15): PENDING, CONVERTED, CANCELLED and
+     * CONVERTING are produced by the document lifecycle (`issue()`, the
+     * conversion, the cancellation paths), never accepted at creation. A
+     * caller wanting a cancelled document creates the DRAFT and cancels it.
+     *
+     * The rejection runs on the NORMALIZED state — the mapper accepts both
+     * string case names and integer values, so both forms land here.
+     */
+    public static function forbiddenBirthState(InvoiceStatus $status): self
+    {
+        return new self(sprintf(
+            "Invoice status '%s' is a lifecycle outcome and cannot be used as a creation input (ADR-016 §7.2). Create the document in DRAFT (or a collection state SENT/PAID/OVERDUE) and let the document lifecycle produce '%s'.",
+            $status->name,
+            $status->name,
+        ));
+    }
+
+    /**
      * Derived from the enum, never listed by hand: a parallel list is what
      * fell out of sync and produced the silent DRAFT fallback.
      *

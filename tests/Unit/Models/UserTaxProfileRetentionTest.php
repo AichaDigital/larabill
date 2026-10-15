@@ -16,7 +16,13 @@ uses(RefreshDatabase::class);
  */
 function fiscalInvoiceFor(TestUser $user, UserTaxProfile $profile, string $date, InvoiceSerieType $serie = InvoiceSerieType::INVOICE): Invoice
 {
-    return Invoice::factory()->create([
+    // ADR-016 §8.2: a PROFORMA row carries no document axis — the factory
+    // state declares the shape instead of inheriting the fiscal stamp.
+    $factory = $serie === InvoiceSerieType::PROFORMA
+        ? Invoice::factory()->proforma()
+        : Invoice::factory();
+
+    return $factory->create([
         'user_id'             => $user->id,
         'user_tax_profile_id' => $profile->id,
         'serie'               => $serie->value,

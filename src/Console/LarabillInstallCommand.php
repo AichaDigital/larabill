@@ -88,6 +88,12 @@ class LarabillInstallCommand extends Command
         // === IMPORT SUPPORT (ADR-015 / AID-895) — invoices.is_historical + agreement origin_key UNIQUE ===
         '047' => 'add_import_support_columns',
         '048' => 'drop_customer_article_instance_unique',
+        // === INVOICE NUMBERING LIFECYCLE (ADR-016 / AID-1627) ===
+        // Preflight first (read-only, loud-abort), then the schema columns,
+        // then the backfill — which adds the named CHECK over healed data.
+        '049' => 'preflight_invoice_numbering_lifecycle',
+        '050' => 'add_invoice_document_lifecycle_columns',
+        '051' => 'backfill_invoice_document_status',
     ];
 
     public function handle(): int

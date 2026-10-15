@@ -34,7 +34,13 @@ function aid555RunBackfill(): void
  */
 function aid555Invoice(array $attributes): Invoice
 {
-    return Invoice::factory()->create($attributes + [
+    // ADR-016 §8.2: a PROFORMA row carries no document axis — the factory
+    // state declares the shape instead of inheriting the fiscal stamp.
+    $factory = ($attributes['serie'] ?? null) === InvoiceSerieType::PROFORMA->value
+        ? Invoice::factory()->proforma()
+        : Invoice::factory();
+
+    return $factory->create($attributes + [
         'user_id'          => TestCase::USER_UUID_1,
         'billable_user_id' => TestCase::USER_UUID_1,
     ]);

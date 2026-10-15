@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use AichaDigital\Larabill\Enums\InvoiceDocumentStatus;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Exceptions\InvalidInvoiceStatusException;
 use AichaDigital\Larabill\Models\CompanyFiscalConfig;
@@ -12,21 +13,25 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 /**
- * AID-838 — the documented `status` input is validated, not guessed.
+ * AID-838 + ADR-016 §7.2 (PR-2, rounds 9/10 V14/V15) — the documented
+ * `status` input is validated, not guessed, and its MEANING is re-scoped.
  *
- * `createInvoice()` documents `status?: string|int`, and the mapping behind it
- * accepted four of the seven enum cases while silently turning ANY other
- * string into DRAFT: `'sent'`, `'overdue'`, `'converted'` and every typo
- * produced a draft the consumer never asked for. The integer branch had the
- * mirror defect — it returned whatever it was given without checking it was a
- * real case, so an out-of-range value blew up later inside Eloquent's enum
- * cast with a raw ValueError instead of a domain error.
+ * AID-838 (v6.12.0) fixed the mapping: accepted names DERIVED from the enum,
+ * both string and integer forms, unknown values refused loud. PR-2 re-scopes
+ * WHAT the input means (§7.2): the lifecycle outcomes PENDING, CONVERTED,
+ * CANCELLED and CONVERTING are never birth inputs — they are produced by the
+ * document lifecycle (`issue()`, the conversion, the cancellation paths).
+ * With the four rejections the enum is exhausted at birth:
  *
- * The accepted strings are now DERIVED from the enum rather than listed by
- * hand: a list maintained in parallel is what fell out of sync in the first
- * place, and adding a case to InvoiceStatus must never silently become a
- * fallback again. Note the labels are NOT the source — `InvoiceStatus::label()`
- * returns translations, so the case name is what maps.
+ * - `DRAFT` accepted → an UNNUMBERED fiscal DRAFT (§7.1 phase 2 skipped).
+ * - `SENT`/`PAID`/`OVERDUE` accepted → issued, then the collection stamp.
+ * - the four lifecycle outcomes rejected — on the NORMALIZED state, so both
+ *   the string case name and the integer value land in the same typed
+ *   refusal (V15: the mapper normalizes both forms, `:683-696` of the v6
+ *   tree).
+ *
+ * The accepted names are still DERIVED from the enum, never listed by hand:
+ * the derivation is what AID-838 fixed and it survives the re-scope.
  */
 beforeEach(function () {
     CompanyFiscalConfig::factory()->create([
@@ -38,34 +43,85 @@ beforeEach(function () {
     $this->service  = app(InvoiceService::class);
 });
 
-it('accepts every enum case by name, including the three the old map forgot', function (InvoiceStatus $case) {
+/**
+ * The birth-eligible cases, DERIVED from the enum — the exhaustive list is
+ * the enum minus the four lifecycle outcomes, so a case added to
+ * InvoiceStatus can never silently become accepted (or rejected) again
+ * without this dataset answering the question.
+ *
+ * @return array<string, InvoiceStatus>
+ */
+function larabillBirthEligibleStatuses(): array
+{
+    $lifecycleOutcomes = [
+        InvoiceStatus::PENDING,
+        InvoiceStatus::CONVERTED,
+        InvoiceStatus::CANCELLED,
+        InvoiceStatus::CONVERTING,
+    ];
+
+    return collect(InvoiceStatus::cases())
+        ->reject(fn (InvoiceStatus $case) => in_array($case, $lifecycleOutcomes, true))
+        ->mapWithKeys(fn (InvoiceStatus $case) => [$case->name => $case])
+        ->all();
+}
+
+it('accepts every birth-eligible enum case by name, with the §7.2 outcome each one documents', function (InvoiceStatus $case) {
     $invoice = $this->service->createInvoice([
         'billable_user_id' => $this->customer->id,
         'status'           => mb_strtolower($case->name),
         'items'            => [],
     ]);
 
-    expect($invoice->status)->toBe($case);
-})->with(fn () => collect(InvoiceStatus::cases())->mapWithKeys(fn (InvoiceStatus $c) => [$c->name => $c])->all());
+    if ($case === InvoiceStatus::DRAFT) {
+        // §7.2: explicit draft → phase 2 does not run — UNNUMBERED DRAFT.
+        expect($invoice->status)->toBe(InvoiceStatus::DRAFT)
+            ->and($invoice->invoice_document_status)->toBe(InvoiceDocumentStatus::DRAFT)
+            ->and($invoice->fiscal_number)->toBeNull()
+            ->and($invoice->series_number)->toBeNull()
+            ->and($invoice->fiscal_year)->toBeNull()
+            ->and($invoice->invoice_date)->toBeNull()
+            ->and($invoice->issued_at)->toBeNull()
+            ->and($invoice->fiscal_submission_status)->toBeNull();
 
-it('accepts every enum case by its integer value', function (InvoiceStatus $case) {
+        return;
+    }
+
+    // §7.2: collection statuses are the post-issuance collection stamp —
+    // the document is ISSUED and numbered exactly once.
+    expect($invoice->status)->toBe($case)
+        ->and($invoice->invoice_document_status)->toBe(InvoiceDocumentStatus::ISSUED)
+        ->and($invoice->fiscal_number)->not->toBeNull()
+        ->and($invoice->series_number)->not->toBeNull()
+        ->and($invoice->fiscal_year)->not->toBeNull()
+        ->and($invoice->invoice_date)->not->toBeNull()
+        ->and($invoice->issued_at)->not->toBeNull()
+        ->and($invoice->fiscal_submission_status)->not->toBeNull();
+})->with(fn () => larabillBirthEligibleStatuses());
+
+it('accepts every birth-eligible enum case by its integer value', function (InvoiceStatus $case) {
     $invoice = $this->service->createInvoice([
         'billable_user_id' => $this->customer->id,
         'status'           => $case->value,
         'items'            => [],
     ]);
 
-    expect($invoice->status)->toBe($case);
-})->with(fn () => collect(InvoiceStatus::cases())->mapWithKeys(fn (InvoiceStatus $c) => [$c->name => $c])->all());
+    // Same §7.2 outcomes through the integer form of the normalized state.
+    expect($invoice->status)->toBe($case)
+        ->and($invoice->invoice_document_status)->toBe(
+            $case === InvoiceStatus::DRAFT ? InvoiceDocumentStatus::DRAFT : InvoiceDocumentStatus::ISSUED,
+        );
+})->with(fn () => larabillBirthEligibleStatuses());
 
 it('is case insensitive, as it always was', function () {
     $invoice = $this->service->createInvoice([
         'billable_user_id' => $this->customer->id,
-        'status'           => 'PeNdInG',
+        'status'           => 'dRaFt',
         'items'            => [],
     ]);
 
-    expect($invoice->status)->toBe(InvoiceStatus::PENDING);
+    expect($invoice->status)->toBe(InvoiceStatus::DRAFT)
+        ->and($invoice->fiscal_number)->toBeNull();
 });
 
 it('refuses an unknown status string instead of quietly issuing a draft', function () {
@@ -84,33 +140,62 @@ it('refuses an integer that is not a case, instead of leaking a raw ValueError',
     ]))->toThrow(InvalidInvoiceStatusException::class);
 });
 
-it('stays catchable as InvalidArgumentException for consumers written against the old contract', function () {
+/*
+ * §7.2 (V14/V15): the four lifecycle outcomes are never birth inputs —
+ * in BOTH the string and the integer form, because the mapper normalizes
+ * both before the rejection runs.
+ */
+it('rejects every lifecycle outcome as a birth input, in both the string and the integer form', function (InvoiceStatus $case) {
     expect(fn () => $this->service->createInvoice([
         'billable_user_id' => $this->customer->id,
-        'status'           => 'nope',
+        'status'           => mb_strtolower($case->name),
         'items'            => [],
-    ]))->toThrow(InvalidArgumentException::class);
-});
+    ]))->toThrow(InvalidInvoiceStatusException::class, $case->name)
+        ->and(fn () => $this->service->createInvoice([
+            'billable_user_id' => $this->customer->id,
+            'status'           => $case->value,
+            'items'            => [],
+        ]))->toThrow(InvalidInvoiceStatusException::class, $case->name);
+})->with(fn () => collect([
+    InvoiceStatus::PENDING,
+    InvoiceStatus::CONVERTED,
+    InvoiceStatus::CANCELLED,
+    InvoiceStatus::CONVERTING,
+])->mapWithKeys(fn (InvoiceStatus $case) => [$case->name => $case])->all());
 
-it('names the offending value and the accepted ones in the message', function () {
+it('names the offending lifecycle outcome and the remedy in the message', function () {
     try {
         $this->service->createInvoice([
             'billable_user_id' => $this->customer->id,
-            'status'           => 'porcessed',
+            'status'           => 'cancelled',
             'items'            => [],
         ]);
         expect()->fail('expected InvalidInvoiceStatusException');
     } catch (InvalidInvoiceStatusException $e) {
-        expect($e->getMessage())->toContain('porcessed')
-            ->and($e->getMessage())->toContain('converted');   // an accepted value is listed
+        expect($e->getMessage())->toContain('CANCELLED')
+            ->and($e->getMessage())->toContain('lifecycle outcome')
+            ->and($e->getMessage())->toContain('§7.2');
     }
 });
 
-it('keeps defaulting to DRAFT when no status is given at all', function () {
+it('keeps result compatibility: an absent status births an ISSUED invoice, and only an explicit draft skips issuance (ADR-016 §7.1/§7.2)', function () {
+    // §7.1 result compatibility: the bare call reaches the issuance phase.
     $invoice = $this->service->createInvoice([
         'billable_user_id' => $this->customer->id,
         'items'            => [],
     ]);
 
-    expect($invoice->status)->toBe(InvoiceStatus::DRAFT);
+    expect($invoice->invoice_document_status)->toBe(InvoiceDocumentStatus::ISSUED)
+        ->and($invoice->fiscal_number)->not->toBeNull()
+        ->and($invoice->status)->toBe(InvoiceStatus::DRAFT);
+
+    // §7.2: only an EXPLICIT draft skips the issuance phase.
+    $explicitDraft = $this->service->createInvoice([
+        'billable_user_id' => $this->customer->id,
+        'items'            => [],
+        'status'           => 'draft',
+    ]);
+
+    expect($explicitDraft->invoice_document_status)->toBe(InvoiceDocumentStatus::DRAFT)
+        ->and($explicitDraft->fiscal_number)->toBeNull();
 });
