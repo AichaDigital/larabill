@@ -209,15 +209,17 @@ The rules are keyed on the country that **issued** the tax id, not on where the 
 
 - `src/Services/InvoiceNumberingService.php:252`, the continuity seed, states "a gap is acceptable, a reused number never is". Under openmizan both are unacceptable.
 - Clientes allocates the number when the draft is created (`app/Services/Invoices/ManualInvoiceCreator.php:53`, invoice created as `DRAFT`), and `app/Policies/InvoicePolicy.php:106` allows deleting a draft. A numbered draft that is deleted leaves a gap.
-- The v7 lifecycle design already solved this (`docs/superpowers/specs/2026-07-13-proforma-invoice-lifecycle-v7-design.md` §6: a numbered non-issued row is impossible, the correlative is assigned at issuance only), but its epic AID-459 was canceled. Whatever replaces it must keep that invariant.
+- **DELIVERED in larabill v8.0.0 (AID-1627)**: the correlative is assigned at issuance only — a numbered non-issued row is impossible by design (`InvoiceDocumentStatus` + counter-provenance-checked coherence, the invariant the v7 lifecycle design §6 specified; the canceled AID-459 epic is superseded). An explicit `status: draft` request births an UNNUMBERED draft — the numbered-draft gap clientes leaned on no longer exists, and deleting a DRAFT leaves nothing behind.
 
-### R2 — Durable delivery to accounting (outbox)
+> **Integrating against 8.0.0?** The `fiscal_submission_status` column exists and is CHECK-bound to ISSUED fiscal rows, but it only ever reads `NOT_REQUIRED` (stamped at issuance by `InvoiceService::resolveFiscalSubmissionStatus()`) or `LEGACY_UNKNOWN` (the backfill's classification). There is **no real `REGISTERED`** until R2 lands — do not build against submission states yet.
+
+### R2 — Durable delivery to accounting (outbox) — destination 8.1.0 (AID-1629)
 
 - There is no outbound integration today.
 - Needed: one delivery intent per issued invoice, created in the issuance transaction, keyed by series + year + number, retried until openmizan acknowledges it, and reconciled against openmizan's last-number read after a failure.
 - The fiscal-submission outbox in the v7 design (§6.7) is the same shape and can be the model.
 
-### R3 — Fiscal-submission state visible on the invoice
+### R3 — Fiscal-submission state visible on the invoice — destination 8.1.0 (AID-1630)
 
 - `src/Listeners/SyncLarabillInvoiceVerification.php` only reacts to `InvoiceRegisteredEvent` and copies the registry status once into `fiscal_verification_metadata`. Failures and later status changes of the record are not reflected on the invoice.
 - Needed: an observable state per invoice (the v7 design proposed `FiscalSubmissionStatus`: not required, pending, registered, action required, content rejected), fed by typed outcomes from lara-verifactu, never by parsing messages.
@@ -236,7 +238,7 @@ The rules are keyed on the country that **issued** the tax id, not on where the 
 
 ## Order of work
 
-Fixes go top-down: **lara-verifactu → larabill → clientes**. lara-verifactu has its own gaps (records left pending are never resent, no accepted-with-errors state, exhausted retries are not reported); they will be tracked in a lara-verifactu ticket of their own, and R3 depends on its typed outcomes.
+Fixes go top-down: **lara-verifactu → larabill → clientes**. The lara-verifactu gaps (pending records never resent, no accepted-with-errors state, exhausted retries unreported) **shipped in lara-verifactu v1.4.0** (typed submission outcomes, `RegistryStatusEnum` + `RegistryStatusChangedEvent`; AID-1626). larabill's R2/R3 (below) consume those typed outcomes and land together in **8.1.0**: R2 — durable delivery to accounting (AID-1629, the outbox); R3 — the observable per-invoice submission state (AID-1630).
 
 ## Out of scope here
 
