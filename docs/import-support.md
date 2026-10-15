@@ -129,7 +129,7 @@ schedulable interval.
 > in the reference consumer as of 2026-10-12): it fails loud for cadences
 > without a legacy equivalent (year/4-10). Per the operator's recommendation
 > (2026-10-12) it will be deprecated with the ADR-015 shim pattern
-> (`@deprecated` + `E_USER_*` notice, retired in 8.0). Scheduling at
+> (`@deprecated` + `E_USER_*` notice; **retirement deferred to the next major (9.0.0)** — ADR-015 Enmienda 2, 2026-10-13: the 8.0 coupling message stays scoped to the numbering lifecycle, and a minor cannot retire surface). Scheduling at
 > year/4-10 is pinned by invariance tests (`addToDate`/`subtractFromDate`,
 > next-due computation, `processScheduledClosures`, `RecurringBillingService`)
 > — after the cutover these are live contracts.

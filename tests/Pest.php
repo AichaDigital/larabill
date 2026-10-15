@@ -1,6 +1,7 @@
 <?php
 
 use AichaDigital\Lara100\ValueObjects\FixedDecimal;
+use AichaDigital\Larabill\Models\InvoiceItem;
 use AichaDigital\Larabill\Tests\Integration\InstallMysql\InstallCommandMysqlTestCase;
 use AichaDigital\Larabill\Tests\Integration\Mysql\MysqlIntegrationTestCase;
 use AichaDigital\Larabill\Tests\TestCase;
@@ -100,4 +101,21 @@ function fdMoney(array $attrs, array $keys): array
     }
 
     return $attrs;
+}
+
+/**
+ * Quietly materialize an invoice LINE of the legacy shape (ADR-016 §6.5 / v7
+ * §10 limit): the default `Invoice` fixture is the legacy numbered ISSUED row,
+ * and since PR-2 its lines are closed to public line creation. A fixture that
+ * needs an ISSUED invoice WITH lines writes them through the documented
+ * outside-the-guarantee surface — events off — exactly like the bulk and
+ * external-SQL writes the spec excludes from the guarantee.
+ *
+ * @param  array<string, mixed>  $attrs
+ */
+function quietInvoiceItem(array $attrs): InvoiceItem
+{
+    return InvoiceItem::withoutEvents(
+        fn () => InvoiceItem::factory()->create($attrs),
+    );
 }

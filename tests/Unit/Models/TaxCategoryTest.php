@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use AichaDigital\Larabill\Enums\ItemType;
 use AichaDigital\Larabill\Models\Invoice;
-use AichaDigital\Larabill\Models\InvoiceItem;
 use AichaDigital\Larabill\Models\TaxCategory;
 use AichaDigital\Larabill\Tests\Models\TestUser;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -120,7 +119,7 @@ it('can have invoice items relationship', function () {
     $user    = TestUser::factory()->create();
     $invoice = Invoice::factory()->create(['user_id' => $user->id]);
 
-    InvoiceItem::factory()->create([
+    quietInvoiceItem([
         'invoice_id' => $invoice->id,
         'item_type'  => ItemType::GOOD,
     ]);

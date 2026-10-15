@@ -5,7 +5,6 @@ declare(strict_types=1);
 use AichaDigital\Larabill\Enums\ItemType;
 use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\Invoice;
-use AichaDigital\Larabill\Models\InvoiceItem;
 use AichaDigital\Larabill\Services\Adapters\VerifactuAdapter;
 use AichaDigital\Larabill\Tests\Models\TestUser;
 use AichaDigital\LaraVerifactu\Enums\InvoiceTypeEnum;
@@ -45,7 +44,7 @@ function makeVerifactuSourceInvoice(array $attributes = [], array $items = [], ?
     $invoice = Invoice::factory()->create($invoiceAttrs);
 
     foreach ($items as $itemAttributes) {
-        InvoiceItem::factory()->create(fdMoney(array_merge([
+        quietInvoiceItem(fdMoney(array_merge([
             'invoice_id' => $invoice->id,
         ], $itemAttributes), ['quantity', 'unit_price', 'taxable_amount', 'total_tax_amount', 'total_amount']));
     }

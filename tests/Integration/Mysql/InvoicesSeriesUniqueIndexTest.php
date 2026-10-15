@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use AichaDigital\Larabill\Enums\FiscalSubmissionStatus;
+use AichaDigital\Larabill\Enums\InvoiceDocumentStatus;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Ramsey\Uuid\Uuid;
@@ -28,12 +30,17 @@ function insertSeriesInvoice(string $userId, string $prefix, int $serie, int $se
         'series_number'    => $seriesNumber,
         'fiscal_year'      => $year,
         'invoice_date'     => "{$year}-03-01",
-        'user_id'          => $userId,
-        'taxable_amount'   => 10000,
-        'total_tax_amount' => 2100,
-        'total_amount'     => 12100,
-        'created_at'       => now(),
-        'updated_at'       => now(),
+        'issued_at'        => "{$year}-03-01 10:00:00",
+        // ADR-016 §8.2: a raw numbered fiscal row IS the backfill's legacy
+        // shape — the CHECK (and the §8.3 classification) require the axes.
+        'invoice_document_status'  => InvoiceDocumentStatus::ISSUED->value,
+        'fiscal_submission_status' => FiscalSubmissionStatus::LEGACY_UNKNOWN->value,
+        'user_id'                  => $userId,
+        'taxable_amount'           => 10000,
+        'total_tax_amount'         => 2100,
+        'total_amount'             => 12100,
+        'created_at'               => now(),
+        'updated_at'               => now(),
     ]);
 }
 

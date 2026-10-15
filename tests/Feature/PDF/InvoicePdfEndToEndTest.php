@@ -6,7 +6,6 @@ use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\Invoice;
-use AichaDigital\Larabill\Models\InvoiceItem;
 use AichaDigital\Larabill\Services\PDF\PDFService;
 use AichaDigital\Larabill\Tests\TestCase;
 use Smalot\PdfParser\Parser;
@@ -41,9 +40,11 @@ it('produces a PDF whose text carries the real invoice', function () {
         'total_amount'             => cents(12100),
     ]);
     $invoice->snapshotFiscalConfigs();
-    $invoice->save();
+    // Fixture write on a protected (ISSUED) row: the documented
+    // outside-the-guarantee surface (ADR-016 §6.5 / v7 §10) — events off.
+    $invoice->saveQuietly();
 
-    InvoiceItem::factory()->create([
+    quietInvoiceItem([
         'invoice_id'       => $invoice->id,
         'description'      => 'Hosting anual Probe',
         'quantity'         => cents(100),

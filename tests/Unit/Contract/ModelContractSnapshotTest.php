@@ -123,6 +123,10 @@ it('has no orphan snapshot files for models outside the contract list', function
         larabillContractModels(),
     );
 
+    // ADR-016 §12 (V5): the service-signature snapshots of PR-2 live in the
+    // same directory, guarded by their own test (ServiceContractSnapshotTest).
+    $known = array_merge($known, ['InvoiceService.json', 'InvoiceNumberingService.json']);
+
     $orphans = [];
 
     foreach (glob(larabillContractSnapshotDir().'/*.json') ?: [] as $file) {

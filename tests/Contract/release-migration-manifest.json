@@ -1,6 +1,6 @@
 {
-    "release": "7.1.0",
-    "upgrade_base": "7.0.0",
+    "release": "8.0.0",
+    "upgrade_base": "7.1.0",
     "migrations": [
         {
             "name": "2024_12_01_000000_create_tax_rates_table.php",
@@ -225,6 +225,21 @@
         {
             "name": "2026_10_12_000001_drop_customer_article_instance_unique.php",
             "sha256": "955ca287351557ded43e7479b50505057d9e8b777a8d0db4a7a1f72c013c1911",
+            "in_base": true
+        },
+        {
+            "name": "2026_10_13_000001_preflight_invoice_numbering_lifecycle.php",
+            "sha256": "418e6b9969df649ba8ecd7c5e9df5390cb11254e18adadc3053a46bf91cf6469",
+            "in_base": false
+        },
+        {
+            "name": "2026_10_13_000002_add_invoice_document_lifecycle_columns.php",
+            "sha256": "1bf21d40ce4746a2a2bda8a25676d0c905cc8ae8b180fea3421d3381ddabe69a",
+            "in_base": false
+        },
+        {
+            "name": "2026_10_13_000003_backfill_invoice_document_status.php",
+            "sha256": "a7f382ff56752212a942156dbf620d607e5a63afcca3e7cee4d50c149c48467f",
             "in_base": false
         }
     ]

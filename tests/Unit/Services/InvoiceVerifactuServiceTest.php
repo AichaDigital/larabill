@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use AichaDigital\Larabill\Enums\ItemType;
 use AichaDigital\Larabill\Models\Invoice;
-use AichaDigital\Larabill\Models\InvoiceItem;
 use AichaDigital\Larabill\Models\UserTaxProfile;
 use AichaDigital\Larabill\Services\InvoiceVerifactuService;
 use AichaDigital\Larabill\Tests\Models\TestUser;
@@ -25,7 +24,7 @@ beforeEach(function () {
         'invoice_date'     => '2026-06-01',
     ], ['taxable_amount', 'total_tax_amount', 'total_amount']));
 
-    InvoiceItem::factory()->create(fdMoney([
+    quietInvoiceItem(fdMoney([
         'invoice_id'       => $this->invoice->id,
         'taxable_amount'   => 10000,
         'total_tax_amount' => 2100,
@@ -78,7 +77,7 @@ describe('InvoiceVerifactuService::registerInvoice', function () {
             'invoice_date'     => '2026-06-01',
         ], ['taxable_amount', 'total_tax_amount', 'total_amount']));
 
-        InvoiceItem::factory()->create(fdMoney([
+        quietInvoiceItem(fdMoney([
             'invoice_id'       => $invoice->id,
             'taxable_amount'   => 10000,
             'total_tax_amount' => 0,

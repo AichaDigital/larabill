@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Services;
 
 use AichaDigital\Lara100\ValueObjects\FixedDecimal;
+use AichaDigital\Larabill\Enums\InvoiceDocumentStatus;
 use AichaDigital\Larabill\Exceptions\GuaranteeOperationPendingException;
 use AichaDigital\Larabill\Exceptions\IllegalAgreementTransitionException;
 use AichaDigital\Larabill\Exceptions\InvalidSettlementAmountException;
@@ -63,7 +64,8 @@ final class GuaranteeService
     public const OPERATION_KEY_PREFIX = 'guarantee_ops:';
 
     public function __construct(
-        protected SettlementService $settlementService
+        protected SettlementService $settlementService,
+        protected InvoiceService $invoiceService,
     ) {}
 
     /**
@@ -320,6 +322,29 @@ final class GuaranteeService
                     (string) $fresh->getKey(),
                     $key,
                 ));
+            }
+
+            // ADR-016 implementation-gate finding 3 (2026-10-13): with the
+            // two-phase issuance, a winning claim can have committed ONLY its
+            // phase-1 durable DRAFT when a loser reaches this lookup — the
+            // winner's phase 2 may still be in flight or have failed. The key
+            // makes that DRAFT this settlement's artifact: resume its issuance
+            // (idempotent — a winner that committed in between returns itself
+            // via issue()'s early return) instead of linking an unnumbered
+            // document as the rectificative. Anything else that is not ISSUED
+            // is not a claim artifact — loud, never linked.
+            if ($rectificative->invoice_document_status !== InvoiceDocumentStatus::ISSUED) {
+                if ($rectificative->invoice_document_status !== InvoiceDocumentStatus::DRAFT) {
+                    throw new RuntimeException(sprintf(
+                        'Guarantee operation [%s]: the rectificative for key [%s] is in document status [%s], '
+                        .'not ISSUED or DRAFT — it cannot be adopted as the settlement artifact.',
+                        (string) $fresh->getKey(),
+                        $key,
+                        (string) $rectificative->invoice_document_status?->name,
+                    ));
+                }
+
+                $rectificative = $this->invoiceService->issue($rectificative);
             }
 
             $fresh->update(['rectifies_invoice_id' => $rectificative->id]);

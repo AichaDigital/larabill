@@ -38,7 +38,13 @@ function registerConsumerTemplate(string $name, string $type, string $view): voi
 
 function guardedInvoice(InvoiceSerieType $serie, string $templateName): Invoice
 {
-    return Invoice::factory()->create([
+    // ADR-016 §8.2: a PROFORMA row carries no document axis — the factory
+    // state declares the shape instead of inheriting the fiscal stamp.
+    $factory = $serie === InvoiceSerieType::PROFORMA
+        ? Invoice::factory()->proforma()
+        : Invoice::factory();
+
+    return $factory->create([
         'fiscal_number'    => 'GUARD-'.strtoupper($templateName).'-1',
         'serie'            => $serie->value,
         'status'           => InvoiceStatus::DRAFT->value,

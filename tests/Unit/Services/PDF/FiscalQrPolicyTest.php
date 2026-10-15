@@ -41,7 +41,13 @@ it('builds a message naming the invoice', function () {
 
 function makeQrInvoice(InvoiceSerieType $serie, bool $registered, InvoiceStatus $status = InvoiceStatus::SENT): Invoice
 {
-    $invoice = Invoice::factory()->create([
+    // ADR-016 §8.2: a PROFORMA row carries no document axis — the factory
+    // state declares the shape instead of inheriting the fiscal stamp.
+    $factory = $serie === InvoiceSerieType::PROFORMA
+        ? Invoice::factory()->proforma()
+        : Invoice::factory();
+
+    $invoice = $factory->create([
         'fiscal_number'          => 'QR-AXES',
         'serie'                  => $serie->value,
         'status'                 => $status->value,
@@ -174,7 +180,7 @@ it('never asks a connector to produce the QR', function () {
 
     $registered = makeQrInvoice(InvoiceSerieType::INVOICE, registered: true);
     $result     = $service->generatePDF($registered);
-    $registered->delete();
+    $registered->deleteQuietly();
 
     // Proves the pipeline actually ran (not a vacuous early failure): a real PDF
     // was rendered through the spy connector.
@@ -182,7 +188,7 @@ it('never asks a connector to produce the QR', function () {
 
     $unregistered = makeQrInvoice(InvoiceSerieType::INVOICE, registered: false);
     $service->generatePDF($unregistered);
-    $unregistered->delete();
+    $unregistered->deleteQuietly();
 
     $service->generatePDF(makeQrInvoice(InvoiceSerieType::PROFORMA, registered: false));
 

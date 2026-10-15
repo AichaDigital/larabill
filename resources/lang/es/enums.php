@@ -15,13 +15,14 @@ return [
     ],
 
     'status' => [
-        'draft'     => 'Borrador',
-        'sent'      => 'Enviada',
-        'paid'      => 'Pagada',
-        'overdue'   => 'Vencida',
-        'cancelled' => 'Cancelada',
-        'pending'   => 'Pendiente',
-        'converted' => 'Convertida',
+        'draft'      => 'Borrador',
+        'sent'       => 'Enviada',
+        'paid'       => 'Pagada',
+        'overdue'    => 'Vencida',
+        'cancelled'  => 'Cancelada',
+        'pending'    => 'Pendiente',
+        'converted'  => 'Convertida',
+        'converting' => 'Convirtiendo',
     ],
 
     'grouped_payment_status' => [

@@ -21,7 +21,8 @@ use Illuminate\Support\Str;
  *
  * Contract under real concurrency: exactly ONE final invoice exists, every
  * process converges on ITS id (the winner creates it, losers receive it via
- * the idempotency branch), and the proforma ends CONVERTED + immutable.
+ * the idempotency branch), and the proforma ends CONVERTING + immutable
+ * (CONVERTED arrives at issue(), ADR-016 §6 step 8).
  *
  * Same harness rules as InvoiceNumberingConcurrencyTest (AID-390): no
  * RefreshDatabase (children must read parent-committed rows on their own
@@ -69,7 +70,7 @@ function aid554ForkConvert(string $proformaId, int $childCount): array
             try {
                 $proforma = Invoice::query()->findOrFail($proformaId);
                 $result   = app(InvoiceService::class)->convertProformaToInvoice($proforma);
-                $invoice  = $result instanceof Invoice ? $result : $result['invoice'];
+                $invoice  = $result->invoice;
                 file_put_contents($resultDir.'/'.getmypid().'.inv', (string) $invoice->id);
                 exit(0);
             } catch (Throwable $e) {
@@ -137,7 +138,7 @@ it('concurrent conversions of the SAME proforma converge on exactly one final in
         ->and(array_unique($invoiceIds))->toBe([(string) $finals->first()->id]);
 
     $frozen = Invoice::findOrFail($proforma->id);
-    expect($frozen->status)->toBe(InvoiceStatus::CONVERTED)
+    expect($frozen->status)->toBe(InvoiceStatus::CONVERTING)
         ->and($frozen->is_immutable)->toBeTrue()
         ->and((string) $frozen->converted_invoice_id)->toBe((string) $finals->first()->id);
 })->group('concurrency');
@@ -185,7 +186,7 @@ it('concurrent conversions on a WARM series control still converge on exactly on
         ->and(array_unique($invoiceIds))->toBe([(string) $finals->first()->id]);
 
     $frozen = Invoice::findOrFail($proforma->id);
-    expect($frozen->status)->toBe(InvoiceStatus::CONVERTED)
+    expect($frozen->status)->toBe(InvoiceStatus::CONVERTING)
         ->and($frozen->is_immutable)->toBeTrue()
         ->and((string) $frozen->converted_invoice_id)->toBe((string) $finals->first()->id);
 })->group('concurrency');

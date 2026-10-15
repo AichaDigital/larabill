@@ -36,6 +36,9 @@ function aid558InvoiceWithItem(bool $immutable): array
     $invoice = $service->createInvoice([
         'billable_user_id' => test()->customer->id,
         'items'            => [['description' => 'Original line', 'quantity' => 100, 'base_price' => 5000]],
+        // §7.1: the bare call is result-compatible (ISSUED); the mutable case
+        // under test is the explicit DRAFT (§7.2).
+        'status'           => $immutable ? null : 'draft',
     ]);
 
     if ($immutable) {

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use AichaDigital\Larabill\Enums\FiscalSubmissionStatus;
+use AichaDigital\Larabill\Enums\InvoiceDocumentStatus;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Enums\ItemType;
@@ -208,9 +210,14 @@ it('upgrades a populated previous-release database to HEAD preserving consumer d
         'fiscal_number'  => 'EXPORT-2026-000001',
         'prefix'         => 'EXPORT', 'serie' => InvoiceSerieType::INVOICE->value, 'series_number' => 1, 'fiscal_year' => 2026,
         'invoice_date'   => '2026-03-01', 'issued_at' => $now,
-        'user_id'        => LARABILL_UPGRADE_USER_ISSUER,
-        'taxable_amount' => 10000, 'total_tax_amount' => 2100, 'total_amount' => 12100,
-        'created_at'     => $now, 'updated_at' => $now,
+        // ADR-016: post-upgrade fiscal writes carry the document axis — the
+        // transitional shape §8.5 stamps (ISSUED + NOT_REQUIRED). The named
+        // CHECK would refuse the unstamped shape.
+        'invoice_document_status'  => InvoiceDocumentStatus::ISSUED->value,
+        'fiscal_submission_status' => FiscalSubmissionStatus::NOT_REQUIRED->value,
+        'user_id'                  => LARABILL_UPGRADE_USER_ISSUER,
+        'taxable_amount'           => 10000, 'total_tax_amount' => 2100, 'total_amount' => 12100,
+        'created_at'               => $now, 'updated_at' => $now,
     ]);
     expect(DB::table('invoices')->count())->toBe(4);
 
@@ -253,17 +260,23 @@ it('upgrades a populated previous-release database to HEAD preserving consumer d
 
     // Invariant 8 — the consumer can still ISSUE after upgrading: a real
     // Invoice::create() runs the full creating hook (FiscalIntegrityChecker +
-    // automatic fiscal snapshots) against the legacy configs.
+    // automatic fiscal snapshots) AND the ADR-016 §8.2 enforcer against the
+    // legacy configs. The document axis is stamped the way the transitional
+    // createInvoice() stamps it (§8.5): ISSUED + NOT_REQUIRED, five fields set
+    // — issued_at no longer has a DEFAULT CURRENT_TIMESTAMP to lean on.
     $newInvoice = Invoice::query()->create([
-        'fiscal_number'    => $number->formatted,
-        'prefix'           => $number->prefix,
-        'serie'            => InvoiceSerieType::INVOICE,
-        'series_number'    => $number->seriesNumber,
-        'fiscal_year'      => $number->fiscalYear,
-        'invoice_date'     => now()->toDateString(),
-        'user_id'          => LARABILL_UPGRADE_USER_ISSUER,
-        'billable_user_id' => LARABILL_UPGRADE_USER_BILLED,
-        'taxable_amount'   => cents(10000), 'total_tax_amount' => cents(2100), 'total_amount' => cents(12100),
+        'fiscal_number'            => $number->formatted,
+        'prefix'                   => $number->prefix,
+        'serie'                    => InvoiceSerieType::INVOICE,
+        'series_number'            => $number->seriesNumber,
+        'fiscal_year'              => $number->fiscalYear,
+        'invoice_date'             => now()->toDateString(),
+        'issued_at'                => now(),
+        'invoice_document_status'  => InvoiceDocumentStatus::ISSUED,
+        'fiscal_submission_status' => FiscalSubmissionStatus::NOT_REQUIRED,
+        'user_id'                  => LARABILL_UPGRADE_USER_ISSUER,
+        'billable_user_id'         => LARABILL_UPGRADE_USER_BILLED,
+        'taxable_amount'           => cents(10000), 'total_tax_amount' => cents(2100), 'total_amount' => cents(12100),
     ]);
 
     expect($newInvoice->exists)->toBeTrue()

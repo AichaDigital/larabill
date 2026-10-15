@@ -44,8 +44,7 @@ it('carries is_roi_taxed from the proforma into the converted invoice', function
 
     expect($proforma->is_roi_taxed)->toBeTrue();
 
-    $invoice = $this->service->convertProformaToInvoice($proforma);
-
+    $invoice = $this->service->convertProformaToInvoice($proforma)->invoice;
     expect($invoice->is_roi_taxed)->toBeTrue();
 });
 
@@ -56,8 +55,7 @@ it('carries a false is_roi_taxed into the converted invoice', function () {
         'items'            => [],
     ]);
 
-    $invoice = $this->service->convertProformaToInvoice($proforma);
-
+    $invoice = $this->service->convertProformaToInvoice($proforma)->invoice;
     expect($invoice->is_roi_taxed)->toBeFalse();
 });
 

@@ -45,7 +45,7 @@ beforeEach(function () {
 // ==========================================
 
 it('detects no changes when config and profile are the same', function () {
-    $proforma = Invoice::factory()->create([
+    $proforma = Invoice::factory()->proforma()->create([
         'serie'                    => InvoiceSerieType::PROFORMA,
         'status'                   => InvoiceStatus::DRAFT,
         'user_id'                  => $this->user->id,
@@ -63,7 +63,7 @@ it('detects no changes when config and profile are the same', function () {
 });
 
 it('can convert safely when no changes', function () {
-    $proforma = Invoice::factory()->create([
+    $proforma = Invoice::factory()->proforma()->create([
         'serie'                    => InvoiceSerieType::PROFORMA,
         'status'                   => InvoiceStatus::DRAFT,
         'user_id'                  => $this->user->id,
@@ -80,7 +80,7 @@ it('can convert safely when no changes', function () {
 // ==========================================
 
 it('detects company config changed to new record', function () {
-    $proforma = Invoice::factory()->create([
+    $proforma = Invoice::factory()->proforma()->create([
         'serie'                    => InvoiceSerieType::PROFORMA,
         'status'                   => InvoiceStatus::DRAFT,
         'user_id'                  => $this->user->id,
@@ -105,7 +105,7 @@ it('detects company config changed to new record', function () {
 });
 
 it('detects critical change when company tax_id changes', function () {
-    $proforma = Invoice::factory()->create([
+    $proforma = Invoice::factory()->proforma()->create([
         'serie'                    => InvoiceSerieType::PROFORMA,
         'status'                   => InvoiceStatus::DRAFT,
         'user_id'                  => $this->user->id,
@@ -130,7 +130,7 @@ it('detects critical change when company tax_id changes', function () {
 });
 
 it('detects critical change when company country_code changes', function () {
-    $proforma = Invoice::factory()->create([
+    $proforma = Invoice::factory()->proforma()->create([
         'serie'                    => InvoiceSerieType::PROFORMA,
         'status'                   => InvoiceStatus::DRAFT,
         'user_id'                  => $this->user->id,
@@ -154,7 +154,7 @@ it('detects critical change when company country_code changes', function () {
 });
 
 it('detects warning change when company business_name changes', function () {
-    $proforma = Invoice::factory()->create([
+    $proforma = Invoice::factory()->proforma()->create([
         'serie'                    => InvoiceSerieType::PROFORMA,
         'status'                   => InvoiceStatus::DRAFT,
         'user_id'                  => $this->user->id,
@@ -185,7 +185,7 @@ it('detects warning change when company business_name changes', function () {
 // ==========================================
 
 it('detects user tax profile changed to new record', function () {
-    $proforma = Invoice::factory()->create([
+    $proforma = Invoice::factory()->proforma()->create([
         'serie'                    => InvoiceSerieType::PROFORMA,
         'status'                   => InvoiceStatus::DRAFT,
         'user_id'                  => $this->user->id,
@@ -214,7 +214,7 @@ it('detects user tax profile changed to new record', function () {
 });
 
 it('detects critical change when user tax_id changes', function () {
-    $proforma = Invoice::factory()->create([
+    $proforma = Invoice::factory()->proforma()->create([
         'serie'                    => InvoiceSerieType::PROFORMA,
         'status'                   => InvoiceStatus::DRAFT,
         'user_id'                  => $this->user->id,
@@ -242,7 +242,7 @@ it('detects critical change when user tax_id changes', function () {
 });
 
 it('detects critical change when user becomes EU VAT registered', function () {
-    $proforma = Invoice::factory()->create([
+    $proforma = Invoice::factory()->proforma()->create([
         'serie'                    => InvoiceSerieType::PROFORMA,
         'status'                   => InvoiceStatus::DRAFT,
         'user_id'                  => $this->user->id,
@@ -274,7 +274,7 @@ it('detects critical change when user becomes EU VAT registered', function () {
 // ==========================================
 
 it('detects both company and user changes', function () {
-    $proforma = Invoice::factory()->create([
+    $proforma = Invoice::factory()->proforma()->create([
         'serie'                    => InvoiceSerieType::PROFORMA,
         'status'                   => InvoiceStatus::DRAFT,
         'user_id'                  => $this->user->id,
@@ -313,7 +313,7 @@ it('detects both company and user changes', function () {
 // ==========================================
 
 it('returns empty summary when no changes', function () {
-    $proforma = Invoice::factory()->create([
+    $proforma = Invoice::factory()->proforma()->create([
         'serie'                    => InvoiceSerieType::PROFORMA,
         'status'                   => InvoiceStatus::DRAFT,
         'user_id'                  => $this->user->id,
@@ -328,7 +328,7 @@ it('returns empty summary when no changes', function () {
 });
 
 it('returns summary with critical label for critical changes', function () {
-    $proforma = Invoice::factory()->create([
+    $proforma = Invoice::factory()->proforma()->create([
         'serie'                    => InvoiceSerieType::PROFORMA,
         'status'                   => InvoiceStatus::DRAFT,
         'user_id'                  => $this->user->id,
@@ -352,7 +352,7 @@ it('returns summary with critical label for critical changes', function () {
 });
 
 it('returns summary with warning label for non-critical changes', function () {
-    $proforma = Invoice::factory()->create([
+    $proforma = Invoice::factory()->proforma()->create([
         'serie'                    => InvoiceSerieType::PROFORMA,
         'status'                   => InvoiceStatus::DRAFT,
         'user_id'                  => $this->user->id,
@@ -392,7 +392,7 @@ function aid328FreezeProforma(Invoice $proforma): Invoice
 }
 
 it('detects a critical in-place edit of the active company config (same ID)', function () {
-    $proforma = aid328FreezeProforma(Invoice::factory()->create([
+    $proforma = aid328FreezeProforma(Invoice::factory()->proforma()->create([
         'serie'                    => InvoiceSerieType::PROFORMA,
         'status'                   => InvoiceStatus::DRAFT,
         'user_id'                  => $this->user->id,
@@ -418,7 +418,7 @@ it('detects a critical in-place edit of the active company config (same ID)', fu
 });
 
 it('detects a warning in-place edit of the active company config (same ID)', function () {
-    $proforma = aid328FreezeProforma(Invoice::factory()->create([
+    $proforma = aid328FreezeProforma(Invoice::factory()->proforma()->create([
         'serie'                    => InvoiceSerieType::PROFORMA,
         'status'                   => InvoiceStatus::DRAFT,
         'user_id'                  => $this->user->id,
@@ -440,7 +440,7 @@ it('detects a warning in-place edit of the active company config (same ID)', fun
 });
 
 it('detects a critical in-place edit of the active user tax profile (same ID)', function () {
-    $proforma = aid328FreezeProforma(Invoice::factory()->create([
+    $proforma = aid328FreezeProforma(Invoice::factory()->proforma()->create([
         'serie'                    => InvoiceSerieType::PROFORMA,
         'status'                   => InvoiceStatus::DRAFT,
         'user_id'                  => $this->user->id,
@@ -463,7 +463,7 @@ it('detects a critical in-place edit of the active user tax profile (same ID)', 
 });
 
 it('blocks safe conversion after a critical in-place edit', function () {
-    $proforma = aid328FreezeProforma(Invoice::factory()->create([
+    $proforma = aid328FreezeProforma(Invoice::factory()->proforma()->create([
         'serie'                    => InvoiceSerieType::PROFORMA,
         'status'                   => InvoiceStatus::DRAFT,
         'user_id'                  => $this->user->id,
@@ -478,7 +478,7 @@ it('blocks safe conversion after a critical in-place edit', function () {
 });
 
 it('compares against the frozen snapshot when the previous config row was edited after freezing', function () {
-    $proforma = aid328FreezeProforma(Invoice::factory()->create([
+    $proforma = aid328FreezeProforma(Invoice::factory()->proforma()->create([
         'serie'                    => InvoiceSerieType::PROFORMA,
         'status'                   => InvoiceStatus::DRAFT,
         'user_id'                  => $this->user->id,
@@ -506,7 +506,7 @@ it('compares against the frozen snapshot when the previous config row was edited
 });
 
 it('detects no changes on a frozen proforma when nothing was edited', function () {
-    $proforma = aid328FreezeProforma(Invoice::factory()->create([
+    $proforma = aid328FreezeProforma(Invoice::factory()->proforma()->create([
         'serie'                    => InvoiceSerieType::PROFORMA,
         'status'                   => InvoiceStatus::DRAFT,
         'user_id'                  => $this->user->id,
@@ -525,7 +525,7 @@ it('keeps the legacy no-changes answer for a same-ID proforma frozen without sna
     // Legacy proforma: FK references only, no encrypted snapshots persisted.
     // There is no frozen truth to compare against, so the same-ID answer
     // stays "no changes" (documented limitation, AID-328).
-    $proforma = Invoice::factory()->create([
+    $proforma = Invoice::factory()->proforma()->create([
         'serie'                    => InvoiceSerieType::PROFORMA,
         'status'                   => InvoiceStatus::DRAFT,
         'user_id'                  => $this->user->id,
@@ -547,7 +547,7 @@ it('keeps the legacy no-changes answer for a same-ID proforma frozen without sna
 // ==========================================
 
 it('cannot convert safely when critical changes exist', function () {
-    $proforma = Invoice::factory()->create([
+    $proforma = Invoice::factory()->proforma()->create([
         'serie'                    => InvoiceSerieType::PROFORMA,
         'status'                   => InvoiceStatus::DRAFT,
         'user_id'                  => $this->user->id,
@@ -567,7 +567,7 @@ it('cannot convert safely when critical changes exist', function () {
 });
 
 it('can convert safely with only warning changes', function () {
-    $proforma = Invoice::factory()->create([
+    $proforma = Invoice::factory()->proforma()->create([
         'serie'                    => InvoiceSerieType::PROFORMA,
         'status'                   => InvoiceStatus::DRAFT,
         'user_id'                  => $this->user->id,

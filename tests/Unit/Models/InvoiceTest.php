@@ -2,10 +2,17 @@
 
 declare(strict_types=1);
 
+use AichaDigital\Larabill\Enums\FiscalSubmissionStatus;
+use AichaDigital\Larabill\Enums\InvoiceDocumentStatus;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
+use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\Invoice;
+use AichaDigital\Larabill\Services\InvoiceService;
 use AichaDigital\Larabill\Tests\TestCase;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+
+uses(RefreshDatabase::class);
 
 it('can create an invoice', function () {
     $invoice = new Invoice([
@@ -41,11 +48,15 @@ it('can make an invoice immutable', function () {
         'fiscal_year'    => 2025,
         'invoice_date'   => now()->toDateString(),
         'issued_at'      => now(),
-        'status'         => InvoiceStatus::DRAFT->value,
-        'user_id'        => TestCase::USER_UUID_1,
-        'taxable_amount' => cents(10000), // €100.00
-        'tax_amount'     => 2100,         // €21.00 (alias, not a cast attribute)
-        'total_amount'   => cents(12100), // €121.00
+        // ADR-016 §8.2: a hand-built fiscal row must declare its document
+        // axis (the enforcer rejects the unstamped shape by design).
+        'invoice_document_status'  => InvoiceDocumentStatus::ISSUED->value,
+        'fiscal_submission_status' => FiscalSubmissionStatus::LEGACY_UNKNOWN->value,
+        'status'                   => InvoiceStatus::DRAFT->value,
+        'user_id'                  => TestCase::USER_UUID_1,
+        'taxable_amount'           => cents(10000), // €100.00
+        'tax_amount'               => 2100,         // €21.00 (alias, not a cast attribute)
+        'total_amount'             => cents(12100), // €121.00
     ]);
 
     $invoice->makeImmutable();
@@ -67,7 +78,7 @@ it('identifies draft invoices', function () {
     expect($sent->isDraft())->toBeFalse();
 });
 
-it('cannot update an immutable invoice', function () {
+it('cannot change fiscal content of an immutable invoice', function () {
     $invoice = new Invoice([
         'fiscal_number'  => 'FAC-2025-000001',
         'prefix'         => 'FAC',
@@ -82,6 +93,41 @@ it('cannot update an immutable invoice', function () {
         'immutable_at'   => now(),
     ]);
 
-    expect(fn () => $invoice->update(['status' => InvoiceStatus::PAID->value]))
+    // ADR-016 §6.5: fiscal content stays closed on a protected row — through
+    // update() AND through the attribute-assignment + save() bypass (D8).
+    expect(fn () => $invoice->update(['fiscal_number' => 'FAC-2025-999999']))
         ->toThrow(Exception::class);
+    expect(fn () => $invoice->update(['total_amount' => cents(9999)]))
+        ->toThrow(Exception::class);
+});
+
+it('permits the deliberate collection-state transitions on an immutable invoice (ADR-016 §6.5)', function () {
+    // A persisted protected fixture: the legacy numbered shape, sealed.
+    $invoice = Invoice::factory()->create([
+        'status'       => InvoiceStatus::DRAFT->value,
+        'user_id'      => TestCase::USER_UUID_1,
+        'is_immutable' => true,
+        'immutable_at' => now(),
+    ]);
+
+    // Collection/lifecycle state is NOT fiscal content: the §6.5 guards
+    // deliberately preserve the grouped-payment class of transitions.
+    expect($invoice->update(['status' => InvoiceStatus::PAID->value]))->toBeTrue()
+        ->and($invoice->refresh()->status)->toBe(InvoiceStatus::PAID);
+});
+
+it('closes the save() bypass on fiscal content of an immutable invoice (ADR-016 §6.5 D8)', function () {
+    CompanyFiscalConfig::factory()->create(['is_active' => true, 'valid_until' => null]);
+
+    $issued = app(InvoiceService::class)->createInvoice([
+        'billable_user_id' => TestCase::USER_UUID_1,
+        'items'            => [['description' => 'Item', 'quantity' => 100, 'base_price' => 1000]],
+    ], ['make_immutable' => true]);
+    $issued = app(InvoiceService::class)->issue($issued);
+
+    // The v6 update() override did not fire here — the attribute-assignment
+    // + save() path is exactly what the new updating guard reads.
+    $issued->fiscal_number = 'FAC-2025-000099';
+
+    expect(fn () => $issued->save())->toThrow(Exception::class, 'fiscally protected');
 });
