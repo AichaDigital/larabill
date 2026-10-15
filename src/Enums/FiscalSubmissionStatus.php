@@ -13,8 +13,9 @@ namespace AichaDigital\Larabill\Enums;
  * fiscal rows); the outbox, handler and typed submission outcomes ship with
  * R2 (AID-1629, AID-1634).
  *
- * R1 writes only `PENDING` / `NOT_REQUIRED` (at issuance) and the backfill
- * value `LEGACY_UNKNOWN`; the remaining transitions arrive with R2.
+ * R1 (8.0.0) writes only `NOT_REQUIRED` (at issuance) and the backfill value
+ * `LEGACY_UNKNOWN`; `PENDING` and the remaining transitions arrive with R2
+ * (AID-1629), when the outbox and the audited decision operation land.
  *
  * @method string label() Get human-readable label
  *
