@@ -2,7 +2,9 @@
 
 All notable changes to `larabill` will be documented in this file.
 
-## [Unreleased]
+## [8.1.0] - 2026-10-17
+
+> **Ships migrations: no** — additive surface (two `@api` predicates, one `@api` exception, factory states/defaults) plus the fiscal-snapshot unification already on main. Upgrade: `composer update aichadigital/larabill`, nothing else. One behavior change to note: PDF generation of an unissued fiscal document now fails closed with a typed exception instead of dying inside the Blade.
 
 - **`Invoice::isIssued()` / `isUnissued()` (`@api`, AID-1687):** document-axis predicates over `invoice_document_status` (ADR-016 §5.2) — the two axes diverge by design (`issue()` leaves the collection status at `DRAFT`, so a numbered invoice is still `isDraft()` until the consumer stamps it). `isDraft()` is NOT renamed; its docblock now names its axis and the divergence, and tests pin the divergence (issued + billing `DRAFT` is still `isDraft()`) and the proforma caveat (absent axis is never issued).
 - **`InvoiceNotIssuedException` (`@api`, AID-1686) and a fail-closed PDF guard:** `DomPDFService::generatePDF()` rejects BEFORE rendering with the typed exception whenever the serie is fiscal and the document is not issued — since 8.0 an unissued fiscal draft carries NULL on all five issuance fields (§8.2 C4) and every fiscal template read `invoice_date->format()` unguarded (fatal inside the Blade; found from the clientes consumer AID-1670, MR !347). **Behavioral note:** a call that previously died with `format() on null` now throws the typed exception from `DomPDFService` and surfaces as `success: false` + the message through the `PDFService` frontier (AID-508 translator). Proformas are excluded by the serie (§8.2 C2/C3). A draft-preview template remains a separate, unrequested product decision.
