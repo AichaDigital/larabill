@@ -126,10 +126,20 @@ it('upgrades a populated previous-release database to HEAD preserving consumer d
     $issuerSnapshotPlaintext = json_encode(['business_name' => 'Acme SL', 'tax_id' => 'ESB12345678']);
     $legacyInvoiceIds        = [];
 
+    // AID-1619 pattern (see the cadence shapes above): the seeds follow the
+    // shape of the CURRENT manifest base. A pre-8.0.0 base has no document
+    // axis; a v8.0.0-or-later base carries it, and the named CHECK (§8.2
+    // C2/C4/C6) refuses a numbered fiscal row without it — measured when the
+    // 8.1.0 stamp moved the upgrade base to v8.0.0 (pipeline 8956, three
+    // db-integration jobs red on constraint 3819). The truthful base shape
+    // for rows that lived through the 8.0.0 backfill is the §8.5
+    // transitional stamp: ISSUED + LEGACY_UNKNOWN.
+    $documentAxisPresent = Schema::hasColumn('invoices', 'invoice_document_status');
+
     foreach ([1, 2, 3] as $number) {
         $legacyInvoiceIds[$number] = (string) Str::orderedUuid();
 
-        DB::table('invoices')->insert([
+        $legacyRow = [
             'id'                       => $legacyInvoiceIds[$number],
             'fiscal_number'            => sprintf('FAC-2026-%06d', $number),
             'prefix'                   => 'FAC', 'serie' => InvoiceSerieType::INVOICE->value, 'series_number' => $number, 'fiscal_year' => 2026,
@@ -141,7 +151,14 @@ it('upgrades a populated previous-release database to HEAD preserving consumer d
             'is_immutable'             => $number !== 3, 'immutable_at' => $number !== 3 ? $now : null,
             'taxable_amount'           => 10000, 'total_tax_amount' => 2100, 'total_amount' => 12100,
             'created_at'               => $now, 'updated_at' => $now,
-        ]);
+        ];
+
+        if ($documentAxisPresent) {
+            $legacyRow['invoice_document_status']  = InvoiceDocumentStatus::ISSUED->value;
+            $legacyRow['fiscal_submission_status'] = FiscalSubmissionStatus::LEGACY_UNKNOWN->value;
+        }
+
+        DB::table('invoices')->insert($legacyRow);
     }
 
     foreach ([1 => 2, 2 => 1, 3 => 1] as $number => $itemCount) {
