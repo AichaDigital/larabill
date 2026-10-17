@@ -7,6 +7,7 @@ namespace AichaDigital\Larabill\Services\PDF;
 use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\TemplateInvoiceType;
+use AichaDigital\Larabill\Exceptions\InvoiceNotIssuedException;
 use AichaDigital\Larabill\Models\CompanyTemplateSettings;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\InvoiceItem;
@@ -73,6 +74,19 @@ class DomPDFService
         // the stack trace and the previous — while PDFService rebuilt a generic
         // RuntimeException from that string. Exception → array → exception → array,
         // losing the original. The frontier (PDFService) is the only translator.
+        //
+        // AID-1686 (from the clientes consumer, AID-1670): an unissued fiscal
+        // document (document status other than ISSUED, ADR-016 §7.1) carries
+        // NULL on all five issuance fields (§8.2 C4) and every fiscal template
+        // reads `invoice_date->format()` unguarded — rendering one died inside
+        // the Blade with `format() on null`. Fail closed BEFORE rendering;
+        // proformas are excluded by the serie: their document axis does not
+        // exist (§8.2 C2), their issuance fields are NOT NULL (C3) and their
+        // template is the proforma one.
+        if ($invoice->serie->isFiscal() && ! $invoice->isIssued()) {
+            throw InvoiceNotIssuedException::notIssued($invoice);
+        }
+
         $template  = $this->getTemplateForInvoice($invoice);
         $includeQR = $invoice->shouldIncludeQR();
 

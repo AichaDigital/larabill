@@ -929,11 +929,46 @@ class Invoice extends Model implements LegallyRetainable
     }
 
     /**
-     * Check if this invoice is still a draft.
+     * Check the COLLECTION axis (ADR-016 §5.2): whether the billing status is
+     * still DRAFT. This is NOT the document axis — the two diverge by design:
+     * `issue()` leaves the collection status at DRAFT (the consumer moves it
+     * as today), so a numbered, fiscally immutable invoice keeps returning
+     * true here until someone stamps SENT or beyond. A PREPARED document and
+     * a draft cancelled before issuance also read through this axis, not the
+     * document one. For "has this document been issued?" use `isIssued()`.
      */
     public function isDraft(): bool
     {
         return $this->status === InvoiceStatus::DRAFT;
+    }
+
+    /**
+     * Check the DOCUMENT axis (ADR-016 §5.2): whether this fiscal row's
+     * document status is ISSUED — numbered, with the five issuance fields
+     * stamped (§8.2 C4) and fiscally immutable.
+     *
+     * A proforma row has no document axis (§8.2 C2: the axis exists only for
+     * fiscal rows) and never reads as issued; gate on the serie when a
+     * proforma needs separate handling.
+     *
+     * @api New surface (AID-1687).
+     */
+    public function isIssued(): bool
+    {
+        return $this->invoice_document_status === InvoiceDocumentStatus::ISSUED;
+    }
+
+    /**
+     * Check the DOCUMENT axis (ADR-016 §5.2): whether this row has NOT been
+     * issued. True for an unnumbered DRAFT, a conversion-born PREPARED and a
+     * document cancelled before issuance — and, by the plain negation
+     * contract, for proforma rows whose axis is absent (see `isIssued()`).
+     *
+     * @api New surface (AID-1687).
+     */
+    public function isUnissued(): bool
+    {
+        return ! $this->isIssued();
     }
 
     /**

@@ -49,13 +49,15 @@ class InvoiceFactory extends Factory
             'due_date'     => $this->faker->optional(0.8)->dateTimeBetween('now', '+30 days'),
             'paid_at'      => $this->faker->optional(0.3)->dateTimeBetween('-30 days', 'now'),
 
-            // v0.3.3: Status using enum
-            'status'  => $this->faker->randomElement([
-                InvoiceStatus::DRAFT->value,
-                InvoiceStatus::SENT->value,
-                InvoiceStatus::PAID->value,
-                InvoiceStatus::OVERDUE->value,
-            ]),
+            // v0.3.3: Status using enum — AID-1688: DETERMINISTIC, never a
+            // dice roll (AID-558/AID-581 discipline, same class as the
+            // is_roi_taxed de-randomization). The default row IS the issued
+            // fiscal shape, so the default collection status is SENT —
+            // "issued and in collection". A test that needs another
+            // collection status declares it (draft()/sent()/paid()/
+            // overdue() states) or overrides it inline; it never inherits
+            // one from the factory's coin.
+            'status'  => InvoiceStatus::SENT->value,
 
             // ADR-016 §8.2/§8.5 (PR-1, AID-1627): a fiscal numbered fixture IS
             // the legacy/transitional shape — the number WAS consumed at birth
@@ -161,6 +163,89 @@ class InvoiceFactory extends Factory
         return $this->state(function (array $attributes) {
             return [
                 'status' => InvoiceStatus::SENT->value,
+            ];
+        });
+    }
+
+    /**
+     * Create an unissued fiscal draft (ADR-016 §7.1 phase 1, AID-1688).
+     *
+     * The durable, unnumbered DRAFT that `createInvoice(status: 'draft')`
+     * births: the five number/issuance fields are all NULL (§8.2 C4), the
+     * document axis is DRAFT and the collection axis is DRAFT. The prefix
+     * stays stamped (§8.1) — only the number waits for `issue()`.
+     */
+    public function unissuedDraft(): static
+    {
+        return $this->state(function (array $attributes) {
+            return [
+                'fiscal_number'            => null,
+                'series_number'            => null,
+                'fiscal_year'              => null,
+                'invoice_date'             => null,
+                'issued_at'                => null,
+                'invoice_document_status'  => InvoiceDocumentStatus::DRAFT->value,
+                'fiscal_submission_status' => null,
+                'status'                   => InvoiceStatus::DRAFT->value,
+                'paid_at'                  => null,
+                'due_date'                 => null,
+            ];
+        });
+    }
+
+    /**
+     * Create a conversion-born PREPARED row (ADR-016 §5.2, AID-1688).
+     *
+     * The verbatim proforma clone waiting for `issue()`: document axis
+     * PREPARED, the five number/issuance fields all NULL, collection axis
+     * DRAFT, and the link back to the proforma it was born from. The serie
+     * stays the fiscal default (the conversion target) — the §8.2 C2
+     * biconditional requires a non-NULL axis only on fiscal rows.
+     */
+    public function prepared(Invoice $proforma): static
+    {
+        return $this->state(function (array $attributes) use ($proforma) {
+            return [
+                'fiscal_number'            => null,
+                'series_number'            => null,
+                'fiscal_year'              => null,
+                'invoice_date'             => null,
+                'issued_at'                => null,
+                'invoice_document_status'  => InvoiceDocumentStatus::PREPARED->value,
+                'fiscal_submission_status' => null,
+                'status'                   => InvoiceStatus::DRAFT->value,
+                'paid_at'                  => null,
+                'due_date'                 => null,
+                'proforma_id'              => $proforma->id,
+            ];
+        });
+    }
+
+    /**
+     * Create a draft cancelled before issuance (ADR-016 §5.1, AID-1688).
+     *
+     * Terminal on the document axis and never numbered: CANCELLED with its
+     * cancellation instant (§8.2 C5) and no actor (S4-r is one-directional:
+     * the instant is mandatory, the actor is optional), five issuance fields
+     * NULL, submission axis NULL and the collection axis moved to CANCELLED
+     * with it.
+     */
+    public function cancelledBeforeIssue(): static
+    {
+        return $this->state(function (array $attributes) {
+            return [
+                'fiscal_number'            => null,
+                'series_number'            => null,
+                'fiscal_year'              => null,
+                'invoice_date'             => null,
+                'issued_at'                => null,
+                'invoice_document_status'  => InvoiceDocumentStatus::CANCELLED->value,
+                'fiscal_submission_status' => null,
+                'document_cancelled_at'    => now(),
+                'document_cancelled_by'    => null,
+                'status'                   => InvoiceStatus::CANCELLED->value,
+                'paid_at'                  => null,
+                'due_date'                 => null,
             ];
         });
     }

@@ -78,6 +78,77 @@ it('identifies draft invoices', function () {
     expect($sent->isDraft())->toBeFalse();
 });
 
+// AID-1687: the document-axis predicates (ADR-016 §5.2). isDraft() reads the
+// COLLECTION axis; these read the DOCUMENT axis. The two diverge by design:
+// issue() leaves the collection status at DRAFT, so a numbered, immutable
+// invoice is still isDraft() until the consumer stamps a collection status.
+it('identifies issued and unissued documents on the document axis', function () {
+    $issued = new Invoice([
+        'serie'                    => InvoiceSerieType::INVOICE->value,
+        'invoice_document_status'  => InvoiceDocumentStatus::ISSUED->value,
+        'status'                   => InvoiceStatus::DRAFT->value,
+    ]);
+
+    $unissuedDraft = new Invoice([
+        'serie'                    => InvoiceSerieType::INVOICE->value,
+        'invoice_document_status'  => InvoiceDocumentStatus::DRAFT->value,
+        'status'                   => InvoiceStatus::DRAFT->value,
+    ]);
+
+    $prepared = new Invoice([
+        'serie'                    => InvoiceSerieType::INVOICE->value,
+        'invoice_document_status'  => InvoiceDocumentStatus::PREPARED->value,
+        'status'                   => InvoiceStatus::DRAFT->value,
+    ]);
+
+    $cancelled = new Invoice([
+        'serie'                    => InvoiceSerieType::INVOICE->value,
+        'invoice_document_status'  => InvoiceDocumentStatus::CANCELLED->value,
+        'status'                   => InvoiceStatus::CANCELLED->value,
+    ]);
+
+    expect($issued->isIssued())->toBeTrue();
+    expect($issued->isUnissued())->toBeFalse();
+
+    expect($unissuedDraft->isIssued())->toBeFalse();
+    expect($unissuedDraft->isUnissued())->toBeTrue();
+
+    expect($prepared->isIssued())->toBeFalse();
+    expect($prepared->isUnissued())->toBeTrue();
+
+    expect($cancelled->isIssued())->toBeFalse();
+    expect($cancelled->isUnissued())->toBeTrue();
+});
+
+it('treats a proforma row (absent document axis) as unissued, never issued', function () {
+    // ADR-016 §8.2 C2: the document axis does not exist on proforma rows
+    // (invoice_document_status IS NULL). The predicates read the axis, so a
+    // proforma is never issued and — by the plain negation contract — reads
+    // as unissued. Callers that must exclude proformas gate on the serie.
+    $proforma = new Invoice([
+        'serie'                    => InvoiceSerieType::PROFORMA->value,
+        'invoice_document_status'  => null,
+        'status'                   => InvoiceStatus::DRAFT->value,
+    ]);
+
+    expect($proforma->isIssued())->toBeFalse();
+    expect($proforma->isUnissued())->toBeTrue();
+});
+
+// AID-1687: the divergence pin. A numbered, fiscally immutable invoice whose
+// collection status was never stamped past DRAFT is still isDraft() — the
+// billing axis and the document axis are independent (ADR-016 §5.2).
+it('keeps isDraft() true for an issued invoice whose collection status is still DRAFT', function () {
+    $issuedUntouched = new Invoice([
+        'serie'                    => InvoiceSerieType::INVOICE->value,
+        'invoice_document_status'  => InvoiceDocumentStatus::ISSUED->value,
+        'status'                   => InvoiceStatus::DRAFT->value,
+    ]);
+
+    expect($issuedUntouched->isIssued())->toBeTrue();
+    expect($issuedUntouched->isDraft())->toBeTrue();
+});
+
 it('cannot change fiscal content of an immutable invoice', function () {
     $invoice = new Invoice([
         'fiscal_number'  => 'FAC-2025-000001',

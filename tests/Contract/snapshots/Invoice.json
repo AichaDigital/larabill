@@ -492,8 +492,22 @@
             "returnType": "bool",
             "static": false
         },
+        "isIssued": {
+            "api": true,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "bool",
+            "static": false
+        },
         "isReverseCharge": {
             "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "bool",
+            "static": false
+        },
+        "isUnissued": {
+            "api": true,
             "deprecated": false,
             "parameters": [],
             "returnType": "bool",
