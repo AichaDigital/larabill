@@ -1,6 +1,6 @@
 {
-    "release": "8.1.0",
-    "upgrade_base": "8.0.0",
+    "release": "8.2.0",
+    "upgrade_base": "8.1.0",
     "migrations": [
         {
             "name": "2024_12_01_000000_create_tax_rates_table.php",
@@ -241,6 +241,11 @@
             "name": "2026_10_13_000003_backfill_invoice_document_status.php",
             "sha256": "a7f382ff56752212a942156dbf620d607e5a63afcca3e7cee4d50c149c48467f",
             "in_base": true
+        },
+        {
+            "name": "2026_10_18_000001_convert_money_columns_to_bigint.php",
+            "sha256": "a2894e713987cc9eb1380cc6a3ba4f50e1035852fc023e07e7afd34757d727eb",
+            "in_base": false
         }
     ]
 }
