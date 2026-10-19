@@ -6,6 +6,8 @@ namespace AichaDigital\Larabill\Services;
 
 use AichaDigital\Larabill\Exceptions\NonProportionableLineException;
 use AichaDigital\Larabill\Models\InvoiceItem;
+use Brick\Math\BigDecimal;
+use Brick\Math\RoundingMode;
 use Carbon\Carbon;
 use Carbon\CarbonInterface;
 use DateTimeInterface;
@@ -32,11 +34,15 @@ use DateTimeInterface;
  * before `service_date_from` clamps to zero consumed days (full refund);
  * one at or after `service_date_to` means fully consumed (base 0).
  *
- * The result is rounded HALF-UP on the exact half with pure integer math:
- * `intdiv(2 * base * unconsumedDays + totalDays, 2 * totalDays)`, which is
- * floor(base × unconsumedDays / totalDays + 0.5). Integer math preserves
- * the base-100 invariant — no float representation drift between the billed
- * cents and the returned cents.
+ * The result is rounded HALF-UP on the exact half via the combined rounding
+ * form `(2·base·unconsumed + totalDays) / (2·totalDays)` — evaluated with
+ * ARBITRARY-PRECISION integers (Brick BigDecimal) and truncated toward zero
+ * on the exact quotient (`RoundingMode::Down`, AID-1527 §3-bis site 3), which
+ * reproduces the legacy `intdiv` bit-identically for every sign. Integer math
+ * preserves the base-100 invariant — no float representation drift between
+ * the billed cents and the returned cents — and the arbitrary-precision
+ * intermediate absorbs the `2·base·days` product that overflows int with
+ * legal bigint inputs (base ≈ 1e14 × 73k days ≈ 1.5e19 > PHP_INT_MAX).
  *
  * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
@@ -90,6 +96,16 @@ final class SettlementArithmetic
             return 0;
         }
 
-        return intdiv(2 * $base * $unconsumedDays + $totalDays, 2 * $totalDays);
+        // AID-1527 §3-bis site 3: the combined rounding form
+        // `(2·b·u + t) / (2t)` with arbitrary-precision intermediates. The
+        // legacy `intdiv` truncated toward zero on the combined numerator;
+        // Brick's RoundingMode::Down truncates toward zero on the exact
+        // quotient — bit-identical for every sign (golden-master proven). The
+        // BigDecimal form removes the int overflow of `2 * base * days` with
+        // legal bigint inputs.
+        $numerator   = BigDecimal::of($base)->multipliedBy(2)->multipliedBy($unconsumedDays)->plus($totalDays);
+        $denominator = BigDecimal::of($totalDays)->multipliedBy(2);
+
+        return $numerator->dividedBy($denominator, 0, RoundingMode::Down)->toInt();
     }
 }

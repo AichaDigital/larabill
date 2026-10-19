@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use AichaDigital\Lara100\Casts\FixedDecimalCast;
 use AichaDigital\Lara100\ValueObjects\FixedDecimal;
+use AichaDigital\Larabill\Casts\AichaMoneyCast;
 use AichaDigital\Larabill\Concerns\HasUserRelation;
 use AichaDigital\Larabill\Concerns\HasUuid;
 use AichaDigital\Larabill\Database\Factories\InvoiceFactory;
@@ -277,9 +277,9 @@ class Invoice extends Model implements LegallyRetainable
             'fiscal_verified_at'           => 'datetime',
             'is_immutable'                 => 'boolean',
             'immutable_at'                 => 'datetime',
-            'taxable_amount'               => FixedDecimalCast::class.':2', // €12.34 ↔ 1234
-            'total_tax_amount'             => FixedDecimalCast::class.':2',
-            'total_amount'                 => FixedDecimalCast::class.':2', // €12.34 ↔ 1234
+            'taxable_amount'               => AichaMoneyCast::class.':2', // €12.34 ↔ 1234 (AEAT domain, AID-1527)
+            'total_tax_amount'             => AichaMoneyCast::class.':2',
+            'total_amount'                 => AichaMoneyCast::class.':2', // €12.34 ↔ 1234 (AEAT domain, AID-1527)
             'fiscal_verification_metadata' => 'array',
             'is_roi_taxed'                 => 'boolean',
             'is_historical'                => 'boolean',

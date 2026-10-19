@@ -76,19 +76,20 @@ describe('larabill:install — production install path on MySQL (AID-287)', func
         // guarantee capability + snapshot + registry + settlement key + the
         // AID-895 import-support columns: invoices.is_historical + the
         // article_service_status.origin_key UNIQUE idempotency key) applied
-        // cleanly. AID-307 adds the invoices
-        // series unique-index swap; AID-429 adds the prefix widening; AID-450
-        // adds the phantom-template cleanup; AID-555 adds the proforma-link
-        // backfill; AID-952 re-keys the article_prices and
-        // article_service_status cadence; AID-949 adds the agreement_causes
-        // vocabulary, the closure_cause_id FK and the §4.2 status program;
-        // AID-953 adds the modality column, then the guarantee capability +
-        // snapshot + registry + settlement key; AID-895 adds the import
-        // support columns (invoices.is_historical, article_service_status
-        // .origin_key UNIQUE); AID-1611 drops the instance-identity UNIQUE
-        // and adds its plain composite replacement; ADR-016/AID-1627 adds
-        // the invoice numbering lifecycle preflight + schema + backfill trio.
-        expect($this->appliedMigrationCount())->toBe(48);
+        // cleanly. AID-307 adds the invoices series unique-index swap; AID-429
+        // adds the prefix widening; AID-450 adds the phantom-template cleanup;
+        // AID-555 adds the proforma-link backfill; AID-952 re-keys the
+        // article_prices and article_service_status cadence; AID-949 adds the
+        // agreement_causes vocabulary, the closure_cause_id FK and the §4.2
+        // status program; AID-953 adds the modality column, then the
+        // guarantee capability + snapshot + registry + settlement key;
+        // AID-895 adds the import support columns (invoices.is_historical,
+        // article_service_status.origin_key UNIQUE); AID-1611 drops the
+        // instance-identity UNIQUE and adds its plain composite replacement;
+        // ADR-016/AID-1627 adds the invoice numbering lifecycle preflight +
+        // schema + backfill trio; AID-1527 adds the money-column widening
+        // (int → signed bigint) with the AEAT domain CHECKs.
+        expect($this->appliedMigrationCount())->toBe(49);
 
         // The package defines inter-table FK constraints (e.g. invoice_items →
         // invoices, tax_group_tax_rate → tax_groups/tax_rates). They could only

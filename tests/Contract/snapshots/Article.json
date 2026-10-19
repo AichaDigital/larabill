@@ -39,7 +39,7 @@
     "appends": [],
     "with": [],
     "casts": {
-        "cost_price": "AichaDigital\\Lara100\\Casts\\FixedDecimalCast:2",
+        "cost_price": "AichaDigital\\Larabill\\Casts\\AichaMoneyCast:2",
         "guarantee_days": "integer",
         "is_active": "boolean",
         "item_type": "AichaDigital\\Larabill\\Enums\\ItemType",

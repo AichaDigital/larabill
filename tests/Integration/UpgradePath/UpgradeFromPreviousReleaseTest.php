@@ -47,6 +47,25 @@ use Illuminate\Support\Str;
 const LARABILL_UPGRADE_USER_ISSUER = '01936df0-0000-7000-8000-0000000000a1';
 const LARABILL_UPGRADE_USER_BILLED = '01936df0-0000-7000-8000-0000000000b2';
 
+/**
+ * AID-1527 — named-CHECK presence via information_schema (ADR-016 §8.2
+ * lookup pattern). Local helper: prefixed, so it cannot collide with any
+ * other file-level helper in the suite's global namespace.
+ */
+function larabillUpgradeAeatCheckExists(string $table, string $column): bool
+{
+    $row = DB::selectOne(
+        'SELECT CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS
+         WHERE CONSTRAINT_SCHEMA = DATABASE()
+           AND TABLE_NAME = ?
+           AND CONSTRAINT_NAME = ?
+           AND CONSTRAINT_TYPE = ?',
+        [$table, "larabill_money_domain_{$table}_{$column}", 'CHECK'],
+    );
+
+    return $row !== null;
+}
+
 it('upgrades a populated previous-release database to HEAD preserving consumer data', function () {
     // ── 1. Base schema: migrate ONLY the upgrade-base migration set ─────────
     /** @var array{release: string, upgrade_base: string, migrations: array<int, array{name: string, sha256: string, in_base: bool}>} $manifest */
@@ -61,13 +80,33 @@ it('upgrades a populated previous-release database to HEAD preserving consumer d
     $baseDir       = sys_get_temp_dir().'/larabill-upgrade-base-'.Str::random(8);
     File::ensureDirectoryExists($baseDir);
 
-    $expectedNewLedgerNames = [];
+    $expectedNewLedgerNames  = [];
+    $manifestBaseNames       = [];
 
     foreach ($manifest['migrations'] as $entry) {
+        $manifestBaseNames[] = basename($entry['name'], '.php');
+
         if ($entry['in_base']) {
             copy("{$migrationsDir}/{$entry['name']}", "{$baseDir}/{$entry['name']}");
         } else {
             $expectedNewLedgerNames[] = basename($entry['name'], '.php');
+        }
+    }
+
+    // AID-1527 — robust for the CURRENT manifest: until the next release
+    // stamp regenerates release-migration-manifest.json, HEAD may carry
+    // migrations the manifest does not list yet (the v8.1.0 manifest
+    // predates the money-widening slice). Those unlisted migrations ARE
+    // the new slice of the next release — derive them from the filesystem
+    // so the upgrade always exercises the true delta. Once the manifest is
+    // regenerated, the not-in_base branch covers them and this loop adds
+    // nothing. (The manifest is NOT regenerated here: stamp + fixture
+    // travel together at release.)
+    foreach (glob("{$migrationsDir}/[0-9]*_*.php") ?: [] as $unlistedPhp) {
+        $unlisted = basename($unlistedPhp, '.php');
+
+        if (! in_array($unlisted, $manifestBaseNames, true)) {
+            $expectedNewLedgerNames[] = $unlisted;
         }
     }
 
@@ -76,6 +115,15 @@ it('upgrades a populated previous-release database to HEAD preserving consumer d
         ->assertExitCode(0);
 
     // ── 2. Seed base-shaped consumer data (raw inserts, sentinel values) ────
+    // AID-1527 fixture-shape note: the money columns of the v8.1.0 base
+    // (invoices, invoice_items, article_prices, articles, ...) are signed
+    // INT, so the seeds are within the int range BY CONSTRUCTION — an
+    // int-era seed cannot hold a value above int-max. "All money columns
+    // are integer" would be FALSE for the grouped-payments pair:
+    // `grouped_payments.amount` and `grouped_payment_invoice.applied_amount`
+    // were born BIGINT (2026-06-27). The upgrade assertions stay integrity
+    // round-trips; the above-int-max proof lives in the §4 conformance
+    // tests, not in this seed.
     $now = now();
 
     DB::table('users')->insert([
@@ -212,6 +260,18 @@ it('upgrades a populated previous-release database to HEAD preserving consumer d
         ->and(DB::table('user_tax_profiles')->count())->toBe(1)
         ->and(DB::table('invoice_series_control')->count())->toBe(1)
         ->and(DB::table('eu_sales_thresholds')->count())->toBe(1);
+
+    // Invariant 2-bis (AID-1527) — the money-widening slice transformed the
+    // int-era money columns to signed bigint and landed the AEAT domain
+    // CHECKs, while the seeded int-range values round-trip untouched
+    // (Invariant 5 reads them back through the HEAD models).
+    expect($this->getMysqlColumnType('invoices', 'total_amount'))->toBe('bigint')
+        ->and($this->getMysqlColumnType('invoice_items', 'unit_price'))->toBe('bigint')
+        ->and($this->getMysqlColumnType('article_prices', 'price'))->toBe('bigint')
+        ->and($this->getMysqlColumnType('articles', 'cost_price'))->toBe('bigint')
+        ->and($this->getMysqlColumnType('grouped_payment_invoice', 'applied_amount'))->toBe('bigint')
+        ->and(larabillUpgradeAeatCheckExists('invoices', 'total_amount'))->toBeTrue()
+        ->and(larabillUpgradeAeatCheckExists('grouped_payment_invoice', 'applied_amount'))->toBeTrue();
 
     // Invariant 3 — the AID-307 index swap landed and changed behaviour: a
     // second real series with the SAME fiscal type and number as a legacy FAC

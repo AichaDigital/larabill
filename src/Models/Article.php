@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use AichaDigital\Lara100\Casts\FixedDecimalCast;
 use AichaDigital\Lara100\ValueObjects\FixedDecimal;
+use AichaDigital\Larabill\Casts\AichaMoneyCast;
 use AichaDigital\Larabill\Database\Factories\ArticleFactory;
 use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Enums\ItemType;
@@ -96,7 +96,7 @@ class Article extends Model
      */
     protected $casts = [
         'item_type'      => ItemType::class,
-        'cost_price'     => FixedDecimalCast::class.':2',
+        'cost_price'     => AichaMoneyCast::class.':2',
         'is_active'      => 'boolean',
         'guarantee_days' => 'integer',
         'metadata'       => 'array',

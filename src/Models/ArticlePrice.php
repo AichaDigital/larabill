@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use AichaDigital\Lara100\Casts\FixedDecimalCast;
 use AichaDigital\Lara100\ValueObjects\FixedDecimal;
+use AichaDigital\Larabill\Casts\AichaMoneyCast;
 use AichaDigital\Larabill\Database\Factories\ArticlePriceFactory;
 use AichaDigital\Larabill\Exceptions\OverlappingArticlePriceException;
 use AichaDigital\Larabill\ValueObjects\BillingInterval;
@@ -68,7 +68,7 @@ class ArticlePrice extends Model
      */
     protected $casts = [
         'billing_quantity'        => 'integer',
-        'price'                   => FixedDecimalCast::class.':2',
+        'price'                   => AichaMoneyCast::class.':2',
         'billing_days_in_advance' => 'integer',
         'valid_from'              => 'date',
         'valid_to'                => 'date',

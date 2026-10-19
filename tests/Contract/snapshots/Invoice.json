@@ -83,9 +83,9 @@
         "serie": "AichaDigital\\Larabill\\Enums\\InvoiceSerieType",
         "service_date": "date",
         "status": "AichaDigital\\Larabill\\Enums\\InvoiceStatus",
-        "taxable_amount": "AichaDigital\\Lara100\\Casts\\FixedDecimalCast:2",
-        "total_amount": "AichaDigital\\Lara100\\Casts\\FixedDecimalCast:2",
-        "total_tax_amount": "AichaDigital\\Lara100\\Casts\\FixedDecimalCast:2"
+        "taxable_amount": "AichaDigital\\Larabill\\Casts\\AichaMoneyCast:2",
+        "total_amount": "AichaDigital\\Larabill\\Casts\\AichaMoneyCast:2",
+        "total_tax_amount": "AichaDigital\\Larabill\\Casts\\AichaMoneyCast:2"
     },
     "relations": {
         "billableUser": {
