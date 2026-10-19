@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Services;
 
+use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Enums\InvoiceDocumentStatus;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
@@ -16,6 +17,8 @@ use AichaDigital\Larabill\Exceptions\UnsettleableInvoiceException;
 use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\InvoiceItem;
+use Brick\Math\BigDecimal;
+use Brick\Math\RoundingMode;
 
 /**
  * Settlement artifacts service (ADR-014, AID-971).
@@ -521,12 +524,14 @@ final class SettlementService
         }
 
         // Frozen rate (absent on a tax-free original → zero tax). The magnitude
-        // is rounded HalfUp exactly like the VAT strategy, then negated as a
-        // whole so the sign arithmetic never rounds a negative base directly.
+        // is computed with the AID-1527 §3-bis exact discipline (site 2 — the
+        // same fix as the VAT strategy): rounded HalfUp on the exact quotient,
+        // never on a float intermediate, with a typed loud rejection when the
+        // result leaves the native integer range (round-2 finding 1).
         $frozen     = $entries[0] ?? null;
         $taxAmount  = $frozen === null
             ? 0
-            : (int) round(abs($amount) * ((int) ($frozen['rate'] ?? 0) / 10000));
+            : $this->frozenRateTaxAmount(abs($amount), (int) ($frozen['rate'] ?? 0));
 
         $taxableAmount  = $amount;
         $totalTaxAmount = -$taxAmount;
@@ -548,6 +553,29 @@ final class SettlementService
             ],
             'total_amount'      => $taxableAmount + $totalTaxAmount,
         ]];
+    }
+
+    /**
+     * AID-1527 §3-bis site 2 — the exact frozen-rate tax for a difference
+     * rectification, replacing the legacy float expression
+     * `(int) round(abs($amount) * ($rate / 10000))` whose float intermediate
+     * loses precision above 2^53 (legal bigint money after the widening) and
+     * wrapped silently out of int range.
+     *
+     * The base is an int (not a float), so no precision classification is
+     * needed: `BigDecimal::of()` is exact for EVERY int. Rounding is
+     * half-away-from-zero on the EXACT quotient (Brick's RoundingMode::HalfUp
+     * — the same semantics as PHP round()), and materialization goes through
+     * the lara100 checked extraction so an out-of-int result throws the typed
+     * `InvalidFixedDecimal` instead of wrapping.
+     */
+    private function frozenRateTaxAmount(int $baseCents, int $rate): int
+    {
+        $exact = BigDecimal::of($baseCents)
+            ->multipliedBy(BigDecimal::of($rate))
+            ->dividedBy(10000, 0, RoundingMode::HalfUp);
+
+        return FixedDecimal::ofDecimalString((string) $exact, 0)->unscaledValue();
     }
 
     /**

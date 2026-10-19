@@ -31,7 +31,7 @@
         "billing_days_in_advance": "integer",
         "billing_quantity": "integer",
         "is_active": "boolean",
-        "price": "AichaDigital\\Lara100\\Casts\\FixedDecimalCast:2",
+        "price": "AichaDigital\\Larabill\\Casts\\AichaMoneyCast:2",
         "valid_from": "date",
         "valid_to": "date"
     },

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use AichaDigital\Lara100\Casts\FixedDecimalCast;
 use AichaDigital\Lara100\ValueObjects\FixedDecimal;
+use AichaDigital\Larabill\Casts\AichaMoneyCast;
 use AichaDigital\Larabill\Database\Factories\ArticleOverrideFactory;
 use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Exceptions\OverlappingArticleOverrideException;
@@ -59,7 +59,7 @@ class ArticleOverride extends Model
      * The attributes that should be cast.
      */
     protected $casts = [
-        'custom_price' => FixedDecimalCast::class.':2',
+        'custom_price' => AichaMoneyCast::class.':2',
         'valid_from'   => 'date',
         'valid_to'     => 'date',
         'is_active'    => 'boolean',

@@ -7,6 +7,7 @@ namespace AichaDigital\Larabill\Models;
 use AichaDigital\Lara100\Casts\FixedDecimalCast;
 use AichaDigital\Lara100\RoundingMode;
 use AichaDigital\Lara100\ValueObjects\FixedDecimal;
+use AichaDigital\Larabill\Casts\AichaMoneyCast;
 use AichaDigital\Larabill\Database\Factories\InvoiceItemFactory;
 use AichaDigital\Larabill\Enums\InvoiceDocumentStatus;
 use AichaDigital\Larabill\Enums\ItemType;
@@ -154,12 +155,12 @@ class InvoiceItem extends Model
     {
         return [
             'item_type'         => ItemType::class, // PHP Enum
-            'quantity'          => FixedDecimalCast::class.':2', // 1.50 ↔ 150
-            'unit_price'        => FixedDecimalCast::class.':2', // €12.34 ↔ 1234
-            'taxable_amount'    => FixedDecimalCast::class.':2', // €12.34 ↔ 1234
-            'total_tax_amount'  => FixedDecimalCast::class.':2',
+            'quantity'          => FixedDecimalCast::class.':2', // 1.50 ↔ 150 (NOT money — no AEAT cap, AID-1527 §2 G2)
+            'unit_price'        => AichaMoneyCast::class.':2', // €12.34 ↔ 1234 (AEAT domain, AID-1527)
+            'taxable_amount'    => AichaMoneyCast::class.':2', // €12.34 ↔ 1234 (AEAT domain, AID-1527)
+            'total_tax_amount'  => AichaMoneyCast::class.':2',
             'taxes_applied'     => 'array',
-            'total_amount'      => FixedDecimalCast::class.':2', // €12.34 ↔ 1234
+            'total_amount'      => AichaMoneyCast::class.':2', // €12.34 ↔ 1234 (AEAT domain, AID-1527)
             'service_date_from' => 'date',
             'service_date_to'   => 'date',
             'metadata'          => 'array',

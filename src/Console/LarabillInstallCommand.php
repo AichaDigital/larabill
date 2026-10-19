@@ -94,6 +94,9 @@ class LarabillInstallCommand extends Command
         '049' => 'preflight_invoice_numbering_lifecycle',
         '050' => 'add_invoice_document_lifecycle_columns',
         '051' => 'backfill_invoice_document_status',
+        // === MONEY COLUMNS WIDENING (AID-1527) ===
+        // int → signed bigint + AEAT domain CHECKs; resumable by introspection.
+        '052' => 'convert_money_columns_to_bigint',
     ];
 
     public function handle(): int

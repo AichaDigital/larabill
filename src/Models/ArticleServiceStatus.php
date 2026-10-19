@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use AichaDigital\Lara100\Casts\FixedDecimalCast;
 use AichaDigital\Lara100\ValueObjects\FixedDecimal;
+use AichaDigital\Larabill\Casts\AichaMoneyCast;
 use AichaDigital\Larabill\Database\Factories\ArticleServiceStatusFactory;
 use AichaDigital\Larabill\Enums\AgreementModality;
 use AichaDigital\Larabill\Enums\AgreementStatus;
@@ -121,7 +121,7 @@ class ArticleServiceStatus extends Model
         'closure_cause_id'          => 'integer',
         'billing_quantity'          => 'integer',
         'guarantee_days'            => 'integer',
-        'effective_price'           => FixedDecimalCast::class.':2',
+        'effective_price'           => AichaMoneyCast::class.':2',
         'instance_data'             => 'array',
         'metadata'                  => 'array',
     ];

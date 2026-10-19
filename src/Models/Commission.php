@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use AichaDigital\Lara100\Casts\FixedDecimalCast;
 use AichaDigital\Lara100\ValueObjects\FixedDecimal;
+use AichaDigital\Larabill\Casts\AichaMoneyCast;
 use AichaDigital\Larabill\Database\Factories\CommissionFactory;
 use AichaDigital\Larabill\Enums\CommissionAppliesTo;
 use AichaDigital\Larabill\Enums\CommissionLevel;
@@ -94,12 +94,12 @@ class Commission extends Model
             'level'              => CommissionLevel::class,
             'type'               => CommissionType::class,
             'applies_to'         => CommissionAppliesTo::class,
-            'rate'               => FixedDecimalCast::class.':2', // 10.50% ↔ 1050 or €20.50 ↔ 2050
+            'rate'               => AichaMoneyCast::class.':2', // 10.50% ↔ 1050 or €20.50 ↔ 2050 (dual-purpose G1: AEAT domain, AID-1527 §2)
             'valid_from'         => 'date',
             'valid_until'        => 'date',
             'is_active'          => 'boolean',
-            'min_amount'         => FixedDecimalCast::class.':2',
-            'max_amount'         => FixedDecimalCast::class.':2',
+            'min_amount'         => AichaMoneyCast::class.':2',
+            'max_amount'         => AichaMoneyCast::class.':2',
             'min_quantity'       => 'integer',
             'metadata'           => 'array',
         ];

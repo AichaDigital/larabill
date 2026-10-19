@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Models;
 
-use AichaDigital\Lara100\Casts\FixedDecimalCast;
 use AichaDigital\Lara100\ValueObjects\FixedDecimal;
+use AichaDigital\Larabill\Casts\AichaMoneyCast;
 use AichaDigital\Larabill\Concerns\HasUuid;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -88,7 +88,7 @@ final class AgreementGuaranteeOperation extends Model
     {
         return [
             'agreement_id' => 'integer',
-            'amount'       => FixedDecimalCast::class.':2',
+            'amount'       => AichaMoneyCast::class.':2',
             'status'       => 'string',
             'refunded_at'  => 'datetime',
         ];
