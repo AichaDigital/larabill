@@ -1,6 +1,6 @@
 {
-    "release": "8.2.0",
-    "upgrade_base": "8.1.0",
+    "release": "8.3.0",
+    "upgrade_base": "8.2.0",
     "migrations": [
         {
             "name": "2024_12_01_000000_create_tax_rates_table.php",
@@ -245,7 +245,7 @@
         {
             "name": "2026_10_18_000001_convert_money_columns_to_bigint.php",
             "sha256": "a2894e713987cc9eb1380cc6a3ba4f50e1035852fc023e07e7afd34757d727eb",
-            "in_base": false
+            "in_base": true
         },
         {
             "name": "2026_10_24_000001_add_allocations_and_credit_movements.php",
