@@ -62,6 +62,7 @@ describe('larabill:install — production install path on MySQL (AID-287)', func
             'grouped_payments',
             'grouped_payment_invoice',
             'agreement_causes',
+            'credit_movements',
         ];
 
         foreach ($expectedTables as $table) {
@@ -88,8 +89,10 @@ describe('larabill:install — production install path on MySQL (AID-287)', func
         // instance-identity UNIQUE and adds its plain composite replacement;
         // ADR-016/AID-1627 adds the invoice numbering lifecycle preflight +
         // schema + backfill trio; AID-1527 adds the money-column widening
-        // (int → signed bigint) with the AEAT domain CHECKs.
-        expect($this->appliedMigrationCount())->toBe(49);
+        // (int → signed bigint) with the AEAT domain CHECKs; AID-962 adds the
+        // payment allocations + customer credit migration (pivot relaxation,
+        // credit_movements, invoice_items.deducts_invoice_id).
+        expect($this->appliedMigrationCount())->toBe(50);
 
         // The package defines inter-table FK constraints (e.g. invoice_items →
         // invoices, tax_group_tax_rate → tax_groups/tax_rates). They could only

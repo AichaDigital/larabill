@@ -55,4 +55,13 @@ final class InvoiceNotAnnullableException extends RuntimeException
             'Resolve the rectificatives first.'
         );
     }
+
+    public static function hasActiveAllocations(Invoice $invoice, int $count): self
+    {
+        return new self(
+            "Invoice [{$invoice->fiscal_number}] has {$count} active payment allocation(s) and cannot be annulled: ".
+            'annulment asserts the invoice never existed, which contradicts money applied to it. '.
+            'Void the allocations first.'
+        );
+    }
 }

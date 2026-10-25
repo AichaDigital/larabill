@@ -58,6 +58,7 @@ function larabillBirthEligibleStatuses(): array
         InvoiceStatus::CONVERTED,
         InvoiceStatus::CANCELLED,
         InvoiceStatus::CONVERTING,
+        InvoiceStatus::PARTIALLY_PAID,
     ];
 
     return collect(InvoiceStatus::cases())
@@ -161,6 +162,7 @@ it('rejects every lifecycle outcome as a birth input, in both the string and the
     InvoiceStatus::CONVERTED,
     InvoiceStatus::CANCELLED,
     InvoiceStatus::CONVERTING,
+    InvoiceStatus::PARTIALLY_PAID,
 ])->mapWithKeys(fn (InvoiceStatus $case) => [$case->name => $case])->all());
 
 it('names the offending lifecycle outcome and the remedy in the message', function () {

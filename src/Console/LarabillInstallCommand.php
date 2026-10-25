@@ -97,6 +97,8 @@ class LarabillInstallCommand extends Command
         // === MONEY COLUMNS WIDENING (AID-1527) ===
         // int → signed bigint + AEAT domain CHECKs; resumable by introspection.
         '052' => 'convert_money_columns_to_bigint',
+        // === PAYMENT ALLOCATIONS + CUSTOMER CREDIT (AID-962) ===
+        '053' => 'add_allocations_and_credit_movements',
     ];
 
     public function handle(): int

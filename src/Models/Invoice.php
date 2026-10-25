@@ -9,6 +9,7 @@ use AichaDigital\Larabill\Casts\AichaMoneyCast;
 use AichaDigital\Larabill\Concerns\HasUserRelation;
 use AichaDigital\Larabill\Concerns\HasUuid;
 use AichaDigital\Larabill\Database\Factories\InvoiceFactory;
+use AichaDigital\Larabill\Enums\AllocationStatus;
 use AichaDigital\Larabill\Enums\FiscalSubmissionStatus;
 use AichaDigital\Larabill\Enums\InvoiceDocumentStatus;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
@@ -28,6 +29,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Invoice Model
@@ -720,6 +722,8 @@ class Invoice extends Model implements LegallyRetainable
      * permitted transition even on immutable invoices. It goes through save()
      * deliberately, bypassing the update() immutability guard, which protects
      * fiscal content (amounts, dates, snapshots) — not payment state.
+     *
+     * @deprecated since 8.3.0 (AID-962), removal in 9.0: the collection state is derived from the active allocations by recomputeCollectionState(), the single in-package writer; a consumer calling this overwrites the derived state under its own responsibility.
      */
     public function markAsPaidViaGroupedPayment(DateTimeInterface $paidAt): void
     {
@@ -731,12 +735,138 @@ class Invoice extends Model implements LegallyRetainable
     /**
      * Restore this invoice's collection state when its grouped payment is reversed.
      * Same rationale as markAsPaidViaGroupedPayment(): permitted on immutable invoices.
+     *
+     * @deprecated since 8.3.0 (AID-962), removal in 9.0: the collection state is derived from the active allocations by recomputeCollectionState(), the single in-package writer; a consumer calling this overwrites the derived state under its own responsibility.
      */
     public function restoreStateViaGroupedPaymentReversal(InvoiceStatus $status, ?DateTimeInterface $paidAt): void
     {
         $this->status  = $status;
         $this->paid_at = $paidAt !== null ? Carbon::instance($paidAt) : null;
         $this->save();
+    }
+
+    /**
+     * Sum of the applied amount of this invoice's ACTIVE allocations (AID-962).
+     * Always a fresh query — never the loaded relation.
+     *
+     * @api New surface (AID-962).
+     */
+    public function amountPaid(): FixedDecimal
+    {
+        $paid = DB::table('grouped_payment_invoice')
+            ->where('invoice_id', $this->getKey())
+            ->where('status', AllocationStatus::ACTIVE->value)
+            ->sum('applied_amount');
+
+        return FixedDecimal::ofUnscaled((int) $paid, 2);
+    }
+
+    /**
+     * `total_amount` minus amountPaid() — negative on rectificatives by
+     * design (AID-962, DECISION 6).
+     *
+     * @api New surface (AID-962).
+     */
+    public function amountOutstanding(): FixedDecimal
+    {
+        return $this->total_amount->minus($this->amountPaid());
+    }
+
+    /**
+     * Whether the active allocations cover part, but not all, of the total
+     * (0 < paid < total) — read from the allocations, not from `status`.
+     *
+     * @api New surface (AID-962).
+     */
+    public function isPartiallyPaid(): bool
+    {
+        $paid = $this->amountPaid();
+
+        return $paid->isPositive() && $paid->isLessThan($this->total_amount);
+    }
+
+    /**
+     * Derive the collection state (`status` + `paid_at`) from the active
+     * allocations and save() it (AID-962, spec §4.4) — the single in-package
+     * writer of those two attributes.
+     *
+     * Call it ONLY on the instance re-read with lockForUpdate() inside the
+     * operation's transaction: it reads `total_amount`, `due_date` and `status`
+     * from $this, and save() writes the dirty attributes without refreshing.
+     *
+     * Guards (no-op, no exception), because the single writer cannot trust
+     * its caller:
+     *   1. not issued on the document axis (`! isIssued()`);
+     *   2. persisted collection status DRAFT, CANCELLED, CONVERTED or
+     *      CONVERTING — document/conversion states, never overwritten here;
+     *   3. no allocation row at all (active or reversed): the legacy invoice
+     *      that was born PAID, imported or stamped by the consumer stays put.
+     *
+     * Table, with paid = amountPaid():
+     *   - paid = 0           → OVERDUE when due_date is set and strictly
+     *                          before today, else SENT; paid_at = null;
+     *   - 0 < paid < total   → PARTIALLY_PAID; paid_at = null;
+     *   - paid ≥ total       → PAID; paid_at = the latest
+     *                          COALESCE(applied_at, payment.paid_at) over the
+     *                          ACTIVE allocations.
+     *
+     * @internal Called by the payment services under the invoice row lock.
+     */
+    public function recomputeCollectionState(): void
+    {
+        if (! $this->isIssued()) {
+            return;
+        }
+
+        if (in_array($this->status, [
+            InvoiceStatus::DRAFT,
+            InvoiceStatus::CANCELLED,
+            InvoiceStatus::CONVERTED,
+            InvoiceStatus::CONVERTING,
+        ], true)) {
+            return;
+        }
+
+        $hasAllocations = DB::table('grouped_payment_invoice')
+            ->where('invoice_id', $this->getKey())
+            ->exists();
+
+        if (! $hasAllocations) {
+            return;
+        }
+
+        $paid = $this->amountPaid();
+
+        if (! $paid->isPositive()) {
+            $this->status = $this->due_date !== null && $this->due_date->lt(Carbon::today())
+                ? InvoiceStatus::OVERDUE
+                : InvoiceStatus::SENT;
+            $this->paid_at = null;
+        } elseif ($paid->isLessThan($this->total_amount)) {
+            $this->status  = InvoiceStatus::PARTIALLY_PAID;
+            $this->paid_at = null;
+        } else {
+            $this->status  = InvoiceStatus::PAID;
+            $this->paid_at = $this->latestActiveSettlementDate();
+        }
+
+        $this->save();
+    }
+
+    /**
+     * The latest COALESCE(allocation.applied_at, payment.paid_at) over the
+     * ACTIVE allocations — the date the invoice became settled.
+     */
+    private function latestActiveSettlementDate(): ?Carbon
+    {
+        $settledAt = DB::table('grouped_payment_invoice')
+            ->join('grouped_payments', 'grouped_payments.id', '=', 'grouped_payment_invoice.grouped_payment_id')
+            ->where('grouped_payment_invoice.invoice_id', $this->getKey())
+            ->where('grouped_payment_invoice.status', AllocationStatus::ACTIVE->value)
+            ->selectRaw('MAX(COALESCE(grouped_payment_invoice.applied_at, grouped_payments.paid_at)) AS settled_at')
+            ->value('settled_at');
+
+        return $settledAt !== null ? Carbon::parse((string) $settledAt) : null;
     }
 
     /**
@@ -810,6 +940,16 @@ class Invoice extends Model implements LegallyRetainable
 
         // @phpstan-ignore-next-line return.type,argument.templateType
         return $this->belongsTo($userModel, 'billable_user_id');
+    }
+
+    /**
+     * Allocation rows of this invoice, active and reversed alike (AID-962).
+     *
+     * @return HasMany<PaymentAllocation, $this>
+     */
+    public function allocations(): HasMany
+    {
+        return $this->hasMany(PaymentAllocation::class, 'invoice_id');
     }
 
     /**

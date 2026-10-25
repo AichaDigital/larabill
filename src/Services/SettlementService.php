@@ -19,6 +19,7 @@ use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\InvoiceItem;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Settlement artifacts service (ADR-014, AID-971).
@@ -160,17 +161,28 @@ final class SettlementService
      * written with save() deliberately, bypassing the update() immutability
      * guard that protects fiscal content — not lifecycle state.
      *
+     * Since 8.3 (AID-962) the guards and the write run on the instance re-read
+     * under lockForUpdate(), and THAT instance is returned: the caller's
+     * $original is never mutated — re-read it (or use the return value).
+     * A refusal writes nothing.
+     *
      * @param  Invoice  $original  an emitted (non-draft, non-proforma) invoice
-     * @return Invoice the annulled original (same document, refreshed)
+     * @return Invoice the annulled document: the locked instance, not $original
      */
     public function annul(Invoice $original): Invoice
     {
-        $this->assertAnnullable($original);
+        return DB::transaction(function () use ($original): Invoice {
+            // Re-read under the row lock: an allocation committed by a
+            // concurrent PaymentService::receive() is visible to the guard.
+            $locked = Invoice::whereKey($original->getKey())->lockForUpdate()->firstOrFail();
 
-        $original->status = InvoiceStatus::CANCELLED;
-        $original->save();
+            $this->assertAnnullable($locked);
 
-        return $original;
+            $locked->status = InvoiceStatus::CANCELLED;
+            $locked->save();
+
+            return $locked;
+        });
     }
 
     /**
@@ -436,6 +448,12 @@ final class SettlementService
 
         if ($rectificativeCount > 0) {
             throw InvoiceNotAnnullableException::hasRectificatives($original, $rectificativeCount);
+        }
+
+        $allocationCount = $original->allocations()->active()->count();
+
+        if ($allocationCount > 0) {
+            throw InvoiceNotAnnullableException::hasActiveAllocations($original, $allocationCount);
         }
     }
 

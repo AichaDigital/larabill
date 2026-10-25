@@ -294,4 +294,27 @@ return [
         // Days after due date for second overdue + suspension warning
         'overdue_suspension_days' => (int) env('LARABILL_REMINDER_SUSPENSION', 7),
     ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Payments (AID-962)
+    |--------------------------------------------------------------------------
+    |
+    | base_transaction_level: the DB::transactionLevel() at which a payment
+    | write that must be the OUTERMOST transaction is still allowed to run —
+    | PaymentService::reverse(), reverseAllocation(), CustomerCredit::apply()
+    | and refund(). They read the ids to lock before opening their own
+    | transaction; inside a caller's transaction that read would pin the
+    | REPEATABLE READ snapshot before the locks, so above this level they throw
+    | PaymentOutsideTransactionRequiredException before reading anything.
+    |
+    | Leave it at 0 in production. A test suite that wraps every test in a
+    | transaction (Laravel's RefreshDatabase) sets it to 1 — the level the
+    | harness itself opens — and nothing higher. receive() and allocate() are
+    | not guarded (a wrapper with no prior read is tolerated).
+    |
+    */
+    'payments' => [
+        'base_transaction_level' => 0,
+    ],
 ];

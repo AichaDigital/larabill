@@ -37,6 +37,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  *
  * @property int $id
  * @property string $invoice_id UUID foreign key to invoices table
+ * @property string|null $deducts_invoice_id Advance invoice this line deducts (AID-962, DECISION 4)
  * @property int|null $article_id FK to articles (v0.4.0)
  * @property ItemType $item_type Good or Service
  * @property string $description
@@ -140,6 +141,7 @@ class InvoiceItem extends Model
         'service_date_from',
         'service_date_to',
         'metadata',
+        'deducts_invoice_id',
     ];
 
     /**
@@ -221,6 +223,17 @@ class InvoiceItem extends Model
     public function unitMeasure(): BelongsTo
     {
         return $this->belongsTo(UnitMeasure::class);
+    }
+
+    /**
+     * The advance invoice this line deducts (AID-962, DECISION 4), so the
+     * consumer can query which lines deduct a given advance.
+     *
+     * @return BelongsTo<Invoice, $this>
+     */
+    public function deductsInvoice(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class, 'deducts_invoice_id');
     }
 
     // ========================================

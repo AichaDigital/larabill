@@ -32,7 +32,7 @@ class LegalEntityTypesSeeder extends Seeder
             );
         }
 
-        $this->command->info('Legal entity types for Spain seeded successfully.');
+        $this->command?->info('Legal entity types for Spain seeded successfully.');
     }
 
     /**

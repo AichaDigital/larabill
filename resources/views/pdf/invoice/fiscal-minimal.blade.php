@@ -76,6 +76,32 @@
             text-align: right;
         }
 
+        .collection-section {
+            margin-top: 6mm;
+            width: 300px;
+            margin-left: auto;
+        }
+
+        .collection-section table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .collection-section th,
+        .collection-section td {
+            padding: 5px 10px;
+            border-bottom: 1px solid #ccc;
+            text-align: left;
+        }
+
+        .collection-section .text-right {
+            text-align: right;
+        }
+
+        .collection-section .total-row {
+            font-weight: bold;
+        }
+
         .totals {
             width: 300px;
             margin-left: auto;
@@ -215,6 +241,17 @@
                 </tr>
             </table>
         </div>
+
+        @if($collection)
+        <div class="collection-section">
+            <table class="totals-table">
+                <tr><th colspan="2">{{ __('larabill::pdf.collection.title') }}</th></tr>
+                <tr><td>{{ __('larabill::pdf.collection.credit_applied') }}:</td><td class="text-right">{{ $collection['credit_applied'] }} €</td></tr>
+                <tr><td>{{ __('larabill::pdf.collection.amount_paid') }}:</td><td class="text-right">{{ $collection['amount_paid'] }} €</td></tr>
+                <tr class="total-row"><td>{{ __('larabill::pdf.collection.amount_due') }}:</td><td class="text-right">{{ $collection['amount_due'] }} €</td></tr>
+            </table>
+        </div>
+        @endif
 
         <!-- QR Code Section -->
         @if($include_qr && (!empty($qr_data['qr_svg']) || !empty($qr_data['qr_png'])))

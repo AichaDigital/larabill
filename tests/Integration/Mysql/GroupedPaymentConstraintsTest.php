@@ -4,9 +4,17 @@ declare(strict_types=1);
 
 use AichaDigital\Larabill\Models\GroupedPayment;
 use AichaDigital\Larabill\Models\Invoice;
-use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 
+/*
+ * AID-30 schema of the grouped-payment pivot, relaxed by AID-962 (migration
+ * 053): the two UNIQUEs — one row per (payment, invoice) and one active
+ * payment per invoice — are retired, because partial payments let two live
+ * payments cover one invoice and a payment be re-allocated to an invoice
+ * after an allocation reversal. The per-invoice guarantee moved from the
+ * UNIQUE to the invoice row lock (spec §5.4); these tests pin that the
+ * schema no longer refuses either shape.
+ */
 describe('AID-30 — grouped payment schema on MySQL', function () {
 
     // Scoped pivot-row builder (AID-272): previously a loose global
@@ -40,39 +48,34 @@ describe('AID-30 — grouped payment schema on MySQL', function () {
         $this->assertUuidCompatibleColumn('grouped_payment_invoice', 'active_invoice_id');
     });
 
-    it('enforces one pivot row per (grouped_payment_id, invoice_id)', function () use ($pivotRow) {
+    it('lets two ACTIVE rows with the same active_invoice_id from two payments coexist', function () use ($pivotRow) {
         $this->bootstrap();
         $userId  = $this->seedUser();
-        $payment = GroupedPayment::factory()->create();
-        $invoice = Invoice::factory()->sent()->create([
-            'user_id'          => $userId,
-            'billable_user_id' => $userId,
-            'is_immutable'     => false,
-            'paid_at'          => null,
-        ]);
+        $invoice = Invoice::factory()->sent()->create(['user_id' => $userId, 'billable_user_id' => $userId, 'is_immutable' => false, 'paid_at' => null]);
+        $p1      = GroupedPayment::factory()->create();
+        $p2      = GroupedPayment::factory()->create();
 
-        $insert = fn () => DB::table('grouped_payment_invoice')->insert($pivotRow($payment->id, $invoice->id, null));
-        $insert();
-        expect($insert)->toThrow(QueryException::class);
+        // Two partial payments, both live, covering the same invoice.
+        DB::table('grouped_payment_invoice')->insert($pivotRow($p1->id, $invoice->id, $invoice->id));
+        DB::table('grouped_payment_invoice')->insert($pivotRow($p2->id, $invoice->id, $invoice->id));
+
+        expect(DB::table('grouped_payment_invoice')->where('active_invoice_id', $invoice->id)->count())->toBe(2);
     });
 
-    it('allows many reversed (null) rows but one active payment per invoice', function () use ($pivotRow) {
+    it('lets the same (payment, invoice) pair appear twice', function () use ($pivotRow) {
         $this->bootstrap();
-        $userId = $this->seedUser();
-        $invA   = Invoice::factory()->sent()->create(['user_id' => $userId, 'billable_user_id' => $userId, 'is_immutable' => false, 'paid_at' => null]);
-        $invB   = Invoice::factory()->sent()->create(['user_id' => $userId, 'billable_user_id' => $userId, 'is_immutable' => false, 'paid_at' => null]);
-        $invC   = Invoice::factory()->sent()->create(['user_id' => $userId, 'billable_user_id' => $userId, 'is_immutable' => false, 'paid_at' => null]);
-        $p1     = GroupedPayment::factory()->create();
-        $p2     = GroupedPayment::factory()->create();
+        $userId  = $this->seedUser();
+        $invoice = Invoice::factory()->sent()->create(['user_id' => $userId, 'billable_user_id' => $userId, 'is_immutable' => false, 'paid_at' => null]);
+        $payment = GroupedPayment::factory()->create();
 
-        // Two reversed rows (active_invoice_id NULL) for the same invoice → allowed.
-        DB::table('grouped_payment_invoice')->insert($pivotRow($p1->id, $invA->id, null));
-        DB::table('grouped_payment_invoice')->insert($pivotRow($p2->id, $invA->id, null));
+        // A reversed allocation (NULL marker) and the re-allocation of the same pair.
+        DB::table('grouped_payment_invoice')->insert($pivotRow($payment->id, $invoice->id, null));
+        DB::table('grouped_payment_invoice')->insert($pivotRow($payment->id, $invoice->id, $invoice->id));
 
-        // Two ACTIVE rows carrying the same active_invoice_id (invB) → second rejected by unique(active_invoice_id).
-        DB::table('grouped_payment_invoice')->insert($pivotRow($p1->id, $invB->id, $invB->id));
-        expect(fn () => DB::table('grouped_payment_invoice')->insert($pivotRow($p2->id, $invC->id, $invB->id)))
-            ->toThrow(QueryException::class);
+        expect(DB::table('grouped_payment_invoice')
+            ->where('grouped_payment_id', $payment->id)
+            ->where('invoice_id', $invoice->id)
+            ->count())->toBe(2);
     });
 
 });

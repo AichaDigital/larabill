@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Services\PDF;
 
 use AichaDigital\Lara100\ValueObjects\FixedDecimal;
+use AichaDigital\Larabill\Enums\CreditMovementKind;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\TemplateInvoiceType;
 use AichaDigital\Larabill\Exceptions\InvoiceNotIssuedException;
@@ -12,6 +13,7 @@ use AichaDigital\Larabill\Models\CompanyTemplateSettings;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\InvoiceItem;
 use AichaDigital\Larabill\Models\InvoiceTemplate;
+use AichaDigital\Larabill\Models\PaymentAllocation;
 use Dompdf\Dompdf;
 use Dompdf\Options;
 use Illuminate\Contracts\View\Factory as ViewFactory;
@@ -299,6 +301,7 @@ class DomPDFService
             'client'            => $this->getClientData($invoice),
             'items'             => $this->getInvoiceItems($invoice),
             'totals'            => $this->getInvoiceTotals($invoice),
+            'collection'        => $this->getCollectionData($invoice),
             'fiscal_data'       => [
                 'reverse_charge' => $this->isReverseCharge($invoice),
                 'exempt'         => $this->isExemptInvoice($invoice),
@@ -502,6 +505,58 @@ class DomPDFService
             'total'         => $invoice->total_amount->toDecimalString(),
             'currency'      => 'EUR',
             'tax_breakdown' => $this->taxBreakdown($invoice),
+        ];
+    }
+
+    /**
+     * Get the collection block data, or null when the block must not print.
+     *
+     * AID-962 (spec §6): under the totals, the invoice shows how much of it
+     * was settled from the customer's credit, how much was paid directly and
+     * what is still due. ONE query over the invoice's ACTIVE allocations,
+     * each flagged by an EXISTS over its active APPLIED exits: a row with at
+     * least one such exit is credit-funded, the rest were paid directly.
+     *
+     * Null for a proforma (spec §12.1: the template carries the block
+     * prepared, but it is never fed in 8.3 — a proforma is not a fiscal
+     * document and has no collection) and when nothing is paid.
+     *
+     * @param  Invoice  $invoice  The invoice
+     * @return array{credit_applied: string, amount_paid: string, amount_due: string}|null
+     */
+    protected function getCollectionData(Invoice $invoice): ?array
+    {
+        if ($invoice->serie === InvoiceSerieType::PROFORMA) {
+            return null;
+        }
+
+        $rows = PaymentAllocation::query()
+            ->active()
+            ->where('invoice_id', $invoice->getKey())
+            ->withExists(['creditMovements as credit_funded' => fn ($query) => $query
+                ->where('kind', CreditMovementKind::APPLIED->value)
+                ->whereNull('reversed_at')])
+            ->get();
+
+        $credit = FixedDecimal::zero(2);
+        $paid   = FixedDecimal::zero(2);
+
+        foreach ($rows as $row) {
+            if ($row->getAttribute('credit_funded')) {
+                $credit = $credit->plus($row->applied_amount);
+            } else {
+                $paid = $paid->plus($row->applied_amount);
+            }
+        }
+
+        if ($credit->isZero() && $paid->isZero()) {
+            return null;
+        }
+
+        return [
+            'credit_applied' => $credit->toDecimalString(),
+            'amount_paid'    => $paid->toDecimalString(),
+            'amount_due'     => $invoice->total_amount->minus($credit)->minus($paid)->toDecimalString(),
         ];
     }
 

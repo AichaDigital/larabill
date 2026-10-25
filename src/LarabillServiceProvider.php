@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill;
 
+use AichaDigital\Larabill\Console\BackfillAllocationStatusCommand;
 use AichaDigital\Larabill\Console\DiagnosePriceOverlapsCommand;
 use AichaDigital\Larabill\Console\LarabillInstallCommand;
 use AichaDigital\Larabill\Console\StalledPreparationsCommand;
@@ -71,6 +72,7 @@ class LarabillServiceProvider extends PackageServiceProvider
             $this->commands([
                 LarabillInstallCommand::class,
                 DiagnosePriceOverlapsCommand::class,
+                BackfillAllocationStatusCommand::class,
                 StalledPreparationsCommand::class,
             ]);
         }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace AichaDigital\Larabill\Exceptions;
 
+use AichaDigital\Larabill\Enums\CreditMovementKind;
 use Exception;
 
 /**
@@ -56,5 +57,30 @@ class GroupedPaymentValidationException extends Exception
     public static function invoicesNotFound(array $ids): self
     {
         return new self('Grouped payment references invoices that do not exist: '.implode(', ', $ids));
+    }
+
+    public static function notIssued(string $invoiceId): self
+    {
+        return new self("Invoice {$invoiceId} is not issued; only issued invoices can receive payment allocations.");
+    }
+
+    public static function notPayableAmount(string $invoiceId, int $totalUnscaled): self
+    {
+        return new self("Invoice {$invoiceId} has total {$totalUnscaled} (base-100); only invoices with a positive total are payable.");
+    }
+
+    public static function nonPositiveAmount(int $unscaled): self
+    {
+        return new self("Payment amount {$unscaled} (base-100) must be strictly positive.");
+    }
+
+    public static function subCentAmount(string $amount): self
+    {
+        return new self("Payment amount {$amount} is sub-cent: amounts must be exact to the cent.");
+    }
+
+    public static function creditKindNotAnEntry(CreditMovementKind $kind): self
+    {
+        return new self("Credit movement kind {$kind->name} is not an entry; only SURPLUS or TOP_UP can originate from a payment.");
     }
 }
