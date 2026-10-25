@@ -1,7 +1,10 @@
 <?php
 
 use AichaDigital\Lara100\ValueObjects\FixedDecimal;
+use AichaDigital\Larabill\Enums\CreditMovementKind;
+use AichaDigital\Larabill\Models\CreditMovement;
 use AichaDigital\Larabill\Models\InvoiceItem;
+use AichaDigital\Larabill\Models\PaymentAllocation;
 use AichaDigital\Larabill\Tests\Integration\InstallMysql\InstallCommandMysqlTestCase;
 use AichaDigital\Larabill\Tests\Integration\Mysql\MysqlIntegrationTestCase;
 use AichaDigital\Larabill\Tests\TestCase;
@@ -72,6 +75,38 @@ expect()->extend('toBeLessThanOrEqualTo', function ($expected) {
 function cents(int $unscaled): FixedDecimal
 {
     return FixedDecimal::ofUnscaled($unscaled, 2);
+}
+
+/**
+ * AID-962 funding invariant (spec §5.6): an allocation is funded EITHER
+ * directly (no active APPLIED exit points at it) OR from credit (its active
+ * APPLIED exits add up to exactly its applied_amount) — never a mix — and
+ * every active APPLIED exit of it consumes credit of the allocation's OWN
+ * payment (its grouped_payment_id), which reverseAllocation() relies on.
+ * Global so every payment/credit test file can call it after each operation.
+ */
+function aid962AssertFundingInvariant(PaymentAllocation $allocation): void
+{
+    $applied = (int) CreditMovement::query()
+        ->where('allocation_id', $allocation->id)
+        ->where('kind', CreditMovementKind::APPLIED->value)
+        ->whereNull('reversed_at')
+        ->sum('amount');
+
+    $fresh = PaymentAllocation::query()->findOrFail($allocation->id);
+
+    expect(in_array($applied, [0, -$fresh->applied_amount->unscaledValue()], true))
+        ->toBeTrue("allocation {$allocation->id}: active APPLIED sum {$applied} is neither 0 nor -{$fresh->applied_amount->unscaledValue()}");
+
+    $foreign = CreditMovement::query()
+        ->where('allocation_id', $allocation->id)
+        ->where('kind', CreditMovementKind::APPLIED->value)
+        ->whereNull('reversed_at')
+        ->where('grouped_payment_id', '!=', $fresh->grouped_payment_id)
+        ->pluck('id')
+        ->all();
+
+    expect($foreign)->toBe([], "allocation {$allocation->id}: active APPLIED exits funded from another payment than {$fresh->grouped_payment_id}");
 }
 
 /**

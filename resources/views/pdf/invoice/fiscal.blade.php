@@ -82,6 +82,10 @@
             text-align: right;
         }
 
+        .collection-section {
+            margin-top: 6mm;
+        }
+
         .totals-section {
             display: flex;
             justify-content: flex-end;
@@ -231,6 +235,17 @@
             </tr>
         </table>
     </div>
+
+    @if($collection)
+    <div class="collection-section">
+        <table class="totals-table">
+            <tr><th colspan="2">{{ __('larabill::pdf.collection.title') }}</th></tr>
+            <tr><td>{{ __('larabill::pdf.collection.credit_applied') }}:</td><td class="text-right">{{ $collection['credit_applied'] }} €</td></tr>
+            <tr><td>{{ __('larabill::pdf.collection.amount_paid') }}:</td><td class="text-right">{{ $collection['amount_paid'] }} €</td></tr>
+            <tr class="total-row"><td>{{ __('larabill::pdf.collection.amount_due') }}:</td><td class="text-right">{{ $collection['amount_due'] }} €</td></tr>
+        </table>
+    </div>
+    @endif
 
     <!-- QR Code Section (only for fiscal invoices) -->
     @if($include_qr && (!empty($qr_data['qr_svg']) || !empty($qr_data['qr_png'])))

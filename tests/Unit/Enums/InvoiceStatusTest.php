@@ -37,7 +37,15 @@ describe('InvoiceStatus Enum', function () {
         $array = InvoiceStatus::toArray();
 
         expect($array)->toBeArray();
-        expect($array)->toHaveCount(8); // ADR-016 §5.2: 7 + CONVERTING
+        expect($array)->toHaveCount(9); // ADR-016 §5.2: 7 + CONVERTING, + PARTIALLY_PAID (AID-962)
         expect($array)->toHaveKeys([0, 1, 2, 3, 4, 5, 6, 7]);
     });
+});
+
+it('derives PARTIALLY_PAID as value 8 with labels in both locales', function () {
+    expect(InvoiceStatus::PARTIALLY_PAID->value)->toBe(8)
+        ->and(InvoiceStatus::PARTIALLY_PAID->canBeEdited())->toBeFalse()
+        ->and(InvoiceStatus::toArray())->toHaveKey(8);
+    app()->setLocale('es');
+    expect(InvoiceStatus::PARTIALLY_PAID->label())->toBe('Cobrada parcialmente');
 });

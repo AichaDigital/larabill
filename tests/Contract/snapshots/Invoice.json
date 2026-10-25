@@ -88,6 +88,13 @@
         "total_tax_amount": "AichaDigital\\Larabill\\Casts\\AichaMoneyCast:2"
     },
     "relations": {
+        "allocations": {
+            "foreignKey": "invoice_id",
+            "localKey": "id",
+            "related": "AichaDigital\\Larabill\\Models\\PaymentAllocation",
+            "type": "HasMany",
+            "withTrashed": false
+        },
         "billableUser": {
             "foreignKey": "billable_user_id",
             "ownerKey": "id",
@@ -269,6 +276,20 @@
         }
     },
     "methods": {
+        "amountOutstanding": {
+            "api": true,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "AichaDigital\\Lara100\\ValueObjects\\FixedDecimal",
+            "static": false
+        },
+        "amountPaid": {
+            "api": true,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "AichaDigital\\Lara100\\ValueObjects\\FixedDecimal",
+            "static": false
+        },
         "assertDeletable": {
             "api": false,
             "deprecated": false,
@@ -499,6 +520,13 @@
             "returnType": "bool",
             "static": false
         },
+        "isPartiallyPaid": {
+            "api": true,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "bool",
+            "static": false
+        },
         "isReverseCharge": {
             "api": false,
             "deprecated": false,
@@ -522,7 +550,7 @@
         },
         "markAsPaidViaGroupedPayment": {
             "api": false,
-            "deprecated": false,
+            "deprecated": true,
             "parameters": [
                 {
                     "name": "paidAt",
@@ -538,6 +566,13 @@
             "deprecated": false,
             "parameters": [],
             "returnType": "string",
+            "static": false
+        },
+        "recomputeCollectionState": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "void",
             "static": false
         },
         "regenerateEncryptedSnapshots": {
@@ -575,7 +610,7 @@
         },
         "restoreStateViaGroupedPaymentReversal": {
             "api": false,
-            "deprecated": false,
+            "deprecated": true,
             "parameters": [
                 {
                     "name": "status",

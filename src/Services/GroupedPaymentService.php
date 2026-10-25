@@ -5,16 +5,18 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Services;
 
 use AichaDigital\Lara100\ValueObjects\FixedDecimal;
-use AichaDigital\Larabill\Enums\GroupedPaymentStatus;
+use AichaDigital\Larabill\Enums\CreditMovementKind;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
-use AichaDigital\Larabill\Enums\InvoiceStatus;
+use AichaDigital\Larabill\Enums\PaymentMethod;
 use AichaDigital\Larabill\Exceptions\GroupedPaymentValidationException;
 use AichaDigital\Larabill\Exceptions\IdempotencyConflictException;
 use AichaDigital\Larabill\Models\GroupedPayment;
 use AichaDigital\Larabill\Models\Invoice;
+use AichaDigital\Larabill\Services\Payments\Ledger;
+use AichaDigital\Larabill\Services\Payments\ReceiveRequest;
+use AichaDigital\Larabill\Services\Payments\ReplayPolicy;
+use AichaDigital\Larabill\ValueObjects\Allocation;
 use DateTimeInterface;
-use Illuminate\Database\QueryException;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -23,7 +25,23 @@ use Illuminate\Support\Facades\DB;
  */
 class GroupedPaymentService
 {
-    /** @param list<string> $invoiceIds */
+    /**
+     * The 8.x card path (AID-961), kept verbatim for its callers: exact amount,
+     * full settlement of every invoice, SENT/OVERDUE/PENDING only. Since 8.3
+     * (AID-962) it resolves a replayed key BEFORE delegating (legacy
+     * comparison: payer, currency, amount, distinct invoice ids) and creates
+     * through PaymentService::process() with ReplayPolicy::Legacy — one full
+     * allocation per invoice, method Card, no recorder, receivedAt = paidAt,
+     * and the same derived key as 8.x.
+     *
+     * It always reads (key pre-check, eligibility) before process(), so a
+     * caller transaction around register() is never in process()'s tolerated
+     * "wrapper without prior read" class; its status precondition
+     * (SENT/OVERDUE/PENDING, re-checked by process() under Legacy) makes that
+     * fail-safe — a stale snapshot can only refuse, as notPayableStatus.
+     *
+     * @param  list<string>  $invoiceIds
+     */
     public function register(
         string $billableUserId,
         array $invoiceIds,
@@ -33,115 +51,61 @@ class GroupedPaymentService
         ?string $reference = null,
         ?string $idempotencyKey = null,
     ): GroupedPayment {
-        $key = $idempotencyKey ?? $this->deriveIdempotencyKey($billableUserId, $invoiceIds, $currency, $amount);
+        $key      = $idempotencyKey ?? $this->deriveIdempotencyKey($billableUserId, $invoiceIds, $currency, $amount);
+        $payments = app(PaymentService::class);
 
-        try {
-            return DB::transaction(function () use ($billableUserId, $invoiceIds, $paidAt, $amount, $currency, $reference, $key): GroupedPayment {
-                $existing = GroupedPayment::where('idempotency_key', $key)->first();
-                if ($existing !== null) {
-                    if ($existing->isReversed()) {
-                        throw IdempotencyConflictException::keySpentByReversal($key); // D2: spent key
-                    }
-                    if ($existing->isPosted() && $this->payloadMatches($existing, $billableUserId, $invoiceIds, $amount, $currency)) {
-                        return $existing->load('invoices');
-                    }
-
-                    throw IdempotencyConflictException::forKey($key);
+        $outcome = DB::transaction(function () use ($payments, $billableUserId, $invoiceIds, $paidAt, $amount, $currency, $reference, $key): GroupedPayment|ReceiveRequest {
+            $existing = GroupedPayment::where('idempotency_key', $key)->first();
+            if ($existing !== null) {
+                if ($existing->isReversed()) {
+                    throw IdempotencyConflictException::keySpentByReversal($key); // D2: spent key
+                }
+                $replay = ReceiveRequest::forLegacyReplay($billableUserId, $invoiceIds, $amount, $currency, $paidAt, $reference, $key);
+                if ($existing->isPosted() && $payments->replayMatches($existing, $replay, ReplayPolicy::Legacy)) {
+                    return $existing->load('invoices');
                 }
 
-                $orderedIds = $invoiceIds;
-                sort($orderedIds); // deterministic lock order (deadlock-safe)
-
-                $invoices = Invoice::whereIn('id', $orderedIds)
-                    ->with('companyFiscalConfig')
-                    ->orderBy('id')
-                    ->lockForUpdate()
-                    ->get();
-
-                $this->assertEligible($billableUserId, $currency, $orderedIds, $invoices, $amount);
-
-                $payment = GroupedPayment::create([
-                    'billable_user_id' => $billableUserId,
-                    'amount'           => $amount,
-                    'currency'         => $currency,
-                    'paid_at'          => $paidAt,
-                    'reference'        => $reference,
-                    'idempotency_key'  => $key,
-                    'status'           => GroupedPaymentStatus::POSTED,
-                ]);
-
-                foreach ($invoices as $invoice) {
-                    $payment->invoices()->attach($invoice->id, [
-                        'applied_amount'    => $invoice->total_amount->unscaledValue(),
-                        'previous_status'   => $invoice->status->value,
-                        'previous_paid_at'  => $invoice->paid_at,
-                        'active_invoice_id' => $invoice->id,
-                    ]);
-
-                    $invoice->markAsPaidViaGroupedPayment($paidAt); // D1: works on immutable invoices
-                }
-
-                return $payment->load('invoices');
-            });
-        } catch (QueryException $e) {
-            // Concurrency backstop: another tx won the unique idempotency_key race (the tx rolled back).
-            if ($this->isIdempotencyKeyViolation($e)) {
-                $raced = GroupedPayment::where('idempotency_key', $key)->first();
-                if ($raced !== null && $raced->isPosted() && $this->payloadMatches($raced, $billableUserId, $invoiceIds, $amount, $currency)) {
-                    return $raced->load('invoices');
-                }
                 throw IdempotencyConflictException::forKey($key);
             }
-            throw $e;
-        }
-    }
 
-    public function reverse(GroupedPayment $payment, string $reason, ?string $reversedBy = null): GroupedPayment
-    {
-        return DB::transaction(function () use ($payment, $reason, $reversedBy): GroupedPayment {
-            // Re-read + lock so two concurrent reversals can't both write (Codex #8).
-            $locked = GroupedPayment::whereKey($payment->getKey())->lockForUpdate()->first() ?? $payment;
+            $orderedIds = $invoiceIds;
+            sort($orderedIds); // deterministic lock order (deadlock-safe)
 
-            if ($locked->isReversed()) {
-                return $locked->load('invoices'); // stable no-op, audit fields untouched
-            }
-
-            $locked->update([
-                'status'         => GroupedPaymentStatus::REVERSED,
-                'reversed_at'    => now(),
-                'reversed_by'    => $reversedBy,
-                'reverse_reason' => $reason,
-            ]);
-
-            $pivotRows = DB::table('grouped_payment_invoice')
-                ->where('grouped_payment_id', $locked->id)
+            $invoices = Invoice::whereIn('id', $orderedIds)
+                ->with('companyFiscalConfig')
+                ->orderBy('id')
+                ->lockForUpdate()
                 ->get();
 
-            // One query for every grouped invoice instead of Invoice::find()
-            // per pivot row (AID-391).
-            $invoicesById = Invoice::query()
-                ->whereIn('id', $pivotRows->pluck('invoice_id')->map(fn ($id): string => (string) $id))
-                ->get()
-                ->keyBy(fn (Invoice $invoice): string => (string) $invoice->id);
+            $this->assertEligible($billableUserId, $currency, $orderedIds, $invoices, $amount);
 
-            foreach ($pivotRows as $pivotRow) {
-                $invoice = $invoicesById->get((string) $pivotRow->invoice_id);
-                if ($invoice === null) {
-                    continue;
-                }
-
-                $invoice->restoreStateViaGroupedPaymentReversal(
-                    InvoiceStatus::from((int) $pivotRow->previous_status),
-                    $pivotRow->previous_paid_at !== null ? Carbon::parse($pivotRow->previous_paid_at) : null,
-                );
-            }
-
-            DB::table('grouped_payment_invoice')
-                ->where('grouped_payment_id', $locked->id)
-                ->update(['active_invoice_id' => null]);
-
-            return $locked->load('invoices');
+            return $this->legacyRequest($billableUserId, $invoices, $paidAt, $amount, $currency, $reference, $key);
         });
+
+        if ($outcome instanceof GroupedPayment) {
+            return $outcome;
+        }
+
+        // process() re-locks and re-validates on its own instances: it is the authoritative check.
+        return $payments->process($outcome, ReplayPolicy::Legacy);
+    }
+
+    /**
+     * Void a card-path payment (AID-961 contract, unchanged signature and
+     * return): the payment and its allocations are reversed, every invoice is
+     * recomputed from the allocations that remain, and a second call is a
+     * stable no-op. Since 8.3 (AID-962) it delegates to PaymentService::reverse()
+     * and no longer reads the deprecated `previous_*` snapshot.
+     *
+     * Must NOT run inside any caller transaction, with or without a prior
+     * read: PaymentService::reverse() reads the payment's invoice ids before
+     * opening its transaction, and inside a wrapper that read pins the
+     * snapshot before the invoice locks, so the recomputation reads stale
+     * allocations (spec §13 rows 40-41). Call it outside your transaction.
+     */
+    public function reverse(GroupedPayment $payment, string $reason, ?string $reversedBy = null): GroupedPayment
+    {
+        return app(PaymentService::class)->reverse($payment, $reason, $reversedBy);
     }
 
     /**
@@ -165,7 +129,7 @@ class GroupedPaymentService
             throw GroupedPaymentValidationException::invoicesNotFound($missing);
         }
 
-        $payableStatuses = [InvoiceStatus::SENT, InvoiceStatus::OVERDUE, InvoiceStatus::PENDING];
+        $payableStatuses = Ledger::legacyPayableStatuses();
         $sum             = FixedDecimal::zero(2);
 
         // One query for the whole batch instead of an exists() per invoice
@@ -207,25 +171,28 @@ class GroupedPaymentService
         }
     }
 
-    /** @param list<string> $invoiceIds */
-    private function payloadMatches(GroupedPayment $existing, string $billableUserId, array $invoiceIds, FixedDecimal $amount, string $currency): bool
+    /**
+     * The receive request equivalent to an eligible register() call: one
+     * allocation per invoice for its full total, method Card, no recorder.
+     *
+     * @param  Collection<int, Invoice>  $invoices  locked and eligible
+     *
+     * @throws GroupedPaymentValidationException when an invoice total is not positive
+     */
+    private function legacyRequest(string $billableUserId, Collection $invoices, DateTimeInterface $paidAt, FixedDecimal $amount, string $currency, ?string $reference, string $key): ReceiveRequest
     {
-        if ((string) $existing->billable_user_id !== $billableUserId || $existing->currency !== $currency) {
-            return false;
+        $allocations = [];
+        foreach ($invoices as $invoice) {
+            if (! $invoice->total_amount->isPositive()) {
+                throw GroupedPaymentValidationException::notPayableAmount((string) $invoice->id, $invoice->total_amount->unscaledValue());
+            }
+            $allocations[] = new Allocation((string) $invoice->id, $invoice->total_amount);
         }
-        if ($existing->amount->compareTo($amount) !== 0) {
-            return false;
-        }
-        $existingIds  = $existing->invoices->pluck('id')->map(fn ($id): string => (string) $id)->sort()->values()->all();
-        $requestedIds = collect($invoiceIds)->map(fn ($id): string => (string) $id)->sort()->values()->all();
 
-        return $existingIds === $requestedIds;
-    }
-
-    private function isIdempotencyKeyViolation(QueryException $e): bool
-    {
-        // SQLSTATE 23000 = integrity constraint violation; message names the column/index.
-        return $e->getCode() === '23000' && str_contains($e->getMessage(), 'idempotency_key');
+        return ReceiveRequest::fromReceive(
+            $billableUserId, $amount, $currency, $paidAt, PaymentMethod::Card, $reference, null,
+            $allocations, CreditMovementKind::SURPLUS, $key,
+        );
     }
 
     /** @param list<string> $invoiceIds */

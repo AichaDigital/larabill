@@ -57,7 +57,8 @@ use Illuminate\Support\Facades\DB;
  *     taxable_amount?: int,
  *     total_tax_amount?: int,
  *     taxes_applied?: array<int|string, mixed>|null,
- *     total_amount?: int
+ *     total_amount?: int,
+ *     deducts_invoice_id?: string|null
  * }
  */
 class InvoiceService
@@ -759,6 +760,7 @@ class InvoiceService
             InvoiceStatus::CONVERTED,
             InvoiceStatus::CANCELLED,
             InvoiceStatus::CONVERTING,
+            InvoiceStatus::PARTIALLY_PAID,
         ], true)) {
             throw InvalidInvoiceStatusException::forbiddenBirthState($status);
         }
@@ -1103,6 +1105,9 @@ class InvoiceService
      * amounts and the taxes_applied snapshot were already frozen with the
      * proforma (ADR-001) and must never be re-derived from the live catalog.
      *
+     * `deducts_invoice_id` (AID-962 §7) names the issued advance invoice a
+     * negative, frozen line deducts; it is persisted on both paths.
+     *
      * @param  InvoiceItemData  $itemData
      */
     protected function createInvoiceItem(Invoice $invoice, array $itemData): InvoiceItem
@@ -1112,21 +1117,22 @@ class InvoiceService
 
         if (array_key_exists('total_amount', $itemData)) {
             return InvoiceItem::create([
-                'invoice_id'        => $invoice->id,
-                'article_id'        => $itemData['article_id']        ?? null,
-                'item_type'         => $itemData['item_type']         ?? ItemType::GOOD,
-                'description'       => $itemData['description']       ?? '',
-                'internal_code'     => $itemData['internal_code']     ?? null,
-                'quantity'          => FixedDecimal::ofUnscaled((int) $quantity, 2),
-                'unit_measure_id'   => $itemData['unit_measure_id']   ?? null,
-                'unit_price'        => FixedDecimal::ofUnscaled((int) $basePrice, 2),
-                'taxable_amount'    => FixedDecimal::ofUnscaled((int) ($itemData['taxable_amount'] ?? 0), 2),
-                'total_tax_amount'  => FixedDecimal::ofUnscaled((int) ($itemData['total_tax_amount'] ?? 0), 2),
-                'taxes_applied'     => $itemData['taxes_applied']     ?? [],
-                'total_amount'      => FixedDecimal::ofUnscaled((int) ($itemData['total_amount'] ?? 0), 2),
-                'service_date_from' => $itemData['service_date_from'] ?? null,
-                'service_date_to'   => $itemData['service_date_to']   ?? null,
-                'metadata'          => $itemData['metadata']          ?? null,
+                'invoice_id'         => $invoice->id,
+                'article_id'         => $itemData['article_id']        ?? null,
+                'item_type'          => $itemData['item_type']         ?? ItemType::GOOD,
+                'description'        => $itemData['description']       ?? '',
+                'internal_code'      => $itemData['internal_code']     ?? null,
+                'quantity'           => FixedDecimal::ofUnscaled((int) $quantity, 2),
+                'unit_measure_id'    => $itemData['unit_measure_id']   ?? null,
+                'unit_price'         => FixedDecimal::ofUnscaled((int) $basePrice, 2),
+                'taxable_amount'     => FixedDecimal::ofUnscaled((int) ($itemData['taxable_amount'] ?? 0), 2),
+                'total_tax_amount'   => FixedDecimal::ofUnscaled((int) ($itemData['total_tax_amount'] ?? 0), 2),
+                'taxes_applied'      => $itemData['taxes_applied']     ?? [],
+                'total_amount'       => FixedDecimal::ofUnscaled((int) ($itemData['total_amount'] ?? 0), 2),
+                'service_date_from'  => $itemData['service_date_from']  ?? null,
+                'service_date_to'    => $itemData['service_date_to']    ?? null,
+                'metadata'           => $itemData['metadata']           ?? null,
+                'deducts_invoice_id' => $itemData['deducts_invoice_id'] ?? null,
             ]);
         }
 
@@ -1144,21 +1150,22 @@ class InvoiceService
         // caller relying on them — notably the recurring flow's idempotency
         // check, which filters on metadata + service_date_from.
         return InvoiceItem::create([
-            'invoice_id'        => $invoice->id,
-            'article_id'        => $itemData['article_id']        ?? null,
-            'item_type'         => $itemData['item_type']         ?? ItemType::GOOD,
-            'description'       => $itemData['description']       ?? '',
-            'internal_code'     => $itemData['internal_code']     ?? null,
-            'quantity'          => FixedDecimal::ofUnscaled((int) $quantity, 2),
-            'unit_measure_id'   => $itemData['unit_measure_id']   ?? null,
-            'unit_price'        => FixedDecimal::ofUnscaled((int) $basePrice, 2),
-            'taxable_amount'    => FixedDecimal::ofUnscaled((int) $taxCalculation['taxable_amount'], 2),
-            'total_tax_amount'  => FixedDecimal::ofUnscaled((int) $taxCalculation['total_tax_amount'], 2),
-            'taxes_applied'     => $taxCalculation['taxes_applied'],
-            'total_amount'      => FixedDecimal::ofUnscaled((int) $taxCalculation['total_amount'], 2),
-            'service_date_from' => $itemData['service_date_from'] ?? null,
-            'service_date_to'   => $itemData['service_date_to']   ?? null,
-            'metadata'          => $itemData['metadata']          ?? null,
+            'invoice_id'         => $invoice->id,
+            'article_id'         => $itemData['article_id']        ?? null,
+            'item_type'          => $itemData['item_type']         ?? ItemType::GOOD,
+            'description'        => $itemData['description']       ?? '',
+            'internal_code'      => $itemData['internal_code']     ?? null,
+            'quantity'           => FixedDecimal::ofUnscaled((int) $quantity, 2),
+            'unit_measure_id'    => $itemData['unit_measure_id']   ?? null,
+            'unit_price'         => FixedDecimal::ofUnscaled((int) $basePrice, 2),
+            'taxable_amount'     => FixedDecimal::ofUnscaled((int) $taxCalculation['taxable_amount'], 2),
+            'total_tax_amount'   => FixedDecimal::ofUnscaled((int) $taxCalculation['total_tax_amount'], 2),
+            'taxes_applied'      => $taxCalculation['taxes_applied'],
+            'total_amount'       => FixedDecimal::ofUnscaled((int) $taxCalculation['total_amount'], 2),
+            'service_date_from'  => $itemData['service_date_from']  ?? null,
+            'service_date_to'    => $itemData['service_date_to']    ?? null,
+            'metadata'           => $itemData['metadata']           ?? null,
+            'deducts_invoice_id' => $itemData['deducts_invoice_id'] ?? null,
         ]);
     }
 

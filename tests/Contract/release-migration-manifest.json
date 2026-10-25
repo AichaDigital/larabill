@@ -246,6 +246,11 @@
             "name": "2026_10_18_000001_convert_money_columns_to_bigint.php",
             "sha256": "a2894e713987cc9eb1380cc6a3ba4f50e1035852fc023e07e7afd34757d727eb",
             "in_base": false
+        },
+        {
+            "name": "2026_10_24_000001_add_allocations_and_credit_movements.php",
+            "sha256": "f1115f9079a536b6c97dff12dfdfca6533744eb22f023ddf1a9c735f097a222e",
+            "in_base": false
         }
     ]
 }

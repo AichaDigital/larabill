@@ -88,6 +88,12 @@ class TestCase extends Orchestra
         // Override user model for tests
         $app['config']->set('larabill.user_model', TestUser::class);
 
+        // RefreshDatabase wraps every test in a transaction, so the payment
+        // writes guarded against a caller's transaction (spec §13.10 row 45)
+        // must treat level 1 as the outermost one. The MySQL harness does not
+        // wrap and keeps the shipped 0.
+        $app['config']->set('larabill.payments.base_transaction_level', 1);
+
         // The shipped config carries no default fiscal series (AID-589) — a
         // series is a business decision the package will not invent. The
         // suite makes that decision explicitly here, exactly like any real

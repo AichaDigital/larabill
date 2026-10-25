@@ -6,6 +6,7 @@ namespace AichaDigital\Larabill\Database\Factories;
 
 use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Enums\GroupedPaymentStatus;
+use AichaDigital\Larabill\Enums\PaymentMethod;
 use AichaDigital\Larabill\Models\GroupedPayment;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
@@ -34,6 +35,9 @@ class GroupedPaymentFactory extends Factory
             'reversed_by'      => null,
             'reverse_reason'   => null,
             'notes'            => null,
+            // AID-962: deterministic — the legacy card path, no recording actor.
+            'method'           => PaymentMethod::Card->value,
+            'recorded_by'      => null,
         ];
     }
 
