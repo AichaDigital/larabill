@@ -12,7 +12,7 @@ use RuntimeException;
  * An article price would have been active at the same time as another price of
  * the same article and billing cadence.
  *
- * Two prices live at once make billing non-deterministic: Article::getPriceFor()
+ * Two prices live at once make billing non-deterministic: Article::getPriceForInterval()
  * resolves a single value, so one of them silently wins and reaches invoice
  * lines (AID-601, ADR-012). The database cannot express "at most one valid at
  * any date" — no exclusion constraints in MySQL, and the re-keyed unique on

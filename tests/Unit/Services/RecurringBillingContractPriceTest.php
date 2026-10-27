@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use AichaDigital\Larabill\DataTransferObjects\InvoiceItemMetadata;
 use AichaDigital\Larabill\Enums\AgreementStatus;
-use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Exceptions\MissingContractPriceException;
 use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticleOverride;
@@ -16,6 +15,7 @@ use AichaDigital\Larabill\Models\UserTaxProfile;
 use AichaDigital\Larabill\Services\PricingService;
 use AichaDigital\Larabill\Services\RecurringBillingService;
 use AichaDigital\Larabill\Tests\Models\TestUser;
+use AichaDigital\Larabill\ValueObjects\BillingInterval;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
@@ -60,14 +60,14 @@ beforeEach(function () {
 });
 
 describe('the engine bills the contract (D1)', function () {
-    it('bills the contract price when the catalogue holds no price for that frequency', function () {
+    it('bills the contract price when the catalogue holds no price for that cadence', function () {
         // Article deliberately created WITHOUT any ArticlePrice. The state is
         // required: ArticleFactory::configure() auto-seeds a random price for
         // any article that ends up with none. No override either, so the
         // contract price is the single source of the amount.
         $article = Article::factory()->withoutPrices()->create(['tax_group_id' => null]);
 
-        expect($article->getPriceFor(BillingFrequency::MONTHLY))->toBeNull();
+        expect($article->getPriceForInterval(new BillingInterval('month', 1)))->toBeNull();
 
         ArticleServiceStatus::factory()->create([
             'customer_id'         => $this->customer->id,

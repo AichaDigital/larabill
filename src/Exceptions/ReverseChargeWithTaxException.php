@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Exceptions;
 
 use AichaDigital\Larabill\Models\Invoice;
+use AichaDigital\Larabill\Models\TaxGroup;
 use RuntimeException;
 
 /**
@@ -44,6 +45,25 @@ final class ReverseChargeWithTaxException extends RuntimeException
             $where.'. Under reverse charge the recipient self-assesses the tax (AEAT rule 1237: '.
             'an N2 breakdown cannot carry VAT). Either clear the tax from the lines or drop the '.
             'is_roi_taxed flag — the package will not rewrite frozen line amounts for you.'
+        );
+    }
+
+    /**
+     * The builder-side early refusal (AID-1778 spec §4.3): an advance was
+     * requested with `is_roi_taxed = true` from a tax group carrying real tax
+     * (sum of the group's rates > 0, base-100). Refused BEFORE any write —
+     * before the draft transaction even opens — so no invoice, no line and no
+     * draft survive it; the AID-929 guard inside `createInvoiceRow()` remains
+     * as the second net.
+     */
+    public static function forTaxGroup(TaxGroup $taxGroup, int $rateSum): self
+    {
+        return new self(
+            sprintf(
+                'Cannot build an advance invoice with is_roi_taxed = true from tax group [%s] carrying real tax (rate sum %d, base-100). Under reverse charge the recipient self-assesses the tax (AEAT rule 1237: an N2 breakdown cannot carry VAT) — a collected advance carries none. Pass a tax-free (or zero-rate) group or drop the is_roi_taxed flag; the package will not silently zero the tax.',
+                $taxGroup->name,
+                $rateSum,
+            )
         );
     }
 }

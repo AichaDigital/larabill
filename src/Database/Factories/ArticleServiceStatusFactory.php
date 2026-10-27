@@ -9,7 +9,6 @@ use AichaDigital\Larabill\Database\Factories\ArticlePriceFactory as CadenceBridg
 use AichaDigital\Larabill\Enums\AgreementModality;
 use AichaDigital\Larabill\Enums\AgreementStatus;
 use AichaDigital\Larabill\Enums\BillingFrequency;
-use AichaDigital\Larabill\Enums\CancellationType;
 use AichaDigital\Larabill\Models\AgreementCause;
 use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticleOverride;
@@ -196,27 +195,24 @@ class ArticleServiceStatusFactory extends Factory
     }
 
     /**
-     * Indicate that the service is cancelled — ALIGNED to the close/suspend
-     * semantics (ADR-014 Enmienda 1, third replica site): the agreement is
-     * CLOSED with the seeded `legacy_cancellation` cause, the original
-     * `CancellationType` survives in the cancellation metadata, and the
-     * legacy refund flag rides the same policy as the shim (`NOTICE_PERIOD`
-     * requires refund).
+     * Indicate that the agreement was cancelled under the legacy policy —
+     * ALIGNED to the close/suspend semantics (ADR-015 Enmienda 1, third
+     * replica site): the agreement is CLOSED with the seeded
+     * `legacy_cancellation` cause, and `$refundUnused` rides the legacy
+     * refund flag (`NOTICE_PERIOD` required refund under the retired
+     * `CancellationType` shim, removed in 9.0).
      */
-    public function cancelled(?CancellationType $type = null): static
+    public function cancelled(bool $refundUnused = false): static
     {
-        $type = $type ?? CancellationType::IMMEDIATE;
-
         return $this->state(fn (array $attributes) => [
             'status'                    => AgreementStatus::CLOSED,
             'closure_cause_id'          => AgreementCause::findActive(AgreementCause::SCOPE_CLOSED, 'legacy_cancellation')->id,
             'cancellation_requested_at' => now()->subDays(5),
             'cancellation_effective_at' => now(),
-            'refund_unused'             => $type->requiresRefund(),
+            'refund_unused'             => $refundUnused,
             'next_billing_date'         => null,
             'metadata'                  => [
                 'cancellation' => [
-                    'type'         => $type->value,
                     'requested_at' => now()->subDays(5)->toIso8601String(),
                 ],
             ],
@@ -281,15 +277,15 @@ class ArticleServiceStatusFactory extends Factory
 
     /**
      * Set for a specific article with cadence. The `BillingFrequency`
-     * parameter is kept until the shim slice (ADR-015 §5) and bridges through
-     * the §4.1 mapping; the modality follows the cadence domain, as in
-     * `frequency()`.
+     * parameter is kept (deprecated since 9.0.0, removal in 10.0) and bridges
+     * through the §4.1 mapping; the modality follows the cadence domain, as
+     * in `frequency()`.
      */
     public function forArticle(Article $article, ?BillingFrequency $frequency = null): static
     {
-        $frequency = $frequency                        ?? BillingFrequency::MONTHLY;
-        $price     = $article->getPriceFor($frequency) ?? 2900;
+        $frequency = $frequency ?? BillingFrequency::MONTHLY;
         $interval  = BillingInterval::fromLegacyFrequency($frequency->value);
+        $price     = $article->getPriceForInterval($interval) ?? 2900;
 
         return $this->state(fn (array $attributes) => [
             'article_id'        => $article->id,

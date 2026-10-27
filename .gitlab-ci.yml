@@ -68,16 +68,16 @@ workflow:
 
 manifest:
   stage: quality
-  image: aichadigital/laravel-ci:8.3
+  image: aichadigital/laravel-ci:8.4
   rules: !reference [.rules-ci, rules]
   script:
     - composer validate --strict --no-interaction
 
 pint:
   stage: quality
-  image: aichadigital/laravel-ci:8.3
+  image: aichadigital/laravel-ci:8.4
   variables:
-    PHP_VERSION: "8.3"
+    PHP_VERSION: "8.4"
   extends: .php
   rules: !reference [.rules-ci, rules]
   script:
@@ -85,9 +85,9 @@ pint:
 
 phpstan:
   stage: quality
-  image: aichadigital/laravel-ci:8.3
+  image: aichadigital/laravel-ci:8.4
   variables:
-    PHP_VERSION: "8.3"
+    PHP_VERSION: "8.4"
   extends: .php
   rules: !reference [.rules-ci, rules]
   script:
@@ -104,10 +104,9 @@ pest:
   image: aichadigital/laravel-ci:$PHP_VERSION
   parallel:
     matrix:
-      - PHP_VERSION: ["8.3", "8.4"]
-        LARAVEL: "12.*"
-        TESTBENCH: "10.*"
-      - PHP_VERSION: ["8.3", "8.4"]
+      # 9.0 (AID-1778): PHP 8.4 and Laravel 13 minimum — the 8.x line
+      # (Laravel 12, PHP 8.3) is no longer tested on this branch.
+      - PHP_VERSION: ["8.4"]
         LARAVEL: "13.*"
         TESTBENCH: "11.*"
   cache:
@@ -165,7 +164,7 @@ pest:
 # acepta LARABILL_TEST_MYSQL_DRIVER para cuando se aborde.
 db-integration:
   stage: test
-  image: aichadigital/laravel-ci:8.3
+  image: aichadigital/laravel-ci:8.4
   # AID-708 — tres combinaciones, porque el DRIVER también decide. Laravel 11
   # trajo un driver `mariadb` propio cuyo grammar emite el tipo UUID nativo de
   # MariaDB en servidores >= 10.7, mientras `MySqlGrammar` emite char(36)
@@ -192,8 +191,8 @@ db-integration:
     - name: $DB_IMAGE
       alias: dbhost
   variables:
-    PHP_VERSION: "8.3"
-    LARAVEL: "12.*"
+    PHP_VERSION: "8.4"
+    LARAVEL: "13.*"
     # La imagen de MySQL lee MYSQL_*; la de MariaDB prefiere MARIADB_* (y acepta
     # MYSQL_* como legacy). Se definen ambos: cada imagen ignora los ajenos.
     MYSQL_ROOT_PASSWORD: root
@@ -208,7 +207,7 @@ db-integration:
   rules: !reference [.rules-ci, rules]
   before_script:
     - php -v | head -1
-    - composer require "laravel/framework:12.*" "orchestra/testbench:10.*" --no-interaction --no-update
+    - composer require "laravel/framework:13.*" "orchestra/testbench:11.*" --no-interaction --no-update
     - composer update --prefer-stable --prefer-dist --no-interaction --no-progress
   script:
     # PCOV: la suite comparte phpunit.xml con failOnWarning="true".
@@ -268,9 +267,9 @@ db-integration:
 # Se conserva el umbral. PCOV obligatorio (la mutación mide cobertura) + aserción.
 mutation:
   stage: test
-  image: aichadigital/laravel-ci:8.3
+  image: aichadigital/laravel-ci:8.4
   variables:
-    PHP_VERSION: "8.3"
+    PHP_VERSION: "8.4"
   extends: .php
   rules: !reference [.rules-ci, rules]
   script:

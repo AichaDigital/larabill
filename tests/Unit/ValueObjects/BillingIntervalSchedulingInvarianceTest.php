@@ -107,25 +107,6 @@ it('produces the same next-billing dates as the legacy frequency math for every 
     );
 })->with(schedulingInvarianceDataset());
 
-it('computes the same next billing date on the model as the legacy frequency math', function (
-    BillingFrequency $frequency,
-    ?BillingInterval $interval,
-    string $anchor,
-) {
-    $service = ArticleServiceStatus::factory()->make([
-        'billing_unit'      => $interval?->unit,
-        'billing_quantity'  => $interval?->quantity,
-        'next_billing_date' => Carbon::parse($anchor),
-    ]);
-
-    $legacyNext = $frequency->addToDate(Carbon::parse($anchor));
-
-    expect($service->calculateNextBillingDate()->toDateString())->toBe(
-        $legacyNext->toDateString(),
-        "model scheduling diverged for {$frequency->name} anchored at {$anchor}",
-    );
-})->with(schedulingInvarianceDataset());
-
 it('keeps the one-time (NULL cadence) scheduling behaviour: the date comes back unchanged', function () {
     // Legacy ONE_TIME semantics: addToDate() returns the date unchanged — so
     // a NULL-cadence agreement must too, both on the model and on the VO.
@@ -137,8 +118,7 @@ it('keeps the one-time (NULL cadence) scheduling behaviour: the date comes back 
         'next_billing_date' => $anchor,
     ]);
 
-    expect($service->calculateNextBillingDate()->toDateString())->toBe($anchor->toDateString())
-        ->and($service->billingInterval())->toBeNull();
+    expect($service->billingInterval())->toBeNull();
 });
 
 it('resolves the billing interval from the agreement unit/quantity columns', function () {

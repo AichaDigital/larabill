@@ -45,18 +45,18 @@ use Illuminate\Support\Facades\Log;
 final class RecurringBillingService
 {
     /**
-     * Deprecated as of AID-836 (prose, not tag: the constructor still
-     * assigns it for BC) — numbering is owned by the canonical emission
-     * path (InvoiceService → InvoiceNumberingService); kept only for
-     * constructor signature compatibility. Removal in the next major.
+     * Numbering legacy slot: owned by the canonical emission path (InvoiceService →
+     * InvoiceNumberingService); the constructor parameter that feeds it is
+     * `@deprecated` (see the constructor) and the slot itself disappears with
+     * that parameter in 10.0.
      */
     protected InvoiceNumberingService $invoiceNumbering;
 
     /**
-     * Deprecated as of AID-836 (prose, not tag: the constructor still
-     * assigns it for BC) — series resolution is owned by the canonical
-     * emission path (InvoiceService → InvoiceSeriesResolver); kept only for
-     * constructor signature compatibility. Removal in the next major.
+     * Series-resolution legacy slot: owned by the canonical emission path
+     * (InvoiceService → InvoiceSeriesResolver); the constructor parameter that
+     * feeds it is `@deprecated` (see the constructor) and the slot itself
+     * disappears with that parameter in 10.0.
      */
     protected InvoiceSeriesResolver $seriesResolver;
 
@@ -64,6 +64,10 @@ final class RecurringBillingService
 
     protected ?RecurringEmissionHookContract $emissionHook;
 
+    /**
+     * @param  InvoiceNumberingService|null  $invoiceNumbering  @deprecated since 6.10.0 (AID-836), removal in 10.0 (AID-1778) — numbering is owned by the canonical emission path; kept only for constructor signature compatibility, never used by the emission path. Pass nothing: the container resolves it.
+     * @param  InvoiceSeriesResolver|null  $seriesResolver  @deprecated since 6.10.0 (AID-836), removal in 10.0 (AID-1778) — series resolution is owned by the canonical emission path; kept only for constructor signature compatibility, never used by the emission path. Pass nothing: the container resolves it.
+     */
     public function __construct(
         protected PricingService $pricingService,
         ?InvoiceNumberingService $invoiceNumbering = null,
@@ -524,7 +528,13 @@ final class RecurringBillingService
      */
     protected function calculateNextBillingDate(ArticleServiceStatus $service): Carbon
     {
-        return $service->calculateNextBillingDate();
+        $currentDate = $service->next_billing_date ?? $service->started_at;
+
+        if ($currentDate === null) {
+            throw new \RuntimeException("Service {$service->id} has neither next_billing_date nor started_at to compute the next billing date.");
+        }
+
+        return $service->billingInterval()?->addToDate($currentDate) ?? $currentDate->copy();
     }
 
     /**

@@ -723,7 +723,7 @@ class Invoice extends Model implements LegallyRetainable
      * deliberately, bypassing the update() immutability guard, which protects
      * fiscal content (amounts, dates, snapshots) — not payment state.
      *
-     * @deprecated since 8.3.0 (AID-962), removal in 9.0: the collection state is derived from the active allocations by recomputeCollectionState(), the single in-package writer; a consumer calling this overwrites the derived state under its own responsibility.
+     * @deprecated since 8.3.0 (AID-962), removal in 10.0: the collection state is derived from the active allocations by recomputeCollectionState(), the single in-package writer; a consumer calling this overwrites the derived state under its own responsibility.
      */
     public function markAsPaidViaGroupedPayment(DateTimeInterface $paidAt): void
     {
@@ -736,7 +736,7 @@ class Invoice extends Model implements LegallyRetainable
      * Restore this invoice's collection state when its grouped payment is reversed.
      * Same rationale as markAsPaidViaGroupedPayment(): permitted on immutable invoices.
      *
-     * @deprecated since 8.3.0 (AID-962), removal in 9.0: the collection state is derived from the active allocations by recomputeCollectionState(), the single in-package writer; a consumer calling this overwrites the derived state under its own responsibility.
+     * @deprecated since 8.3.0 (AID-962), removal in 10.0: the collection state is derived from the active allocations by recomputeCollectionState(), the single in-package writer; a consumer calling this overwrites the derived state under its own responsibility.
      */
     public function restoreStateViaGroupedPaymentReversal(InvoiceStatus $status, ?DateTimeInterface $paidAt): void
     {

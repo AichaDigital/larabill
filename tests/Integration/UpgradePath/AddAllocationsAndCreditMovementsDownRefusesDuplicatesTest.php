@@ -6,6 +6,7 @@ use AichaDigital\Larabill\Enums\FiscalSubmissionStatus;
 use AichaDigital\Larabill\Enums\InvoiceDocumentStatus;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
+use AichaDigital\Larabill\Tests\Support\UpgradePath\ManifestBase;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -105,25 +106,15 @@ function aid962DownSeedAllocation(string $paymentId, array $overrides = []): voi
 }
 
 beforeEach(function () {
-    // 8.2.0 base, then 053 in its own batch — so --step=1 rolls back 053 only.
-    /** @var array{migrations: array<int, array{name: string, in_base: bool}>} $manifest */
-    $manifest = json_decode(
-        (string) file_get_contents(dirname(__DIR__, 2).'/Contract/release-migration-manifest.json'),
-        true,
-        512,
-        JSON_THROW_ON_ERROR,
-    );
-
+    // 8.2.0 base (everything ordered BEFORE 053 — AID-1619), then 053 in its
+    // own batch — so --step=1 rolls back 053 only. Migrations ordered after
+    // the slice (054 onward) must not be copied into the base dir.
     $migrationsDir           = dirname(__DIR__, 3).'/database/migrations';
     $this->aid962DownBaseDir = sys_get_temp_dir().'/larabill-aid962-down-base-'.Str::random(8);
     File::ensureDirectoryExists($this->aid962DownBaseDir);
 
-    foreach ($manifest['migrations'] as $entry) {
-        if ($entry['name'] === LARABILL_AID962_DOWN_MIGRATION) {
-            continue;
-        }
-
-        copy("{$migrationsDir}/{$entry['name']}", "{$this->aid962DownBaseDir}/{$entry['name']}");
+    foreach (ManifestBase::migrationsBefore('add_allocations_and_credit_movements') as $name) {
+        copy("{$migrationsDir}/{$name}", "{$this->aid962DownBaseDir}/{$name}");
     }
 
     $this->createUsersTable();

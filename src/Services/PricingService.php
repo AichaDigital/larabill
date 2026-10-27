@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Services;
 
 use AichaDigital\Larabill\DataTransferObjects\PricingDetails;
-use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Exceptions\MissingContractPriceException;
 use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticleOverride;
@@ -22,28 +21,6 @@ use AichaDigital\Larabill\ValueObjects\BillingInterval;
  */
 class PricingService
 {
-    /**
-     * Get the effective price for a customer at a specific frequency.
-     * Returns the ArticlePrice for the frequency if no customer or no active override exists.
-     *
-     * @deprecated since 7.0.0, use `PricingService::getEffectivePriceForInterval()` — see UPGRADE-7.0.md
-     *
-     * The `BillingFrequency`-typed signature bridges through the interval domain.
-     */
-    public function getEffectivePrice(Article $article, BillingFrequency $frequency, int|string|null $customerId): ?float
-    {
-        $this->triggerLegacyDeprecation(
-            'PricingService::getEffectivePrice()',
-            'PricingService::getEffectivePriceForInterval()',
-        );
-
-        return $this->getEffectivePriceForInterval(
-            $article,
-            BillingInterval::fromLegacyFrequency($frequency->value),
-            $customerId,
-        );
-    }
-
     /**
      * Get the effective price for a customer at one cadence — the
      * interval-native body (ADR-015 §5: same entry points over
@@ -121,30 +98,6 @@ class PricingService
         $discount = $this->calculateDiscountAmount($basePrice, $appliedPrice);
 
         return round(($discount / $basePrice) * 100, 2);
-    }
-
-    /**
-     * Create pricing details DTO for an article, frequency and customer.
-     *
-     * @deprecated since 7.0.0, use `PricingService::createPricingDetailsForInterval()` — see UPGRADE-7.0.md
-     *
-     * The `BillingFrequency`-typed signature bridges through the interval domain.
-     */
-    public function createPricingDetails(
-        Article $article,
-        BillingFrequency $frequency,
-        int|string|null $customerId
-    ): PricingDetails {
-        $this->triggerLegacyDeprecation(
-            'PricingService::createPricingDetails()',
-            'PricingService::createPricingDetailsForInterval()',
-        );
-
-        return $this->createPricingDetailsForInterval(
-            $article,
-            BillingInterval::fromLegacyFrequency($frequency->value),
-            $customerId,
-        );
     }
 
     /**
@@ -262,20 +215,5 @@ class PricingService
         $margin = $this->calculateProfitMargin($article, $price);
 
         return round(($margin / $price) * 100, 2);
-    }
-
-    /**
-     * ONE legacy-deprecation emitter for this class's shim paths (ADR-015
-     * §5): every delegating public path emits the same-shaped
-     * `E_USER_DEPRECATED` through here. Internal code never calls legacy
-     * paths, so nothing internal emits.
-     */
-    private function triggerLegacyDeprecation(string $method, string $replacement): void
-    {
-        trigger_error(sprintf(
-            '%s is deprecated since larabill 7.0.0, use %s instead — see UPGRADE-7.0.md.',
-            $method,
-            $replacement,
-        ), E_USER_DEPRECATED);
     }
 }

@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace AichaDigital\Larabill\Services;
 
 use AichaDigital\Lara100\ValueObjects\FixedDecimal;
-use AichaDigital\Larabill\Enums\BillingFrequency;
-use AichaDigital\Larabill\Exceptions\LegacyCadenceUnsupportedException;
 use AichaDigital\Larabill\Exceptions\OverlappingArticlePriceException;
 use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticlePrice;
@@ -76,59 +74,5 @@ class ArticlePriceService
                 'is_active'               => true,
             ]);
         });
-    }
-
-    /**
-     * Create an active price for one article and billing frequency — the
-     * legacy-frequency signature, forwarded to `setIntervalPrice()`, which
-     * holds the guarantee.
-     *
-     * @deprecated since 7.0.0, use `ArticlePriceService::setIntervalPrice()` (unit + quantity; `ONE_TIME` → NULL/NULL) — see UPGRADE-7.0.md
-     *
-     * WEEKLY and BIWEEKLY throw `LegacyCadenceUnsupportedException`: the ADR-015
-     * cadence domain cannot represent them (the ONE qualified STABILITY.md §3
-     * narrowing — zero corpus instances, AID-895 survey), and the migration preflight
-     * loud-aborts any stored weekly row — so no 7.0 installation can hold such
-     * data.
-     *
-     * @throws OverlappingArticlePriceException
-     * @throws LegacyCadenceUnsupportedException
-     */
-    public function setPrice(
-        Article $article,
-        BillingFrequency $frequency,
-        FixedDecimal $price,
-        ?Carbon $validFrom = null,
-        ?Carbon $validTo = null,
-        ?int $billingDaysInAdvance = null,
-    ): ArticlePrice {
-        $this->triggerLegacyDeprecation(
-            'ArticlePriceService::setPrice()',
-            'ArticlePriceService::setIntervalPrice()',
-        );
-
-        return $this->setIntervalPrice(
-            $article,
-            BillingInterval::fromLegacyFrequency($frequency->value),
-            $price,
-            $validFrom,
-            $validTo,
-            $billingDaysInAdvance,
-        );
-    }
-
-    /**
-     * ONE legacy-deprecation emitter for this class's shim paths (ADR-015
-     * §5): every delegating public path emits the same-shaped
-     * `E_USER_DEPRECATED` through here. Internal code never calls legacy
-     * paths, so nothing internal emits.
-     */
-    private function triggerLegacyDeprecation(string $method, string $replacement): void
-    {
-        trigger_error(sprintf(
-            '%s is deprecated since larabill 7.0.0, use %s instead — see UPGRADE-7.0.md.',
-            $method,
-            $replacement,
-        ), E_USER_DEPRECATED);
     }
 }

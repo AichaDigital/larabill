@@ -380,22 +380,34 @@ it('flow 8: register() records method Card and replays its legacy key with anoth
         ->and(PaymentAllocation::count())->toBe(2);
 });
 
-it('register() rejects a PARTIALLY_PAID invoice with notPayableStatus', function () {
+it('register() accepts a PARTIALLY_PAID invoice and allocates exactly its outstanding (AID-1778)', function () {
     $inv = PaymentFixtures::sentInvoice(12100);
     aid962Receive(cents(5000), [new Allocation($inv->id, cents(5000))]);
-    expect($inv->fresh()->status)->toBe(InvoiceStatus::PARTIALLY_PAID);
+    expect($inv->fresh()->status)->toBe(InvoiceStatus::PARTIALLY_PAID)
+        ->and($inv->fresh()->amountOutstanding()->unscaledValue())->toBe(7100);
 
-    expect(fn () => app(GroupedPaymentService::class)->register(TestCase::USER_UUID_2, [$inv->id], now(), cents(12100), 'EUR'))
-        ->toThrow(GroupedPaymentValidationException::class, 'has status '.InvoiceStatus::PARTIALLY_PAID->value);
+    $payment = app(GroupedPaymentService::class)->register(TestCase::USER_UUID_2, [$inv->id], now(), cents(7100), 'EUR');
+
+    expect($payment->status)->toBe(GroupedPaymentStatus::POSTED)
+        ->and($payment->allocations)->toHaveCount(1)
+        ->and($payment->allocations[0]->applied_amount->unscaledValue())->toBe(7100)
+        ->and($inv->fresh()->status)->toBe(InvoiceStatus::PAID)
+        ->and($inv->fresh()->amountOutstanding()->unscaledValue())->toBe(0);
 });
 
 /*
- * Final-review A1 (spec §2 anti-goal): register() checks eligibility in one
- * transaction and creates through process() in another. A partial receive()
- * committed in between leaves the invoice PARTIALLY_PAID; under
- * ReplayPolicy::Legacy process() must refuse it as notPayableStatus (the 8.2
- * contract), never as AllocationExceedsInvoiceException. SQLite has no row
- * locks, so the rival commit is simulated in-process from a once-hook on
+ * Final-review A1 (spec §2 anti-goal), restated for AID-1778 (§3.3/§3.4):
+ * register() checks eligibility in one transaction and creates through
+ * process() in another. A partial receive() committed IN the eligibility
+ * read (this hook fires on the actively-paid pivot lookup, inside
+ * register()'s first transaction) is visible to the outstanding-based sum,
+ * so register() refuses it right there as amountMismatch — the sum is a
+ * under-lock read (§3.3). The BETWEEN-transactions race, whose fresh
+ * outstanding is smaller than the allocation built earlier, surfaces in
+ * process() as AllocationExceedsInvoiceException (the declared new mode,
+ * §3.4) and is pinned by the PaymentService test double in RegisterTest
+ * (R4a); a fully-settling race keeps the status refusal (R4b). SQLite has no
+ * row locks, so the rival commit is simulated in-process from a once-hook on
  * register()'s last eligibility read (the actively-paid lookup), which runs
  * AFTER register() loaded the invoice as SENT and BEFORE process() locks it.
  */
@@ -425,17 +437,22 @@ function aid962ArmPartialPaymentBetweenRegisterAndProcess(Invoice $invoice): voi
     });
 }
 
-it('register(): a partial receive() between its eligibility check and process() surfaces as notPayableStatus, never as an outstanding overflow', function () {
+it('register(): a partial receive() visible during its eligibility read is caught by the under-lock outstanding sum, with no partial write (AID-1778)', function () {
     $inv = PaymentFixtures::sentInvoice(12100);
     aid962ArmPartialPaymentBetweenRegisterAndProcess($inv);
 
     expect(fn () => app(GroupedPaymentService::class)->register(TestCase::USER_UUID_2, [$inv->id], now(), cents(12100), 'EUR'))
-        ->toThrow(GroupedPaymentValidationException::class, "Invoice {$inv->id} has status ".InvoiceStatus::PARTIALLY_PAID->value);
+        ->toThrow(GroupedPaymentValidationException::class, 'expected sum 12099, got 12100');
 
-    // The race really happened (the hook fired), and register() wrote nothing of its own.
-    expect($inv->fresh()->status)->toBe(InvoiceStatus::PARTIALLY_PAID)
+    // The race really happened: the amountMismatch message is only reachable
+    // if the hook's rival pivot (1 cent) was visible to the under-lock sum.
+    // The refusal aborts register()'s FIRST transaction, so its own writes AND
+    // the in-transaction rival pivot roll back — total fail-safe, no partial
+    // write, no orphan allocation (the factory-created rival payment exists
+    // because it committed before the hook armed).
+    expect($inv->fresh()->status)->toBe(InvoiceStatus::SENT)
         ->and(GroupedPayment::count())->toBe(1)
-        ->and(PaymentAllocation::count())->toBe(1);
+        ->and(PaymentAllocation::count())->toBe(0);
 });
 
 it('receive() (Full) still pays a PARTIALLY_PAID invoice, and only an amount above the outstanding is AllocationExceedsInvoiceException', function () {

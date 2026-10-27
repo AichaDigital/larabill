@@ -7,6 +7,7 @@ use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticleOverride;
 use AichaDigital\Larabill\Models\ArticleServiceStatus;
 use AichaDigital\Larabill\Services\PricingService;
+use AichaDigital\Larabill\ValueObjects\BillingInterval;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 
@@ -20,7 +21,7 @@ beforeEach(function () {
 it('returns base price when no customer provided', function () {
     $article = Article::factory()->monthly(2900)->create();
 
-    $price = $this->service->getEffectivePrice($article, BillingFrequency::MONTHLY, null);
+    $price = $this->service->getEffectivePriceForInterval($article, new BillingInterval('month', 1), null);
 
     expect($price)->toBe(2900.0);
 });
@@ -28,7 +29,7 @@ it('returns base price when no customer provided', function () {
 it('returns base price when customer has no override', function () {
     $article = Article::factory()->monthly(2900)->create();
 
-    $price = $this->service->getEffectivePrice($article, BillingFrequency::MONTHLY, 999);
+    $price = $this->service->getEffectivePriceForInterval($article, new BillingInterval('month', 1), 999);
 
     expect($price)->toBe(2900.0);
 });
@@ -44,7 +45,7 @@ it('returns override price when customer has active override', function () {
         'is_active'    => true,
     ]);
 
-    $price = $this->service->getEffectivePrice($article, BillingFrequency::MONTHLY, $customer->id);
+    $price = $this->service->getEffectivePriceForInterval($article, new BillingInterval('month', 1), $customer->id);
 
     expect($price)->toBe(2400.0);
 });
@@ -60,7 +61,7 @@ it('returns override price for UUID customer IDs', function () {
         'is_active'    => true,
     ]);
 
-    $price = $this->service->getEffectivePrice($article, BillingFrequency::MONTHLY, $customerId);
+    $price = $this->service->getEffectivePriceForInterval($article, new BillingInterval('month', 1), $customerId);
 
     expect($price)->toBe(2400.0);
 });
@@ -138,7 +139,7 @@ it('returns zero discount percentage when base price is zero', function () {
 it('creates pricing details without override', function () {
     $article = Article::factory()->monthly(2900)->create();
 
-    $details = $this->service->createPricingDetails($article, BillingFrequency::MONTHLY, null);
+    $details = $this->service->createPricingDetailsForInterval($article, BillingInterval::fromLegacyFrequency(BillingFrequency::MONTHLY->value), null);
 
     expect($details->basePrice)->toBe(2900.0)
         ->and($details->appliedPrice)->toBe(2900.0)
@@ -159,7 +160,7 @@ it('creates pricing details with customer override', function () {
         'is_active'    => true,
     ]);
 
-    $details = $this->service->createPricingDetails($article, BillingFrequency::MONTHLY, $customer->id);
+    $details = $this->service->createPricingDetailsForInterval($article, BillingInterval::fromLegacyFrequency(BillingFrequency::MONTHLY->value), $customer->id);
 
     expect($details->basePrice)->toBe(2900.0)
         ->and($details->appliedPrice)->toBe(2400.0)
@@ -243,7 +244,7 @@ it('returns null when no price for frequency', function () {
     $article = Article::factory()->monthly(2900)->create();
 
     // Request yearly price but article only has monthly
-    $price = $this->service->getEffectivePrice($article, BillingFrequency::YEARLY, null);
+    $price = $this->service->getEffectivePriceForInterval($article, BillingInterval::fromLegacyFrequency(BillingFrequency::YEARLY->value), null);
 
     expect($price)->toBeNull();
 });

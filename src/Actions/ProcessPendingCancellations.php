@@ -34,7 +34,7 @@ final class ProcessPendingCancellations
         $service = new ServiceLifecycleService;
 
         try {
-            $cancelledCount = $service->processPendingCancellations();
+            $cancelledCount = $service->processScheduledClosures()->materialised;
 
             Log::info('Processed pending cancellations', [
                 'cancelled_count' => $cancelledCount,

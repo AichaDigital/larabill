@@ -9,6 +9,7 @@ use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Models\GroupedPayment;
 use AichaDigital\Larabill\Models\Invoice;
+use AichaDigital\Larabill\Tests\Support\UpgradePath\ManifestBase;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -152,25 +153,18 @@ function aid962SeedInvoice(string $id, int $number, int $totalAmount, InvoiceSta
 }
 
 beforeEach(function () {
-    // ── Base schema: the 8.2.0 install (everything but 053) ─────────────────
-    /** @var array{migrations: array<int, array{name: string, in_base: bool}>} $manifest */
-    $manifest = json_decode(
-        (string) file_get_contents(dirname(__DIR__, 2).'/Contract/release-migration-manifest.json'),
-        true,
-        512,
-        JSON_THROW_ON_ERROR,
-    );
-
-    $migrationsDir           = dirname(__DIR__, 3).'/database/migrations';
-    $this->aid962BaseDir     = sys_get_temp_dir().'/larabill-aid962-base-'.Str::random(8);
+    // ── Base schema: the 8.2.0 install (everything ordered BEFORE 053) ──────
+    // AID-1619: the base is the migrations ordered BEFORE the slice (the real
+    // "just before" state of a sequential consumer), NOT "every manifest
+    // migration except the one under test" — migrations ordered after the
+    // slice (054 onward) must not be copied into the base dir, or they would
+    // run against a schema their prerequisites have not built yet.
+    $migrationsDir       = dirname(__DIR__, 3).'/database/migrations';
+    $this->aid962BaseDir = sys_get_temp_dir().'/larabill-aid962-base-'.Str::random(8);
     File::ensureDirectoryExists($this->aid962BaseDir);
 
-    foreach ($manifest['migrations'] as $entry) {
-        if ($entry['name'] === LARABILL_AID962_MIGRATION) {
-            continue;
-        }
-
-        copy("{$migrationsDir}/{$entry['name']}", "{$this->aid962BaseDir}/{$entry['name']}");
+    foreach (ManifestBase::migrationsBefore('add_allocations_and_credit_movements') as $name) {
+        copy("{$migrationsDir}/{$name}", "{$this->aid962BaseDir}/{$name}");
     }
 
     $this->createUsersTable();

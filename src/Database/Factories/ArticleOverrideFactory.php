@@ -8,6 +8,7 @@ use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticleOverride;
+use AichaDigital\Larabill\ValueObjects\BillingInterval;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -108,7 +109,7 @@ class ArticleOverrideFactory extends Factory
     public function withDiscount(int $discountPercentage, BillingFrequency $frequency = BillingFrequency::MONTHLY): static
     {
         return $this->afterMaking(function (ArticleOverride $override) use ($discountPercentage, $frequency) {
-            $basePrice              = $override->article->getPriceFor($frequency) ?? 0;
+            $basePrice              = $override->article->getPriceForInterval(BillingInterval::fromLegacyFrequency($frequency->value)) ?? 0;
             $override->custom_price = FixedDecimal::ofUnscaled((int) ($basePrice * (1 - $discountPercentage / 100)), 2);
         });
     }

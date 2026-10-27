@@ -9,9 +9,7 @@ use AichaDigital\Larabill\Casts\AichaMoneyCast;
 use AichaDigital\Larabill\Database\Factories\ArticleServiceStatusFactory;
 use AichaDigital\Larabill\Enums\AgreementModality;
 use AichaDigital\Larabill\Enums\AgreementStatus;
-use AichaDigital\Larabill\Enums\CancellationType;
 use AichaDigital\Larabill\Events\ServiceActivated;
-use AichaDigital\Larabill\Events\ServiceCancelled;
 use AichaDigital\Larabill\Events\ServiceClosed;
 use AichaDigital\Larabill\Events\ServiceReinstated;
 use AichaDigital\Larabill\Events\ServiceSuspended;
@@ -23,7 +21,6 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -472,84 +469,6 @@ class ArticleServiceStatus extends Model
     }
 
     /**
-     * Cancel the service — the DEPRECATED-SHIM forwarding route (ADR-015 §3.2
-     * shim timing, per-path precision, gate round 8 P1 #1).
-     *
-     * @deprecated since 7.0.0, use `ArticleServiceStatus::close(cause)` / `ArticleServiceStatus::suspend(cause)` (the shim forwards with the seeded `legacy_cancellation` cause and keeps dispatching the legacy `ServiceCancelled` event) — see UPGRADE-7.0.md
-     *
-     * The `CancellationType` parameter
-     * keeps the existing public signature alive.
-     *
-     * Forwards to `close()` with the seeded `legacy_cancellation` cause —
-     * never an invented commercial cause — preserving the original type in
-     * the cancellation metadata, and dispatches the legacy `@api`
-     * `ServiceCancelled` event so existing listeners keep receiving it.
-     *
-     * THIS path's legacy notice computation reads
-     * `article.metadata.service.cancellation_policy.notice_days` VERBATIM —
-     * `ServiceLifecycleService::cancel()` reads a DIFFERENT metadata route;
-     * there is deliberately no shared abstraction (gate round 8, P1 #1).
-     *
-     * The legacy `cancellation_requested_at` / `cancellation_effective_at` /
-     * `refund_unused` columns are kept written until the AID-971 rewrite of
-     * the close path retires them (§2.1).
-     */
-    public function cancel(CancellationType $type, ?string $reason = null): void
-    {
-        $this->triggerLegacyDeprecation(
-            'ArticleServiceStatus::cancel()',
-            'ArticleServiceStatus::close()/suspend() with the seeded `legacy_cancellation` cause',
-        );
-
-        $effectiveDate = match ($type) {
-            CancellationType::IMMEDIATE     => now(),
-            CancellationType::END_OF_PERIOD => $this->next_billing_date ?? now(),
-            CancellationType::NOTICE_PERIOD => now()->addDays(
-                $this->article->metadata['service']['cancellation_policy']['notice_days'] ?? 30
-            ),
-        };
-
-        $userId = Auth::check() ? Auth::id() : null;
-
-        $this->close(
-            AgreementCause::findActive(AgreementCause::SCOPE_CLOSED, 'legacy_cancellation'),
-            $reason,
-            $effectiveDate->isFuture() ? $effectiveDate : null,
-        );
-
-        // Legacy columns kept per §2.1 (untouched by the close API itself).
-        $this->forceFill([
-            'cancellation_requested_at' => now(),
-            'cancellation_effective_at' => $effectiveDate,
-            'refund_unused'             => $type->requiresRefund(),
-        ])->save();
-
-        $this->setMetadata('cancellation', array_merge($this->metadata['cancellation'] ?? [], [
-            'reason'       => $reason,
-            'requested_by' => $userId,
-            'requested_at' => now()->toIso8601String(),
-            'type'         => $type->value,
-        ]));
-
-        ServiceCancelled::dispatch($this->fresh() ?? $this, $type, $reason);
-    }
-
-    /**
-     * ONE legacy-deprecation emitter for this class's shim paths (ADR-015 §5):
-     * every delegating public path emits the same-shaped `E_USER_DEPRECATED`
-     * through here. Internal code never calls legacy paths, so nothing
-     * internal emits.
-     */
-    private function triggerLegacyDeprecation(string $method, string $replacement): void
-    {
-        trigger_error(sprintf(
-            '%s is deprecated since larabill 7.0.0, use %s instead — see UPGRADE-7.0.md.',
-            $method,
-            $replacement,
-        ), E_USER_DEPRECATED);
-    }
-
-    /**
      * Enter the transient guarantee window (ADR-015 §3.1/§3.4, slice 2
      * AID-953): the single `active → guarantee` edge, taken by
      * `GuaranteeService::openOperation()` when a refund claim is recorded.
@@ -594,31 +513,6 @@ class ArticleServiceStatus extends Model
     }
 
     /**
-     * Calculate the next billing date from the agreement's cadence.
-     *
-     * Resolves the ADR-015 interval (unit + quantity) and delegates to
-     * `BillingInterval::addToDate()` — whose overflow semantics are PINNED to
-     * the old `BillingFrequency::addToDate()` math (Jan 31 + 1 month → Mar 3),
-     * so existing schedules do not shift (spec §2.4; invariance pinned in
-     * tests/Unit/ValueObjects/BillingIntervalSchedulingInvarianceTest.php).
-     *
-     * A NULL cadence (one-time agreement) keeps the legacy ONE_TIME behaviour:
-     * the date comes back unchanged.
-     *
-     * @deprecated since 7.0.0, use `BillingInterval::addToDate()` via `ArticleServiceStatus::billingInterval()` — see UPGRADE-7.0.md
-     */
-    public function calculateNextBillingDate(): Carbon
-    {
-        $currentDate = $this->next_billing_date ?? $this->started_at;
-
-        if ($currentDate === null) {
-            throw new \RuntimeException("Service {$this->id} has neither next_billing_date nor started_at to compute the next billing date.");
-        }
-
-        return $this->billingInterval()?->addToDate($currentDate) ?? $currentDate->copy();
-    }
-
-    /**
      * Revise the contractual price from the catalogue or an active override.
      *
      * This is an explicit act of the CONSUMER — a contract revision — and the
@@ -659,32 +553,6 @@ class ArticleServiceStatus extends Model
             'effective_price'     => $candidate,
             'current_override_id' => $override?->id,
         ]);
-    }
-
-    /**
-     * Check if this service should be billed.
-     *
-     * Coarse model-level gate; the engine's precise window logic lives in
-     * `RecurringBillingService::shouldGenerateInvoice()`. Composed of the
-     * ADR-015 exclusions: only the `recurring` modality is ever billed
-     * (`one_time` emits exactly once at contracting — with no
-     * `next_billing_date` it never reaches here; `non_billable` never
-     * emits at all), and NO period is ever emitted across a scheduled
-     * close (§3.2) or a term end (§3.3).
-     *
-     * @deprecated since 7.0.0, use the state + interval gate (`AgreementStatus` modality + `billingInterval()`) — see UPGRADE-7.0.md
-     */
-    public function shouldBeBilled(): bool
-    {
-        if ($this->status !== AgreementStatus::ACTIVE
-            || $this->next_billing_date === null
-            || ! $this->next_billing_date->isPast()
-            || ! $this->isRecurring()) {
-            return false;
-        }
-
-        return ! $this->periodReachesBeyondScheduledClose()
-            && ! $this->periodReachesBeyondExpiry();
     }
 
     /**

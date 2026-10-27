@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticleOverride;
 use Carbon\Carbon;
@@ -225,42 +224,6 @@ it('returns null days until expiration when already expired', function () {
     $override = ArticleOverride::factory()->expired()->create();
 
     expect($override->daysUntilExpiration())->toBeNull();
-});
-
-it('calculates discount amount', function () {
-    $article = Article::factory()->monthly(2900)->create();
-
-    $override = ArticleOverride::factory()->create([
-        'article_id'   => $article->id,
-        'custom_price' => cents(2400),
-    ]);
-
-    expect($override->getDiscountAmount(BillingFrequency::MONTHLY))->toEqual(500);
-});
-
-it('calculates discount percentage', function () {
-    $article = Article::factory()->monthly(2900)->create();
-
-    $override = ArticleOverride::factory()->create([
-        'article_id'   => $article->id,
-        'custom_price' => cents(2320), // 20% discount
-    ]);
-
-    $percentage = $override->getDiscountPercentage(BillingFrequency::MONTHLY);
-
-    expect($percentage)->toBeInt()
-        ->and($percentage)->toBe(20);
-});
-
-it('returns zero discount percentage when base price is zero', function () {
-    $article = Article::factory()->withoutPrices()->create();
-
-    $override = ArticleOverride::factory()->create([
-        'article_id'   => $article->id,
-        'custom_price' => cents(0),
-    ]);
-
-    expect($override->getDiscountPercentage(BillingFrequency::MONTHLY))->toBe(0);
 });
 
 it('factory creates active override by default', function () {

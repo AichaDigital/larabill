@@ -19,6 +19,7 @@ use AichaDigital\Larabill\Models\CreditMovement;
 use AichaDigital\Larabill\Models\GroupedPayment;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\PaymentAllocation;
+use AichaDigital\Larabill\Services\Payments\ExitBands;
 use AichaDigital\Larabill\Services\Payments\Ledger;
 use AichaDigital\Larabill\Services\Payments\OutermostTransaction;
 use AichaDigital\Larabill\Services\Payments\ReceiveRequest;
@@ -112,11 +113,17 @@ class PaymentService
      * duplicate money); outside the outermost-transaction contract.
      *
      * Under ReplayPolicy::Legacy the §5.1.3 status list is register()'s
-     * (SENT, OVERDUE, PENDING — Ledger::legacyPayableStatuses()): a partial
-     * receive() committed between register()'s eligibility check and this
-     * transaction surfaces as notPayableStatus, never as
-     * AllocationExceedsInvoiceException (spec §2: register() keeps the 8.2
-     * contract).
+     * (SENT, OVERDUE, PENDING — and PARTIALLY_PAID since 8.4, AID-1778:
+     * Ledger::legacyPayableStatuses()). The between-transactions race with a
+     * register() attempt has TWO cases since 8.4, decided by the check order
+     * below (status first, then outstanding): a PARTIAL receive() committed
+     * between register()'s eligibility check and this transaction leaves the
+     * invoice PARTIALLY_PAID with a smaller outstanding than the allocation
+     * built earlier and surfaces as AllocationExceedsInvoiceException; a
+     * fully-settling one makes the invoice PAID and still surfaces as
+     * notPayableStatus (spec §3.4). A same-key replay never reads invoices or
+     * outstandings, so outstanding drift between attempts neither invalidates
+     * it nor moves new money (spec §3.5).
      *
      * @throws LogicException when $request is replay-only (ReceiveRequest::forLegacyReplay())
      *
@@ -515,6 +522,14 @@ class PaymentService
      * then `id`): one APPLIED exit per entry with something left, until
      * $amount is covered. Payer and currency are copied from the payment.
      * Runs under the payment lock, after the availableCredit() check.
+     *
+     * Since 8.4 (AID-1778, spec §5.3–§5.4) each take is PLACED on its entry's
+     * cent tape LOWEST-GAP-FIRST by ExitBands::segmentsFor() — under THIS
+     * payment lock — and ONE exit row is created PER FILLED GAP: usually one
+     * row, but a take spanning a refilled hole plus the frontier is split
+     * into one row per gap, all on the same allocation and entry. On an
+     * unresolvable entry (an active NULL-band exit) the rows carry
+     * `band_start = NULL` and the take is NOT split (spec §5.7).
      */
     private function consumeEntries(GroupedPayment $payment, PaymentAllocation $row, FixedDecimal $amount, ?string $recordedBy, DateTimeInterface $at): void
     {
@@ -538,17 +553,37 @@ class PaymentService
 
             $take = $remaining->isLessThan($left) ? $remaining : $left;
 
-            CreditMovement::query()->create([
-                'billable_user_id'     => $payment->billable_user_id,
-                'currency'             => $payment->currency,
-                'kind'                 => CreditMovementKind::APPLIED,
-                'amount'               => $take->negated(),
-                'grouped_payment_id'   => $payment->id,
-                'allocation_id'        => $row->id,
-                'consumes_movement_id' => $entry->id,
-                'recorded_by'          => $recordedBy,
-                'occurred_at'          => $at,
-            ]);
+            $segments = ExitBands::segmentsFor($entry, $take->toScale(2)->unscaledValue());
+
+            if ($segments === null) {
+                CreditMovement::query()->create([
+                    'billable_user_id'     => $payment->billable_user_id,
+                    'currency'             => $payment->currency,
+                    'kind'                 => CreditMovementKind::APPLIED,
+                    'amount'               => $take->negated(),
+                    'grouped_payment_id'   => $payment->id,
+                    'allocation_id'        => $row->id,
+                    'consumes_movement_id' => $entry->id,
+                    'band_start'           => null,
+                    'recorded_by'          => $recordedBy,
+                    'occurred_at'          => $at,
+                ]);
+            } else {
+                foreach ($segments as [$start, $length]) {
+                    CreditMovement::query()->create([
+                        'billable_user_id'     => $payment->billable_user_id,
+                        'currency'             => $payment->currency,
+                        'kind'                 => CreditMovementKind::APPLIED,
+                        'amount'               => FixedDecimal::ofUnscaled(-$length, 2),
+                        'grouped_payment_id'   => $payment->id,
+                        'allocation_id'        => $row->id,
+                        'consumes_movement_id' => $entry->id,
+                        'band_start'           => $start,
+                        'recorded_by'          => $recordedBy,
+                        'occurred_at'          => $at,
+                    ]);
+                }
+            }
 
             $left = $left->minus($take);
         }

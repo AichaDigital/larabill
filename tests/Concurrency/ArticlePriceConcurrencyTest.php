@@ -3,11 +3,11 @@
 declare(strict_types=1);
 
 use AichaDigital\Lara100\ValueObjects\FixedDecimal;
-use AichaDigital\Larabill\Enums\BillingFrequency;
 use AichaDigital\Larabill\Exceptions\OverlappingArticlePriceException;
 use AichaDigital\Larabill\Models\Article;
 use AichaDigital\Larabill\Models\ArticlePrice;
 use AichaDigital\Larabill\Services\ArticlePriceService;
+use AichaDigital\Larabill\ValueObjects\BillingInterval;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -72,9 +72,9 @@ function aid601ForkSetPrice(int $articleId, int $childCount): array
             try {
                 $article = Article::query()->findOrFail($articleId);
 
-                app(ArticlePriceService::class)->setPrice(
+                app(ArticlePriceService::class)->setIntervalPrice(
                     $article,
-                    BillingFrequency::MONTHLY,
+                    new BillingInterval('month', 1),
                     FixedDecimal::ofUnscaled(2900, 2),
                 );
 
