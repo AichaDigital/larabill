@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use Illuminate\Support\Facades\Schema;
+
 // TestCase is bound to this directory in tests/Pest.php
 // (InstallCommandMysqlTestCase → environment=production + redirected database_path).
 
@@ -92,7 +94,10 @@ describe('larabill:install — production install path on MySQL (AID-287)', func
         // (int → signed bigint) with the AEAT domain CHECKs; AID-962 adds the
         // payment allocations + customer credit migration (pivot relaxation,
         // credit_movements, invoice_items.deducts_invoice_id).
-        expect($this->appliedMigrationCount())->toBe(50);
+        expect($this->appliedMigrationCount())->toBe(51);
+
+        // AID-1778: the exit-band column ships inside the install order (054).
+        expect(Schema::hasColumn('credit_movements', 'band_start'))->toBeTrue();
 
         // The package defines inter-table FK constraints (e.g. invoice_items →
         // invoices, tax_group_tax_rate → tax_groups/tax_rates). They could only

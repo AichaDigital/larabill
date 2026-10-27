@@ -1,6 +1,6 @@
 {
-    "release": "8.3.0",
-    "upgrade_base": "8.2.0",
+    "release": "9.0.0",
+    "upgrade_base": "8.3.0",
     "migrations": [
         {
             "name": "2024_12_01_000000_create_tax_rates_table.php",
@@ -250,6 +250,11 @@
         {
             "name": "2026_10_24_000001_add_allocations_and_credit_movements.php",
             "sha256": "f1115f9079a536b6c97dff12dfdfca6533744eb22f023ddf1a9c735f097a222e",
+            "in_base": true
+        },
+        {
+            "name": "2026_10_26_000001_add_band_start_to_credit_movements.php",
+            "sha256": "eb80e538234bb3f52541c770b66f05e754aae94f3e6b37667a8435d7bc1cd69f",
             "in_base": false
         }
     ]

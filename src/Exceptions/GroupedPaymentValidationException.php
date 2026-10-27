@@ -40,7 +40,7 @@ class GroupedPaymentValidationException extends Exception
 
     public static function notPayableStatus(string $invoiceId, int $status): self
     {
-        return new self("Invoice {$invoiceId} has status {$status}; only SENT/OVERDUE/PENDING invoices are payable.");
+        return new self("Invoice {$invoiceId} has status {$status}; only SENT/OVERDUE/PENDING/PARTIALLY_PAID invoices are payable.");
     }
 
     public static function alreadyActivelyPaid(string $invoiceId): self
@@ -82,5 +82,15 @@ class GroupedPaymentValidationException extends Exception
     public static function creditKindNotAnEntry(CreditMovementKind $kind): self
     {
         return new self("Credit movement kind {$kind->name} is not an entry; only SURPLUS or TOP_UP can originate from a payment.");
+    }
+
+    /**
+     * Additive refusal of AID-1778 (spec §4.2, D3 parity): mirrors the
+     * `currencyMismatch` semantics for the credit-ledger side — the entry's
+     * collected currency differs from the active fiscal configuration.
+     */
+    public static function creditCurrencyMismatch(string $movementId, string $entryCurrency, string $configCurrency): self
+    {
+        return new self("Credit movement {$movementId} currency {$entryCurrency} does not match the active fiscal configuration currency {$configCurrency}.");
     }
 }

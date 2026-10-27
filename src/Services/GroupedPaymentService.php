@@ -7,6 +7,7 @@ namespace AichaDigital\Larabill\Services;
 use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Enums\CreditMovementKind;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
+use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Enums\PaymentMethod;
 use AichaDigital\Larabill\Exceptions\GroupedPaymentValidationException;
 use AichaDigital\Larabill\Exceptions\IdempotencyConflictException;
@@ -27,18 +28,29 @@ class GroupedPaymentService
 {
     /**
      * The 8.x card path (AID-961), kept verbatim for its callers: exact amount,
-     * full settlement of every invoice, SENT/OVERDUE/PENDING only. Since 8.3
-     * (AID-962) it resolves a replayed key BEFORE delegating (legacy
-     * comparison: payer, currency, amount, distinct invoice ids) and creates
-     * through PaymentService::process() with ReplayPolicy::Legacy — one full
-     * allocation per invoice, method Card, no recorder, receivedAt = paidAt,
-     * and the same derived key as 8.x.
+     * one allocation per invoice. Since 8.3 (AID-962) it resolves a replayed
+     * key BEFORE delegating (legacy comparison: payer, currency, amount,
+     * distinct invoice ids) and creates through PaymentService::process()
+     * with ReplayPolicy::Legacy — method Card, no recorder, receivedAt =
+     * paidAt, and the same derived key as 8.x. Since 8.4 (AID-1778) it also
+     * accepts PARTIALLY_PAID invoices and allocates exactly each invoice's
+     * amountOutstanding(), so $amount must equal the under-lock sum of the
+     * outstandings; wholly unpaid invoices keep the 8.3 behavior because
+     * outstanding === total when no active allocations exist.
      *
      * It always reads (key pre-check, eligibility) before process(), so a
      * caller transaction around register() is never in process()'s tolerated
-     * "wrapper without prior read" class; its status precondition
-     * (SENT/OVERDUE/PENDING, re-checked by process() under Legacy) makes that
-     * fail-safe — a stale snapshot can only refuse, as notPayableStatus.
+     * "wrapper without prior read" class; its status precondition (SENT,
+     * OVERDUE, PENDING and PARTIALLY_PAID since 8.4, re-checked by process()
+     * under Legacy) makes that fail-safe. A stale snapshot between the two
+     * transactions can still only refuse (process() validates before any
+     * write): since 8.4 a PARTIAL racing receive() surfaces as
+     * AllocationExceedsInvoiceException (the invoice stays PARTIALLY_PAID and
+     * the fresh outstanding is smaller than the allocation built earlier),
+     * while a fully-settling one keeps surfacing as notPayableStatus. A
+     * same-key replay is unaffected by outstanding drift: it compares
+     * immutable payload fields only and returns the original payment
+     * verbatim.
      *
      * @param  list<string>  $invoiceIds
      */
@@ -159,11 +171,21 @@ class GroupedPaymentService
                 throw GroupedPaymentValidationException::notPayableStatus((string) $invoice->id, $invoice->status->value);
             }
 
-            if (in_array((string) $invoice->id, $activelyPaidIds, true)) {
+            if ($invoice->status !== InvoiceStatus::PARTIALLY_PAID
+                && in_array((string) $invoice->id, $activelyPaidIds, true)) {
                 throw GroupedPaymentValidationException::alreadyActivelyPaid((string) $invoice->id);
             }
 
-            $sum = $sum->plus($invoice->total_amount);
+            // AID-1778: the amount must equal the sum of the outstandings read
+            // under the lock; a PARTIALLY_PAID invoice contributes exactly what
+            // is left, and an active pivot no longer refuses it (the widened
+            // machinery keeps the one-charge-per-invoice intent: a card payment
+            // that settles the outstanding moves the invoice to PAID, and a
+            // second register() is then refused by the status list). A
+            // fully-covered invoice is either PAID (status-refused) or
+            // stale-stamped (guard-refused above), so a zero outstanding
+            // cannot reach the allocations.
+            $sum = $sum->plus($invoice->amountOutstanding());
         }
 
         if ($sum->compareTo($amount) !== 0) {
@@ -173,7 +195,10 @@ class GroupedPaymentService
 
     /**
      * The receive request equivalent to an eligible register() call: one
-     * allocation per invoice for its full total, method Card, no recorder.
+     * allocation per invoice for its amountOutstanding() (AID-1778: a
+     * PARTIALLY_PAID invoice contributes exactly what is left; a wholly
+     * unpaid one contributes its full total, as 8.3 did), method Card, no
+     * recorder. The notPayableAmount floor stays on total_amount.
      *
      * @param  Collection<int, Invoice>  $invoices  locked and eligible
      *
@@ -186,7 +211,7 @@ class GroupedPaymentService
             if (! $invoice->total_amount->isPositive()) {
                 throw GroupedPaymentValidationException::notPayableAmount((string) $invoice->id, $invoice->total_amount->unscaledValue());
             }
-            $allocations[] = new Allocation((string) $invoice->id, $invoice->total_amount);
+            $allocations[] = new Allocation((string) $invoice->id, $invoice->amountOutstanding());
         }
 
         return ReceiveRequest::fromReceive(

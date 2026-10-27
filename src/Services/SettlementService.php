@@ -91,10 +91,47 @@ final class SettlementService
      *                                               index serialises concurrent issuances of the
      *                                               same claim (collision-and-adoption). Null = no
      *                                               claim — the plain rectificative path, unchanged.
+     * @param  list<array<string, mixed>>|null  $items  additive AID-1778 input (spec
+     *                                                  §5.1, G10): pre-built FROZEN lines used
+     *                                                  VERBATIM, bypassing
+     *                                                  clonedVerbatimItems()/differenceItems() —
+     *                                                  the supply of
+     *                                                  `AdvanceInvoiceBuilder::
+     *                                                  rectificativeLines()` for the partial
+     *                                                  rectificative of a REFUNDED credit exit.
+     *                                                  Requires `$amount === null` (two amount
+     *                                                  sources are mutually exclusive) and
+     *                                                  validates every line BEFORE any write:
+     *                                                  `total_amount` strictly negative with
+     *                                                  `taxable_amount + total_tax_amount ===
+     *                                                  total_amount`, every `taxes_applied` entry
+     *                                                  with `amount <= 0` naming a
+     *                                                  `(source_rate_id, rate)` pair of the
+     *                                                  original's frozen breakdown (a rate the
+     *                                                  original never carried is an invented
+     *                                                  distribution, AID-589 doctrine), per item
+     *                                                  Σ `taxes_applied[].amount ===
+     *                                                  total_tax_amount`, across items Σ
+     *                                                  `total_amount < 0`, and the list never
+     *                                                  empty. The exit-sum pin (Σ |total_amount|
+     *                                                  = |exit.amount|) lives where the exit is
+     *                                                  known — in `rectificativeLines()` (H8) —
+     *                                                  because this route stays exit-agnostic.
      */
-    public function rectify(Invoice $original, ?int $amount = null, ?string $settlementOperationKey = null): Invoice
+    public function rectify(Invoice $original, ?int $amount = null, ?string $settlementOperationKey = null, ?array $items = null): Invoice
     {
         $this->assertRectifiable($original);
+
+        // G10: supplied items are validated BEFORE any write (including the
+        // keyed adoption's resume-issuance below) — a refusal never touches
+        // an existing claim. The amount/items conflict is the first check.
+        if ($items !== null) {
+            if ($amount !== null) {
+                throw InvalidRectificationAmountException::itemsWithAmount();
+            }
+
+            $items = $this->validateSuppliedItems($original, $items);
+        }
 
         // §7.3: the keyed adoption-resume branch runs BEFORE any creation —
         // a committed claim is adopted (or its durable draft resumed), never
@@ -108,7 +145,7 @@ final class SettlementService
             throw InvalidRectificationAmountException::forAmount($amount);
         }
 
-        $items = $amount === null
+        $items ??= $amount === null
             ? $this->clonedVerbatimItems($original)
             : $this->differenceItems($original, $amount);
 
@@ -574,6 +611,112 @@ final class SettlementService
     }
 
     /**
+     * G10 validation of the supplied frozen items (AID-1778 spec §5.1),
+     * before any write: the rectificative corrects the SAME operation, so a
+     * rate the original never carried is an invented distribution and a
+     * line identity breach would emit a fiscal document that does not add
+     * up. Returns the items VERBATIM when every invariant holds.
+     *
+     * @param  list<array<string, mixed>>  $items
+     * @return list<array<string, mixed>>
+     */
+    private function validateSuppliedItems(Invoice $original, array $items): array
+    {
+        if ($items === []) {
+            throw InvalidRectificationAmountException::invalidItems(
+                'the items list is empty; pass null items to rectify the full original instead.'
+            );
+        }
+
+        // The original's frozen (source_rate_id, rate) pairs — the only
+        // rates the rectificative may correct.
+        $frozenRates = [];
+
+        foreach ($original->items as $item) {
+            foreach (is_array($item->taxes_applied) ? $item->taxes_applied : [] as $entry) {
+                if (is_array($entry)) {
+                    $frozenRates[$this->frozenRateKey($entry)] = true;
+                }
+            }
+        }
+
+        foreach (array_values($items) as $index => $item) {
+            if (! is_array($item)) {
+                throw InvalidRectificationAmountException::invalidItems("item #{$index} is not an array.");
+            }
+
+            foreach (['taxable_amount', 'total_tax_amount', 'total_amount', 'taxes_applied'] as $key) {
+                if (! array_key_exists($key, $item)) {
+                    throw InvalidRectificationAmountException::invalidItems("item #{$index} is missing its {$key} key.");
+                }
+            }
+
+            $taxable      = self::suppliedCents($item['taxable_amount'], $index, 'taxable_amount');
+            $lineTax      = self::suppliedCents($item['total_tax_amount'], $index, 'total_tax_amount');
+            $lineTotal    = self::suppliedCents($item['total_amount'], $index, 'total_amount');
+            $taxesApplied = is_array($item['taxes_applied']) ? $item['taxes_applied'] : [];
+
+            if ($lineTotal >= 0) {
+                throw InvalidRectificationAmountException::invalidItems(
+                    "item #{$index} carries total_amount [{$lineTotal}]; rectificative lines are strictly negative."
+                );
+            }
+
+            if ($taxable + $lineTax !== $lineTotal) {
+                throw InvalidRectificationAmountException::invalidItems(
+                    "item #{$index} breaks the line identity taxable_amount + total_tax_amount === total_amount ({$taxable} + {$lineTax} ≠ {$lineTotal})."
+                );
+            }
+
+            $taxSum = 0;
+
+            foreach ($taxesApplied as $entry) {
+                if (! is_array($entry)) {
+                    throw InvalidRectificationAmountException::invalidItems("item #{$index} carries a non-array taxes_applied entry.");
+                }
+
+                $entryAmount = self::suppliedCents($entry['amount'] ?? null, $index, 'taxes_applied[].amount');
+                $taxSum     += $entryAmount;
+
+                if ($entryAmount > 0) {
+                    throw InvalidRectificationAmountException::invalidItems(
+                        "item #{$index} carries a taxes_applied entry with amount [{$entryAmount}]; rectificative taxes are not positive."
+                    );
+                }
+
+                if (! isset($frozenRates[$this->frozenRateKey($entry)])) {
+                    throw InvalidRectificationAmountException::invalidItems(
+                        "item #{$index} names a (source_rate_id, rate) pair the original's frozen breakdown never carried — an invented distribution."
+                    );
+                }
+            }
+
+            if ($taxSum !== $lineTax) {
+                throw InvalidRectificationAmountException::invalidItems(
+                    "item #{$index} carries taxes_applied summing to {$taxSum}, not its total_tax_amount [{$lineTax}]."
+                );
+            }
+        }
+
+        // The cross-item Σ total_amount < 0 of G10 holds by construction:
+        // every line is strictly negative (checked above), so the sum is
+        // negative — PHPStan level 8 proves the branch dead.
+
+        return $items;
+    }
+
+    /**
+     * The frozen-breakdown lookup key of a taxes_applied entry: its
+     * (source_rate_id, rate) pair.
+     *
+     * @param  array<string, mixed>  $entry
+     */
+    private function frozenRateKey(array $entry): string
+    {
+        return ((int) ($entry['source_rate_id'] ?? 0)).'|'.((int) ($entry['rate'] ?? 0));
+    }
+
+    /**
      * AID-1527 §3-bis site 2 — the exact frozen-rate tax for a difference
      * rectification, replacing the legacy float expression
      * `(int) round(abs($amount) * ($rate / 10000))` whose float intermediate
@@ -607,5 +750,28 @@ final class SettlementService
             fn (array $entry): array => ['amount' => -($entry['amount'] ?? 0)] + $entry,
             array_filter($entries, is_array(...))
         ));
+    }
+
+    /**
+     * A supplied monetary value must already be a base-100 integer: an int,
+     * or a string holding one. Anything else (a float, a fractional string,
+     * a missing value) is refused, never truncated — a silent (int) cast
+     * would drop a fractional cent and still satisfy the line identity.
+     *
+     * @throws InvalidRectificationAmountException
+     */
+    private static function suppliedCents(mixed $value, int $index, string $key): int
+    {
+        if (is_int($value)) {
+            return $value;
+        }
+
+        if (is_string($value) && preg_match('/^-?\d+$/', $value) === 1) {
+            return (int) $value;
+        }
+
+        throw InvalidRectificationAmountException::invalidItems(
+            "item #{$index} carries a non-integer base-100 {$key} [".var_export($value, true).']; supplied amounts must be integer cents.'
+        );
     }
 }

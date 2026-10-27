@@ -99,6 +99,10 @@ class LarabillInstallCommand extends Command
         '052' => 'convert_money_columns_to_bigint',
         // === PAYMENT ALLOCATIONS + CUSTOMER CREDIT (AID-962) ===
         '053' => 'add_allocations_and_credit_movements',
+        // === EXIT BANDS (AID-1778) — position of an exit on its entry's cent tape ===
+        // Additive nullable column first, then the 8.3.0 backfill (E1+E2+E3,
+        // conservative reconstruction or declared-unresolvable NULL) — one file.
+        '054' => 'add_band_start_to_credit_movements',
     ];
 
     public function handle(): int

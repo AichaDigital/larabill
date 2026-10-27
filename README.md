@@ -7,7 +7,7 @@
 [![Coverage](https://gitlab.castris.com/aichadigital/larabill/badges/main/coverage.svg?style=flat-square)](https://gitlab.castris.com/aichadigital/larabill/-/pipelines)
 [![PHPStan level 8](https://img.shields.io/badge/PHPStan-level%208-brightgreen.svg?style=flat-square&logo=php)](https://phpstan.org/)
 [![PHP Version](https://img.shields.io/packagist/php-v/aichadigital/larabill.svg?style=flat-square&logo=php)](https://packagist.org/packages/aichadigital/larabill)
-[![Laravel Version](https://img.shields.io/badge/Laravel-12.x%20%7C%2013.x-red.svg?style=flat-square&logo=laravel)](https://laravel.com)
+[![Laravel Version](https://img.shields.io/badge/Laravel-13.x-red.svg?style=flat-square&logo=laravel)](https://laravel.com)
 [![License](https://img.shields.io/packagist/l/aichadigital/larabill.svg?style=flat-square)](https://packagist.org/packages/aichadigital/larabill)
 <!-- AI-BADGES:END -->
 
@@ -22,7 +22,17 @@
 
 > ℹ️ **Schema upgrade policy (stable versions = respect for data)** — since 1.0, larabill treats your database as a contract: schema changes ship WITH their upgrade path. Every release that touches tables includes a data-aware migration (existing rows are transformed, never discarded), and breaking majors ship an `UPGRADE-X.md` guide in the dist. To upgrade an existing install: `composer update aichadigital/larabill`, re-run `php artisan larabill:install --no-migrate` (idempotent — it publishes only the NEW migrations, skipping the ones you already have), then `php artisan migrate`. Never use `migrate:fresh` on a database with real data.
 
-> ⚠️ **Upgrading?** Follow the guides sequentially: [UPGRADE-4.0.md](UPGRADE-4.0.md) (3.x → 4.0, VAT verification moves to [`lararoi`](https://github.com/aichadigital/lararoi)), [UPGRADE-5.0.md](UPGRADE-5.0.md) (4.x → 5.0, real fiscal series separated from the fiscal type) and [UPGRADE-6.0.md](UPGRADE-6.0.md) (5.x → 6.0, deprecated surface removed — zero migrations).
+> ⚠️ **Upgrading?** Follow the guides sequentially: [UPGRADE-4.0.md](UPGRADE-4.0.md) (3.x → 4.0, VAT verification moves to [`lararoi`](https://github.com/aichadigital/lararoi)), [UPGRADE-5.0.md](UPGRADE-5.0.md) (4.x → 5.0, real fiscal series separated from the fiscal type), [UPGRADE-6.0.md](UPGRADE-6.0.md) (5.x → 6.0, deprecated surface removed — zero migrations), [UPGRADE-7.0.md](UPGRADE-7.0.md) (6.x → 7.0, agreement model redesign) and [UPGRADE-9.0.md](UPGRADE-9.0.md) (8.x → 9.0, advance invoices, PHP 8.4 / Laravel 13, shim retirement).
+
+## 📈 Version support
+
+| larabill line | PHP | Laravel | Support status |
+| -- | -- | -- | -- |
+| **9.x** | **8.4+** | **13** | **Active** |
+| 8.x | 8.3+ | 12–13 | Security fixes only, until the Laravel 12/13 security EOL published at https://laravel.com/docs/releases |
+| 7.x and older | — | — | End of support |
+
+Version lines track Laravel's majors: a new larabill major follows the new Laravel and abandons the previous lines, which keep receiving security fixes only for as long as their Laravel version does (stack policy: AID-1793). EOL dates are taken from the policy published at https://laravel.com/docs/releases, never from memory.
 
 Larabill is a professional, **UUID-first** billing and invoicing package for Laravel applications. It provides tax calculation for Spain/EU/worldwide and flexible invoice generation with immutability protection, plus an optional thin bridge to intra-community VAT/NIF verification (delegated to the [`lararoi`](https://github.com/aichadigital/lararoi) package). The consumer app's `users.id` MUST be UUID v7 char(36) — see [`docs/setup-uuid.md`](docs/setup-uuid.md) and [ADR-006](docs/ADR-006-uuid-first-no-agnostic.md).
 
@@ -46,8 +56,8 @@ Larabill is a professional, **UUID-first** billing and invoicing package for Lar
 
 ## 📦 Requirements
 
-- PHP ^8.3
-- Laravel ^12.0 | ^13.0
+- PHP ^8.4 (the platform check refuses PHP 8.3 — use PHP 8.4 or later locally and in CI)
+- Laravel ^13.0
 - `users.id` UUID v7 char(36) — see [`docs/setup-uuid.md`](docs/setup-uuid.md)
 
 ## 🚀 Installation
@@ -322,6 +332,7 @@ vendor/bin/phpstan analyse
 | [UPGRADE-4.0.md](UPGRADE-4.0.md) | Upgrade guide: larabill 3.x → 4.0 (VAT verification bridge) |
 | [UPGRADE-5.0.md](UPGRADE-5.0.md) | Upgrade guide: larabill 4.x → 5.0 (fiscal series vs fiscal type) |
 | [UPGRADE-6.0.md](UPGRADE-6.0.md) | Upgrade guide: larabill 5.x → 6.0 (deprecated surface removed) |
+| [UPGRADE-9.0.md](UPGRADE-9.0.md) | Upgrade guide: larabill 8.x → 9.0 (advance invoices, PHP 8.4 / Laravel 13, shim retirement) |
 | [CHANGELOG.md](CHANGELOG.md) | Version history and breaking changes |
 
 For AI agents working with this package, see [.claude/project.md](.claude/project.md).

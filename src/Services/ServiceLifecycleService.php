@@ -7,8 +7,6 @@ namespace AichaDigital\Larabill\Services;
 use AichaDigital\Lara100\RoundingMode;
 use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Enums\AgreementStatus;
-use AichaDigital\Larabill\Enums\CancellationType;
-use AichaDigital\Larabill\Events\ServiceCancelled;
 use AichaDigital\Larabill\Models\AgreementCause;
 use AichaDigital\Larabill\Models\ArticleServiceStatus;
 use AichaDigital\Larabill\Models\InvoiceItem;
@@ -44,58 +42,6 @@ final class ServiceLifecycleService
     public function suspend(ArticleServiceStatus $service, AgreementCause $cause, ?string $reason = null): void
     {
         $service->suspend($cause, $reason);
-    }
-
-    /**
-     * Cancel a service — the DEPRECATED-SHIM forwarding route (ADR-015 §3.2,
-     * per-path precision, gate round 8 P1 #1): forwards to the SAME close
-     * path as the model shim with the seeded `legacy_cancellation` cause and
-     * dispatches the legacy `@api` `ServiceCancelled` event so existing
-     * listeners keep receiving it.
-     *
-     * @deprecated since 7.0.0, use `ServiceLifecycleService::suspend()` / the close API (`ArticleServiceStatus::close(cause)`) — see UPGRADE-7.0.md
-     *
-     * THIS path's legacy notice computation reads `metadata.notice_period_days`
-     * VERBATIM — `ArticleServiceStatus::cancel()` reads a DIFFERENT metadata
-     * route (`service.cancellation_policy.notice_days`); there is deliberately
-     * no shared abstraction (gate round 8, P1 #1).
-     */
-    public function cancel(
-        ArticleServiceStatus $service,
-        CancellationType $type,
-        ?string $reason = null
-    ): void {
-        $this->triggerLegacyDeprecation(
-            'ServiceLifecycleService::cancel()',
-            'ServiceLifecycleService::suspend() / the close API with the seeded `legacy_cancellation` cause',
-        );
-
-        $effectiveDate = $this->calculateCancellationEffectiveDate($service, $type);
-
-        $service->close(
-            AgreementCause::findActive(AgreementCause::SCOPE_CLOSED, 'legacy_cancellation'),
-            $reason,
-            $effectiveDate->isFuture() ? $effectiveDate : null,
-        );
-
-        $metadata                 = $service->metadata ?? [];
-        $metadata['cancellation'] = [
-            'requested_at'   => now()->toIso8601String(),
-            'effective_date' => $effectiveDate->toIso8601String(),
-            'type'           => $type->value,
-            'reason'         => $reason,
-        ];
-
-        // Legacy columns kept per §2.1 (untouched by the close API itself).
-        $service->forceFill([
-            'cancellation_requested_at' => now(),
-            'cancellation_effective_at' => $effectiveDate,
-            'refund_unused'             => $type->requiresRefund(),
-        ])->save();
-
-        $service->update(['metadata' => $metadata]);
-
-        ServiceCancelled::dispatch($service->fresh() ?? $service, $type, $reason);
     }
 
     /**
@@ -172,26 +118,6 @@ final class ServiceLifecycleService
     }
 
     /**
-     * Process all pending cancellations that should take effect — SUBSUMED
-     * by `processScheduledClosures()` (ADR-015 §5): the deferred-closure
-     * carry-over lives in `close_scheduled_at` (materialised by the single
-     * locked materialiser, which also re-dispatches the legacy
-     * `ServiceCancelled` event for cancel()-shim rows). Kept as a delegating
-     * entry point until the T7 shim slice annotates it; the old
-     * `cancellation_effective_at`-driven pass is gone.
-     *
-     * @return int Number of agreements materialised (closed) this run — the
-     *             truthful count (AID-1590), excluding rows skipped as already
-     *             materialised or deleted.
-     *
-     * @deprecated since 7.0.0, use `ServiceLifecycleService::processScheduledClosures()` (the scheduler subsumes deferred closures and expiry) — see UPGRADE-7.0.md
-     */
-    public function processPendingCancellations(): int
-    {
-        return $this->processScheduledClosures()->materialised;
-    }
-
-    /**
      * Process all deferred closures and expiries that have come due — the
      * ONE locked materialiser of §3.2 (gate round 8, P2 #2): it handles BOTH
      * `close_scheduled_at` and `expires_at` in the same pass, so scheduler
@@ -201,12 +127,9 @@ final class ServiceLifecycleService
      * close decision outranks the automatic expiry.
      *
      * A scheduled closure materialises with its STORED cause (nullable —
-     * migrated 6.x rows carry cause NULL); when the row carries a legacy
-     * `cancellation.type` in metadata (the cancel() shim route, including
-     * rows migrated from 6.x `cancel()`), the legacy `@api`
-     * `ServiceCancelled` event is re-dispatched on materialisation so
-     * existing listeners keep receiving their cancellations (§5, gate round
-     * 10 P1).
+     * migrated 6.x rows carry cause NULL). The legacy `ServiceCancelled`
+     * re-dispatch of the 7.0 cancel()-shim era ended with the 9.0 shim
+     * removal: listeners must use `ServiceClosed` / `ServiceSuspended`.
      *
      * Uses one transaction per service with `FOR UPDATE` revalidation for
      * idempotency.
@@ -292,9 +215,7 @@ final class ServiceLifecycleService
 
     /**
      * Materialise one scheduled close under the caller's transaction: close
-     * with the STORED cause (nullable — legal) and re-dispatch the legacy
-     * `ServiceCancelled` event when the row carries the cancel() shim's type
-     * marker.
+     * with the STORED cause (nullable — legal).
      *
      * An UNRESOLVABLE stored cause (AID-1594 — retired with `is_active =
      * false`, or missing, between scheduling and materialisation) never
@@ -307,8 +228,6 @@ final class ServiceLifecycleService
      */
     private function materialiseScheduledClose(ArticleServiceStatus $service): void
     {
-        $legacyType = $service->metadata['cancellation']['type'] ?? null;
-
         $cause     = $service->closureCause;
         $situation = null;
 
@@ -335,34 +254,6 @@ final class ServiceLifecycleService
             $cause,
             $service->metadata['closure']['note'] ?? null,
         );
-
-        // The type marker survives a JSON round-trip as an int (the enum's
-        // backed value); accept both representations.
-        if ($legacyType !== null && (is_int($legacyType) || (is_string($legacyType) && $legacyType !== ''))) {
-            ServiceCancelled::dispatch(
-                $service->fresh() ?? $service,
-                CancellationType::from((int) $legacyType),
-                $service->metadata['cancellation']['reason'] ?? null,
-            );
-        }
-    }
-
-    /**
-     * Calculate the effective date for cancellation based on type
-     *
-     * @deprecated since 7.0.0, schedule the close with its effective date (`ArticleServiceStatus::close(cause, note, effectiveAt)`) — see UPGRADE-7.0.md
-     */
-    protected function calculateCancellationEffectiveDate(
-        ArticleServiceStatus $service,
-        CancellationType $type
-    ): Carbon {
-        return match ($type) {
-            CancellationType::IMMEDIATE     => now(),
-            CancellationType::END_OF_PERIOD => $service->next_billing_date ?? now(),
-            CancellationType::NOTICE_PERIOD => now()->addDays(
-                $service->article->metadata['notice_period_days'] ?? 30
-            ),
-        };
     }
 
     /**
@@ -407,21 +298,5 @@ final class ServiceLifecycleService
         // The agreement's cadence (stored at contract time)
         return $service->billingInterval()?->subtractFromDate($service->next_billing_date->copy())
             ?? $service->next_billing_date->copy();
-    }
-
-    /**
-     * ONE legacy-deprecation emitter for this class's shim paths (ADR-015
-     * §5): every delegating public path emits the same-shaped
-     * `E_USER_DEPRECATED` through here. `processPendingCancellations()` is
-     * annotated but does NOT emit — the package's own `larabill:process-cancellations`
-     * action still calls it internally, and internal code must not emit.
-     */
-    private function triggerLegacyDeprecation(string $method, string $replacement): void
-    {
-        trigger_error(sprintf(
-            '%s is deprecated since larabill 7.0.0, use %s instead — see UPGRADE-7.0.md.',
-            $method,
-            $replacement,
-        ), E_USER_DEPRECATED);
     }
 }

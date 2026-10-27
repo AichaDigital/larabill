@@ -9,7 +9,7 @@ it('builds every validation failure', function () {
     expect(V::mixedUsers())->toBeInstanceOf(V::class);
     expect(V::currencyMismatch('inv-1', 'EUR', 'USD')->getMessage())->toContain('EUR')->toContain('USD');
     expect(V::proformaNotPayable('inv-1')->getMessage())->toContain('inv-1');
-    expect(V::notPayableStatus('inv-1', 0)->getMessage())->toContain('inv-1');
+    expect(V::notPayableStatus('inv-1', 0)->getMessage())->toContain('inv-1')->toContain('SENT/OVERDUE/PENDING/PARTIALLY_PAID');
     expect(V::alreadyActivelyPaid('inv-1')->getMessage())->toContain('inv-1');
     expect(V::amountMismatch(1000, 999)->getMessage())->toContain('1000')->toContain('999');
     expect(V::invoicesNotFound(['x'])->getMessage())->toContain('x');

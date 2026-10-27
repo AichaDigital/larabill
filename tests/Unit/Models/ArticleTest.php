@@ -11,11 +11,44 @@ use AichaDigital\Larabill\Models\ArticlePrice;
 use AichaDigital\Larabill\Models\ArticleServiceStatus;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\TaxGroup;
+use AichaDigital\Larabill\Services\PricingService;
 use AichaDigital\Larabill\Tests\TestCase;
+use AichaDigital\Larabill\ValueObjects\BillingInterval;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
+
+/**
+ * Capture E_USER_DEPRECATED notices raised by $callback through a custom
+ * error handler (AID-1778 T5e: the 9.0-deprecated frequency bridge).
+ *
+ * @param  callable(): mixed  $callback
+ * @return array<int, string>
+ */
+function articleLegacyDeprecations(callable $callback): array
+{
+    $notices = [];
+
+    set_error_handler(function (int $errno, string $errstr) use (&$notices): bool {
+        if ($errno === E_USER_DEPRECATED) {
+            $notices[] = $errstr;
+
+            return true;
+        }
+
+        return false;
+    });
+
+    try {
+        $callback();
+    } finally {
+        restore_error_handler();
+    }
+
+    return $notices;
+}
 
 describe('Article creation', function () {
     it('can create an article', function () {
@@ -158,29 +191,6 @@ describe('Article scopes', function () {
             ->and($services->first()->item_type)->toBe(ItemType::SERVICE);
     });
 
-    it('scopes recurring articles (those with recurring prices)', function () {
-        // Article with monthly price (recurring)
-        $recurringArticles = Article::factory()
-            ->withPrice(BillingFrequency::MONTHLY, 2900)
-            ->count(2)
-            ->create();
-
-        // Article with one-time price (not recurring)
-        $oneTimeArticles = Article::factory()
-            ->oneTime(5000)
-            ->count(2)
-            ->create();
-
-        // Verify test setup
-        expect($recurringArticles)->toHaveCount(2, 'Setup: should create 2 recurring articles')
-            ->and($oneTimeArticles)->toHaveCount(2, 'Setup: should create 2 one-time articles')
-            ->and(Article::count())->toBe(4, 'Setup: total articles should be 4');
-
-        $recurring = Article::recurring()->get();
-
-        expect($recurring)->toHaveCount(2);
-    });
-
     it('scopes by category', function () {
         Article::factory()->category('hosting')->count(2)->create();
         Article::factory()->category('domains')->count(3)->create();
@@ -209,7 +219,7 @@ describe('Article type helpers', function () {
             ->and($service->isGood())->toBeFalse();
     });
 
-    it('identifies recurring articles correctly', function () {
+    it('seeds recurring-capable articles through cadence-bearing prices', function () {
         $recurring = Article::factory()
             ->withPrice(BillingFrequency::MONTHLY, 2900)
             ->create();
@@ -224,8 +234,8 @@ describe('Article type helpers', function () {
             ->and($oneTime->prices)->toHaveCount(1, 'Setup: oneTime should have 1 price')
             ->and($oneTime->prices->first()->billing_unit)->toBeNull('Setup: should be one-time (NULL cadence)');
 
-        expect($recurring->isRecurring())->toBeTrue()
-            ->and($oneTime->isRecurring())->toBeFalse();
+        expect($recurring->activePrices()->whereNotNull('billing_unit')->exists())->toBeTrue()
+            ->and($oneTime->activePrices()->whereNotNull('billing_unit')->exists())->toBeFalse();
     });
 });
 
@@ -280,9 +290,9 @@ describe('Article pricing', function () {
         // Verify test setup: exactly 3 prices created
         expect($article->prices)->toHaveCount(3, 'Setup verification: should have exactly 3 prices');
 
-        expect($article->getPriceFor(BillingFrequency::MONTHLY))->toEqual(2900.0)
-            ->and($article->getPriceFor(BillingFrequency::QUARTERLY))->toEqual(7900.0)
-            ->and($article->getPriceFor(BillingFrequency::YEARLY))->toEqual(29000.0);
+        expect($article->getPriceForInterval(new BillingInterval('month', 1)))->toEqual(2900.0)
+            ->and($article->getPriceForInterval(new BillingInterval('month', 3)))->toEqual(7900.0)
+            ->and($article->getPriceForInterval(new BillingInterval('year', 1)))->toEqual(29000.0);
     });
 
     it('returns null for unavailable frequency', function () {
@@ -293,9 +303,9 @@ describe('Article pricing', function () {
         // Verify test setup: only 1 price (1 month)
         expect($article->prices)->toHaveCount(1, 'Setup verification: should have exactly 1 price');
 
-        // WEEKLY is outside the ADR-015 cadence domain: the lookup fails loud
-        // (qualified STABILITY.md §3 exception) instead of returning null.
-        expect(fn () => $article->getPriceFor(BillingFrequency::WEEKLY))
+        // 'week' is outside the ADR-015 cadence domain: the lookup fails loud
+        // (domain guard, InvalidBillingIntervalException) instead of returning null.
+        expect(fn () => $article->getPriceForInterval(new BillingInterval('week', 1)))
             ->toThrow(InvalidBillingIntervalException::class);
     });
 
@@ -310,11 +320,39 @@ describe('Article pricing', function () {
         // Verify test setup: exactly 2 prices
         expect($article->prices)->toHaveCount(2, 'Setup verification: should have exactly 2 prices');
 
+        $notices = articleLegacyDeprecations(fn () => $article->getAvailableFrequencies());
+
+        expect($notices)->toHaveCount(1)
+            ->and($notices[0])->toContain('Article::getAvailableFrequencies() is deprecated since larabill 9.0.0')
+            ->and($notices[0])->toContain('Article::getAvailableIntervals()');
+
         $frequencies = $article->getAvailableFrequencies();
 
         expect($frequencies)->toHaveCount(2)
             ->and($frequencies)->toContain(BillingFrequency::MONTHLY)
             ->and($frequencies)->toContain(BillingFrequency::QUARTERLY);
+    });
+
+    it('gets available intervals — the interval-native read (NULL element is the one-time cadence)', function () {
+        $article = Article::factory()
+            ->withPrices([
+                BillingFrequency::MONTHLY->value   => 2900,
+                BillingFrequency::QUARTERLY->value => 7900,
+            ])
+            ->create();
+
+        $oneTime = Article::factory()->oneTime(5000)->create();
+
+        $intervals = $article->getAvailableIntervals();
+
+        $pairs = fn (Collection $intervals) => $intervals->map(
+            fn (?BillingInterval $interval) => $interval === null ? null : [$interval->unit, $interval->quantity],
+        );
+
+        expect($pairs($article->getAvailableIntervals()))->toHaveCount(2)
+            ->toContain(['month', 1])
+            ->toContain(['month', 3])
+            ->and($pairs($oneTime->getAvailableIntervals()))->each->toBeNull();
     });
 
     it('gets default price (ONE_TIME or first available)', function () {
@@ -348,7 +386,7 @@ describe('Article pricing', function () {
         expect($article->prices)->toHaveCount(1, 'Setup verification: should have exactly 1 price')
             ->and($article->prices->first()->billing_days_in_advance)->toBe(7, 'Setup verification: days_in_advance should be 7');
 
-        expect($article->getBillingDaysInAdvanceFor(BillingFrequency::MONTHLY))->toBe(7);
+        expect($article->getBillingDaysInAdvanceForInterval(new BillingInterval('month', 1)))->toBe(7);
     });
 });
 
@@ -358,7 +396,7 @@ describe('Article price overrides', function () {
             ->monthly(2900)
             ->create();
 
-        expect($article->getEffectivePriceFor(null, BillingFrequency::MONTHLY))->toEqual(2900.0);
+        expect(app(PricingService::class)->getEffectivePriceForInterval($article, new BillingInterval('month', 1), null))->toEqual(2900.0);
     });
 
     it('returns standard price when customer has no override', function () {
@@ -366,7 +404,7 @@ describe('Article price overrides', function () {
             ->monthly(2900)
             ->create();
 
-        expect($article->getEffectivePriceFor(999, BillingFrequency::MONTHLY))->toEqual(2900.0);
+        expect(app(PricingService::class)->getEffectivePriceForInterval($article, new BillingInterval('month', 1), 999))->toEqual(2900.0);
     });
 
     it('returns override price when customer has active override', function () {
@@ -384,7 +422,7 @@ describe('Article price overrides', function () {
             'is_active'    => true,
         ]);
 
-        expect($article->getEffectivePriceFor($customer->id, BillingFrequency::MONTHLY))->toEqual(2400.0);
+        expect(app(PricingService::class)->getEffectivePriceForInterval($article, new BillingInterval('month', 1), $customer->id))->toEqual(2400.0);
     });
 
     it('returns override price for UUID customer IDs', function () {
@@ -401,7 +439,7 @@ describe('Article price overrides', function () {
             'is_active'    => true,
         ]);
 
-        expect($article->getEffectivePriceFor($customerId, BillingFrequency::MONTHLY))->toEqual(2400.0)
+        expect(app(PricingService::class)->getEffectivePriceForInterval($article, new BillingInterval('month', 1), $customerId))->toEqual(2400.0)
             ->and($article->hasActiveOverrideFor($customerId))->toBeTrue();
     });
 
@@ -466,6 +504,6 @@ describe('Article factory presets', function () {
 
         expect($article->isGood())->toBeTrue()
             ->and($article->category)->toBe('hardware')
-            ->and($article->getPriceFor(BillingFrequency::ONE_TIME))->not->toBeNull();
+            ->and($article->getPriceForInterval(null))->not->toBeNull();
     });
 });

@@ -14,7 +14,7 @@ use Carbon\Carbon;
  *
  * Retired closed cadence enum — DEPRECATED compatibility shim (ADR-015 §5).
  *
- * @deprecated since 7.0.0, use `BillingInterval` (unit + quantity; `ONE_TIME` → NULL cadence + modality) — see UPGRADE-7.0.md
+ * @deprecated since 7.0.0, removal in 10.0, use `BillingInterval` (unit + quantity; `ONE_TIME` → NULL cadence + modality) — see UPGRADE-9.0.md
  *
  * @api Supported public surface (AID-413; see docs/api-surface.md).
  */

@@ -12,7 +12,7 @@ Larabill es el **núcleo de facturación** del ecosistema Larafactu (AichaDigita
 - Pricing por frecuencia (`Article` + `ArticlePrice`, ADR-004)
 - Cumplimiento VeriFACTU (vía `lara-verifactu`)
 
-**Stack:** PHP 8.3+, Laravel 12 ó 13 (`^12.0||^13.0`), Pest. Framework-agnóstico (sin acoplamiento a Filament). License AGPL-3.0-or-later.
+**Stack:** PHP 8.4+ (`^8.4`), Laravel 13 (`^13.0`) desde la línea 9.0 (AID-1778: el platform check rechaza php83; la 8.x queda en soporte de seguridad — ver README «Version support» y AID-1793), Pest. Framework-agnóstico (sin acoplamiento a Filament). License AGPL-3.0-or-later.
 
 ## Lectura obligatoria antes de tocar código
 
@@ -49,7 +49,7 @@ Va en el XML y no en un script de composer porque paratest lanza cada worker com
 
 ## Nota sobre PHP 8.4 local
 
-Hay un bug conocido "table already exists" con SQLite in-memory en PHP 8.4 local. Usar PHP 8.3 localmente o confiar en CI (matriz PHP 8.3+8.4 × L12+L13).
+Histórico: se documentó un bug "table already exists" con SQLite in-memory en PHP 8.4 local. **NO se reprodujo el 2026-10-26 con PHP 8.4.27** (suite completa verde, AID-1778 T5d). Desde la línea 9.0 el runner es `php84` — el platform check de `composer.json` rechaza php83, así que toda la suite, phpstan y pint corren con `php84` (`PHP84="$HOME/Library/Application Support/Herd/bin/php84"`). Se conserva el histórico por si reaparece en otra máquina.
 
 ## Anti-patterns frecuentes
 
@@ -83,7 +83,9 @@ Hay un bug conocido "table already exists" con SQLite in-memory en PHP 8.4 local
 - Leer como regresión del candidato un rojo de arquitectura del consumidor en el gate de conformidad con repositorio `path` en symlink → los tests que separan código propio de `vendor` por ruta (`str_starts_with($file, base_path('vendor'))`) clasifican el paquete como propio porque el symlink resuelve fuera de `vendor/`. Repetir con `symlink: false` y verificar la identidad por checksum (medido en el gate de v6.14.0: 2 falsos rojos que desaparecen con la copia).
 - Dar un default ALEATORIO (`faker->boolean(N)`, `optional()`, `randomElement`) a un campo de factory que gobierna un guard, policy, visibilidad o resolución (`is_immutable`, `is_roi_taxed`, `is_exempt_vat`, flags de estado) → es un flake latente (AID-508/AID-558/AID-581): el día que aparece el guard, ~N% de los fixtures que no lo declaran flakean. El default es determinista (`false`/valor típico); el test que necesita el caso lo declara. Ante un flake por moneda de factory, la corrección es DE-RANDOMIZAR el default, no pinnear el fixture afectado (deja el resto de monedas vivas).
 
-## Estado actual (2026-10-05)
+## Estado actual (2026-10-26)
+
+- **Línea 9.0 en curso (AID-1778, rama `feat/aid-1778-advance-invoice-partial-card`):** PHP ^8.4 + Laravel 13 (T5d), shims de la 7.0 retirados salvo la familia `BillingFrequency` (T5e, deprecada a 10.0 — L16/L17), `linkAdvanceInvoice()` estrechado a borrador + una-a-una (T5c, BREAKING, excepción cualificada en `STABILITY.md`), `AdvanceInvoiceBuilder` + prorrateo por bandas persistidas + migración 054 (T3–T5b). Registro de major: `approvals/majors/larabill-9.md` (`proposed`). Pendiente: T6 (medición sandbox AEAT, gate duro) y T8 (gate de conformidad contra `clientes`).
 
 - **Repositorio en GitLab** (`gitlab.castris.com:aichadigital/larabill`) desde el 2026-07-22; GitHub es **espejo** de distribución (Packagist necesita un driver reconocido para servir `dist`). Los MR se abren con `glab`, no `gh`. CI = `.gitlab-ci.yml` (11 jobs: `manifest`, `phpstan`, `pint`, `db-integration` × 3 —MySQL 8.4 y MariaDB 11.4 en ambos drivers, con guarda que falla si el servidor que responde sale de la frenada (AID-1319)—, `pest` × 4, `mutation`) + job `release` que dispara SOLO en tags `v*` y emite la Release nativa extrayendo la sección del CHANGELOG. **Verificación obligatoria por release:** tag replicado al espejo de GitHub Y Packagist ofreciendo `dist` (`curl -s https://repo.packagist.org/p2/aichadigital/larabill.json | jq`), antes de dar la release por terminada.
 - Tag actual: **v6.14.2** (2026-09-27; código idéntico a v6.14.1, que **no** se instala desde Packagist: su tag se movió y Packagist sirve un dist obsoleto). Lo pendiente de publicar se lee en `[Unreleased]` del `CHANGELOG.md`, no aquí. **PHPStan level 8** (máximo). La versión que usa el consumidor **clientes** se verifica en su `origin/main`, nunca en el checkout, que suele estar en una rama de trabajo.
@@ -114,5 +116,5 @@ Hay un bug conocido "table already exists" con SQLite in-memory en PHP 8.4 local
 - **Migraciones (ADR-007 + ADR-010):** `.php` = fuente de verdad, `.php.stub` = artefacto derivado byte-exacto (`bin/sync-migration-stubs`); `$migrationOrder` 1:1 con los stubs, validado por `MigrationOrderConsistencyTest`. Constantes de fixture: `tests/TestCase::USER_UUID_1/2/3`.
 - **Publishing de stubs: se MANTIENE (AID-302 → ADR-010, 2026-07-02).** El refactor a «0 stubs» (esquema package-managed, como laratickets AID-290) queda **RECHAZADO/aplazado**: sería breaking para consumidores ya instalados sin beneficio correctivo (la deuda técnica ya estaba cerrada). Reconsiderar solo en una versión mayor breaking con plan de migración explícito — criterios de reapertura en `docs/ADR-010-keep-migration-stub-publishing.md`. AID-302 describía el estado v0.8.3 (6 divergencias) ya superado por ADR-007.
 - **Deuda de divergencia `.php`↔`.stub`: ENTERAMENTE SALDADA.** Los 3 follow-ups de ADR-007 cerrados: (1) test de instalación productiva en MySQL (`tests/Integration/InstallMysql/InstallCommandSchemaTest.php`, AID-287) valida `larabill:install → stubs → migrate` con FKs íntegras; (2) auditoría del resto del stack (barrido umbrella AID-298…303); (3) el histórico fillable huérfano `tax_group_id` en `InvoiceItem` verificado **inexistente** en v3.1.3 — no se persiste en el item por diseño (snapshot inmutable en `taxes_applied`/`total_tax_amount`; `tax_group_id` es columna solo en `articles` + input de `TaxCalculationService`).
-- **Tests:** SQLite (`composer test`) + MySQL Integration (`tests/Integration/Mysql/`). CI matriz PHP 8.3+8.4 × L12+L13 + 3 jobs `db-integration` (MySQL 8.4, MariaDB 11.4 × drivers `mysql`/`mariadb`) + **mutation testing** (`pest --mutate`, job no-required, gate `--min=68` pinneado del baseline medido, scope `mutates()` en las suites de money+fiscal — AID-536). PHP 8.4 local: bug "table already exists" → usar PHP 8.3 o confiar en CI.
+- **Tests:** SQLite (`composer test`) + MySQL Integration (`tests/Integration/Mysql/`). Desde 9.0 (AID-1778): CI matriz **PHP 8.4 × L13** + 3 jobs `db-integration` (MySQL 8.4, MariaDB 11.4 × drivers `mysql`/`mariadb`) + **mutation testing** (`pest --mutate`, job no-required, gate `--min=68` pinneado del baseline medido, scope `mutates()` en las suites de money+fiscal — AID-536). Runner local: `php84` (el platform check rechaza php83).
 - **Onboarding consumidor:** `docs/setup-uuid.md` es la guía canónica.

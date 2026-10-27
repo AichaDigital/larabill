@@ -14,9 +14,8 @@ use Illuminate\Queue\SerializesModels;
  * the materialisation of a scheduled close. Cause is nullable: `closed` +
  * NULL cause is a legal state (the import requirement, ADR-015 §2.2).
  *
- * New code listens to this event; the legacy `ServiceCancelled` (whose
- * constructor takes the retired `CancellationType`) is only dispatched by
- * the deprecated `cancel()` shims for their own cancellations.
+ * New code listens to this event. The legacy `ServiceCancelled` shim event
+ * was removed with the 7.0 shim layer in 9.0 (ADR-015 Enmienda 2).
  *
  * @api Supported public surface (AID-413; see docs/api-surface.md).
  */

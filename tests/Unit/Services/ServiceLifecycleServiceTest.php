@@ -3,9 +3,7 @@
 declare(strict_types=1);
 
 use AichaDigital\Larabill\Enums\AgreementStatus;
-use AichaDigital\Larabill\Enums\CancellationType;
 use AichaDigital\Larabill\Events\ServiceActivated;
-use AichaDigital\Larabill\Events\ServiceCancelled;
 use AichaDigital\Larabill\Events\ServiceClosed;
 use AichaDigital\Larabill\Events\ServiceSuspended;
 use AichaDigital\Larabill\Models\AgreementCause;
@@ -75,82 +73,6 @@ it('can suspend a service with a suspension cause', function () {
         return $event->service->id === $service->id
             && $event->reason      === 'Payment overdue';
     });
-});
-
-it('can cancel a service immediately (shim forwards to the close path)', function () {
-    Event::fake([ServiceCancelled::class, ServiceClosed::class]);
-
-    $customer = $this->userModel::factory()->create();
-    $article  = Article::factory()->service()->monthly(2900)->create();
-    $service  = ArticleServiceStatus::factory()->create([
-        'customer_id'       => $customer->id,
-        'article_id'        => $article->id,
-        'billing_unit'      => 'month', 'billing_quantity' => 1,
-        'status'            => AgreementStatus::ACTIVE,
-    ]);
-
-    $this->service->cancel($service, CancellationType::IMMEDIATE, 'Customer request');
-
-    $service->refresh();
-    expect($service->status)->toBe(AgreementStatus::CLOSED)
-        ->and($service->closure_cause_id)->toBe(
-            AgreementCause::findActive(AgreementCause::SCOPE_CLOSED, 'legacy_cancellation')->id
-        )
-        ->and($service->refund_unused)->toBeFalse() // IMMEDIATE does NOT require refund
-        ->and($service->metadata)->toHaveKey('cancellation')
-        ->and($service->metadata['cancellation']['type'])->toBe(CancellationType::IMMEDIATE->value);
-
-    Event::assertDispatched(ServiceCancelled::class);
-    Event::assertDispatched(ServiceClosed::class);
-});
-
-it('can cancel a service at end of period (scheduled close)', function () {
-    Event::fake([ServiceCancelled::class]);
-
-    $customer = $this->userModel::factory()->create();
-    $article  = Article::factory()->service()->monthly(2900)->create();
-    $service  = ArticleServiceStatus::factory()->create([
-        'customer_id'       => $customer->id,
-        'article_id'        => $article->id,
-        'billing_unit'      => 'month', 'billing_quantity' => 1,
-        'status'            => AgreementStatus::ACTIVE,
-        'next_billing_date' => now()->addMonth(),
-    ]);
-
-    $this->service->cancel($service, CancellationType::END_OF_PERIOD);
-
-    $service->refresh();
-    expect($service->status)->toBe(AgreementStatus::ACTIVE) // Still active until end of period
-        ->and($service->close_scheduled_at->toDateString())->toBe(now()->addMonth()->toDateString())
-        ->and($service->metadata['cancellation']['type'])->toBe(CancellationType::END_OF_PERIOD->value)
-        ->and($service->cancellation_effective_at->toDateString())->toBe(now()->addMonth()->toDateString())
-        ->and($service->refund_unused)->toBeFalse();
-
-    Event::assertDispatched(ServiceCancelled::class);
-});
-
-it('can cancel a service with notice period (its own metadata route, verbatim)', function () {
-    Event::fake([ServiceCancelled::class]);
-
-    $customer = $this->userModel::factory()->create();
-    $article  = Article::factory()->service()->monthly(2900)->create([
-        'metadata' => ['notice_period_days' => 15],
-    ]);
-    $service = ArticleServiceStatus::factory()->create([
-        'customer_id'       => $customer->id,
-        'article_id'        => $article->id,
-        'billing_unit'      => 'month', 'billing_quantity' => 1,
-        'status'            => AgreementStatus::ACTIVE,
-    ]);
-
-    $this->service->cancel($service, CancellationType::NOTICE_PERIOD);
-
-    $service->refresh();
-    expect($service->status)->toBe(AgreementStatus::ACTIVE)
-        ->and($service->close_scheduled_at->toDateString())->toBe(now()->addDays(15)->toDateString())
-        ->and($service->cancellation_effective_at->toDateString())->toBe(now()->addDays(15)->toDateString());
-
-    Event::assertDispatched(ServiceCancelled::class);
 });
 
 it('can expire a service — expiry closes with the fulfilment cause (§4.2 rewire)', function () {
@@ -255,7 +177,7 @@ it('can process expired services', function () {
     expect($expiredServices)->toBe(3);
 });
 
-it('can process pending cancellations — the scheduled closures of the §3.2 materialiser', function () {
+it('processes deferred closures through the §3.2 materialiser', function () {
     $customer = $this->userModel::factory()->create();
     $article  = Article::factory()->service()->monthly(2900)->create();
 
@@ -278,7 +200,7 @@ it('can process pending cancellations — the scheduled closures of the §3.2 ma
         'close_scheduled_at' => now()->addMonth(),
     ]);
 
-    $count = $this->service->processPendingCancellations();
+    $count = $this->service->processScheduledClosures()->materialised;
 
     expect($count)->toBe(2);
 

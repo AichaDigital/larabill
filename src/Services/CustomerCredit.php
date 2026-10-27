@@ -18,6 +18,7 @@ use AichaDigital\Larabill\Models\CreditMovement;
 use AichaDigital\Larabill\Models\GroupedPayment;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\PaymentAllocation;
+use AichaDigital\Larabill\Services\Payments\ExitBands;
 use AichaDigital\Larabill\Services\Payments\Ledger;
 use AichaDigital\Larabill\Services\Payments\OutermostTransaction;
 use DateTimeInterface;
@@ -165,8 +166,11 @@ final class CustomerCredit
      * Entries are consumed FIFO across all of the customer's payments and
      * grouped BY PAYMENT: one allocation per payment spent (the sum consumed
      * from that payment's entries, `grouped_payment_id` = that payment) and
-     * one APPLIED exit per entry consumed, pointing at its payment's
-     * allocation — so every allocation stays funded from its own payment's
+     * one APPLIED exit PER FILLED BAND GAP of each entry consumed, pointing
+     * at its payment's allocation — usually one exit per entry, but a take
+     * spanning a refilled hole plus the frontier is split into one exit row
+     * per gap, all sharing the allocation (AID-1778, spec §5.3–§5.4) — so
+     * every allocation stays funded from its own payment's
      * entries, which is what reverseAllocation() reads. `$appliedAt`
      * (default now) is the allocations' `applied_at` and the exits'
      * `occurred_at`; `$recordedBy` goes on the exits. The locked invoice is
@@ -227,7 +231,6 @@ final class CustomerCredit
                 foreach ($takes as [$entry, $take]) {
                     self::recordExit($entry, CreditMovementKind::APPLIED, $take, $appliedAt, $recordedBy, allocationId: $row->id);
                 }
-
                 $rows->push($row);
             }
 
@@ -239,11 +242,16 @@ final class CustomerCredit
 
     /**
      * Record $amount of $billableUserId's $currency credit leaving as a
-     * refund (spec §5.7): one REFUNDED exit per entry consumed FIFO, with
-     * `occurred_at = $refundedAt`, `method`, `reference` and `recorded_by`.
-     * The package records the money leaving; it does not move it. Locks: all
-     * source payments by id ascending (no invoice). Must NOT run inside a
-     * caller's transaction; guarded by `larabill.payments.base_transaction_level`.
+     * refund (spec §5.7): one REFUNDED exit PER FILLED BAND GAP of each entry
+     * consumed FIFO, with `occurred_at = $refundedAt`, `method`, `reference`
+     * and `recorded_by`. Since 8.4 (AID-1778, spec §5.4) ONE consumed entry
+     * may carry SEVERAL REFUNDED rows — one per filled gap — when the take is
+     * split across the free tape; every row of the split is returned in the
+     * collection (and every row of a split shares the entry's
+     * `consumes_movement_id`). The package records the money leaving; it does
+     * not move it. Locks: all source payments by id ascending (no invoice).
+     * Must NOT run inside a caller's transaction; guarded by
+     * `larabill.payments.base_transaction_level`.
      *
      * @return Collection<int, CreditMovement> the exits, in FIFO order
      *
@@ -265,7 +273,7 @@ final class CustomerCredit
             /** @var Collection<int, CreditMovement> $exits */
             $exits = new Collection;
             foreach (self::plan($billableUserId, $currency, $locked, $amount) as [$entry, $take]) {
-                $exits->push(self::recordExit($entry, CreditMovementKind::REFUNDED, $take, $refundedAt, $recordedBy, method: $method, reference: $reference));
+                $exits = $exits->merge(self::recordExit($entry, CreditMovementKind::REFUNDED, $take, $refundedAt, $recordedBy, method: $method, reference: $reference));
             }
 
             return $exits;
@@ -467,9 +475,20 @@ final class CustomerCredit
     }
 
     /**
-     * One exit consuming $take of $entry; customer, currency and payment are
-     * copied from the entry it consumes (§5.1 step 4). APPLIED exits carry
+     * The exit rows consuming $take of $entry; customer, currency and payment
+     * are copied from the entry it consumes (§5.1 step 4). APPLIED exits carry
      * their allocation; REFUNDED exits carry the method and reference.
+     *
+     * Since 8.4 (AID-1778) the take is PLACED on the entry's cent tape
+     * LOWEST-GAP-FIRST by ExitBands::segmentsFor() — under the source-payment
+     * lock this transaction already holds — and ONE row is created PER FILLED
+     * GAP: usually one row, but a take spanning a refilled hole plus the
+     * frontier is split into one row per gap, all sharing the allocation and
+     * every other copied attribute (spec §5.3–§5.4). On an unresolvable entry
+     * (an active NULL-band exit) the rows carry `band_start = NULL` and the
+     * take is NOT split (spec §5.7).
+     *
+     * @return Collection<int, CreditMovement> the created exit rows, in tape position order
      */
     private static function recordExit(
         CreditMovement $entry,
@@ -480,12 +499,12 @@ final class CustomerCredit
         ?int $allocationId = null,
         ?PaymentMethod $method = null,
         ?string $reference = null,
-    ): CreditMovement {
-        return CreditMovement::query()->create([
+    ): Collection {
+        $segments   = ExitBands::segmentsFor($entry, $take->toScale(2)->unscaledValue());
+        $attributes = [
             'billable_user_id'     => $entry->billable_user_id,
             'currency'             => $entry->currency,
             'kind'                 => $kind,
-            'amount'               => $take->negated(),
             'grouped_payment_id'   => $entry->grouped_payment_id,
             'consumes_movement_id' => $entry->id,
             'allocation_id'        => $allocationId,
@@ -493,7 +512,28 @@ final class CustomerCredit
             'reference'            => $reference,
             'recorded_by'          => $recordedBy,
             'occurred_at'          => $at,
-        ]);
+        ];
+
+        /** @var Collection<int, CreditMovement> $rows */
+        $rows = new Collection;
+
+        if ($segments === null) {
+            $rows->push(CreditMovement::query()->create($attributes + [
+                'amount'     => $take->negated(),
+                'band_start' => null,
+            ]));
+
+            return $rows;
+        }
+
+        foreach ($segments as [$start, $length]) {
+            $rows->push(CreditMovement::query()->create($attributes + [
+                'amount'     => FixedDecimal::ofUnscaled(-$length, 2),
+                'band_start' => $start,
+            ]));
+        }
+
+        return $rows;
     }
 
     /**

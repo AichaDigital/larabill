@@ -9,6 +9,7 @@ use AichaDigital\Larabill\Models\ArticleOverride;
 use AichaDigital\Larabill\Models\ArticleServiceStatus;
 use AichaDigital\Larabill\Services\PricingService;
 use AichaDigital\Larabill\Tests\Models\TestUser;
+use AichaDigital\Larabill\ValueObjects\BillingInterval;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -190,8 +191,8 @@ it('applies validity through every public pricing entry point', function () {
 
     expect($pricing->getActiveOverride($article, $this->customer->id))->toBeNull()
         ->and($pricing->hasActiveOverride($article, $this->customer->id))->toBeFalse()
-        ->and($pricing->getEffectivePrice($article, BillingFrequency::MONTHLY, $this->customer->id))->toBe(9900.0)
-        ->and($pricing->createPricingDetails($article, BillingFrequency::MONTHLY, $this->customer->id)->pricingRule)->toBe('base_price')
+        ->and($pricing->getEffectivePriceForInterval($article, new BillingInterval('month', 1), $this->customer->id))->toBe(9900.0)
+        ->and($pricing->createPricingDetailsForInterval($article, new BillingInterval('month', 1), $this->customer->id)->pricingRule)->toBe('base_price')
         ->and($pricing->getEffectivePriceForService($service))->toBe(9900.0)
         ->and($pricing->createPricingDetailsForService($service)->pricingRule)->toBe('base_price');
 });

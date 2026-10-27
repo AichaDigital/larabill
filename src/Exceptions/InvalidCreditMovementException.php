@@ -17,4 +17,13 @@ final class InvalidCreditMovementException extends RuntimeException
     {
         return new self("Credit movement {$movementId} is not an entry (surplus or top-up) and cannot be used here.");
     }
+
+    /**
+     * Additive refusal of AID-1778 (spec §4.2): a reversed entry has been
+     * undone in the ledger, so no advance invoice can document its collection.
+     */
+    public static function reversed(string $movementId): self
+    {
+        return new self("Credit movement {$movementId} is reversed and cannot back an advance invoice.");
+    }
 }

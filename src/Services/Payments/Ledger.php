@@ -75,9 +75,15 @@ final class Ledger
      * CustomerCredit::apply() pass payableStatuses() (PARTIALLY_PAID is
      * payable), while the legacy card path (register(), via
      * PaymentService::process() under ReplayPolicy::Legacy) passes
-     * legacyPayableStatuses() — so a partial receive() that lands between
-     * register()'s eligibility check and process() surfaces as
-     * notPayableStatus, the 8.2 contract, never as an outstanding overflow.
+     * legacyPayableStatuses(). Since 8.4 (AID-1778) that list also contains
+     * PARTIALLY_PAID, so the pre-transaction eligibility check and the
+     * under-lock check agree by construction. The Legacy race has two cases,
+     * decided by THIS check order (status before outstanding): a partial
+     * receive() landing between register()'s two transactions leaves the
+     * invoice PARTIALLY_PAID with a smaller outstanding than the earlier
+     * allocation and surfaces as AllocationExceedsInvoiceException; a
+     * fully-settling one makes the invoice PAID and keeps surfacing as
+     * notPayableStatus.
      *
      * @param  list<InvoiceStatus>  $payableStatuses
      *
@@ -139,15 +145,17 @@ final class Ledger
     }
 
     /**
-     * The collection states the 8.x card path accepts (AID-961):
-     * GroupedPaymentService::register() settles whole invoices only, so a
-     * PARTIALLY_PAID invoice is not payable there.
+     * The collection states the 8.x card path accepts (AID-961). Since 8.4
+     * (AID-1778) Legacy no longer means «whole invoices only»: a
+     * PARTIALLY_PAID invoice is payable too, and register() allocates exactly
+     * its amountOutstanding() under the lock. assertEligible() and process()
+     * read THIS list, so the two checks agree by construction.
      *
      * @return list<InvoiceStatus>
      */
     public static function legacyPayableStatuses(): array
     {
-        return [InvoiceStatus::SENT, InvoiceStatus::OVERDUE, InvoiceStatus::PENDING];
+        return [InvoiceStatus::SENT, InvoiceStatus::OVERDUE, InvoiceStatus::PENDING, InvoiceStatus::PARTIALLY_PAID];
     }
 
     /**

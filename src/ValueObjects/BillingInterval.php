@@ -153,7 +153,7 @@ final class BillingInterval
      * Reverse bridge to the retired `BillingFrequency` enum — the mirror of
      * `fromLegacyFrequency()`, keeping the enum the single source of both
      * directions while transitional `BillingFrequency`-typed read methods
-     * still exist (ADR-015 §5; retired with the enum in slice 2b).
+     * still exist (ADR-015 §5; the shim retirement was deferred to 9.0 by ADR-015 Enmienda 2 and the `BillingFrequency` family goes in 10.0 — this bridge is `@deprecated since 9.0.0, removal in 10.0`).
      *
      * Only the seven legacy-representable cadences map back. A cadence inside
      * the new domain but outside the legacy image (e.g. month/5, year/4) has

@@ -28,7 +28,7 @@ use Illuminate\Support\Carbon;
  * every new allocation, for compatibility. `previous_*` are no longer read
  * by the package; `active_invoice_id` is still read by
  * GroupedPaymentService::register() (the `alreadyActivelyPaid` guard) and
- * by the consumer's 8.x reader. Removal of all three in 9.0.
+ * by the consumer's 8.x reader. Removal of all three in 10.0.
  *
  * @property int $id
  * @property string $grouped_payment_id
@@ -39,9 +39,9 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $reversed_at
  * @property string|null $reversed_by
  * @property string|null $reverse_reason
- * @property int $previous_status @deprecated Still written, no longer read; removal in 9.0.
- * @property Carbon|null $previous_paid_at @deprecated Still written, no longer read; removal in 9.0.
- * @property string|null $active_invoice_id @deprecated Still written (= invoice_id while ACTIVE, NULL once reversed); still read by register()'s alreadyActivelyPaid guard and the consumer's 8.x reader; no longer a uniqueness guarantee; removal in 9.0.
+ * @property int $previous_status @deprecated Still written, no longer read; removal in 10.0.
+ * @property Carbon|null $previous_paid_at @deprecated Still written, no longer read; removal in 10.0.
+ * @property string|null $active_invoice_id @deprecated Still written (= invoice_id while ACTIVE, NULL once reversed); still read by register()'s alreadyActivelyPaid guard and the consumer's 8.x reader; no longer a uniqueness guarantee; removal in 10.0.
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  *

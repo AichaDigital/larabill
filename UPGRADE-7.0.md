@@ -6,6 +6,8 @@ larabill **7.0 reshapes the agreement model** (ADR-015): the closed `BillingFreq
 
 **It ships migrations: yes — 8 of them (040–047).** They transform existing data (cadence re-key, status program, renewal backfill, deferred-closure carry-over) and loud-abort — leaving every table byte-identical — when they find data they refuse to interpret. **Your 6.x application code keeps working**: the retired public surface ships through 7.0 as a deprecated compatibility shim (see "The deprecated shim layer" below); the shims are removed in **8.0**.
 
+> **⚠️ Dated correction (2026-10-26, AID-1778 / ADR-015 Enmienda 2) — this document's removal promise is superseded, not rewritten:** the shims were NOT removed in 8.0 — the retirement was deferred to **9.0**, where it shipped (see [UPGRADE-9.0.md](UPGRADE-9.0.md)). The exception within that retirement is the **`BillingFrequency` family** — `BillingFrequency`, `BillingInterval::toLegacyFrequency()` and `Article::getAvailableFrequencies()` — which 7.0 left alive and without a deprecation tag: it is deprecated since 9.0.0 with removal in **10.0**, honouring the one-full-major window of STABILITY.md. The rest of this guide is kept verbatim as the 7.0-era record.
+
 ## The one upgrade ritual
 
 ```bash
@@ -131,7 +133,7 @@ WHERE billing_frequency = 0 AND next_billing_date IS NOT NULL;
 
 The recurrent engine's loud gate for a one_time row with a billing date stays in place as defense in depth — after the migration it is unreachable through the supported upgrade path and only fires on rows written against the data contract afterwards.
 
-## The deprecated shim layer (removed in 8.0)
+## The deprecated shim layer (removed in 8.0 — actually retired in 9.0; see the dated correction at the top, AID-1778)
 
 Every retired public symbol still ships through 7.0, marked `@deprecated` with its named replacement, delegating to the new model. The shims are a **compatibility surface, not a second engine**: package internals and the WHMCS import run on the new model only. Each delegating public path emits an `E_USER_DEPRECATED` notice naming the replacement, so your logs tell you exactly what to migrate before 8.0 removes it.
 
