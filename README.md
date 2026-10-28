@@ -29,10 +29,10 @@
 | larabill line | PHP | Laravel | Support status |
 | -- | -- | -- | -- |
 | **9.x** | **8.4+** | **13** | **Active** |
-| 8.x | 8.3+ | 12–13 | Security fixes only, until the Laravel 12/13 security EOL published at https://laravel.com/docs/releases |
+| 8.x | 8.3+ | 12–13 | Security fixes only, until **2027-02-24** (Laravel 12 security EOL, per https://laravel.com/docs/releases) |
 | 7.x and older | — | — | End of support |
 
-Version lines track Laravel's majors: a new larabill major follows the new Laravel and abandons the previous lines, which keep receiving security fixes only for as long as their Laravel version does (stack policy: AID-1793). EOL dates are taken from the policy published at https://laravel.com/docs/releases, never from memory.
+Version lines track Laravel's majors: a new larabill major follows the new Laravel and abandons the previous lines, which keep receiving security fixes only for as long as their Laravel version does (stack policy: AID-1793). 9.x is the Laravel 13 line, so 8.x is the Laravel 12 line: its security support ends with Laravel 12's, even when installed on Laravel 13. Apps on Laravel 13 move to 9.x, which requires PHP 8.4. EOL dates are taken from the policy published at https://laravel.com/docs/releases, never from memory.
 
 Larabill is a professional, **UUID-first** billing and invoicing package for Laravel applications. It provides tax calculation for Spain/EU/worldwide and flexible invoice generation with immutability protection, plus an optional thin bridge to intra-community VAT/NIF verification (delegated to the [`lararoi`](https://github.com/aichadigital/lararoi) package). The consumer app's `users.id` MUST be UUID v7 char(36) — see [`docs/setup-uuid.md`](docs/setup-uuid.md) and [ADR-006](docs/ADR-006-uuid-first-no-agnostic.md).
 
