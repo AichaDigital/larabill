@@ -41,7 +41,7 @@ class TaxGroup extends Model
     /**
      * The attributes that are mass assignable.
      *
-     * @var array<string>
+     * @var list<string>
      */
     protected $fillable = [
         'name',
@@ -56,7 +56,7 @@ class TaxGroup extends Model
      * The tax rates that belong to this tax group.
      * Many-to-many relationship through tax_group_tax_rate pivot.
      *
-     * @return BelongsToMany<TaxRate>
+     * @return BelongsToMany<TaxRate, $this>
      */
     public function taxRates(): BelongsToMany
     {

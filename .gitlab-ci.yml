@@ -126,7 +126,9 @@ pest:
         echo "PCOV no se activó — la suite abortaría por failOnWarning sin ejecutar nada"
         exit 1
       fi
-    - ./vendor/bin/pest --ci --coverage --coverage-clover=coverage.xml
+    # Floor pinned from the measured total (83.5 % on 2026-10-29, AID-1819):
+    # a drop below it turns the job red. Raise it as coverage rises; never lower it.
+    - ./vendor/bin/pest --ci --coverage --min=83 --coverage-clover=coverage.xml
   coverage: '/Total:\s*(\d+\.\d+)\s*%/'
   artifacts:
     when: always
