@@ -83,7 +83,6 @@
         "test-profile": "vendor/bin/pest --profile",
         "test-coverage": "vendor/bin/pest --coverage",
         "phpstan": "vendor/bin/phpstan analyse --memory-limit=1G",
-        "phpstan-baseline": "vendor/bin/phpstan analyse --generate-baseline --memory-limit=1G",
         "phpinsights": "vendor/bin/phpinsights",
         "test-mutate": "vendor/bin/pest --mutate --parallel --min=68",
         "phpinsights-fix": "vendor/bin/phpinsights fix",
