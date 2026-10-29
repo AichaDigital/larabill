@@ -21,6 +21,8 @@ use AichaDigital\Larabill\Models\PaymentAllocation;
 use AichaDigital\Larabill\Services\Payments\ExitBands;
 use AichaDigital\Larabill\Services\Payments\Ledger;
 use AichaDigital\Larabill\Services\Payments\OutermostTransaction;
+use AichaDigital\Larabill\ValueObjects\CreditBreakdown;
+use AichaDigital\Larabill\ValueObjects\CreditEntryRemainder;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -152,6 +154,57 @@ final class CustomerCredit
     public function position(): FixedDecimal
     {
         return $this->balance()->minus($this->outstanding());
+    }
+
+    /**
+     * The live balance of the bound customer and currency split by the
+     * origin of each entry (AID-1817): consumable (no advance invoice) and
+     * advance-backed (`advance_invoice_id` set, whatever the advance's
+     * document state). Each entry counts its remainder — its amount plus its
+     * ACTIVE exits, the same arithmetic as CreditMovement::remaining() — so
+     * an entry linked after being partly consumed counts only what is left,
+     * and refunds weigh FIFO exactly as refund() placed them. The two parts
+     * add up to balance().
+     *
+     * Two plain reads (the entries, then their exits aggregated in one
+     * grouped query); no lock, no write. Like balance(), it is a snapshot,
+     * not a reservation: a concurrent apply() may consume what it shows.
+     *
+     * @throws LogicException on an unbound instance
+     */
+    public function breakdown(): CreditBreakdown
+    {
+        $entries = $this->boundMovements()->entries()->orderBy('occurred_at')->orderBy('id')->get();
+
+        /** @var array<string, int> $consumed */
+        $consumed = $entries->isEmpty() ? [] : CreditMovement::query()
+            ->whereIn('consumes_movement_id', $entries->modelKeys())
+            ->active()
+            ->groupBy('consumes_movement_id')
+            ->selectRaw('consumes_movement_id, SUM(amount) AS consumed')
+            ->toBase()   // a raw aggregate row, not a CreditMovement: no cast on `consumed`
+            ->pluck('consumed', 'consumes_movement_id')
+            ->map(fn ($sum): int => (int) $sum)
+            ->all();
+
+        $consumable    = FixedDecimal::zero(2);
+        $advanceBacked = FixedDecimal::zero(2);
+        $live          = [];
+        foreach ($entries as $entry) {
+            $remaining = $entry->amount->plus(FixedDecimal::ofUnscaled($consumed[(string) $entry->id] ?? 0, 2))->toScale(2);
+
+            if ($entry->advance_invoice_id === null) {
+                $consumable = $consumable->plus($remaining);
+            } else {
+                $advanceBacked = $advanceBacked->plus($remaining);
+            }
+
+            if ($remaining->isPositive()) {
+                $live[] = new CreditEntryRemainder((string) $entry->id, $remaining, $entry->advance_invoice_id);
+            }
+        }
+
+        return new CreditBreakdown($consumable->toScale(2), $advanceBacked->toScale(2), $live);
     }
 
     /**

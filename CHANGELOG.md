@@ -2,6 +2,12 @@
 
 All notable changes to `larabill` will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- **`CustomerCredit::breakdown()` (`@api`, AID-1817) — the live balance split by the origin of each entry:** on a bound instance (`CustomerCredit::for($customer, $currency)`) it returns a `CreditBreakdown` (`@api`) with `consumable` (entries with no advance invoice — spendable with `apply()`), `advanceBacked` (entries with `advance_invoice_id` set — their VAT was already declared on the advance, so they are consumed as a deduction line, AID-1815, never applied as a payment) and `entries`, a FIFO-ordered list of `CreditEntryRemainder` (`@api`: movement id, remainder, advance invoice id) for the entries with a positive remainder. Each entry counts its remainder after its ACTIVE exits, so an entry linked after a partial consumption counts only what is left, and refunds weigh exactly as `refund()` placed them FIFO. **`consumable + advanceBacked` equals `balance()`.** An entry linked to an advance that is still a DRAFT counts as advance-backed. Two plain reads, no lock, no write. Additive: no existing signature or behaviour changes.
+
 ## [9.0.0] - 2026-10-27
 
 > **⚠️ BREAKING major — read [UPGRADE-9.0.md](UPGRADE-9.0.md) before upgrading.** **Platform:** PHP `^8.4` and Laravel 13 only (AID-1778 T5d, L14/L15; the stack-wide line policy is tracked in AID-1793). **Ships migrations: yes** — `2026_10_26_000001_add_band_start_to_credit_movements` (054) adds the nullable `credit_movements.band_start` column and reconstructs the bands of 8.3.0 exits under a CONSERVATIVE RECONSTRUCTION CRITERION — **not** a proof of the historical order (L12); entries whose stored history is ambiguous stay NULL and are declared unresolvable, never guessed (§5.7 of the spec). Upgrade: `composer update aichadigital/larabill` + `php artisan larabill:install` (idempotent — publishes migration 054) + `php artisan migrate`. **`migrate:fresh` is never part of the path.** The 7.0 shim layer is retired (ADR-015 Enmienda 2) except the `BillingFrequency` family, which is deprecated to 10.0 (L16/L17).
