@@ -4,6 +4,8 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+## [9.1.0] - 2026-10-29
+
 ### Added
 
 - **`CustomerCredit::breakdown()` (`@api`, AID-1817) — the live balance split by the origin of each entry:** on a bound instance (`CustomerCredit::for($customer, $currency)`) it returns a `CreditBreakdown` (`@api`) with `consumable` (entries with no advance invoice — spendable with `apply()`), `advanceBacked` (entries with `advance_invoice_id` set — their VAT was already declared on the advance, so they are consumed as a deduction line, AID-1815, never applied as a payment) and `entries`, a FIFO-ordered list of `CreditEntryRemainder` (`@api`: movement id, remainder, advance invoice id) for the entries with a positive remainder. Each entry counts its remainder after its ACTIVE exits, so an entry linked after a partial consumption counts only what is left, and refunds weigh exactly as `refund()` placed them FIFO. **`consumable + advanceBacked` equals `balance()`.** An entry linked to an advance that is still a DRAFT counts as advance-backed. Two plain reads, no lock, no write. Additive: no existing signature or behaviour changes.
