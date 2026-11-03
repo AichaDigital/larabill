@@ -26,4 +26,9 @@ final class InvalidCreditMovementException extends RuntimeException
     {
         return new self("Credit movement {$movementId} is reversed and cannot back an advance invoice.");
     }
+
+    public static function voucherBacked(string $movementId, string $saleInvoiceId): self
+    {
+        return new self("Credit movement {$movementId} is voucher-backed (sale invoice {$saleInvoiceId}): its VAT was declared by the sale, so it cannot back an advance invoice.");
+    }
 }

@@ -14,11 +14,14 @@ enum CreditMovementKind: int
     case APPLIED  = 2;
     case REFUNDED = 3;
 
+    /** A voucher consumption (AID-1825): balance leaving against a service, never a payment. */
+    case CONSUMED = 4;
+
     public function isEntry(): bool
     {
         return match ($this) {
-            self::SURPLUS, self::TOP_UP   => true,
-            self::APPLIED, self::REFUNDED => false,
+            self::SURPLUS, self::TOP_UP                   => true,
+            self::APPLIED, self::REFUNDED, self::CONSUMED => false,
         };
     }
 
@@ -34,6 +37,7 @@ enum CreditMovementKind: int
             self::TOP_UP   => __('larabill::enums.credit_movement_kind.top_up'),
             self::APPLIED  => __('larabill::enums.credit_movement_kind.applied'),
             self::REFUNDED => __('larabill::enums.credit_movement_kind.refunded'),
+            self::CONSUMED => __('larabill::enums.credit_movement_kind.consumed'),
         };
     }
 
@@ -45,6 +49,7 @@ enum CreditMovementKind: int
             self::TOP_UP->value   => self::TOP_UP->label(),
             self::APPLIED->value  => self::APPLIED->label(),
             self::REFUNDED->value => self::REFUNDED->label(),
+            self::CONSUMED->value => self::CONSUMED->label(),
         ];
     }
 }

@@ -8,22 +8,28 @@ use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Enums\AllocationStatus;
 use AichaDigital\Larabill\Enums\CreditMovementKind;
 use AichaDigital\Larabill\Enums\GroupedPaymentStatus;
+use AichaDigital\Larabill\Enums\InvoiceDocumentStatus;
 use AichaDigital\Larabill\Enums\PaymentMethod;
+use AichaDigital\Larabill\Enums\VoucherSaleStage;
 use AichaDigital\Larabill\Exceptions\AllocationExceedsInvoiceException;
 use AichaDigital\Larabill\Exceptions\AllocationExceedsPaymentException;
 use AichaDigital\Larabill\Exceptions\GroupedPaymentValidationException;
 use AichaDigital\Larabill\Exceptions\IdempotencyConflictException;
 use AichaDigital\Larabill\Exceptions\InsufficientCreditException;
 use AichaDigital\Larabill\Exceptions\PaymentOutsideTransactionRequiredException;
+use AichaDigital\Larabill\Exceptions\SaleClaimedException;
+use AichaDigital\Larabill\Exceptions\SaleStageException;
 use AichaDigital\Larabill\Models\CreditMovement;
 use AichaDigital\Larabill\Models\GroupedPayment;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\PaymentAllocation;
+use AichaDigital\Larabill\Models\VoucherSaleClaim;
 use AichaDigital\Larabill\Services\Payments\ExitBands;
 use AichaDigital\Larabill\Services\Payments\Ledger;
 use AichaDigital\Larabill\Services\Payments\OutermostTransaction;
 use AichaDigital\Larabill\Services\Payments\ReceiveRequest;
 use AichaDigital\Larabill\Services\Payments\ReplayPolicy;
+use AichaDigital\Larabill\Support\CheckedWrite;
 use AichaDigital\Larabill\ValueObjects\Allocation;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Collection;
@@ -155,10 +161,11 @@ class PaymentService
                     /** @var Invoice $invoice present: assertAllFound() rejects missing ids */
                     $invoice = $invoices->get($allocation->invoiceId);
                     Ledger::assertPayable($invoice, $request->billableUserId, $request->currency, $statuses);
+                    Ledger::assertNotClaimedSale($invoice, 'allocating a payment'); // AID-1825 §1a rule 2 (covers receive() and register())
                     Ledger::assertWithinOutstanding($invoice, $allocation->amount);
                 }
 
-                $payment = GroupedPayment::create([
+                $payment = new GroupedPayment([
                     'billable_user_id' => $request->billableUserId,
                     'amount'           => $request->amount,
                     'currency'         => $request->currency,
@@ -169,6 +176,9 @@ class PaymentService
                     'method'           => $request->method,
                     'recorded_by'      => $request->recordedBy,
                 ]);
+                // A vetoed payment save must not leave an unsaved model that the
+                // rest of the step (allocations, remainder, a sale claim) references.
+                CheckedWrite::orFail($payment->save(), 'the received payment');
 
                 foreach ($request->allocations as $allocation) {
                     /** @var Invoice $invoice */
@@ -177,7 +187,11 @@ class PaymentService
                     $invoice->recomputeCollectionState();
                 }
 
-                $this->recordRemainder($payment, $request);
+                // AID-1825 S1: a voucher-sale recording keeps the remainder
+                // OUT of the ledger — recorded, not spendable, until S3b.
+                if ($request->remainderEntry) {
+                    $this->recordRemainder($payment, $request);
+                }
 
                 return $this->loaded($payment);
             });
@@ -288,6 +302,7 @@ class PaymentService
             $invoice = $invoices->get($allocation->invoiceId);
 
             Ledger::assertPayable($invoice, (string) $locked->billable_user_id, $locked->currency, Ledger::payableStatuses());
+            Ledger::assertNotClaimedSale($invoice, 'allocating credit'); // AID-1825 §1a rule 2
             Ledger::assertWithinOutstanding($invoice, $amount);
 
             $available = $locked->availableCredit();
@@ -348,6 +363,19 @@ class PaymentService
                 return $this->loaded($locked); // stable no-op, audit fields untouched
             }
 
+            // AID-1825 §1a rule 5: a payment funding a voucher sale is
+            // reversible at stage PENDING only — the reversal releases the
+            // claim and, if S2 already ran, cancels the PREPARED child so the
+            // proforma returns to DRAFT. At ISSUING or BACKED it is refused.
+            $claim = VoucherSaleClaim::query()->where('grouped_payment_id', $locked->id)->first();
+            if ($claim !== null) {
+                if ($claim->stage !== VoucherSaleStage::Pending) {
+                    throw SaleStageException::reverseRefused($paymentId, (string) $claim->id, $claim->stage);
+                }
+
+                $this->releaseSaleClaim($claim, $reversedBy ?? 'reverse()');
+            }
+
             $entryIds = $locked->creditMovements()->active()->entries()->pluck('id');
             $consumed = CreditMovement::query()
                 ->active()
@@ -371,7 +399,7 @@ class PaymentService
             $at    = now();
             $audit = ['reversed_at' => $at, 'reversed_by' => $reversedBy, 'reverse_reason' => $reason];
 
-            $locked->update(['status' => GroupedPaymentStatus::REVERSED] + $audit);
+            CheckedWrite::orFail($locked->update(['status' => GroupedPaymentStatus::REVERSED] + $audit), 'the REVERSED payment');
 
             PaymentAllocation::query()
                 ->whereKey($active->modelKeys())
@@ -433,6 +461,14 @@ class PaymentService
                 return $row; // stable no-op, audit fields untouched
             }
 
+            // AID-1825 §1a rule 2: the collection of a voucher sale is never
+            // reversed through this path — it would mint a SURPLUS entry from
+            // the money the voucher entry already represents.
+            $saleClaimId = $invoices->get((string) $row->invoice_id)?->getAttribute('sale_claim_id');
+            if ($saleClaimId !== null) {
+                throw SaleClaimedException::allocation((int) $row->id, (string) $row->invoice_id, (string) $saleClaimId);
+            }
+
             // (1) The funding, read BEFORE anything is touched.
             $exits  = CreditMovement::query()
                 ->active()
@@ -475,6 +511,32 @@ class PaymentService
 
             return $row->refresh();
         });
+    }
+
+    /**
+     * Release a PENDING voucher-sale claim on reversal (AID-1825 §1a rule 5):
+     * the PREPARED child, if S2 ran, is cancelled through the sale's own
+     * path (document CANCELLED, proforma back to DRAFT, re-convertible) and
+     * the claim row is deleted — the proforma can be sold again under a new
+     * key. Runs inside reverse()'s transaction, under the payment lock.
+     */
+    private function releaseSaleClaim(VoucherSaleClaim $claim, string $actor): void
+    {
+        $prepared = Invoice::query()->where('sale_claim_id', $claim->id)->first();
+
+        if ($prepared !== null) {
+            if ($prepared->invoice_document_status !== InvoiceDocumentStatus::PREPARED) {
+                throw SaleStageException::reverseRefused((string) $claim->grouped_payment_id, (string) $claim->id, $claim->stage);
+            }
+
+            VoucherSaleClaim::withSaleAuthorization(
+                (string) $claim->id,
+                fn () => app(InvoiceService::class)->cancelPreparedInvoice($prepared, $actor),
+            );
+            Invoice::query()->whereKey($prepared->getKey())->update(['sale_claim_id' => null]);
+        }
+
+        CheckedWrite::orFail($claim->delete(), 'the released sale claim');
     }
 
     /** Pre-check outcome for an already-used key: same payment, or a controlled conflict. */
@@ -537,6 +599,7 @@ class PaymentService
         $entries = $payment->creditMovements()
             ->active()
             ->entries()
+            ->notVoucherBacked() // AID-1825: a voucher never funds a payment
             ->orderBy('occurred_at')
             ->orderBy('id')
             ->get();

@@ -43,6 +43,10 @@ use Illuminate\Support\Facades\DB;
  * @property string|null $consumes_movement_id
  * @property int|null $band_start Base-100 cent offset where this exit's band starts on its entry's tape (AID-1778); NULL on entries and on unresolvable entries
  * @property string|null $advance_invoice_id
+ * @property string|null $sale_invoice_id Voucher backing of an entry: the issued voucher-sale invoice (AID-1825); never fillable
+ * @property string|null $credit_operation_id The keyed operation that created a consumption exit (AID-1825); never fillable
+ * @property string|null $service_ref
+ * @property string|null $service_description
  * @property PaymentMethod|null $method
  * @property string|null $recorded_by
  * @property string|null $reference
@@ -173,6 +177,25 @@ class CreditMovement extends Model
     }
 
     /**
+     * Rows that are NOT voucher-backed (AID-1825 §1 item 4): an entry whose
+     * `sale_invoice_id` is set is balance contracted to consume services —
+     * never a payment, never a refund, never a currency hint. Every 9.1 row
+     * has `sale_invoice_id` NULL, so this scope changes nothing for them.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeNotVoucherBacked(Builder $query): Builder
+    {
+        return $query->whereNull($this->qualifyColumn('sale_invoice_id'));
+    }
+
+    public function isVoucherBacked(): bool
+    {
+        return $this->sale_invoice_id !== null;
+    }
+
+    /**
      * Stamp the advance invoice that documents this entry — the only setter
      * of `advance_invoice_id`, once, and only on an entry. The link is
      * one-to-one in BOTH directions (AID-1778 §5.6, O2): an entry cannot
@@ -274,9 +297,12 @@ class CreditMovement extends Model
             // different invoice locks, so one passes its own conflict check
             // and must lose here, surfacing ::forMovement (unchanged from
             // 8.3.0). No subquery over credit_movements — no ERROR 1093.
+            // AID-1825: a voucher-backed entry (`sale_invoice_id` set) is
+            // never an advance's entry — its VAT was declared by the sale.
             $affected = static::query()
                 ->whereKey($this->getKey())
                 ->whereNull('advance_invoice_id')
+                ->whereNull('sale_invoice_id')
                 ->whereIn('kind', self::entryKindValues())
                 ->update(['advance_invoice_id' => $locked->getKey()]);
 
@@ -287,6 +313,10 @@ class CreditMovement extends Model
 
                 if ($current->isExit()) {
                     throw InvalidCreditMovementException::notAnEntry((string) $current->id);
+                }
+
+                if ($current->isVoucherBacked()) {
+                    throw InvalidCreditMovementException::voucherBacked((string) $current->id, (string) $current->sale_invoice_id);
                 }
 
                 throw CreditMovementAlreadyLinkedException::forMovement((string) $current->id, (string) $current->advance_invoice_id);

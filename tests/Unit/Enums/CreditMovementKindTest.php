@@ -20,9 +20,9 @@ it('splits kinds into entries and exits', function () {
         ->and(CreditMovementKind::SURPLUS->isExit())->toBeFalse();
 });
 
-it('exposes non-empty labels and a 4-entry array', function () {
+it('exposes non-empty labels and a 5-entry array', function () {
     foreach (CreditMovementKind::cases() as $case) {
         expect($case->label())->toBeString()->not->toBeEmpty()->not->toContain('larabill::');
     }
-    expect(CreditMovementKind::toArray())->toHaveCount(4);
+    expect(CreditMovementKind::toArray())->toHaveCount(5); // AID-1825 adds CONSUMED
 });

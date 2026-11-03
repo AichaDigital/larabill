@@ -29,6 +29,23 @@ final class InvoiceNotCancellableException extends \RuntimeException
         ));
     }
 
+    public static function notAProforma(Invoice $invoice): self
+    {
+        return new self(sprintf(
+            'Document [%s] cannot be cancelled through cancelProforma(): it is not a proforma (AID-1825 §1 item 6).',
+            (string) $invoice->getKey(),
+        ));
+    }
+
+    public static function proformaNotInForce(Invoice $invoice): self
+    {
+        return new self(sprintf(
+            'Proforma [%s] cannot be cancelled: its collection status is %s — only a DRAFT or SENT proforma is in force, and a closed proforma is never reopened (AID-1825 §1 item 6).',
+            (string) $invoice->getKey(),
+            $invoice->status->name,
+        ));
+    }
+
     public static function notConversionBorn(Invoice $invoice): self
     {
         return new self(sprintf(

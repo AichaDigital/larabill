@@ -6,21 +6,28 @@ namespace AichaDigital\Larabill\Services;
 
 use AichaDigital\Lara100\ValueObjects\FixedDecimal;
 use AichaDigital\Larabill\Contracts\Services\FiscalVerificationContract;
+use AichaDigital\Larabill\Contracts\Services\VoucherSaleIssuanceHookContract;
 use AichaDigital\Larabill\DTO\ProformaConversionResult;
 use AichaDigital\Larabill\Enums\FiscalSubmissionStatus;
 use AichaDigital\Larabill\Enums\InvoiceDocumentStatus;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Enums\ItemType;
+use AichaDigital\Larabill\Enums\SaleIntegrityReason;
 use AichaDigital\Larabill\Exceptions\FiscalConfigChangedException;
 use AichaDigital\Larabill\Exceptions\InvalidInvoiceStatusException;
 use AichaDigital\Larabill\Exceptions\InvoiceNotCancellableException;
 use AichaDigital\Larabill\Exceptions\InvoiceNotIssuableException;
 use AichaDigital\Larabill\Exceptions\ReverseChargeWithTaxException;
+use AichaDigital\Larabill\Exceptions\SaleClaimedException;
+use AichaDigital\Larabill\Exceptions\SaleIntegrityException;
 use AichaDigital\Larabill\Models\CompanyFiscalConfig;
+use AichaDigital\Larabill\Models\GroupedPayment;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\InvoiceItem;
 use AichaDigital\Larabill\Models\UserTaxProfile;
+use AichaDigital\Larabill\Models\VoucherSaleClaim;
+use AichaDigital\Larabill\Support\CheckedWrite;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
@@ -327,6 +334,23 @@ class InvoiceService
         return DB::transaction(function () use ($invoice): Invoice {
             $conversionBorn = $invoice->proforma_id !== null;
 
+            // AID-1825 (gate round 5): a voucher sale locks its funding
+            // payment FIRST (the global order payment → proforma → invoice)
+            // and holds it through issuance, so the payment cannot drift
+            // between S3a's check and the number — and is re-checked after
+            // the consumer hook, which runs on this same connection.
+            $saleClaim   = null;
+            $salePayment = null;
+            $saleClaimId = $invoice->getAttribute('sale_claim_id'); // set at S2, never changes afterwards
+            if ($saleClaimId !== null) {
+                $saleClaim   = VoucherSaleClaim::query()->whereKey($saleClaimId)->first();
+                $salePayment = $saleClaim === null ? null : GroupedPayment::query()->whereKey($saleClaim->grouped_payment_id)->lockForUpdate()->first();
+                if ($saleClaim === null || $salePayment === null) {
+                    throw SaleIntegrityException::because(SaleIntegrityReason::ClaimMissing, (string) $saleClaimId, (string) $invoice->getKey(), 'the sale claim or its payment no longer exists at issuance');
+                }
+                $saleClaim->assertPaymentMatches($salePayment, (string) $invoice->getKey());
+            }
+
             // Lock order (§6.3): proforma → invoice. Round 1 finding V3.
             $proforma = null;
             if ($conversionBorn) {
@@ -338,6 +362,13 @@ class InvoiceService
             // invoice returns itself unchanged.
             if ($invoice->invoice_document_status === InvoiceDocumentStatus::ISSUED) {
                 return $invoice;
+            }
+
+            // AID-1825 §1a rule 1: a voucher-sale invoice is issued by the
+            // sale only — outside sellVoucher() the correlative is not consumed.
+            $saleClaimId = $invoice->getAttribute('sale_claim_id');
+            if ($saleClaimId !== null && ! VoucherSaleClaim::isAuthorizedFor((string) $saleClaimId)) {
+                throw SaleClaimedException::invoice((string) $invoice->id, (string) $saleClaimId, 'issue()');
             }
 
             // Eligibility (§6 step 1): DRAFT (direct) or PREPARED
@@ -380,6 +411,26 @@ class InvoiceService
             // AMBIENT transaction (§6.1, round 1 finding S1): no nested
             // DB::transaction; the first-use deadlock-recovery contract of
             // AID-390 is covered by THIS outermost retry.
+            // AID-1825 (gate round 4): a voucher sale is issued in the claim's
+            // currency or not at all — checked BEFORE the correlative is
+            // consumed, so a config changed between S3a and this transaction
+            // is refused instead of being frozen into a numbered document.
+            // AID-1825 (gate round 6): the LOCKED invoice against the claim —
+            // total, payer and the claim link — before the number is consumed.
+            if ($saleClaim !== null) {
+                $saleClaim->assertInvoiceMatches($invoice, preSettlement: true);
+            }
+
+            $saleConfig = null;
+            if ($saleClaim !== null) {
+                // The config row is LOCKED and this very instance is the one
+                // the snapshots are stamped from below (one read, not two).
+                $saleConfig = CompanyFiscalConfig::withTrashed()->whereKey((int) $invoice->company_fiscal_config_id)->lockForUpdate()->first();
+                if ($saleConfig?->currency !== $saleClaim->expected_currency) {
+                    throw SaleIntegrityException::because(SaleIntegrityReason::CurrencyDrift, (string) $saleClaim->id, (string) $invoice->id, 'the fiscal config currency ('.($saleConfig?->currency ?? 'none').") differs from the claim's {$saleClaim->expected_currency} at issuance");
+                }
+            }
+
             $instant = now();
             $number  = $this->invoiceNumbering->generateNumberInTransaction(
                 $invoice->prefix,
@@ -418,7 +469,7 @@ class InvoiceService
             // freezes its context as of issuance (ADR-001) — a stale birth
             // issuer/customer snapshot next to a fresh fiscal snapshot would
             // contradict the row it claims to describe.
-            $companyConfig   = CompanyFiscalConfig::withTrashed()->findOrFail((int) $invoice->company_fiscal_config_id);
+            $companyConfig   = $saleConfig ?? CompanyFiscalConfig::withTrashed()->findOrFail((int) $invoice->company_fiscal_config_id);
             $customerProfile = $invoice->user_tax_profile_id
                 ? UserTaxProfile::withTrashed()->findOrFail((int) $invoice->user_tax_profile_id)
                 : null;
@@ -437,14 +488,43 @@ class InvoiceService
                     $invoice->customer_snapshot = $invoice->generateBillableUserSnapshot($issuerModel, $customerProfile);
                 }
                 $invoice->fiscal_snapshot = $invoice->generateFiscalContextSnapshot($companyConfig, $customerProfile);
-                $invoice->save();
+                // A vetoed save must not commit the consumed number (gate round 2).
+                CheckedWrite::orFail($invoice->save(), 'the ISSUED document');
             });
 
             // §6 step 8: document → ISSUED; conversion-born: the proforma's
             // collection axis moves CONVERTING → CONVERTED. The collection
             // axis of THIS document stays DRAFT (§5.2).
             if ($proforma !== null) {
-                $proforma->update(['status' => InvoiceStatus::CONVERTED->value]);
+                CheckedWrite::orFail($proforma->update(['status' => InvoiceStatus::CONVERTED->value]), 'the proforma CONVERTED mirror');
+            }
+
+            // AID-1825 §3: the sale mark — written INSIDE this transaction, so
+            // «issued by the sale» commits with the number or not at all —
+            // and the optional issuance hook, same transaction, same
+            // connection, after the mark: the consumer's local fiscal record
+            // commits with the number or not at all. A throwing hook rolls
+            // everything back (no number consumed, no mark).
+            if ($saleClaimId !== null) {
+                VoucherSaleClaim::query()->whereKey($saleClaimId)->update(['issued_by_sale' => true]);
+
+                if (app()->bound(VoucherSaleIssuanceHookContract::class)) {
+                    $issued = $invoice->fresh() ?? $invoice;
+                    // Consumer code runs WITHOUT the sale authorization: it may
+                    // write its own tables, never a claimed row (gate round 1 B4).
+                    VoucherSaleClaim::withoutSaleAuthorization(
+                        fn () => app(VoucherSaleIssuanceHookContract::class)->afterIssue($issued),
+                    );
+                    VoucherSaleClaim::query()->whereKey($saleClaimId)->update(['hook_ran' => true]);
+
+                    // The hook ran on THIS connection: a payment or an invoice
+                    // collection state it touched is caught here and rolls the
+                    // whole issuance back (gate rounds 5 and 7).
+                    if ($saleClaim !== null && $salePayment !== null) {
+                        $saleClaim->assertPaymentMatches(GroupedPayment::query()->whereKey($salePayment->getKey())->lockForUpdate()->firstOrFail(), (string) $invoice->id);
+                        $saleClaim->assertInvoiceMatches(Invoice::query()->whereKey($invoice->getKey())->lockForUpdate()->firstOrFail(), preSettlement: true);
+                    }
+                }
             }
 
             return $invoice->fresh() ?? $invoice;
@@ -486,6 +566,13 @@ class InvoiceService
                 throw InvoiceNotCancellableException::forDocumentStatus($invoice, $invoice->invoice_document_status);
             }
 
+            // AID-1825 §1a rule 1: the PREPARED invoice of a claimed sale is
+            // released by the sale only (reverse() at stage PENDING).
+            $saleClaimId = $invoice->getAttribute('sale_claim_id');
+            if ($saleClaimId !== null && ! VoucherSaleClaim::isAuthorizedFor((string) $saleClaimId)) {
+                throw SaleClaimedException::invoice((string) $invoice->id, (string) $saleClaimId, 'cancelPreparedInvoice()');
+            }
+
             if ($proforma === null) {
                 throw InvoiceNotCancellableException::notConversionBorn($invoice);
             }
@@ -494,15 +581,15 @@ class InvoiceService
             $invoice->invoice_document_status = InvoiceDocumentStatus::CANCELLED;
             $invoice->document_cancelled_at   = now();
             $invoice->document_cancelled_by   = $actor;
-            $invoice->save();
+            CheckedWrite::orFail($invoice->save(), 'the CANCELLED prepared document');
 
             // The proforma: back to DRAFT, mirror cleared, re-convertible.
-            $proforma->update([
+            CheckedWrite::orFail($proforma->update([
                 'status'               => InvoiceStatus::DRAFT->value,
                 'is_immutable'         => false,
                 'converted_invoice_id' => null,
                 'converted_at'         => null,
-            ]);
+            ]), 'the proforma release');
 
             return $invoice->fresh() ?? $invoice;
         }, 3);
@@ -591,6 +678,13 @@ class InvoiceService
 
             if ($proforma->serie !== InvoiceSerieType::PROFORMA) {
                 throw new \InvalidArgumentException('Invoice is not a proforma');
+            }
+
+            // AID-1825 §1a rule 1: a proforma claimed by a voucher sale is
+            // converted by the sale only. Unclaimed proformas: no change.
+            $claimId = VoucherSaleClaim::query()->where('proforma_id', $proforma->getKey())->value('id');
+            if ($claimId !== null && ! VoucherSaleClaim::isAuthorizedFor((string) $claimId)) {
+                throw SaleClaimedException::proforma((string) $proforma->id, (string) $claimId, 'convertProformaToInvoice()');
             }
 
             // Idempotency check (§3.2, unchanged): return the already-converted
@@ -686,12 +780,12 @@ class InvoiceService
 
             // §9: the proforma freezes at conversion — CONVERTING, immutable,
             // mirror written at conversion (unchanged), conversion instant.
-            $proforma->update([
+            CheckedWrite::orFail($proforma->update([
                 'is_immutable'         => true,
                 'converted_invoice_id' => $invoice->id,
                 'converted_at'         => now(),
                 'status'               => InvoiceStatus::CONVERTING->value,
-            ]);
+            ]), 'the proforma CONVERTING freeze');
 
             return new ProformaConversionResult($invoice, $warnings);
         }, 3);
@@ -903,7 +997,7 @@ class InvoiceService
             ? $this->invoiceNumbering->generateNumber($series, $serie)
             : null;
 
-        $invoice = Invoice::create([
+        $invoice = new Invoice([
             'fiscal_number'             => $number?->formatted,
             'prefix'                    => $series,
             'serie'                     => $serie,
@@ -949,6 +1043,8 @@ class InvoiceService
             'payment_terms'             => $invoiceData['payment_terms'] ?? null,
             'template_name'             => $invoiceData['template_name'] ?? null,
         ]);
+        // A vetoed row save must not leave an unsaved model the lines then reference (gate round 5).
+        CheckedWrite::orFail($invoice->save(), 'the invoice row');
 
         // Create invoice items
         $items = $invoiceData['items'] ?? [];
@@ -983,7 +1079,7 @@ class InvoiceService
             ?? $this->generateBillableUserSnapshot($billableUser, $userTaxProfile);
         $invoice->fiscal_snapshot   = $invoice->generateFiscalContextSnapshot($companyConfig, $userTaxProfile);
 
-        $invoice->save();
+        CheckedWrite::orFail($invoice->save(), 'the invoice totals and snapshots');
 
         // Make immutable if requested
         if ($options['make_immutable'] ?? false) {
@@ -1098,6 +1194,21 @@ class InvoiceService
     }
 
     /**
+     * One invoice line, written and CHECKED: a vetoed line save throws inside
+     * the caller's transaction instead of leaving a document without the
+     * line (implementation gate round 3).
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    private function persistItem(array $attributes): InvoiceItem
+    {
+        $item = new InvoiceItem($attributes);
+        CheckedWrite::orFail($item->save(), 'an invoice line');
+
+        return $item;
+    }
+
+    /**
      * Create an invoice item with tax calculation.
      *
      * When the frozen keys are present (total_amount et al.), the line is
@@ -1116,7 +1227,7 @@ class InvoiceService
         $basePrice = $itemData['base_price']  ?? ($itemData['unit_price'] ?? 0);
 
         if (array_key_exists('total_amount', $itemData)) {
-            return InvoiceItem::create([
+            return $this->persistItem([
                 'invoice_id'         => $invoice->id,
                 'article_id'         => $itemData['article_id']        ?? null,
                 'item_type'          => $itemData['item_type']         ?? ItemType::GOOD,
@@ -1149,7 +1260,7 @@ class InvoiceService
         // promises. They used to be dropped on this branch, which broke any
         // caller relying on them — notably the recurring flow's idempotency
         // check, which filters on metadata + service_date_from.
-        return InvoiceItem::create([
+        return $this->persistItem([
             'invoice_id'         => $invoice->id,
             'article_id'         => $itemData['article_id']        ?? null,
             'item_type'          => $itemData['item_type']         ?? ItemType::GOOD,

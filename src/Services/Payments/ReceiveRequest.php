@@ -42,7 +42,36 @@ final readonly class ReceiveRequest
         public CreditMovementKind $creditKind,
         public string $idempotencyKey,
         public bool $replayOnly = false,
+        /** AID-1825 S1: false records the payment with NO remainder entry (recorded, not spendable). */
+        public bool $remainderEntry = true,
     ) {}
+
+    /**
+     * The S1 recording of a voucher sale (AID-1825 minimal scope §1): the
+     * payment is recorded POSTED with no allocation and NO credit entry — the
+     * money is recorded, not spendable, until S3b backs it. The key is the
+     * sale's own: the consumer-declared payment event, never derived.
+     *
+     * @internal Built by VoucherSaleService only.
+     */
+    public static function forVoucherSale(
+        string $billableUserId,
+        FixedDecimal $amount,
+        string $currency,
+        DateTimeInterface $receivedAt,
+        PaymentMethod $method,
+        ?string $reference,
+        ?string $recordedBy,
+        string $idempotencyKey,
+    ): self {
+        $request = self::fromReceive($billableUserId, $amount, $currency, $receivedAt, $method, $reference, $recordedBy, [], CreditMovementKind::TOP_UP, $idempotencyKey);
+
+        return new self(
+            $request->billableUserId, $request->amount, $request->currency, $request->receivedAt, $request->method,
+            $request->reference, $request->recordedBy, [], $request->creditKind, $request->idempotencyKey,
+            replayOnly: false, remainderEntry: false,
+        );
+    }
 
     /**
      * Validate the receive() input (spec §5.1.2) and derive the key when none

@@ -103,6 +103,10 @@ class LarabillInstallCommand extends Command
         // Additive nullable column first, then the 8.3.0 backfill (E1+E2+E3,
         // conservative reconstruction or declared-unresolvable NULL) — one file.
         '054' => 'add_band_start_to_credit_movements',
+        // AID-1825 (9.2): voucher sales — credit_operations, voucher_sale_claims,
+        // credit_movements.sale_invoice_id/credit_operation_id/service_*,
+        // invoices.sale_claim_id. Additive; no backfill.
+        '055' => 'add_voucher_sales',
     ];
 
     public function handle(): int

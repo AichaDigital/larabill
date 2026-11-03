@@ -48,6 +48,7 @@ return [
         'top_up'   => 'Top-up',
         'applied'  => 'Applied',
         'refunded' => 'Refunded',
+        'consumed' => 'Consumed',
     ],
 
     'unit_category' => [

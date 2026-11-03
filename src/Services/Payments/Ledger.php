@@ -10,8 +10,10 @@ use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Exceptions\AllocationExceedsInvoiceException;
 use AichaDigital\Larabill\Exceptions\GroupedPaymentValidationException;
+use AichaDigital\Larabill\Exceptions\SaleClaimedException;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\PaymentAllocation;
+use AichaDigital\Larabill\Support\CheckedWrite;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -121,6 +123,25 @@ final class Ledger
     }
 
     /**
+     * AID-1825 §1a rule 2 — no collection by another path. An invoice that
+     * carries `sale_claim_id` is a voucher-sale invoice: its only collection
+     * is the allocation S3b writes under the claim. Called by every
+     * allocation writer (process(), allocate(), CustomerCredit::apply()) on
+     * the LOCKED instance, after assertPayable(); an invoice without a claim
+     * passes untouched (9.1 behaviour).
+     *
+     * @throws SaleClaimedException
+     */
+    public static function assertNotClaimedSale(Invoice $invoice, string $operation): void
+    {
+        $claimId = $invoice->getAttribute('sale_claim_id');
+
+        if ($claimId !== null) {
+            throw SaleClaimedException::invoice((string) $invoice->id, (string) $claimId, $operation);
+        }
+    }
+
+    /**
      * The last §5.1.3 check: $amount ≤ amountOutstanding(), read with a fresh
      * query on the locked invoice.
      *
@@ -174,7 +195,7 @@ final class Ledger
      */
     public static function createAllocation(string $paymentId, Invoice $invoice, FixedDecimal $amount, DateTimeInterface $appliedAt): PaymentAllocation
     {
-        return PaymentAllocation::query()->create([
+        $allocation = new PaymentAllocation([
             'grouped_payment_id' => $paymentId,
             'invoice_id'         => $invoice->id,
             'applied_amount'     => $amount,
@@ -184,5 +205,8 @@ final class Ledger
             'previous_status'    => $invoice->status->value,
             'previous_paid_at'   => $invoice->paid_at,
         ]);
+        CheckedWrite::orFail($allocation->save(), 'the payment allocation');
+
+        return $allocation;
     }
 }

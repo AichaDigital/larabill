@@ -152,6 +152,13 @@
             "type": "BelongsTo",
             "withTrashed": false
         },
+        "saleClaim": {
+            "foreignKey": "sale_claim_id",
+            "ownerKey": "id",
+            "related": "AichaDigital\\Larabill\\Models\\VoucherSaleClaim",
+            "type": "BelongsTo",
+            "withTrashed": false
+        },
         "user": {
             "foreignKey": "user_id",
             "ownerKey": "id",
@@ -324,6 +331,13 @@
             "returnType": "void",
             "static": false
         },
+        "assertNotFiscallyEditedWhileClaimed": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "void",
+            "static": false
+        },
         "calculateTotals": {
             "api": false,
             "deprecated": false,
@@ -336,6 +350,13 @@
             "deprecated": false,
             "parameters": [],
             "returnType": "array",
+            "static": false
+        },
+        "delete": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [],
+            "returnType": "?bool",
             "static": false
         },
         "generateBillableUserSnapshot": {
@@ -561,6 +582,20 @@
             "returnType": "void",
             "static": false
         },
+        "openSaleClaim": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "lock",
+                    "type": "bool",
+                    "variadic": false,
+                    "default": "false"
+                }
+            ],
+            "returnType": "?AichaDigital\\Larabill\\Models\\VoucherSaleClaim",
+            "static": false
+        },
         "pdfFilename": {
             "api": false,
             "deprecated": false,
@@ -631,6 +666,20 @@
             "deprecated": false,
             "parameters": [],
             "returnType": "?DateTimeInterface",
+            "static": false
+        },
+        "save": {
+            "api": false,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "options",
+                    "type": "array",
+                    "variadic": false,
+                    "default": "array (\n)"
+                }
+            ],
+            "returnType": "bool",
             "static": false
         },
         "shouldIncludeQR": {

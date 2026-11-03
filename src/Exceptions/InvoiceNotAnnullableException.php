@@ -56,6 +56,14 @@ final class InvoiceNotAnnullableException extends RuntimeException
         );
     }
 
+    public static function voucherSale(Invoice $invoice, int $entries): self
+    {
+        return new self(
+            "Invoice [{$invoice->fiscal_number}] is a voucher-sale invoice backing {$entries} credit entr(y/ies) and cannot be annulled: ".
+            'annulment asserts the invoice never existed, which contradicts the voucher balance it created — live or consumed (AID-1825 §1 item 4).'
+        );
+    }
+
     public static function hasActiveAllocations(Invoice $invoice, int $count): self
     {
         return new self(
