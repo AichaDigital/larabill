@@ -4,6 +4,12 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+> **Ships migrations: no.** Upgrade: `composer update aichadigital/larabill`, nothing else.
+
+### Fixed
+
+- **`SettlementService::rectify()` refuses a voucher-sale invoice (`InvoiceNotRectifiableException::forVoucherSale`, AID-1852).** **Old (9.2.0):** `assertRectifiable()` refused only proformas, drafts and annulled invoices, so a voucher-sale invoice could be rectified — the rectificative lowered `CustomerCredit::outstanding()` while the voucher entry it does not touch kept `balance()` whole (`refund()` never plans a voucher entry), so the customer's `position()` ROSE by the refunded amount and the refunded voucher stayed consumable. **New:** the guard reads `sale_claim_id` from the row (written by the sale only; an instance loaded without the column does not slip through) and refuses on every route — full, partial and keyed — before any write. Mirrors the `annul()` refusal shipped in 9.2.0. Refunding a voucher remains unsupported; that path waits for its fiscal decisions.
+
 ## [9.2.0] - 2026-11-03
 
 > **Ships migrations: yes** — `2026_11_01_000001_add_voucher_sales` (055) is additive (new tables `credit_operations` and `voucher_sale_claims`; nullable `credit_movements.sale_invoice_id`, `credit_operation_id`, `service_ref`, `service_description`; nullable `invoices.sale_claim_id`), **no backfill**: a 9.1 database has no voucher, no claim and no consumption. Resumable at constraint level: tables and columns are guarded by existence and every unique, index and foreign key is ensured on its own (the schema builder emits them as separate statements), so a run interrupted between statements adds only what is missing on rerun; on SQLite the foreign keys added to existing tables are skipped (the builder cannot add them there — the SQLite path is the test suite). Upgrade: `composer update aichadigital/larabill` + `php artisan larabill:install` (idempotent — publishes 055) + `php artisan migrate`. `migrate:fresh` is never part of the path.

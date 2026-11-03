@@ -524,6 +524,18 @@ final class SettlementService
         if ($original->status === InvoiceStatus::CANCELLED) {
             throw InvoiceNotRectifiableException::forAnnulled($original);
         }
+
+        // AID-1825: a voucher-sale invoice backs a voucher balance that no
+        // rectificative can take back (refund() never plans a voucher entry),
+        // so a rectificative would lower outstanding() while balance() stays
+        // whole — the customer's position would rise by the refunded amount
+        // and the refunded voucher would stay consumable. The marker is read
+        // from the row: `sale_claim_id` is written by the sale only, and an
+        // instance loaded without the column must not slip through.
+        $saleClaimId = Invoice::query()->whereKey($original->getKey())->value('sale_claim_id');
+        if ($saleClaimId !== null) {
+            throw InvoiceNotRectifiableException::forVoucherSale($original);
+        }
     }
 
     /**
