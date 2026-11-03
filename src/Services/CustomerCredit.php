@@ -189,22 +189,25 @@ final class CustomerCredit
 
         $consumable    = FixedDecimal::zero(2);
         $advanceBacked = FixedDecimal::zero(2);
+        $voucherBacked = FixedDecimal::zero(2);
         $live          = [];
         foreach ($entries as $entry) {
             $remaining = $entry->amount->plus(FixedDecimal::ofUnscaled($consumed[(string) $entry->id] ?? 0, 2))->toScale(2);
 
-            if ($entry->advance_invoice_id === null) {
+            if ($entry->sale_invoice_id !== null) {
+                $voucherBacked = $voucherBacked->plus($remaining); // AID-1825: the voucher's own part
+            } elseif ($entry->advance_invoice_id === null) {
                 $consumable = $consumable->plus($remaining);
             } else {
                 $advanceBacked = $advanceBacked->plus($remaining);
             }
 
             if ($remaining->isPositive()) {
-                $live[] = new CreditEntryRemainder((string) $entry->id, $remaining, $entry->advance_invoice_id);
+                $live[] = new CreditEntryRemainder((string) $entry->id, $remaining, $entry->advance_invoice_id, $entry->sale_invoice_id);
             }
         }
 
-        return new CreditBreakdown($consumable->toScale(2), $advanceBacked->toScale(2), $live);
+        return new CreditBreakdown($consumable->toScale(2), $advanceBacked->toScale(2), $live, $voucherBacked->toScale(2));
     }
 
     /**
@@ -267,6 +270,7 @@ final class CustomerCredit
             $fiscal = $target->companyFiscalConfig?->currency;
             // With no fiscal currency the §5.1.3 currency check does not apply (D3); any value passes it.
             Ledger::assertPayable($target, $billableUserId, $fiscal ?? '', Ledger::payableStatuses());
+            Ledger::assertNotClaimedSale($target, 'applying credit'); // AID-1825 §1a rule 2: legacy credit is never applied TO a sale invoice
 
             $currency = $fiscal ?? self::inferCurrency($billableUserId, $locked);
             $plan     = self::plan($billableUserId, $currency, $locked, $amount);
@@ -381,6 +385,7 @@ final class CustomerCredit
                 ->where('billable_user_id', $billableUserId)
                 ->active()
                 ->entries()
+                ->notVoucherBacked() // AID-1825: a voucher is not a currency hint for a payment
                 ->whereIn('grouped_payment_id', $locked->keys()->all())
                 ->get();
 
@@ -413,6 +418,7 @@ final class CustomerCredit
             ->when($currency !== null, fn (Builder $query) => $query->where('currency', $currency))
             ->active()
             ->entries()
+            ->notVoucherBacked() // AID-1825: a voucher-only payment is never a source payment
             ->whereIn('grouped_payment_id', GroupedPayment::query()->select('id')->where('status', GroupedPaymentStatus::POSTED->value))
             ->distinct()
             ->pluck('grouped_payment_id')
@@ -470,6 +476,7 @@ final class CustomerCredit
             ->where('currency', $currency)
             ->active()
             ->entries()
+            ->notVoucherBacked() // AID-1825 §1 item 4: never a payment, never a refund
             ->whereIn('grouped_payment_id', $locked->keys()->all())
             ->orderBy('occurred_at')
             ->orderBy('id')

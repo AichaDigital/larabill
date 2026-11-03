@@ -15,6 +15,7 @@ use AichaDigital\Larabill\Exceptions\InvoiceNotRectifiableException;
 use AichaDigital\Larabill\Exceptions\UnresolvableRectificationRateException;
 use AichaDigital\Larabill\Exceptions\UnsettleableInvoiceException;
 use AichaDigital\Larabill\Models\Article;
+use AichaDigital\Larabill\Models\CreditMovement;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\InvoiceItem;
 use Brick\Math\BigDecimal;
@@ -475,6 +476,16 @@ final class SettlementService
 
         if ($original->status === InvoiceStatus::DRAFT) {
             throw InvoiceNotAnnullableException::forDraft($original);
+        }
+
+        // AID-1825 §1 item 4: a voucher-sale invoice is never annulled —
+        // unbacked (its claim is still in progress), with live balance or
+        // with consumptions: the balance it created is, was or will be real.
+        // Detected by the claim link AND by the entries (a lost claim still
+        // refuses). Invoices a sale never touched: no change.
+        $voucherEntries = CreditMovement::query()->where('sale_invoice_id', $original->getKey())->count();
+        if ($voucherEntries > 0 || $original->getAttribute('sale_claim_id') !== null) {
+            throw InvoiceNotAnnullableException::voucherSale($original, $voucherEntries);
         }
 
         if ($original->status === InvoiceStatus::CANCELLED) {

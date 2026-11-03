@@ -14,7 +14,9 @@ use AichaDigital\Larabill\Enums\FiscalSubmissionStatus;
 use AichaDigital\Larabill\Enums\InvoiceDocumentStatus;
 use AichaDigital\Larabill\Enums\InvoiceSerieType;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
+use AichaDigital\Larabill\Enums\VoucherSaleStage;
 use AichaDigital\Larabill\Exceptions\InvoiceDocumentCoherenceException;
+use AichaDigital\Larabill\Exceptions\SaleClaimedException;
 use AichaDigital\Larabill\Services\FiscalIntegrityChecker;
 use AichaDigital\Larabill\Services\ModelMappingService;
 use AichaDigital\Larabill\Services\PDF\PDFService;
@@ -68,6 +70,7 @@ use Illuminate\Support\Facades\DB;
  * @property int|null $company_fiscal_config_id FK to company_fiscal_configs (ADR-001)
  * @property int|null $user_tax_profile_id FK to user_tax_profiles (ADR-003)
  * @property string|null $proforma_id UUID if converted from proforma
+ * @property string|null $sale_claim_id Voucher-sale claim this invoice was born of (AID-1825); written by the sale only, never fillable
  * @property string|null $rectifies_invoice_id UUID if rectificative
  * @property string|null $settlement_operation_key Deterministic settlement operation key (ADR-015 §3.4, guarantee): `guarantee_ops:{registry_row_uuid}`. UNIQUE on this table — the serialisation point of idempotent settlement issuance: a second issuance for the same claim collides on this index and ADOPTS the existing artifact instead of issuing a duplicate fiscal correction. NULL for every document minted outside a guarantee settlement.
  * @property string|null $issuer_snapshot Encrypted issuer data (v0.4.0)
@@ -163,6 +166,10 @@ class Invoice extends Model implements LegallyRetainable
         // transition is the one legitimate writer of the five number/issuance
         // fields on an already-protected row.
         static::updating(function (Invoice $invoice): void {
+            // The claim guard runs FIRST: it locks this row and adopts its
+            // committed protection state, so the fiscal lock below judges the
+            // row as it is now, not as the caller's snapshot read it.
+            $invoice->assertNotFiscallyEditedWhileClaimed();
             $invoice->assertFiscalContentLocked();
         });
 
@@ -172,8 +179,160 @@ class Invoice extends Model implements LegallyRetainable
         // Neither is ever deleted. Bulk/query-builder and external SQL remain
         // documented outside the guarantee (v7 §10 limit, verbatim).
         static::deleting(function (Invoice $invoice): void {
+            // AID-1825 §1a rule 1: a claimed proforma is never deleted
+            // outside the sale. Locks the row and adopts its committed state
+            // first, so assertDeletable() judges the row as it is now.
+            $claim = $invoice->openSaleClaim(lock: true);
+            if ($claim !== null && ! VoucherSaleClaim::isAuthorizedFor((string) $claim->id)) {
+                throw SaleClaimedException::proforma((string) $invoice->getKey(), (string) $claim->id, 'delete()');
+            }
+
             $invoice->assertDeletable();
         });
+    }
+
+    /**
+     * The voucher-sale claim that still protects this row (AID-1825 §1a rule
+     * 1): the claim an invoice carries through `sale_claim_id`, or the claim
+     * placed on this proforma — while its stage is PENDING or ISSUING. A
+     * BACKED claim no longer needs it: the invoice is ISSUED and the proforma
+     * CONVERTED, both protected by the ordinary guards. Null on every row a
+     * sale never touched, so 9.1 behaviour is unchanged.
+     */
+    public function openSaleClaim(bool $lock = false): ?VoucherSaleClaim
+    {
+        // The guards lock THIS row first (a single-row lock, never a range):
+        // S1 holds the proforma row lock while it writes the claim, so an
+        // editor racing S1 waits here and then reads the committed claim
+        // instead of passing the check and writing after S1 (gate round 1,
+        // suspected claim/edit race). Autocommit callers wait the same way.
+        // The locking read also returns the row AS COMMITTED NOW — a caller
+        // inside an older repeatable-read snapshot would otherwise judge a
+        // proforma the sale has since converted and frozen by its stale
+        // copy (gate round 3, stale parent state) — so the protection
+        // columns are adopted from it before anything is decided.
+        if ($lock && $this->exists) {
+            $committed = $this->newModelQuery()->whereKey($this->getKey())->lockForUpdate()->first();
+            if ($committed !== null) {
+                $this->adoptCommittedProtectionState($committed->getAttributes());
+            }
+        }
+
+        $claimId = $this->getRawOriginal('sale_claim_id');
+
+        if ($claimId === null && $this->getRawOriginal('serie') !== InvoiceSerieType::PROFORMA->value) {
+            return null; // not a proforma, not a sale invoice: never claimed
+        }
+
+        // Under $lock the claim is read with a LOCKING read: a plain read
+        // inside an open transaction answers from that transaction's snapshot
+        // and may miss a claim committed while this row's lock was awaited
+        // (gate round 2, suspected snapshot race); a locking read always
+        // returns the latest committed row.
+        $query = $claimId !== null
+            ? VoucherSaleClaim::query()->whereKey($claimId)
+            : VoucherSaleClaim::query()->where('proforma_id', $this->getKey());
+        $claim = $lock ? $query->lockForUpdate()->first() : $query->first();
+
+        return $claim !== null && $claim->stage !== VoucherSaleStage::Backed ? $claim : null;
+    }
+
+    /**
+     * `is_immutable` true → false is the write that would reopen a frozen
+     * proforma to fiscal edits. It is refused on a CONVERTED proforma (its
+     * issued child exists — the freeze is permanent) and on a proforma a
+     * voucher sale ever claimed, at ANY stage, outside the sale (the sale's
+     * own release path runs under its authorization). Gate round 4: once a
+     * claim is BACKED the claim guard stands down and the ordinary immutable
+     * guard was the only protection left — and it could be switched off.
+     * An ordinary CONVERTING proforma keeps 9.1 behaviour: its release
+     * (`cancelPreparedInvoice()`) unfreezes it together with the status.
+     *
+     * @throws SaleClaimedException|\Exception
+     */
+    private function assertNotUnfrozenAfterConversion(?VoucherSaleClaim $openClaim): void
+    {
+        if (! $this->isDirty('is_immutable') || (bool) $this->getRawOriginal('is_immutable') !== true || (bool) $this->getAttribute('is_immutable') !== false) {
+            return;
+        }
+
+        if ($this->getRawOriginal('serie') !== InvoiceSerieType::PROFORMA->value) {
+            return;
+        }
+
+        $claim = $openClaim ?? VoucherSaleClaim::query()->where('proforma_id', $this->getKey())->first();
+        if ($claim !== null && VoucherSaleClaim::isAuthorizedFor((string) $claim->id)) {
+            return;
+        }
+
+        if ($claim !== null) {
+            throw SaleClaimedException::proforma((string) $this->getKey(), (string) $claim->id, 'unfreezing (is_immutable → false)');
+        }
+
+        if ($this->getRawOriginal('status') === InvoiceStatus::CONVERTED->value) {
+            throw new \Exception(sprintf('Cannot unfreeze proforma %s: it is CONVERTED (its issued invoice exists); the freeze is permanent.', (string) $this->getKey()));
+        }
+    }
+
+    /**
+     * Adopt the committed values of the columns the guards judge by
+     * (`is_immutable`, document/collection status, the sale and conversion
+     * links). A column the caller did NOT change is refreshed in both the
+     * attributes and the original (so no stale value is written back over a
+     * newer one); a column the caller DID change keeps its dirty value and
+     * only its original moves, so the guards compare against the row as it
+     * is now.
+     *
+     * @param  array<string, mixed>  $committed
+     */
+    private function adoptCommittedProtectionState(array $committed): void
+    {
+        foreach (['is_immutable', 'invoice_document_status', 'status', 'sale_claim_id', 'converted_invoice_id', 'converted_at', 'fiscal_number'] as $key) {
+            if (! array_key_exists($key, $committed)) {
+                continue;
+            }
+
+            $wasDirty = array_key_exists($key, $this->attributes)
+                && (! array_key_exists($key, $this->original) || $this->attributes[$key] !== $this->original[$key]);
+
+            $this->original[$key] = $committed[$key];
+            if (! $wasDirty) {
+                $this->attributes[$key] = $committed[$key];
+            }
+        }
+    }
+
+    /**
+     * AID-1825 §1a rule 1 — no fiscal-content edit during the claim: from S1
+     * until BACKED, a change to any FISCAL_CONTENT_FIELDS of the claimed
+     * proforma or its PREPARED invoice is refused outside `sellVoucher()`.
+     * Collection and lifecycle fields keep their own writers (S3b, the sale's
+     * own stage writes run under the sale authorization anyway).
+     *
+     * @throws SaleClaimedException
+     */
+    public function assertNotFiscallyEditedWhileClaimed(): void
+    {
+        // EVERY update locks the row and adopts its committed protection state
+        // (gate round 4: a non-fiscal write from a stale snapshot must be
+        // judged against the row as it is now, too). The claim is read in
+        // the same step.
+        $claim = $this->openSaleClaim(lock: true);
+
+        $this->assertNotUnfrozenAfterConversion($claim);
+
+        $mutated = array_intersect(array_keys($this->getDirty()), self::FISCAL_CONTENT_FIELDS);
+        if ($mutated === []) {
+            return;
+        }
+
+        if ($claim === null || VoucherSaleClaim::isAuthorizedFor((string) $claim->id)) {
+            return;
+        }
+
+        throw $this->getRawOriginal('sale_claim_id') !== null
+            ? SaleClaimedException::invoice((string) $this->getKey(), (string) $claim->id, 'editing '.implode(', ', $mutated))
+            : SaleClaimedException::proforma((string) $this->getKey(), (string) $claim->id, 'editing '.implode(', ', $mutated));
     }
 
     /**
@@ -870,6 +1029,30 @@ class Invoice extends Model implements LegallyRetainable
     }
 
     /**
+     * AID-1825 §1a rule 1: the claim guards in `updating`/`deleting` take
+     * THIS row's lock and then read the claim. That check is only atomic with
+     * the write while the lock is held until the write commits, so every save
+     * and delete runs inside a transaction (a savepoint for callers already in
+     * one). Measured on MySQL 8.4 without it: an autocommit edit racing S1
+     * passed the check before the claim existed, its UPDATE waited on S1's
+     * lock and landed inside the sale window.
+     *
+     * @param  array<string, mixed>  $options
+     */
+    public function save(array $options = []): bool
+    {
+        return (bool) $this->getConnection()->transaction(fn (): bool => parent::save($options));
+    }
+
+    public function delete(): ?bool
+    {
+        /** @var bool|null $deleted */
+        $deleted = $this->getConnection()->transaction(fn (): ?bool => parent::delete());
+
+        return $deleted;
+    }
+
+    /**
      * Override update to prevent modifications of immutable invoices.
      *
      * @param  array<string, mixed>  $attributes
@@ -972,6 +1155,18 @@ class Invoice extends Model implements LegallyRetainable
     public function proforma(): BelongsTo
     {
         return $this->belongsTo(self::class, 'proforma_id');
+    }
+
+    /**
+     * The voucher-sale claim this invoice was born of (AID-1825), null for
+     * every other invoice. `sale_claim_id` is written by the sale only —
+     * never fillable — and is the row every integrity read starts from.
+     *
+     * @return BelongsTo<VoucherSaleClaim, $this>
+     */
+    public function saleClaim(): BelongsTo
+    {
+        return $this->belongsTo(VoucherSaleClaim::class, 'sale_claim_id');
     }
 
     /**

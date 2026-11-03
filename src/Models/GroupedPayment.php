@@ -123,15 +123,18 @@ class GroupedPayment extends Model
     }
 
     /**
-     * Sum of what is left of this payment's ACTIVE credit entries (spec §4.2),
-     * each entry's remaining being its amount plus its active exits.
+     * Sum of what is left of this payment's ACTIVE, NOT voucher-backed credit
+     * entries (spec §4.2), each entry's remaining being its amount plus its
+     * active exits. A voucher-backed entry (AID-1825) is excluded: it funds
+     * no allocation, so it is not available credit of the payment.
      */
     public function availableCredit(): FixedDecimal
     {
         $entries = CreditMovement::query()
             ->where('grouped_payment_id', $this->id)
             ->active()
-            ->entries();
+            ->entries()
+            ->notVoucherBacked();
 
         $entered  = (int) (clone $entries)->sum('amount');
         $consumed = (int) CreditMovement::query()

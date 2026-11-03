@@ -11,6 +11,7 @@ use AichaDigital\Larabill\Casts\AichaMoneyCast;
 use AichaDigital\Larabill\Database\Factories\InvoiceItemFactory;
 use AichaDigital\Larabill\Enums\InvoiceDocumentStatus;
 use AichaDigital\Larabill\Enums\ItemType;
+use AichaDigital\Larabill\Exceptions\SaleClaimedException;
 use AichaDigital\Larabill\Services\ModelMappingService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
@@ -77,19 +78,11 @@ class InvoiceItem extends Model
         parent::boot();
 
         static::saving(function (InvoiceItem $item): void {
-            if ($item->parentInvoiceIsProtected()) {
-                throw new \Exception(sprintf(
-                    'Cannot write invoice lines of a fiscally protected invoice (ADR-016 §6.5: immutable or ISSUED documents are closed to line mutation through any public operation).',
-                ));
-            }
+            $item->guardParents('writing a line');
         });
 
         static::deleting(function (InvoiceItem $item): void {
-            if ($item->parentInvoiceIsProtected()) {
-                throw new \Exception(sprintf(
-                    'Cannot delete invoice lines of a fiscally protected invoice (ADR-016 §6.5: immutable or ISSUED documents are closed to line mutation through any public operation).',
-                ));
-            }
+            $item->guardParents('deleting a line');
         });
     }
 
@@ -97,9 +90,73 @@ class InvoiceItem extends Model
      * Whether the parent invoice's PERSISTED state is fiscally protected
      * (ADR-016 §6.5): immutable, or document status ISSUED.
      */
+    /**
+     * AID-1825 §1a rule 1: the lines of a claimed proforma or of its PREPARED
+     * sale invoice are closed to writes and deletes outside `sellVoucher()`
+     * — a line delete can keep the header total and slip past the header
+     * revalidation, so the lines are guarded on their own events.
+     *
+     * @throws SaleClaimedException
+     */
+    /**
+     * ONE pass over both parents of the write — the ORIGINAL parent (a line
+     * moved out of a document) and the destination (a line moved into one):
+     * locked in id order (the same order for every writer, so two opposite
+     * moves cannot deadlock — gate round 4), each judged by its COMMITTED
+     * state: fiscally protected (immutable or ISSUED — ADR-016 §6.5, now on
+     * the original parent too, gate round 4) or claimed by a voucher sale
+     * outside the sale (AID-1825 §1a rule 1, gate round 1 B3).
+     *
+     * @throws \Exception|SaleClaimedException
+     */
+    public function guardParents(string $operation): void
+    {
+        $parentIds = array_values(array_unique(array_filter([
+            $this->getRawOriginal('invoice_id'),
+            $this->getAttribute('invoice_id'),
+        ], static fn ($id): bool => $id !== null)));
+        sort($parentIds);
+
+        foreach ($parentIds as $parentId) {
+            // A LOCKING read on THIS model's connection: the row as committed
+            // now, held until this write commits (transactional save/delete).
+            $invoice = (new Invoice)->setConnection($this->getConnectionName())->newQuery()->whereKey($parentId)->lockForUpdate()->first();
+            if ($invoice === null) {
+                continue;
+            }
+
+            $originalDoc = $invoice->getRawOriginal('invoice_document_status');
+            if ((bool) $invoice->getRawOriginal('is_immutable') || (is_int($originalDoc) && $originalDoc === InvoiceDocumentStatus::ISSUED->value)) {
+                throw new \Exception(sprintf(
+                    'Cannot %s of a fiscally protected invoice (ADR-016 §6.5: immutable or ISSUED documents are closed to line mutation through any public operation).',
+                    $operation === 'deleting a line' ? 'delete invoice lines' : 'write invoice lines',
+                ));
+            }
+
+            $claim = $invoice->openSaleClaim(lock: true);
+            if ($claim === null || VoucherSaleClaim::isAuthorizedFor((string) $claim->id)) {
+                continue;
+            }
+
+            throw $invoice->getRawOriginal('sale_claim_id') !== null
+                ? SaleClaimedException::invoice((string) $invoice->getKey(), (string) $claim->id, $operation)
+                : SaleClaimedException::proforma((string) $invoice->getKey(), (string) $claim->id, $operation);
+        }
+    }
+
+    /** @deprecated since the sale boundary — kept for callers; guardParents() is what the model events run. */
+    public function assertParentNotClaimed(string $operation): void
+    {
+        $this->guardParents($operation);
+    }
+
     public function parentInvoiceIsProtected(): bool
     {
-        $invoice = $this->invoice()->getResults();
+        // A LOCKING read of the parent: it returns the row as committed now,
+        // not the caller's repeatable-read snapshot of it (gate round 3,
+        // stale parent state), and holds it until this write commits (the
+        // transactional save()/delete()).
+        $invoice = $this->invoice()->lockForUpdate()->first();
 
         if ($invoice === null) {
             return false;
@@ -183,6 +240,27 @@ class InvoiceItem extends Model
      * @param  array<string, mixed>  $attributes
      * @param  array<string, mixed>  $options
      */
+    /**
+     * AID-1825 §1a rule 1: the parent-claim guards in `saving`/`deleting`
+     * lock the parent row(s) and read the claim; the lock must outlive the
+     * write for the check to be atomic, so saves and deletes run inside a
+     * transaction (a savepoint for callers already in one). See Invoice::save().
+     *
+     * @param  array<string, mixed>  $options
+     */
+    public function save(array $options = []): bool
+    {
+        return (bool) $this->getConnection()->transaction(fn (): bool => parent::save($options));
+    }
+
+    public function delete(): ?bool
+    {
+        /** @var bool|null $deleted */
+        $deleted = $this->getConnection()->transaction(fn (): ?bool => parent::delete());
+
+        return $deleted;
+    }
+
     public function update(array $attributes = [], array $options = []): bool
     {
         $invoice = $this->invoice()->getResults();

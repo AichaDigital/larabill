@@ -94,7 +94,7 @@ describe('larabill:install — production install path on MySQL (AID-287)', func
         // (int → signed bigint) with the AEAT domain CHECKs; AID-962 adds the
         // payment allocations + customer credit migration (pivot relaxation,
         // credit_movements, invoice_items.deducts_invoice_id).
-        expect($this->appliedMigrationCount())->toBe(51);
+        expect($this->appliedMigrationCount())->toBe(52);
 
         // AID-1778: the exit-band column ships inside the install order (054).
         expect(Schema::hasColumn('credit_movements', 'band_start'))->toBeTrue();

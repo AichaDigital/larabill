@@ -256,6 +256,11 @@
             "name": "2026_10_26_000001_add_band_start_to_credit_movements.php",
             "sha256": "eb80e538234bb3f52541c770b66f05e754aae94f3e6b37667a8435d7bc1cd69f",
             "in_base": true
+        },
+        {
+            "name": "2026_11_01_000001_add_voucher_sales.php",
+            "sha256": "44f7ff1cafa4d31f6419a3b914010fc8dc3c41d68412050c54c63121d3e4c9a4",
+            "in_base": false
         }
     ]
 }
