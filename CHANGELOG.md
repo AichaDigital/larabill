@@ -4,6 +4,8 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+## [9.2.0] - 2026-11-03
+
 > **Ships migrations: yes** — `2026_11_01_000001_add_voucher_sales` (055) is additive (new tables `credit_operations` and `voucher_sale_claims`; nullable `credit_movements.sale_invoice_id`, `credit_operation_id`, `service_ref`, `service_description`; nullable `invoices.sale_claim_id`), **no backfill**: a 9.1 database has no voucher, no claim and no consumption. Resumable at constraint level: tables and columns are guarded by existence and every unique, index and foreign key is ensured on its own (the schema builder emits them as separate statements), so a run interrupted between statements adds only what is missing on rerun; on SQLite the foreign keys added to existing tables are skipped (the builder cannot add them there — the SQLite path is the test suite). Upgrade: `composer update aichadigital/larabill` + `php artisan larabill:install` (idempotent — publishes 055) + `php artisan migrate`. `migrate:fresh` is never part of the path.
 
 ### Added
