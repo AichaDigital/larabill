@@ -15,6 +15,8 @@ use RuntimeException;
  * is not a fiscal document at all, and an annulled document was declared
  * never to have existed — neither may carry `rectifies_invoice_id`, because
  * declaring any of them to the AEAT as R1 would misrepresent reality.
+ * A voucher-sale invoice (AID-1825) is refused as well: its rectificative
+ * would net the debt while the voucher balance it created stays spendable.
  *
  * @api Supported public surface (AID-413; see docs/api-surface.md).
  */
@@ -43,6 +45,15 @@ final class InvoiceNotRectifiableException extends RuntimeException
             "Invoice [{$invoice->fiscal_number}] is annulled and cannot be rectified: ".
             'annulment and rectification are mutually exclusive — the annulled document '.
             'was declared never to have existed, so it cannot be corrected.'
+        );
+    }
+
+    public static function forVoucherSale(Invoice $invoice): self
+    {
+        return new self(
+            "Invoice [{$invoice->fiscal_number}] is a voucher-sale invoice and cannot be rectified through this route: ".
+            'a rectificative would net the debt while the voucher balance it created stays whole and spendable. '.
+            'Refunding a voucher is not supported in this version.'
         );
     }
 }

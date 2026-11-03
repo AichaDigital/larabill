@@ -11,6 +11,7 @@ use AichaDigital\Larabill\Exceptions\IdempotencyConflictException;
 use AichaDigital\Larabill\Exceptions\InsufficientCreditException;
 use AichaDigital\Larabill\Exceptions\InvoiceNotAnnullableException;
 use AichaDigital\Larabill\Exceptions\InvoiceNotCancellableException;
+use AichaDigital\Larabill\Exceptions\InvoiceNotRectifiableException;
 use AichaDigital\Larabill\Exceptions\SaleClaimedException;
 use AichaDigital\Larabill\Exceptions\SaleIntegrityException;
 use AichaDigital\Larabill\Models\CompanyFiscalConfig;
@@ -211,6 +212,35 @@ describe('annul() on a voucher-sale invoice (test 9 — item 4)', function () {
 
         expect(CustomerCredit::for($this->customer->id, 'EUR')->balance()->unscaledValue())->toBe(0);
         expect(fn () => app(SettlementService::class)->annul($sold->invoice->fresh()))->toThrow(InvoiceNotAnnullableException::class);
+    });
+});
+
+describe('rectify() on a voucher-sale invoice', function () {
+    it('refuses it: no rectificative is created and balance, outstanding and position are untouched', function (string $route) {
+        $sold   = aid1825cSold($this->customer->id);
+        $credit = CustomerCredit::for($this->customer->id, 'EUR');
+        $before = [$credit->balance()->unscaledValue(), $credit->outstanding()->unscaledValue(), $credit->position()->unscaledValue()];
+        $count  = Invoice::query()->count();
+
+        $call = match ($route) {
+            'full'    => fn () => app(SettlementService::class)->rectify($sold->invoice->fresh()),
+            'partial' => fn () => app(SettlementService::class)->rectify($sold->invoice->fresh(), -1000),
+            'keyed'   => fn () => app(SettlementService::class)->rectify($sold->invoice->fresh(), null, 'rectify-voucher-sale'),
+        };
+
+        expect($call)->toThrow(InvoiceNotRectifiableException::class, 'voucher-sale');
+
+        expect(Invoice::query()->count())->toBe($count)
+            ->and(Invoice::query()->where('rectifies_invoice_id', $sold->invoice->id)->exists())->toBeFalse()
+            ->and([$credit->balance()->unscaledValue(), $credit->outstanding()->unscaledValue(), $credit->position()->unscaledValue()])->toBe($before);
+    })->with(['full', 'partial', 'keyed']);
+
+    it('reads the marker from the row, not from the instance handed in', function () {
+        $sold  = aid1825cSold($this->customer->id);
+        $stale = Invoice::query()->select(array_diff(array_keys($sold->invoice->fresh()->getAttributes()), ['sale_claim_id']))->findOrFail($sold->invoice->id);
+
+        expect($stale->getAttribute('sale_claim_id'))->toBeNull()
+            ->and(fn () => app(SettlementService::class)->rectify($stale))->toThrow(InvoiceNotRectifiableException::class, 'voucher-sale');
     });
 });
 
