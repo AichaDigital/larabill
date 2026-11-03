@@ -1,6 +1,6 @@
 {
-    "release": "9.2.0",
-    "upgrade_base": "9.1.0",
+    "release": "9.3.0",
+    "upgrade_base": "9.2.0",
     "migrations": [
         {
             "name": "2024_12_01_000000_create_tax_rates_table.php",
@@ -260,7 +260,7 @@
         {
             "name": "2026_11_01_000001_add_voucher_sales.php",
             "sha256": "44f7ff1cafa4d31f6419a3b914010fc8dc3c41d68412050c54c63121d3e4c9a4",
-            "in_base": false
+            "in_base": true
         }
     ]
 }
