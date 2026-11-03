@@ -51,6 +51,9 @@ workflow:
   rules:
     - if: $CI_COMMIT_TAG
       when: never
+    # Scheduled pipelines exist only for the weekly mutation run.
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+      when: never
     - if: $CI_PIPELINE_SOURCE == "merge_request_event"
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
 
@@ -267,13 +270,23 @@ db-integration:
 
 # Mutación con gate REAL: `pest --mutate --parallel --min=68` (scope money+fiscal).
 # Se conserva el umbral. PCOV obligatorio (la mutación mide cobertura) + aserción.
+#
+# Mutation testing is a periodic problem detector, not a per-commit gate: it runs
+# only from the weekly pipeline schedule on main, or when launched by hand from
+# the GitLab UI. Local runs (`composer test-mutate`) stay available for closing a
+# process. The full run exceeds one hour, hence the explicit timeout.
 mutation:
   stage: test
   image: aichadigital/laravel-ci:8.4
   variables:
     PHP_VERSION: "8.4"
   extends: .php
-  rules: !reference [.rules-ci, rules]
+  timeout: 3h
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $CI_PIPELINE_SOURCE == "web"
+      when: manual
+      allow_failure: true
   script:
     - echo 'pcov.enabled=1' > /usr/local/etc/php/conf.d/zz-pcov-on.ini
     - |
