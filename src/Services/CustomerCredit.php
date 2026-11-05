@@ -21,6 +21,7 @@ use AichaDigital\Larabill\Models\PaymentAllocation;
 use AichaDigital\Larabill\Services\Payments\ExitBands;
 use AichaDigital\Larabill\Services\Payments\Ledger;
 use AichaDigital\Larabill\Services\Payments\OutermostTransaction;
+use AichaDigital\Larabill\Support\DocumentCurrency;
 use AichaDigital\Larabill\ValueObjects\CreditBreakdown;
 use AichaDigital\Larabill\ValueObjects\CreditEntryRemainder;
 use DateTimeInterface;
@@ -135,7 +136,7 @@ final class CustomerCredit
 
         $total = FixedDecimal::zero(2);
         foreach ($invoices as $invoice) {
-            $invoiceCurrency = $invoice->companyFiscalConfig?->currency;
+            $invoiceCurrency = DocumentCurrency::of($invoice);
             if ($invoiceCurrency !== null && $invoiceCurrency !== $currency) {
                 continue;
             }
@@ -240,7 +241,7 @@ final class CustomerCredit
      * @return Collection<int, PaymentAllocation> in the FIFO order of their payments
      *
      * @throws PaymentOutsideTransactionRequiredException when called inside a caller's transaction
-     * @throws GroupedPaymentValidationException on a non-positive or sub-cent amount, or an invoice that is not payable
+     * @throws GroupedPaymentValidationException on a non-positive or sub-cent amount, an invoice that is not payable, or (legacy issued rows with no snapshot currency only) a referenced config whose currency changed during the call
      * @throws InsufficientCreditException when the balance cannot cover the amount (forBalance), or the invoice has no fiscal currency and the customer holds a positive balance in no currency (noCreditForCustomer) or in several (currencyAmbiguous)
      * @throws AllocationExceedsInvoiceException when the amount exceeds the invoice outstanding
      */
@@ -255,9 +256,10 @@ final class CustomerCredit
         // Plain reads OUTSIDE the transaction: which payments to lock. With no
         // fiscal currency on the invoice, the candidates of EVERY currency of
         // the customer; the currency is decided under the locks.
-        $paymentIds = self::sourcePaymentIds($billableUserId, self::fiscalCurrency($invoiceId));
+        $readCurrency = self::documentCurrency($invoiceId);
+        $paymentIds   = self::sourcePaymentIds($billableUserId, $readCurrency);
 
-        return DB::transaction(function () use ($billableUserId, $invoiceId, $amount, $paymentIds, $recordedBy, $appliedAt): Collection {
+        return DB::transaction(function () use ($billableUserId, $invoiceId, $amount, $readCurrency, $paymentIds, $recordedBy, $appliedAt): Collection {
             // FIRST statements: the locking reads, payments then invoice (global order).
             $locked   = self::lockPayments($paymentIds);
             $invoices = Ledger::lockInvoices([$invoiceId]);
@@ -267,10 +269,19 @@ final class CustomerCredit
             /** @var Invoice $target present: assertAllFound() rejects a missing id */
             $target = $invoices->get($invoiceId);
 
-            $fiscal = $target->companyFiscalConfig?->currency;
+            // 9.3.1: the document's currency, decided from the LOCKED row — the frozen
+            // snapshot once issued (immutable, cannot move under us), else the config.
+            $fiscal = DocumentCurrency::of($target);
             // With no fiscal currency the §5.1.3 currency check does not apply (D3); any value passes it.
             Ledger::assertPayable($target, $billableUserId, $fiscal ?? '', Ledger::payableStatuses());
             Ledger::assertNotClaimedSale($target, 'applying credit'); // AID-1825 §1a rule 2: legacy credit is never applied TO a sale invoice
+
+            // The payments were chosen outside the transaction for $readCurrency. On the
+            // legacy fallback (no snapshot currency) the config may have moved since:
+            // refuse rather than plan over payments locked for another currency.
+            if ($fiscal !== $readCurrency) {
+                throw GroupedPaymentValidationException::currencyMismatch($invoiceId, (string) $readCurrency, (string) $fiscal);
+            }
 
             $currency = $fiscal ?? self::inferCurrency($billableUserId, $locked);
             $plan     = self::plan($billableUserId, $currency, $locked, $amount);
@@ -362,10 +373,12 @@ final class CustomerCredit
             ->active();
     }
 
-    /** The fiscal currency of the invoice, a plain read OUTSIDE the transaction (null when it has none or does not exist). */
-    private static function fiscalCurrency(string $invoiceId): ?string
+    /** The document's currency (DocumentCurrency::of()), a plain read OUTSIDE the transaction (null when it has none or does not exist). */
+    private static function documentCurrency(string $invoiceId): ?string
     {
-        return Invoice::query()->with('companyFiscalConfig')->find($invoiceId)?->companyFiscalConfig?->currency;
+        $invoice = Invoice::query()->with('companyFiscalConfig')->find($invoiceId);
+
+        return $invoice === null ? null : DocumentCurrency::of($invoice);
     }
 
     /**

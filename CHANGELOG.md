@@ -4,6 +4,25 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+> **Ships migrations: no.** Upgrade: `composer update aichadigital/larabill`, nothing else.
+
+### Fixed
+
+- **An issued invoice keeps the currency frozen in its snapshot on the collection side; an in-place edit of the issuer configuration no longer re-denominates it.** **Old (9.3.0 and back to 8.3.0):** `CustomerCredit::apply()`, `PaymentService::receive()`/`allocate()` (via `Ledger::assertPayable()`), `GroupedPaymentService::register()` and `CustomerCredit::outstanding()` read the invoice's currency from the referenced `CompanyFiscalConfig` *as it is now*, and `apply()` compared that value with itself — so after issuing in EUR and editing the configuration to USD, `apply()` spent USD credit on the EUR document, `receive()`/`register()` accepted a USD payment and refused an EUR one, and the outstanding read counted the invoice under USD. **New:** for an **ISSUED invoice whose `fiscal_snapshot` carries a currency**, all of these use that frozen currency (what `issue()` stamped), and `apply()` decides it from the invoice row it locked. This is what `apply()`'s docblock already promised. No new public API: the reader is `Support\DocumentCurrency` (`@internal`).
+- **The guarantee is limited to issued invoices with a currency in their snapshot.** A legacy issued row with no snapshot (or no currency in it) keeps the 9.3.0 fallback: its currency is still read from the referenced configuration, so an edit of that configuration still changes how its payments, credit and outstanding are read. The one addition for those rows: if the configuration's currency changes **during** an `apply()` (between the read that chooses the payments and the read under the locks), `apply()` now refuses with `GroupedPaymentValidationException::currencyMismatch()` instead of planning over payments chosen for another currency.
+- **Who notices:** only an installation that edited a configuration's currency in place after issuing on it. Candidates (the snapshot is encrypted, so the per-invoice comparison is done in PHP with `Invoice::getFiscalSnapshotData()['currency']`):
+
+  ```sql
+  SELECT c.id, c.currency, COUNT(i.id) AS issued_invoices
+  FROM company_fiscal_configs c
+  JOIN invoices i ON i.company_fiscal_config_id = c.id
+  WHERE i.invoice_document_status = 'issued'
+  GROUP BY c.id, c.currency;
+  ```
+
+- **Not changed:** what currency a new invoice is issued in (the issuer configuration at issue time), `AdvanceInvoiceBuilder` (emission side), `refund()` (explicit currency), and the fixed `'EUR'` that `VerifactuAdapter` sends to `lara-verifactu` (an open question for that package's owner against the AEAT specification).
+- **Known limit, not fixed here — the PDF:** the template data still carries a fixed `totals.currency = 'EUR'`, and the bundled templates print a literal `€` without reading that key. A printed PDF shows `€` whatever the document's currency, as before.
+
 ## [9.3.0] - 2026-11-03
 
 > **Ships migrations: no.** Upgrade: `composer update aichadigital/larabill`, nothing else.

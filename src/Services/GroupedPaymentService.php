@@ -16,6 +16,7 @@ use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Services\Payments\Ledger;
 use AichaDigital\Larabill\Services\Payments\ReceiveRequest;
 use AichaDigital\Larabill\Services\Payments\ReplayPolicy;
+use AichaDigital\Larabill\Support\DocumentCurrency;
 use AichaDigital\Larabill\ValueObjects\Allocation;
 use DateTimeInterface;
 use Illuminate\Support\Collection;
@@ -157,8 +158,9 @@ class GroupedPaymentService
                 throw GroupedPaymentValidationException::mixedUsers();
             }
 
-            // D3: validate currency against the invoice's effective fiscal currency.
-            $invoiceCurrency = $invoice->companyFiscalConfig?->currency;
+            // D3: validate currency against the invoice's own currency — the frozen
+            // snapshot once issued (9.3.1), else the referenced config.
+            $invoiceCurrency = DocumentCurrency::of($invoice);
             if ($invoiceCurrency !== null && $invoiceCurrency !== $currency) {
                 throw GroupedPaymentValidationException::currencyMismatch((string) $invoice->id, $currency, $invoiceCurrency);
             }
