@@ -4,6 +4,8 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+## [9.3.1] - 2026-11-05
+
 > **Ships migrations: no.** Upgrade: `composer update aichadigital/larabill`, nothing else.
 
 ### Fixed
