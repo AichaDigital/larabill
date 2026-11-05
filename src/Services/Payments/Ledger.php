@@ -14,6 +14,7 @@ use AichaDigital\Larabill\Exceptions\SaleClaimedException;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\PaymentAllocation;
 use AichaDigital\Larabill\Support\CheckedWrite;
+use AichaDigital\Larabill\Support\DocumentCurrency;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -100,7 +101,8 @@ final class Ledger
         }
 
         // D3 parity with register(): a missing fiscal config (or currency) is not a mismatch.
-        $invoiceCurrency = $invoice->companyFiscalConfig?->currency;
+        // The document's currency: the frozen snapshot once issued (9.3.1), else the config.
+        $invoiceCurrency = DocumentCurrency::of($invoice);
         if ($invoiceCurrency !== null && $invoiceCurrency !== $currency) {
             throw GroupedPaymentValidationException::currencyMismatch($invoiceId, $currency, $invoiceCurrency);
         }

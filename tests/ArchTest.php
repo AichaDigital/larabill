@@ -150,3 +150,70 @@ test('invoice collection state has one in-package writer', function () {
         'paid_at' => ['Models/GroupedPayment.php' => 1, 'Services/PaymentService.php' => 1],
     ]);
 });
+
+/*
+ * 9.3.1 Step A (spec 2026-11-04 §4 A7): on the collection side, an invoice's
+ * currency is read ONLY through Support\DocumentCurrency — the frozen snapshot
+ * of an issued document, the referenced config otherwise. A closed list on
+ * purpose, not a sweep of src/Services/: the emission side legitimately reads
+ * the issuer config's currency (AdvanceInvoiceBuilder builds a NEW draft;
+ * InvoiceService / Invoice::generateFiscalContextSnapshot() are where the
+ * currency is frozen) and stays outside it. VerifactuAdapter's fixed 'EUR' is
+ * classified apart (open question for lara-verifactu's owner) and not covered.
+ * DomPDFService's fixed 'EUR' template datum is out of Step A too: the bundled
+ * templates print a literal '€' and never read totals.currency (spec §4).
+ * A new collection-side file is added to this list in the same change.
+ *
+ * The guard counts every access to the configuration, not only the adjacent
+ * `->companyFiscalConfig->currency` form: a relation read (property or
+ * method, whatever variable it lands in), Invoice::getCompanyFiscalSnapshot()
+ * (it returns the live relation, not the frozen snapshot) and a static
+ * CompanyFiscalConfig:: call. The only allowed site is VoucherSaleService::proformaCurrency(), the
+ * pricing currency of a PROFORMA (not issued, so nothing is frozen yet).
+ * Eager loads (`with('companyFiscalConfig')`, `load(...)`) are string
+ * arguments and are not counted. Comments are stripped before matching, so a
+ * docblock naming the pattern does not trip it. Blind spot: a dynamic or
+ * string-named access (`getRelation('companyFiscalConfig')`, `$invoice->{$name}`)
+ * is not seen.
+ */
+/** @return array<string, int> per file, the configuration accesses outside DocumentCurrency */
+function aid962cCollectionSideCurrencyReads(): array
+{
+    $src   = dirname(__DIR__).'/src';
+    $files = [
+        'Services/CustomerCredit.php',
+        'Services/Payments/Ledger.php',
+        'Services/GroupedPaymentService.php',
+        'Services/PaymentService.php',
+        'Services/VoucherSaleService.php',
+    ];
+    $hits = [];
+
+    foreach ($files as $file) {
+        $code  = aid962cStripComments($src.'/'.$file);
+        $count = preg_match_all('/->\s*(?:companyFiscalConfig|getCompanyFiscalSnapshot)\b|\bCompanyFiscalConfig\s*::/', $code);
+        if ($count > 0) {
+            $hits[$file] = $count;
+        }
+    }
+
+    return $hits;
+}
+
+function aid962cStripComments(string $path): string
+{
+    $code = '';
+    foreach (token_get_all((string) file_get_contents($path)) as $token) {
+        if (is_array($token) && in_array($token[0], [T_COMMENT, T_DOC_COMMENT], true)) {
+            continue;
+        }
+        $code .= is_array($token) ? $token[1] : $token;
+    }
+
+    return $code;
+}
+
+test('collection-side currency reads go through DocumentCurrency (9.3.1 Step A, A7)', function () {
+    // VoucherSaleService::proformaCurrency(): `$proforma->companyFiscalConfig()` and `CompanyFiscalConfig::getActive()`.
+    expect(aid962cCollectionSideCurrencyReads())->toBe(['Services/VoucherSaleService.php' => 2]);
+});

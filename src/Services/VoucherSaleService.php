@@ -34,6 +34,7 @@ use AichaDigital\Larabill\Services\Payments\OutermostTransaction;
 use AichaDigital\Larabill\Services\Payments\ReceiveRequest;
 use AichaDigital\Larabill\Services\Payments\ReplayPolicy;
 use AichaDigital\Larabill\Support\CheckedWrite;
+use AichaDigital\Larabill\Support\DocumentCurrency;
 use AichaDigital\Larabill\ValueObjects\SaleRecoveryRow;
 use AichaDigital\Larabill\ValueObjects\VoucherConsumptionRequest;
 use AichaDigital\Larabill\ValueObjects\VoucherConsumptionResult;
@@ -495,14 +496,9 @@ final class VoucherSaleService
         // ISSUED: the snapshot issue() stamped is the document's currency.
         // PREPARED: issue() will re-stamp the snapshot from the referenced
         // config, so the config IS the currency the document will carry.
-        if ($invoice->invoice_document_status === InvoiceDocumentStatus::ISSUED) {
-            $frozen = $invoice->getFiscalSnapshotData()['currency'] ?? null;
-            if (is_string($frozen) && $frozen !== '') {
-                return $frozen;
-            }
-        }
-
-        return $invoice->companyFiscalConfig()->first()?->currency;
+        // withoutRelations(): the fallback re-reads the referenced config, never a
+        // relation cached on the caller's instance (the pre-9.3.1 fresh query).
+        return DocumentCurrency::of($invoice->withoutRelations());
     }
 
     /**
