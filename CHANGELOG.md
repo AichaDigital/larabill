@@ -4,6 +4,13 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **A credit exit whose write is vetoed by a model listener now aborts the whole call (AID-1864).** **Old (9.3.1 and back to 8.3.0):** a `saving` or `creating` listener on `CreditMovement` that returned `false` for an APPLIED or REFUNDED exit made the write silently not happen, and the call still reported success. `CustomerCredit::apply()` and `PaymentService::allocate()` committed the allocation and marked the invoice as collected while the credit stayed unspent — and a later `PaymentService::reverseAllocation()` of that allocation, finding no exit behind it, wrote a new SURPLUS entry: credit the customer never had. `CustomerCredit::refund()` returned an empty collection and recorded nothing. **New:** the four exit writes go through one checked writer; a vetoed exit throws `LogicException` («The write of a credit exit was vetoed by a model listener…») and the transaction rolls back everything the call wrote — the allocation, the exits already written in that call and the invoice state. Applies to both ways an exit is written: one row per band segment, and the single row of an entry that carries a legacy exit with no band.
+- **Who notices:** only an installation that registers a listener or observer on `CreditMovement` that can return `false`. Without one, nothing changes. With one, a call that used to return normally now throws; the caller must treat it as a refused operation — nothing of it was kept.
+- **What the guarantee covers:** the rows written on the transaction's connection. A listener that changes the exit instead of vetoing it, or that deletes it after it is written, is not detected. In a call that writes several exits, the ones written before the vetoed one have already fired their `created`/`saved` events: what a consumer's listener did outside the database (a cache, an external call, another connection) is not undone by the rollback.
+- **Not changed:** the credit entry writes (`receive()`'s remainder, the SURPLUS of a reversal) and the save of the invoice's collection state are still unchecked; a veto there is a separate, known defect.
+
 ## [9.3.1] - 2026-11-05
 
 > **Ships migrations: no.** Upgrade: `composer update aichadigital/larabill`, nothing else.

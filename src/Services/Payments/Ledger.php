@@ -11,12 +11,14 @@ use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Exceptions\AllocationExceedsInvoiceException;
 use AichaDigital\Larabill\Exceptions\GroupedPaymentValidationException;
 use AichaDigital\Larabill\Exceptions\SaleClaimedException;
+use AichaDigital\Larabill\Models\CreditMovement;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\PaymentAllocation;
 use AichaDigital\Larabill\Support\CheckedWrite;
 use AichaDigital\Larabill\Support\DocumentCurrency;
 use DateTimeInterface;
 use Illuminate\Database\Eloquent\Collection;
+use LogicException;
 
 /**
  * The invoice-side steps shared by PaymentService and CustomerCredit (AID-962,
@@ -210,5 +212,28 @@ final class Ledger
         CheckedWrite::orFail($allocation->save(), 'the payment allocation');
 
         return $allocation;
+    }
+
+    /**
+     * Write one APPLIED or REFUNDED credit exit, or throw (AID-1864). A
+     * `saving`/`creating` listener that vetoes the write makes save() return
+     * false without throwing, and Builder::create() swallows it: the
+     * allocation and the invoice state would commit without their exit, or a
+     * refund would be reported and never recorded. Checking the bool here
+     * aborts the caller's transaction instead.
+     *
+     * The row is the one `CreditMovement::query()->create($attributes)` would
+     * write: every key the callers pass is fillable.
+     *
+     * @param  array<string, mixed>  $attributes
+     *
+     * @throws LogicException when a model listener vetoes the write
+     */
+    public static function createExit(array $attributes): CreditMovement
+    {
+        $exit = new CreditMovement($attributes);
+        CheckedWrite::orFail($exit->save(), 'a credit exit');
+
+        return $exit;
     }
 }
