@@ -244,6 +244,7 @@ final class CustomerCredit
      * @throws GroupedPaymentValidationException on a non-positive or sub-cent amount, an invoice that is not payable, or (legacy issued rows with no snapshot currency only) a referenced config whose currency changed during the call
      * @throws InsufficientCreditException when the balance cannot cover the amount (forBalance), or the invoice has no fiscal currency and the customer holds a positive balance in no currency (noCreditForCustomer) or in several (currencyAmbiguous)
      * @throws AllocationExceedsInvoiceException when the amount exceeds the invoice outstanding
+     * @throws LogicException when a model listener vetoes the write of a credit exit; nothing of the call is kept (AID-1864)
      */
     public function apply(string $billableUserId, Invoice $invoice, FixedDecimal $amount, ?string $recordedBy = null, ?DateTimeInterface $appliedAt = null): Collection
     {
@@ -326,6 +327,7 @@ final class CustomerCredit
      * @throws PaymentOutsideTransactionRequiredException when called inside a caller's transaction
      * @throws GroupedPaymentValidationException on a non-positive or sub-cent amount
      * @throws InsufficientCreditException when the balance cannot cover the amount
+     * @throws LogicException when a model listener vetoes the write of a credit exit; nothing of the call is kept (AID-1864)
      */
     public function refund(string $billableUserId, FixedDecimal $amount, string $currency, DateTimeInterface $refundedAt, PaymentMethod $method, ?string $reference = null, ?string $recordedBy = null): Collection
     {
@@ -591,7 +593,7 @@ final class CustomerCredit
         $rows = new Collection;
 
         if ($segments === null) {
-            $rows->push(CreditMovement::query()->create($attributes + [
+            $rows->push(Ledger::createExit($attributes + [
                 'amount'     => $take->negated(),
                 'band_start' => null,
             ]));
@@ -600,7 +602,7 @@ final class CustomerCredit
         }
 
         foreach ($segments as [$start, $length]) {
-            $rows->push(CreditMovement::query()->create($attributes + [
+            $rows->push(Ledger::createExit($attributes + [
                 'amount'     => FixedDecimal::ofUnscaled(-$length, 2),
                 'band_start' => $start,
             ]));

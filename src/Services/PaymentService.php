@@ -281,6 +281,7 @@ class PaymentService
      * @throws AllocationExceedsPaymentException when the payment is not POSTED (a reversed payment has no credit) or its entries cannot cover the amount
      * @throws GroupedPaymentValidationException when the invoice does not exist or is not payable (§5.1.3)
      * @throws AllocationExceedsInvoiceException when the amount exceeds the invoice outstanding
+     * @throws LogicException when a model listener vetoes the write of a credit exit; nothing of the call is kept (AID-1864)
      */
     public function allocate(GroupedPayment $payment, Allocation $allocation, ?string $recordedBy = null, ?DateTimeInterface $appliedAt = null): PaymentAllocation
     {
@@ -619,7 +620,7 @@ class PaymentService
             $segments = ExitBands::segmentsFor($entry, $take->toScale(2)->unscaledValue());
 
             if ($segments === null) {
-                CreditMovement::query()->create([
+                Ledger::createExit([
                     'billable_user_id'     => $payment->billable_user_id,
                     'currency'             => $payment->currency,
                     'kind'                 => CreditMovementKind::APPLIED,
@@ -633,7 +634,7 @@ class PaymentService
                 ]);
             } else {
                 foreach ($segments as [$start, $length]) {
-                    CreditMovement::query()->create([
+                    Ledger::createExit([
                         'billable_user_id'     => $payment->billable_user_id,
                         'currency'             => $payment->currency,
                         'kind'                 => CreditMovementKind::APPLIED,
