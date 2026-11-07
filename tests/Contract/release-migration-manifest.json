@@ -1,6 +1,6 @@
 {
-    "release": "9.3.2",
-    "upgrade_base": "9.3.1",
+    "release": "9.4.0",
+    "upgrade_base": "9.3.2",
     "migrations": [
         {
             "name": "2024_12_01_000000_create_tax_rates_table.php",
