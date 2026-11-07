@@ -59,6 +59,58 @@ final class Ledger
     }
 
     /**
+     * Lock the given credit entries and return the ones that can FUND A
+     * PAYMENT, in the order the ids were given (AID-1856, spec §3.1–§3.2).
+     *
+     * An entry can fund a payment when, on its row: it is active, its kind
+     * is an entry kind, and it is backed neither by a voucher sale
+     * (`sale_invoice_id`) nor by an advance invoice (`advance_invoice_id`).
+     * The predicate is applied to what the LOCKING read returns — the latest
+     * committed row, not the caller's snapshot: a
+     * CreditMovement::linkAdvanceInvoice() that committed at any moment
+     * before the lock is seen and the entry is left out; one attempted after
+     * it waits until the caller commits. The ids passed in come from a plain
+     * read and serve only to know what to lock; every later read and write
+     * of the caller takes the instances returned here.
+     *
+     * ONE locking read per id, a unique search on the primary key, taken in
+     * ascending id order: InnoDB locks that index record only, with no gap,
+     * so no neighbouring row and no range waits — only a write of that same
+     * entry does, which is the point — and no list of ids is bound, so the
+     * lock sets no ceiling on how many entries a customer may hold. Runs
+     * inside the caller's transaction, AFTER its payment and invoice locks.
+     * A repeated id is locked and returned once, at its first position.
+     *
+     * @param  list<string>  $entryIds  candidate ids, in the caller's FIFO order
+     * @return Collection<int, CreditMovement> the locked entries that can fund a payment, in that same order
+     */
+    public static function lockFundingEntries(array $entryIds): Collection
+    {
+        $entryIds  = array_values(array_unique($entryIds));
+        $ascending = $entryIds;
+        sort($ascending, SORT_STRING);
+
+        $locked = [];
+        foreach ($ascending as $id) {
+            $entry = CreditMovement::query()->whereKey($id)->lockForUpdate()->first();
+
+            if ($entry !== null && ! $entry->isReversed() && $entry->isEntry() && ! $entry->isVoucherBacked() && ! $entry->isAdvanceBacked()) {
+                $locked[$id] = $entry;
+            }
+        }
+
+        /** @var Collection<int, CreditMovement> $funding */
+        $funding = new Collection;
+        foreach ($entryIds as $id) {
+            if (isset($locked[$id])) {
+                $funding->push($locked[$id]);
+            }
+        }
+
+        return $funding;
+    }
+
+    /**
      * @param  list<string>  $invoiceIds
      * @param  Collection<string, Invoice>  $invoices
      *

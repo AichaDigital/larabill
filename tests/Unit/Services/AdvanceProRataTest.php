@@ -5,6 +5,7 @@ declare(strict_types=1);
 use AichaDigital\Larabill\Enums\CreditMovementKind;
 use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Enums\PaymentMethod;
+use AichaDigital\Larabill\Exceptions\AllocationExceedsPaymentException;
 use AichaDigital\Larabill\Exceptions\InvalidAdvanceInvoiceException;
 use AichaDigital\Larabill\Exceptions\InvalidCreditMovementException;
 use AichaDigital\Larabill\Models\CompanyFiscalConfig;
@@ -415,22 +416,54 @@ it('telescopes over mixed APPLIED/REFUNDED live exits and after a reversal + ref
     $credit  = app(CustomerCredit::class);
     $service = app(PaymentService::class);
 
+    // Since 9.4 (AID-1856) allocate() never spends an entry linked to an
+    // advance, so the APPLIED exits of this proof — and the allocate() refill
+    // of the reversed hole — are written by the real creation path BEFORE the
+    // link: an entry applied first and documented by an advance afterwards.
+    // A second entry, OLDER than the fixture's, so refund()'s FIFO reaches it
+    // first.
+    $payment = $service->receive(
+        (string) $this->customer->id, cents(10000), 'EUR', now()->subHours(2)->startOfSecond(),
+        PaymentMethod::BankTransfer, null, null, [], CreditMovementKind::TOP_UP,
+    );
+    $entry = $payment->creditMovements()->entries()->sole();
+
     // Mixed kinds on one entry: an APPLIED deduction, a REFUNDED partial
     // rectificative, then the rest APPLIED — the tape tiles [0, G).
-    $service->allocate($this->payment, new Allocation($invoice->id, cents(1000)));
+    $service->allocate($payment, new Allocation($invoice->id, cents(1000)));
     $credit->refund((string) $this->customer->id, cents(1000), 'EUR', now()->subMinutes(5)->startOfSecond(), PaymentMethod::BankTransfer);
-    $service->allocate($this->payment, new Allocation($invoice->id, cents(8000)));
-
-    // f(1000) = 174, f(2000) − f(1000) = 173, f(G) − f(2000) = 1389 → 1736 = T.
-    expect(aid1778Telescope($this->builder, $this->entry))->toBe([1736, 8264]);
+    $service->allocate($payment, new Allocation($invoice->id, cents(8000)));
 
     // Reversal in the middle + refill (R20): the freed hole is refilled at
-    // its position, never priced twice at the frontier.
-    $firstExit = aid1778LiveExits($this->entry)->first();
+    // its position by allocate(), never priced twice at the frontier.
+    $firstExit = aid1778LiveExits($entry)->first();
     $service->reverseAllocation($firstExit->allocation_id, 'R20 refill test');
-    $service->allocate($this->payment, new Allocation($invoice->id, cents(1000)));
+    $service->allocate($payment, new Allocation($invoice->id, cents(1000)));
+
+    $bands = fn (): array => aid1778LiveExits($entry)->map(fn (CreditMovement $exit): array => [$exit->band_start, $exit->kind])->all();
+
+    expect($bands())->toBe([[0, CreditMovementKind::APPLIED], [1000, CreditMovementKind::REFUNDED], [2000, CreditMovementKind::APPLIED]]);
+
+    $advance = aid1778MakeAdvance($this->customer, $this->rate);
+    $entry->linkAdvanceInvoice($advance);
+    $advance         = app(InvoiceService::class)->issue($advance);
+    $advance->status = InvoiceStatus::SENT;
+    $advance->save();
 
     // Live set after the reversal: [1000,2000) 173, refill [0,1000) 174,
     // [2000,10000) 1389 → 1736 = T; frontier-continuation would yield 1735.
-    expect(aid1778Telescope($this->builder, $this->entry))->toBe([1736, 8264]);
+    expect(aid1778Telescope($this->builder, $entry))->toBe([1736, 8264]);
+
+    // The same reversal + refill once the entry is linked: allocate() refuses
+    // it now, and the refill is a refund — the exit a linked entry still
+    // takes — placed on the freed hole by the same band rule.
+    $service->reverseAllocation(aid1778LiveExits($entry)->first()->allocation_id, 'R20 refill after the link');
+
+    expect(fn () => $service->allocate($payment, new Allocation($invoice->id, cents(1000))))
+        ->toThrow(AllocationExceedsPaymentException::class, 'requested 1000, available 0');
+
+    $credit->refund((string) $this->customer->id, cents(1000), 'EUR', now()->subMinutes(4)->startOfSecond(), PaymentMethod::BankTransfer);
+
+    expect($bands())->toBe([[0, CreditMovementKind::REFUNDED], [1000, CreditMovementKind::REFUNDED], [2000, CreditMovementKind::APPLIED]])
+        ->and(aid1778Telescope($this->builder, $entry))->toBe([1736, 8264]);
 });

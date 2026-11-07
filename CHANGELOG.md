@@ -4,6 +4,35 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Credit backed by an advance invoice is no longer spent as an ordinary payment (AID-1856).** Since 9.1 `CustomerCredit::breakdown()` separates the balance linked to an advance invoice (`CreditMovement::linkAdvanceInvoice()`) and documents that it «must not be applied as a payment»: its VAT was already declared on the advance, so paying an invoice with it declares that VAT twice. The writers did not honour it. Three behaviours change:
+  - **`CustomerCredit::apply()`. Old (9.0.0 to 9.3.2):** entries linked to an advance were spent like any other, and FIFO took them first when they were the oldest. **New:** they are never taken. An amount above the consumable part of the balance (`breakdown()->consumable`) is refused with `InsufficientCreditException`, whose «available» is that consumable part, even when `balance()` covers the amount.
+  - **`PaymentService::allocate()`. Old:** it funded the allocation from an advance-backed entry of the payment. **New:** it never does; above what the payment's other entries hold it refuses with `AllocationExceedsPaymentException`.
+  - **`GroupedPayment::availableCredit()`. Old:** it counted what was left of advance-backed entries. **New:** it excludes it, so it reports what `allocate()` accepts.
+  - **Currency inference of `apply()` on an invoice with no fiscal currency. Old:** advance-backed balance counted as a currency hint. **New:** it does not; a customer whose only credit is advance-backed gets `InsufficientCreditException` («holds no credit in any currency»), and advance-backed credit in one currency plus consumable credit in another is no longer ambiguous.
+- **Not changed: `CustomerCredit::refund()`.** It keeps consuming advance-backed entries, in the same FIFO order as the rest, and each such exit keeps feeding `AdvanceInvoiceBuilder::rectificativeLines()` — the refund of an advance and its rectificative. `balance()` and `position()` keep counting the whole balance.
+- **How it is decided:** on the entry's own locked row, not on an earlier read. `apply()` and `allocate()` now take a row lock on each entry they may spend, after their payment and invoice locks. A `linkAdvanceInvoice()` that committed before that lock is seen and the entry is left alone; one attempted while the call runs waits for it. The lock is one row at a time by primary key: no neighbouring row and no range waits, only a write of that same entry.
+- **Who notices:** only an installation that links credit entries to advance invoices (`linkAdvanceInvoice()`, `AdvanceInvoiceBuilder::forCreditEntry()`). Without linked entries, nothing changes. To see whether advance-backed credit was spent as a payment under earlier versions — the query over-reports on purpose, because an entry applied first and linked afterwards is legitimate and also appears (the link carries no timestamp):
+
+  ```sql
+  SELECT e.id AS entry_id, e.advance_invoice_id, SUM(-x.amount) AS applied_base100
+  FROM credit_movements e
+  JOIN credit_movements x ON x.consumes_movement_id = e.id
+  WHERE e.advance_invoice_id IS NOT NULL
+    AND x.kind = 2            -- APPLIED
+    AND x.reversed_at IS NULL
+  GROUP BY e.id, e.advance_invoice_id;
+  ```
+
+  Those rows stay valid: they are still counted, their allocations are still reversible with `PaymentService::reverseAllocation()`, and `AdvanceInvoiceBuilder::deductionLine()` still reads them when their band is resolved.
+- **Known consequence until AID-1815:** `apply()` and `allocate()` were the only paths of the package that wrote the APPLIED exit `AdvanceInvoiceBuilder::deductionLine()` reads. After this release no package path creates one on an advance-backed entry, so advance-backed balance leaves the ledger only through `refund()`. The order «apply, then compute the deduction line, then put it on the invoice» never closed — `apply()` needs an issued invoice and the line has to enter before issue — and the primitive that consumes an advance as a deduction line on a draft invoice is tracked as AID-1815.
+- **Unchanged caller contract of `allocate()` and `receive()`:** call them as the outermost transaction, or inside a wrapper that has made no earlier read. Inside a caller's transaction that has already read, their sums come from that transaction's snapshot and an entry can be consumed past what it holds. This predates the release and is not changed by it; `apply()`, `refund()`, `reverse()` and `reverseAllocation()` refuse to run inside a caller's transaction and are not affected.
+
+### Added
+
+- **`CreditMovement::scopeNotAdvanceBacked()` and `CreditMovement::isAdvanceBacked()` (AID-1856):** the mirror of `scopeNotVoucherBacked()` / `isVoucherBacked()` for entries linked to an advance invoice. The scope narrows a read; it is not the decision of the payment paths, which is taken on locked rows.
+
 ## [9.3.2] - 2026-11-06
 
 > **Ships migrations: no.** Upgrade: `composer update aichadigital/larabill`, nothing else.

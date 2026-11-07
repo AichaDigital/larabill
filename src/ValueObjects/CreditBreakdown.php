@@ -14,8 +14,11 @@ use AichaDigital\Lara100\ValueObjects\FixedDecimal;
  *   CustomerCredit::apply().
  * - `advanceBacked` — entries linked to an advance invoice (whatever the
  *   advance's document state). Their VAT was already declared on the
- *   advance, so they must not be applied as a payment; they are consumed as
- *   a deduction line (AID-1815).
+ *   advance, so they are never applied as a payment: since 9.4 (AID-1856)
+ *   CustomerCredit::apply() and PaymentService::allocate() leave them
+ *   alone. CustomerCredit::refund() still consumes them (the refund of the
+ *   advance and its rectificative); their consumption as a deduction line
+ *   on a later invoice is AID-1815.
  * - `voucherBacked` — entries born of a voucher sale (`sale_invoice_id`,
  *   AID-1825): balance contracted to consume services. Never a payment,
  *   never refunded in this version; consumed with consumeVoucher().

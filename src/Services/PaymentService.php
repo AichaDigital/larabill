@@ -274,11 +274,24 @@ class PaymentService
      * `applied_at` and the exits' `occurred_at`; `$recordedBy` goes on the
      * exits.
      *
-     * Locks, as the first statements of its transaction (spec §13 row 40):
-     * the payment row, then the invoice row; every sum is read after both.
-     * Must be the OUTERMOST transaction (see process()).
+     * Only entries that can fund a payment are spent: a voucher-backed entry
+     * (AID-1825) and, since 9.4, an entry linked to an advance invoice
+     * (AID-1856) are never taken, and what they hold is not credit this
+     * method can allocate — above the rest it refuses, as
+     * GroupedPayment::availableCredit() reports.
      *
-     * @throws AllocationExceedsPaymentException when the payment is not POSTED (a reversed payment has no credit) or its entries cannot cover the amount
+     * Locks, as the first statements of its transaction (spec §13 row 40):
+     * the payment row, then the invoice row; then, after the invoice checks,
+     * a row lock on each candidate entry (Ledger::lockFundingEntries()), so
+     * whether an entry is linked to an advance is decided on the locked row
+     * and a concurrent CreditMovement::linkAdvanceInvoice() either landed
+     * before or waits for this call. Every sum is read after the locks.
+     * Must be the OUTERMOST transaction (see process()): inside a caller's
+     * transaction that has already read, what is left of each entry is still
+     * computed from the caller's snapshot — the entry lock does not change
+     * that contract.
+     *
+     * @throws AllocationExceedsPaymentException when the payment is not POSTED (a reversed payment has no credit) or its entries that can fund a payment cannot cover the amount
      * @throws GroupedPaymentValidationException when the invoice does not exist or is not payable (§5.1.3)
      * @throws AllocationExceedsInvoiceException when the amount exceeds the invoice outstanding
      * @throws LogicException when a model listener vetoes the write of a credit exit; nothing of the call is kept (AID-1864)
@@ -306,13 +319,20 @@ class PaymentService
             Ledger::assertNotClaimedSale($invoice, 'allocating credit'); // AID-1825 §1a rule 2
             Ledger::assertWithinOutstanding($invoice, $amount);
 
-            $available = $locked->availableCredit();
+            // AID-1856: the entries that can fund this allocation, decided on their LOCKED
+            // rows, each with what it has left — the same set funds the allocation below.
+            $funding   = $this->fundingEntries($locked);
+            $available = FixedDecimal::zero(2);
+            foreach ($funding as [, $remaining]) {
+                $available = $available->plus($remaining);
+            }
+
             if ($amount->isGreaterThan($available)) {
                 throw AllocationExceedsPaymentException::forPayment((string) $locked->id, $available->toScale(2)->unscaledValue(), $amount->unscaledValue());
             }
 
             $row = Ledger::createAllocation((string) $locked->id, $invoice, $amount, $appliedAt);
-            $this->consumeEntries($locked, $row, $amount, $recordedBy, $appliedAt);
+            $this->consumeEntries($locked, $row, $amount, $recordedBy, $appliedAt, $funding);
             $invoice->recomputeCollectionState();
 
             return $row->refresh();
@@ -581,10 +601,44 @@ class PaymentService
     }
 
     /**
-     * Fund $row from $payment's ACTIVE entries, oldest first (`occurred_at`,
-     * then `id`): one APPLIED exit per entry with something left, until
-     * $amount is covered. Payer and currency are copied from the payment.
-     * Runs under the payment lock, after the availableCredit() check.
+     * The entries of $payment that can fund an allocation, oldest first
+     * (`occurred_at`, then `id`), each with what it has left (AID-1856, spec
+     * §3.4): a plain read of the candidate ids — active entries, neither
+     * voucher-backed nor advance-backed — and then
+     * Ledger::lockFundingEntries(), which decides on the locked rows. Runs
+     * under the payment lock, after the invoice checks.
+     *
+     * @return list<array{0: CreditMovement, 1: FixedDecimal}> entry, remaining
+     */
+    private function fundingEntries(GroupedPayment $payment): array
+    {
+        /** @var list<string> $candidateIds */
+        $candidateIds = $payment->creditMovements()
+            ->active()
+            ->entries()
+            ->notVoucherBacked() // AID-1825: a voucher never funds a payment
+            ->notAdvanceBacked() // AID-1856: nor does an entry linked to an advance invoice
+            ->orderBy('occurred_at')
+            ->orderBy('id')
+            ->pluck('id')
+            ->map(fn ($id): string => (string) $id)
+            ->all();
+
+        $funding = [];
+        foreach (Ledger::lockFundingEntries($candidateIds) as $entry) {
+            $funding[] = [$entry, $entry->remaining()];
+        }
+
+        return $funding;
+    }
+
+    /**
+     * Fund $row from $funding — the locked entries of $payment that can fund
+     * an allocation, oldest first, each with what it has left
+     * (fundingEntries()): one APPLIED exit per entry with something left,
+     * until $amount is covered. Payer and currency are copied from the
+     * payment. Runs under the payment lock, after the available-credit check
+     * over the same set.
      *
      * Since 8.4 (AID-1778, spec §5.3–§5.4) each take is PLACED on its entry's
      * cent tape LOWEST-GAP-FIRST by ExitBands::segmentsFor() — under THIS
@@ -593,24 +647,18 @@ class PaymentService
      * into one row per gap, all on the same allocation and entry. On an
      * unresolvable entry (an active NULL-band exit) the rows carry
      * `band_start = NULL` and the take is NOT split (spec §5.7).
+     *
+     * @param  list<array{0: CreditMovement, 1: FixedDecimal}>  $funding
      */
-    private function consumeEntries(GroupedPayment $payment, PaymentAllocation $row, FixedDecimal $amount, ?string $recordedBy, DateTimeInterface $at): void
+    private function consumeEntries(GroupedPayment $payment, PaymentAllocation $row, FixedDecimal $amount, ?string $recordedBy, DateTimeInterface $at, array $funding): void
     {
-        $left    = $amount;
-        $entries = $payment->creditMovements()
-            ->active()
-            ->entries()
-            ->notVoucherBacked() // AID-1825: a voucher never funds a payment
-            ->orderBy('occurred_at')
-            ->orderBy('id')
-            ->get();
+        $left = $amount;
 
-        foreach ($entries as $entry) {
+        foreach ($funding as [$entry, $remaining]) {
             if (! $left->isPositive()) {
                 break;
             }
 
-            $remaining = $entry->remaining();
             if (! $remaining->isPositive()) {
                 continue;
             }
