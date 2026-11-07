@@ -43,13 +43,23 @@ use LogicException;
  * takes the customer explicitly and never reads the binding, so
  * `app(CustomerCredit::class)->apply(...)` works unbound.
  *
+ * Since 9.4 (AID-1856) the two exits differ in what they may take: apply()
+ * spends only entries that can fund a payment — an entry linked to an
+ * advance invoice (`advance_invoice_id`) is left alone, like a voucher's —
+ * while refund() keeps consuming advance-backed entries, the published
+ * refund of an advance and its rectificative (AID-1778).
+ *
  * Locking (spec §5 intro, §5.4, §13.10 rows 40-41). apply() and refund()
  * read, OUTSIDE their transaction (autocommit, fixes no snapshot), the ids of
  * the POSTED payments of the customer and currency that hold an active
  * entry (every currency of the customer when apply() targets an invoice with
  * no fiscal currency: the currency is then decided under the locks). Their transaction then opens with the locking read of ALL those
- * payments by id ascending, then (apply() only) the invoice; every remainder
- * and the balance are read after the locks, never trusted from before. Only
+ * payments by id ascending, then (apply() only) the invoice and, after its
+ * payability checks, a row lock on each candidate entry
+ * (Ledger::lockFundingEntries(): whether an entry is linked to an advance is
+ * decided on the locked row, so a concurrent linkAdvanceInvoice() either
+ * landed before and the entry is left out, or waits for this call); every
+ * remainder and the balance are read after the locks, never trusted from before. Only
  * entries of the locked payments are consumed: an entry born in between from
  * a NEW payment (receive()) is not seen in this run — it can leave credit
  * unused, never over-consume it (§5.4). Entries of a locked payment are only
@@ -220,6 +230,12 @@ final class CustomerCredit
      * several → currencyAmbiguous. A currency mismatch between credit and
      * invoice surfaces as insufficient credit in the invoice's currency.
      *
+     * Only credit that can fund a payment is spent (AID-1856): entries
+     * linked to an advance invoice are never taken — their VAT was declared
+     * on the advance — and they are not a currency hint either; an amount
+     * above the consumable part (CustomerCredit::breakdown()) is refused as
+     * insufficient credit even when balance() covers it.
+     *
      * Entries are consumed FIFO across all of the customer's payments and
      * grouped BY PAYMENT: one allocation per payment spent (the sum consumed
      * from that payment's entries, `grouped_payment_id` = that payment) and
@@ -242,7 +258,7 @@ final class CustomerCredit
      *
      * @throws PaymentOutsideTransactionRequiredException when called inside a caller's transaction
      * @throws GroupedPaymentValidationException on a non-positive or sub-cent amount, an invoice that is not payable, or (legacy issued rows with no snapshot currency only) a referenced config whose currency changed during the call
-     * @throws InsufficientCreditException when the balance cannot cover the amount (forBalance), or the invoice has no fiscal currency and the customer holds a positive balance in no currency (noCreditForCustomer) or in several (currencyAmbiguous)
+     * @throws InsufficientCreditException when the credit that can fund a payment cannot cover the amount (forBalance), or the invoice has no fiscal currency and the customer holds such credit in no currency (noCreditForCustomer) or in several (currencyAmbiguous)
      * @throws AllocationExceedsInvoiceException when the amount exceeds the invoice outstanding
      * @throws LogicException when a model listener vetoes the write of a credit exit; nothing of the call is kept (AID-1864)
      */
@@ -258,7 +274,7 @@ final class CustomerCredit
         // fiscal currency on the invoice, the candidates of EVERY currency of
         // the customer; the currency is decided under the locks.
         $readCurrency = self::documentCurrency($invoiceId);
-        $paymentIds   = self::sourcePaymentIds($billableUserId, $readCurrency);
+        $paymentIds   = self::sourcePaymentIds($billableUserId, $readCurrency, fundingOnly: true);
 
         return DB::transaction(function () use ($billableUserId, $invoiceId, $amount, $readCurrency, $paymentIds, $recordedBy, $appliedAt): Collection {
             // FIRST statements: the locking reads, payments then invoice (global order).
@@ -284,8 +300,12 @@ final class CustomerCredit
                 throw GroupedPaymentValidationException::currencyMismatch($invoiceId, (string) $readCurrency, (string) $fiscal);
             }
 
-            $currency = $fiscal ?? self::inferCurrency($billableUserId, $locked);
-            $plan     = self::plan($billableUserId, $currency, $locked, $amount);
+            // AID-1856: the entries that can fund a payment, decided on their LOCKED rows —
+            // once, after the payability checks, so a refused invoice locks no entry. The
+            // inference and the plan both read this one set.
+            $funding  = self::fundingEntries($billableUserId, $fiscal, $locked);
+            $currency = $fiscal ?? self::inferCurrency($billableUserId, $funding);
+            $plan     = self::plan($billableUserId, $currency, $locked, $amount, $funding->filter(fn (CreditMovement $entry): bool => $entry->currency === $currency));
             Ledger::assertWithinOutstanding($target, $amount);
 
             /** @var Collection<int, PaymentAllocation> $rows */
@@ -313,7 +333,10 @@ final class CustomerCredit
      * Record $amount of $billableUserId's $currency credit leaving as a
      * refund (spec §5.7): one REFUNDED exit PER FILLED BAND GAP of each entry
      * consumed FIFO, with `occurred_at = $refundedAt`, `method`, `reference`
-     * and `recorded_by`. Since 8.4 (AID-1778, spec §5.4) ONE consumed entry
+     * and `recorded_by`. Entries linked to an advance invoice ARE consumed
+     * here, in the same FIFO order as the rest (AID-1856 leaves this path
+     * untouched: each such exit feeds AdvanceInvoiceBuilder::rectificativeLines()).
+     * Since 8.4 (AID-1778, spec §5.4) ONE consumed entry
      * may carry SEVERAL REFUNDED rows — one per filled gap — when the take is
      * split across the free tape; every row of the split is returned in the
      * collection (and every row of a split shares the entry's
@@ -342,7 +365,7 @@ final class CustomerCredit
 
             /** @var Collection<int, CreditMovement> $exits */
             $exits = new Collection;
-            foreach (self::plan($billableUserId, $currency, $locked, $amount) as [$entry, $take]) {
+            foreach (self::plan($billableUserId, $currency, $locked, $amount, self::refundableEntries($billableUserId, $currency, $locked)) as [$entry, $take]) {
                 $exits = $exits->merge(self::recordExit($entry, CreditMovementKind::REFUNDED, $take, $refundedAt, $recordedBy, method: $method, reference: $reference));
             }
 
@@ -384,29 +407,21 @@ final class CustomerCredit
     }
 
     /**
-     * The currency of an apply() on an invoice with no fiscal currency, read
-     * UNDER the payment locks: the only currency in which the active entries
-     * of the locked payments leave a positive balance (spec §13.10 row 42).
+     * The currency of an apply() on an invoice with no fiscal currency,
+     * decided UNDER the locks: the only currency in which the entries that
+     * can fund a payment leave a positive balance (spec §13.10 row 42).
+     * Advance-backed and voucher-backed entries are not in $funding, so
+     * neither is a currency hint (AID-1856, AID-1825).
      *
-     * @param  Collection<string, GroupedPayment>  $locked
+     * @param  Collection<int, CreditMovement>  $funding  the locked funding entries of every currency
      *
      * @throws InsufficientCreditException noCreditForCustomer / currencyAmbiguous
      */
-    private static function inferCurrency(string $billableUserId, Collection $locked): string
+    private static function inferCurrency(string $billableUserId, Collection $funding): string
     {
         $balances = [];
-        if ($locked->isNotEmpty()) {
-            $entries = CreditMovement::query()
-                ->where('billable_user_id', $billableUserId)
-                ->active()
-                ->entries()
-                ->notVoucherBacked() // AID-1825: a voucher is not a currency hint for a payment
-                ->whereIn('grouped_payment_id', $locked->keys()->all())
-                ->get();
-
-            foreach ($entries as $entry) {
-                $balances[$entry->currency] = ($balances[$entry->currency] ?? FixedDecimal::zero(2))->plus($entry->remaining());
-            }
+        foreach ($funding as $entry) {
+            $balances[$entry->currency] = ($balances[$entry->currency] ?? FixedDecimal::zero(2))->plus($entry->remaining());
         }
 
         $currencies = array_keys(array_filter($balances, fn (FixedDecimal $balance): bool => $balance->isPositive()));
@@ -422,11 +437,13 @@ final class CustomerCredit
     /**
      * Ids of the POSTED payments of the customer (in $currency, or in any
      * currency when null) holding at least one ACTIVE entry, sorted — read
-     * OUTSIDE the transaction (§5.4 step 1).
+     * OUTSIDE the transaction (§5.4 step 1). With $fundingOnly (apply()) a
+     * payment whose only entries are linked to an advance invoice is not a
+     * source payment (AID-1856); refund() keeps counting them.
      *
      * @return list<string>
      */
-    private static function sourcePaymentIds(string $billableUserId, ?string $currency): array
+    private static function sourcePaymentIds(string $billableUserId, ?string $currency, bool $fundingOnly = false): array
     {
         $ids = CreditMovement::query()
             ->where('billable_user_id', $billableUserId)
@@ -434,6 +451,7 @@ final class CustomerCredit
             ->active()
             ->entries()
             ->notVoucherBacked() // AID-1825: a voucher-only payment is never a source payment
+            ->when($fundingOnly, fn (Builder $query) => $query->notAdvanceBacked())
             ->whereIn('grouped_payment_id', GroupedPayment::query()->select('id')->where('status', GroupedPaymentStatus::POSTED->value))
             ->distinct()
             ->pluck('grouped_payment_id')
@@ -474,19 +492,64 @@ final class CustomerCredit
     }
 
     /**
-     * The FIFO consumption plan, read UNDER the payment locks (§5.4 step 3):
-     * the active entries of the locked payments by `occurred_at`, then `id`,
-     * each with what is taken from it, until $amount is covered.
+     * The entries apply() may spend, FIFO (`occurred_at`, then `id`), read
+     * UNDER the payment locks (AID-1856, spec §3.3): a plain read of the
+     * candidate ids — the active entries of the locked payments that are
+     * neither voucher-backed nor advance-backed, in $currency or in every
+     * currency when null — and then Ledger::lockFundingEntries(), which
+     * decides on the locked rows. The candidate rows serve only to obtain
+     * ids; the instances returned are the locked ones.
      *
      * @param  Collection<string, GroupedPayment>  $locked
-     * @return list<array{0: CreditMovement, 1: FixedDecimal}>
-     *
-     * @throws InsufficientCreditException when the locked entries cannot cover $amount
-     * @throws LogicException when an entry to consume belongs to a payment that is not locked
+     * @return Collection<int, CreditMovement>
      */
-    private static function plan(string $billableUserId, string $currency, Collection $locked, FixedDecimal $amount): array
+    private static function fundingEntries(string $billableUserId, ?string $currency, Collection $locked): Collection
     {
-        $entries = $locked->isEmpty() ? new Collection : CreditMovement::query()
+        if ($locked->isEmpty()) {
+            /** @var Collection<int, CreditMovement> $none */
+            $none = new Collection;
+
+            return $none;
+        }
+
+        /** @var list<string> $candidateIds */
+        $candidateIds = CreditMovement::query()
+            ->where('billable_user_id', $billableUserId)
+            ->when($currency !== null, fn (Builder $query) => $query->where('currency', $currency))
+            ->active()
+            ->entries()
+            ->notVoucherBacked()
+            ->notAdvanceBacked()
+            ->whereIn('grouped_payment_id', $locked->keys()->all())
+            ->orderBy('occurred_at')
+            ->orderBy('id')
+            ->pluck('id')
+            ->map(fn ($id): string => (string) $id)
+            ->all();
+
+        return Ledger::lockFundingEntries($candidateIds);
+    }
+
+    /**
+     * The entries refund() consumes, FIFO (`occurred_at`, then `id`), read
+     * UNDER the payment locks (§5.4 step 3): the active entries of the locked
+     * payments, advance-backed ones INCLUDED — the published refund of an
+     * advance and its rectificative (AID-1778) — and voucher-backed ones
+     * excluded. No entry row is locked on this path (AID-1856, spec §3.6).
+     *
+     * @param  Collection<string, GroupedPayment>  $locked
+     * @return Collection<int, CreditMovement>
+     */
+    private static function refundableEntries(string $billableUserId, string $currency, Collection $locked): Collection
+    {
+        if ($locked->isEmpty()) {
+            /** @var Collection<int, CreditMovement> $none */
+            $none = new Collection;
+
+            return $none;
+        }
+
+        return CreditMovement::query()
             ->where('billable_user_id', $billableUserId)
             ->where('currency', $currency)
             ->active()
@@ -496,7 +559,24 @@ final class CustomerCredit
             ->orderBy('occurred_at')
             ->orderBy('id')
             ->get();
+    }
 
+    /**
+     * The FIFO consumption plan over $entries (already selected, in FIFO
+     * order, under the payment locks — §5.4 step 3): each entry with what is
+     * taken from it, until $amount is covered. The selection is the caller's
+     * (fundingEntries() for apply(), refundableEntries() for refund()); the
+     * arithmetic is shared.
+     *
+     * @param  Collection<string, GroupedPayment>  $locked
+     * @param  Collection<int, CreditMovement>  $entries
+     * @return list<array{0: CreditMovement, 1: FixedDecimal}>
+     *
+     * @throws InsufficientCreditException when the entries cannot cover $amount
+     * @throws LogicException when an entry to consume belongs to a payment that is not locked
+     */
+    private static function plan(string $billableUserId, string $currency, Collection $locked, FixedDecimal $amount, Collection $entries): array
+    {
         $remaining = [];
         $balance   = FixedDecimal::zero(2);
         foreach ($entries as $entry) {

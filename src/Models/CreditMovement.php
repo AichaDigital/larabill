@@ -196,8 +196,33 @@ class CreditMovement extends Model
     }
 
     /**
+     * Rows that are NOT linked to an advance invoice (AID-1856): an entry
+     * whose `advance_invoice_id` is set documents money whose VAT the advance
+     * already declared, so it never funds an ordinary payment —
+     * CustomerCredit::apply() and PaymentService::allocate() leave it alone;
+     * CustomerCredit::refund() still takes it. The scope only narrows a
+     * read: the payment paths decide on the LOCKED row
+     * (Ledger::lockFundingEntries()), because a link can commit after a
+     * plain read.
+     *
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
+    public function scopeNotAdvanceBacked(Builder $query): Builder
+    {
+        return $query->whereNull($this->qualifyColumn('advance_invoice_id'));
+    }
+
+    public function isAdvanceBacked(): bool
+    {
+        return $this->advance_invoice_id !== null;
+    }
+
+    /**
      * Stamp the advance invoice that documents this entry — the only setter
-     * of `advance_invoice_id`, once, and only on an entry. The link is
+     * of `advance_invoice_id` in the package (the attribute is mass-assignable
+     * and the foreign key clears it when the advance is deleted), once, and
+     * only on an entry. The link is
      * one-to-one in BOTH directions (AID-1778 §5.6, O2): an entry cannot
      * link twice, and an advance cannot back two entries.
      *
@@ -243,7 +268,11 @@ class CreditMovement extends Model
      * while inserting exits — the two paths can meet in opposite order and
      * one is chosen as the deadlock victim (SQLSTATE 40001 / error 1213).
      * Nothing is half-written; the consumer retries the call (spec R27 pins
-     * the retry contract on this lock order).
+     * the retry contract on this lock order). Since 9.4 (AID-1856)
+     * `CustomerCredit::apply()` and `PaymentService::allocate()` also take a
+     * row lock on every entry they may spend, before deciding: a link of one
+     * of those entries waits until the running call commits, and a call that
+     * starts after a link committed sees the entry as linked and leaves it.
      *
      * @throws InvalidCreditMovementException when the row is an exit
      * @throws CreditMovementAlreadyLinkedException when the row is already linked, or the advance is already linked to another entry

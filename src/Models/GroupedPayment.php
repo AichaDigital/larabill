@@ -123,10 +123,13 @@ class GroupedPayment extends Model
     }
 
     /**
-     * Sum of what is left of this payment's ACTIVE, NOT voucher-backed credit
-     * entries (spec §4.2), each entry's remaining being its amount plus its
-     * active exits. A voucher-backed entry (AID-1825) is excluded: it funds
-     * no allocation, so it is not available credit of the payment.
+     * Sum of what is left of this payment's ACTIVE credit entries that can
+     * fund an allocation (spec §4.2), each entry's remaining being its amount
+     * plus its active exits. A voucher-backed entry (AID-1825) and, since 9.4,
+     * an entry linked to an advance invoice (AID-1856) are excluded: they
+     * fund no allocation, so they are not available credit of the payment.
+     * A plain read — a snapshot, not a reservation: allocate() decides on the
+     * locked rows.
      */
     public function availableCredit(): FixedDecimal
     {
@@ -134,7 +137,8 @@ class GroupedPayment extends Model
             ->where('grouped_payment_id', $this->id)
             ->active()
             ->entries()
-            ->notVoucherBacked();
+            ->notVoucherBacked()
+            ->notAdvanceBacked();
 
         $entered  = (int) (clone $entries)->sum('amount');
         $consumed = (int) CreditMovement::query()
