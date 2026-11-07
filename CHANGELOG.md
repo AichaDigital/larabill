@@ -4,6 +4,10 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+## [9.4.0] - 2026-11-07
+
+> **Ships migrations: no.** Upgrade: `composer update aichadigital/larabill`, nothing else.
+
 ### Fixed
 
 - **Credit backed by an advance invoice is no longer spent as an ordinary payment (AID-1856).** Since 9.1 `CustomerCredit::breakdown()` separates the balance linked to an advance invoice (`CreditMovement::linkAdvanceInvoice()`) and documents that it «must not be applied as a payment»: its VAT was already declared on the advance, so paying an invoice with it declares that VAT twice. The writers did not honour it. Three behaviours change:
