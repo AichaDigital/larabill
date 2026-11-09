@@ -281,6 +281,9 @@ mutation:
   variables:
     PHP_VERSION: "8.4"
   extends: .php
+  # ADE-1248: heavy lane - run on aichadigital-runner02 only, keeps runner34 low-latency
+  tags:
+    - heavy
   timeout: 3h
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule" && $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
