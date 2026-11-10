@@ -4,6 +4,8 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+## [9.5.0] - 2026-11-09
+
 > **Ships migrations: no.** Upgrade: `composer update aichadigital/larabill`, nothing else.
 
 ### Fixed
@@ -17,6 +19,8 @@ All notable changes to `larabill` will be documented in this file.
 - **The way out is to call them outside your transaction** and do your own work before or after. Raising `larabill.payments.base_transaction_level` is an opt-out, not a repair: it only stops the refusal, and a call inside a transaction that has already read still sums stale rows. Keep it at `0` in production and at the level your test harness opens (`1` under `RefreshDatabase`) in tests.
 - **Not changed:** `PaymentService::process()` (`@internal`) stays unguarded. `register()` calls it after its own transaction has returned, at the caller's level; `VoucherSaleService` calls it inside its own transaction with a request that carries no allocations, so it never reads those sums. `CreditMovement::linkAdvanceInvoice()` keeps its own documented, unenforced caller contract.
 - **Who notices:** only a caller that runs one of the three methods inside its own `DB::transaction()` (or below a `beginTransaction()`), production or tests. A test suite already running at `base_transaction_level = 1` under `RefreshDatabase` notices only where a test adds a second transaction around the call. The 9.4.0 note that described `receive()`/`allocate()` as tolerating a wrapper with no prior read is superseded by this entry.
+- **Compatibility (CONSTITUTION §8): why this is a fix in the 9.x line and not a major.** The refused patterns that were correct on 9.4.0 — a wrapper with no prior read, an allocation-free `receive()` or a same-key replay inside a wrapper — cannot be told apart at runtime from the unsafe one: a plain read the caller made earlier in its transaction leaves no trace the package can observe, so the transaction level is the only boundary it can enforce. The compatible alternative (keeping every pattern working by keeping running totals on the locked rows, which needs a schema change) was evaluated and rejected in the spec; locking reads for the sums were rejected for the gap-lock deadlocks of AID-715. Precedent: 8.3.0 shipped the same guard on `GroupedPaymentService::reverse()` as a narrowing in a minor. The narrowing is approved under §9 by the owner (umbrella record `governance/changes/2026-11-09-larabill-9-5-0-estrechamiento-pagos.md`).
+- **The consumer case found before release.** The conformance run of the reference consumer `clientes` against this release turned exactly one of its tests red: `tests/Feature/Notifications/BillingNotificationsTest.php` («sends nothing when the settlement rolls back after the success point») wrapped the whole Stripe settlement, and with it `register()`, in an extra `DB::transaction()` to simulate an outer rollback. `clientes` fixed the test (AID-1937, its MR !388) by opening the outer transaction after `register()` has run, with `base_transaction_level` untouched; with the fix its full suite and its conformance suite on MySQL 8.4 and MariaDB 11.4 show no difference against 9.3.1. Production code of `clientes` calls none of the three methods inside a transaction and is not affected.
 
 ## [9.4.0] - 2026-11-07
 
