@@ -4,6 +4,20 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+> **Ships migrations: no.** Upgrade: `composer update aichadigital/larabill`, nothing else.
+
+### Fixed
+
+- **`PaymentService::receive()`, `PaymentService::allocate()` and `GroupedPaymentService::register()` refuse to run inside a caller's transaction (AID-1884).** Inside a caller's transaction that had already made a plain read, their row locks returned current rows but the sums that decide how much is left — the outstanding of an invoice, what is left of a credit entry — were read from the caller's REPEATABLE READ snapshot. A payment committed by another connection in between was invisible to them, and both calls committed. Measured on 9.4.0, MySQL 8.4 and MariaDB 11.4, against an invoice or an entry of 100,00: `receive()` allocated **140,00** (invoice left `PARTIALLY_PAID`), `allocate()` left **140,00** of exits on the entry, and `register()` collected **160,00** (invoice `PAID`). `register()`'s docblock called a wrapper «fail-safe»; that stopped being true in 9.0.0, when it began to accept `PARTIALLY_PAID` invoices. The three methods now call the same guard as `reverse()`, `reverseAllocation()`, `CustomerCredit::apply()`/`refund()` and the voucher writes, as their first statement: above `larabill.payments.base_transaction_level` (default `0`; `1` under `RefreshDatabase`) they throw `PaymentOutsideTransactionRequiredException` before reading or validating anything. This narrows what the three methods accept, as a fix under `STABILITY.md` rule 5 (precedent: the same guard on `GroupedPaymentService::reverse()` in 8.3.0). Every case that changes, above the base level:
+  - **A wrapper with a prior read** (the defect). **Old:** both writes committed and over-collected. **New:** refused; nothing is written.
+  - **A wrapper with no prior read** (`DB::transaction(fn () => $payments->receive(...))`). **Old:** `receive()` and `allocate()` ran correctly. **New:** refused. `register()` was never safe here, because it reads before writing.
+  - **An allocation-free `receive()` (credit only) inside a wrapper. Old:** ran. **New:** refused.
+  - **A same-key replay inside a wrapper. Old:** returned the original payment. **New:** refused.
+  - **Error precedence. Old:** an invalid payload inside a wrapper threw `GroupedPaymentValidationException`. **New:** it throws `PaymentOutsideTransactionRequiredException`; the payload is validated only once the call runs outside the wrapper.
+- **The way out is to call them outside your transaction** and do your own work before or after. Raising `larabill.payments.base_transaction_level` is an opt-out, not a repair: it only stops the refusal, and a call inside a transaction that has already read still sums stale rows. Keep it at `0` in production and at the level your test harness opens (`1` under `RefreshDatabase`) in tests.
+- **Not changed:** `PaymentService::process()` (`@internal`) stays unguarded. `register()` calls it after its own transaction has returned, at the caller's level; `VoucherSaleService` calls it inside its own transaction with a request that carries no allocations, so it never reads those sums. `CreditMovement::linkAdvanceInvoice()` keeps its own documented, unenforced caller contract.
+- **Who notices:** only a caller that runs one of the three methods inside its own `DB::transaction()` (or below a `beginTransaction()`), production or tests. A test suite already running at `base_transaction_level = 1` under `RefreshDatabase` notices only where a test adds a second transaction around the call. The 9.4.0 note that described `receive()`/`allocate()` as tolerating a wrapper with no prior read is superseded by this entry.
+
 ## [9.4.0] - 2026-11-07
 
 > **Ships migrations: no.** Upgrade: `composer update aichadigital/larabill`, nothing else.

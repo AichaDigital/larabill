@@ -11,9 +11,11 @@ use AichaDigital\Larabill\Enums\InvoiceStatus;
 use AichaDigital\Larabill\Enums\PaymentMethod;
 use AichaDigital\Larabill\Exceptions\GroupedPaymentValidationException;
 use AichaDigital\Larabill\Exceptions\IdempotencyConflictException;
+use AichaDigital\Larabill\Exceptions\PaymentOutsideTransactionRequiredException;
 use AichaDigital\Larabill\Models\GroupedPayment;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Services\Payments\Ledger;
+use AichaDigital\Larabill\Services\Payments\OutermostTransaction;
 use AichaDigital\Larabill\Services\Payments\ReceiveRequest;
 use AichaDigital\Larabill\Services\Payments\ReplayPolicy;
 use AichaDigital\Larabill\Support\DocumentCurrency;
@@ -33,27 +35,32 @@ class GroupedPaymentService
      * key BEFORE delegating (legacy comparison: payer, currency, amount,
      * distinct invoice ids) and creates through PaymentService::process()
      * with ReplayPolicy::Legacy — method Card, no recorder, receivedAt =
-     * paidAt, and the same derived key as 8.x. Since 8.4 (AID-1778) it also
+     * paidAt, and the same derived key as 8.x. Since 9.0.0 (AID-1778) it also
      * accepts PARTIALLY_PAID invoices and allocates exactly each invoice's
      * amountOutstanding(), so $amount must equal the under-lock sum of the
      * outstandings; wholly unpaid invoices keep the 8.3 behavior because
      * outstanding === total when no active allocations exist.
      *
-     * It always reads (key pre-check, eligibility) before process(), so a
-     * caller transaction around register() is never in process()'s tolerated
-     * "wrapper without prior read" class; its status precondition (SENT,
-     * OVERDUE, PENDING and PARTIALLY_PAID since 8.4, re-checked by process()
-     * under Legacy) makes that fail-safe. A stale snapshot between the two
-     * transactions can still only refuse (process() validates before any
-     * write): since 8.4 a PARTIAL racing receive() surfaces as
-     * AllocationExceedsInvoiceException (the invoice stays PARTIALLY_PAID and
-     * the fresh outstanding is smaller than the allocation built earlier),
-     * while a fully-settling one keeps surfacing as notPayableStatus. A
-     * same-key replay is unaffected by outstanding drift: it compares
+     * Must be the OUTERMOST transaction (AID-1884): inside a caller's
+     * transaction that has already read, the invoice status is read on the
+     * locked row (current) but the outstanding from the caller's snapshot
+     * (stale), so a PARTIALLY_PAID invoice could be collected past its total
+     * (measured: 160,00 against 100,00). Guarded: above
+     * `larabill.payments.base_transaction_level` (default 0; 1 under
+     * RefreshDatabase) it throws before deriving the key or reading
+     * anything. process() then runs after this method's own transaction has
+     * returned, at the caller's ambient level. The two phases are not
+     * atomic: between them a racing writer can still commit, and process()
+     * re-locks and re-validates before any write — since 9.0.0 a PARTIAL
+     * racing receive() surfaces as AllocationExceedsInvoiceException (the
+     * fresh outstanding is smaller than the allocation built earlier), a
+     * fully-settling one as notPayableStatus. A same-key replay compares
      * immutable payload fields only and returns the original payment
      * verbatim.
      *
      * @param  list<string>  $invoiceIds
+     *
+     * @throws PaymentOutsideTransactionRequiredException when called inside a caller's transaction
      */
     public function register(
         string $billableUserId,
@@ -64,6 +71,8 @@ class GroupedPaymentService
         ?string $reference = null,
         ?string $idempotencyKey = null,
     ): GroupedPayment {
+        OutermostTransaction::assert(__METHOD__); // AID-1884: before any read
+
         $key      = $idempotencyKey ?? $this->deriveIdempotencyKey($billableUserId, $invoiceIds, $currency, $amount);
         $payments = app(PaymentService::class);
 

@@ -302,16 +302,18 @@ return [
     |
     | base_transaction_level: the DB::transactionLevel() at which a payment
     | write that must be the OUTERMOST transaction is still allowed to run —
-    | PaymentService::reverse(), reverseAllocation(), CustomerCredit::apply()
-    | and refund(). They read the ids to lock before opening their own
-    | transaction; inside a caller's transaction that read would pin the
-    | REPEATABLE READ snapshot before the locks, so above this level they throw
+    | PaymentService::receive(), allocate(), reverse(), reverseAllocation();
+    | GroupedPaymentService::register(); CustomerCredit::apply(), refund();
+    | VoucherSaleService::sellVoucher(), consumeVoucher(). Inside a caller's
+    | transaction a plain read made earlier pins the REPEATABLE READ snapshot
+    | their sums would read, so above this level they throw
     | PaymentOutsideTransactionRequiredException before reading anything.
     |
     | Leave it at 0 in production. A test suite that wraps every test in a
     | transaction (Laravel's RefreshDatabase) sets it to 1 — the level the
-    | harness itself opens — and nothing higher. receive() and allocate() are
-    | not guarded (a wrapper with no prior read is tolerated).
+    | harness itself opens — and nothing higher. Raising it is an opt-out, not
+    | a repair: it only stops the refusal, and a call inside a caller's
+    | transaction that has already read still sums stale rows.
     |
     */
     'payments' => [

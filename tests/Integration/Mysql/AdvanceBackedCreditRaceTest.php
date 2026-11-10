@@ -278,8 +278,9 @@ it('excludes an entry linked after the candidate read: the decision comes from t
     $call = fn () => match ($path) {
         'apply', 'apply-no-currency' => app(CustomerCredit::class)->apply($this->customer, $invoice, cents(2000)),
         'allocate'                   => app(PaymentService::class)->allocate($payment, new Allocation($invoice->id, cents(2000))),
-        // T15: the context allocate()'s caller contract tolerates — a wrapper that has made NO prior read.
-        'allocate-in-wrapper'        => DB::transaction(fn () => app(PaymentService::class)->allocate($payment, new Allocation($invoice->id, cents(2000)))),
+        // T15 ran allocate() inside a wrapper with no prior read; since 9.5.0 (AID-1884) that
+        // wrapper is refused before any read, so the race is covered by the unwrapped case above
+        // and the refusal by tests/Integration/Mysql/CallerSnapshotGuardEngineTest.php.
     };
 
     $refused = null;
@@ -317,7 +318,7 @@ it('excludes an entry linked after the candidate read: the decision comes from t
         expect($refused)->toBeNull()
             ->and(CreditMovement::query()->where('consumes_movement_id', $free->id)->where('kind', CreditMovementKind::APPLIED->value)->sum('amount'))->toEqual(-2000);
     }
-})->with(['apply', 'apply-no-currency', 'allocate', 'allocate-in-wrapper'])
+})->with(['apply', 'apply-no-currency', 'allocate'])
     ->with(['only the linked entry' => false, 'a second, unlinked entry' => true]);
 
 // ── T8b — refund() holds no entry lock (GUARD: green on 9.3.2) ──────────────

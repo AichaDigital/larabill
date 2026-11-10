@@ -60,8 +60,17 @@ class PaymentService
      * credit entry of $creditKind. A replayed key returns the payment it names
      * when the full immutable payload matches (ReplayPolicy::Full).
      *
+     * Must be the OUTERMOST transaction (AID-1884): inside a caller's
+     * transaction that has already read, the outstanding of each invoice
+     * would be summed from the caller's REPEATABLE READ snapshot and the
+     * call could allocate past the invoice total. Guarded: above
+     * `larabill.payments.base_transaction_level` (default 0; 1 under
+     * RefreshDatabase) it throws before reading or validating anything — a
+     * same-key replay and an invalid payload included.
+     *
      * @param  array<int, Allocation>  $allocations
      *
+     * @throws PaymentOutsideTransactionRequiredException when called inside a caller's transaction
      * @throws GroupedPaymentValidationException on an invalid amount, kind, duplicate ids, or an invoice that is not payable
      * @throws AllocationExceedsPaymentException when the allocations add up to more than $amount
      * @throws AllocationExceedsInvoiceException when an allocation exceeds the invoice outstanding
@@ -79,6 +88,8 @@ class PaymentService
         CreditMovementKind $creditKind = CreditMovementKind::SURPLUS,
         ?string $idempotencyKey = null,
     ): GroupedPayment {
+        OutermostTransaction::assert(__METHOD__); // AID-1884: before any read or validation
+
         return $this->process(
             ReceiveRequest::fromReceive($billableUserId, $amount, $currency, $receivedAt, $method, $reference, $recordedBy, $allocations, $creditKind, $idempotencyKey),
             ReplayPolicy::Full,
@@ -101,16 +112,16 @@ class PaymentService
      *
      * Call it as the OUTERMOST transaction: inside a caller's transaction ours
      * is a savepoint, and a plain read the caller made earlier has already
-     * fixed the snapshot, so every sum here would read stale rows. Not
-     * guarded with DB::transactionLevel() on purpose: a wrapper with NO prior
-     * read is tolerated (the locking read is still the first read of the
-     * snapshot) — a test harness, or a consumer that only wraps the call. It
-     * is the caller's contract, the same for receive() and allocate().
-     * reverse() and reverseAllocation() are stricter (see their docblocks):
-     * they must not run inside any caller transaction at all, and are guarded
-     * by `larabill.payments.base_transaction_level`
-     * (PaymentOutsideTransactionRequiredException, spec §13.10 row 45);
-     * receive() and allocate() are not.
+     * fixed the snapshot, so every sum here would read stale rows (measured:
+     * 140,00 allocated against an invoice of 100,00, AID-1884). This method
+     * is not guarded itself: its public callers are — receive() and
+     * GroupedPaymentService::register() refuse above
+     * `larabill.payments.base_transaction_level`
+     * (PaymentOutsideTransactionRequiredException) as their first statement.
+     * A direct (internal) caller must be the outermost transaction or run
+     * inside a guarded entry point; VoucherSaleService::claim() calls it
+     * inside its own transaction with a request that carries no allocations
+     * and no remainder entry, so it never reaches the stale sums.
      *
      * Known limit (spec §13 row 43): inside a caller transaction a same-key
      * race reaches the catch as a savepoint rollback and the re-read is
@@ -119,17 +130,18 @@ class PaymentService
      * duplicate money); outside the outermost-transaction contract.
      *
      * Under ReplayPolicy::Legacy the §5.1.3 status list is register()'s
-     * (SENT, OVERDUE, PENDING — and PARTIALLY_PAID since 8.4, AID-1778:
+     * (SENT, OVERDUE, PENDING — and PARTIALLY_PAID since 9.0.0, AID-1778:
      * Ledger::legacyPayableStatuses()). The between-transactions race with a
-     * register() attempt has TWO cases since 8.4, decided by the check order
+     * register() attempt has TWO cases since 9.0.0, decided by the check order
      * below (status first, then outstanding): a PARTIAL receive() committed
      * between register()'s eligibility check and this transaction leaves the
      * invoice PARTIALLY_PAID with a smaller outstanding than the allocation
      * built earlier and surfaces as AllocationExceedsInvoiceException; a
      * fully-settling one makes the invoice PAID and still surfaces as
-     * notPayableStatus (spec §3.4). A same-key replay never reads invoices or
-     * outstandings, so outstanding drift between attempts neither invalidates
-     * it nor moves new money (spec §3.5).
+     * notPayableStatus (spec §3.4). A same-key replay locks the invoices like
+     * any call, but skips the payability and outstanding checks and writes
+     * nothing, so outstanding drift between attempts neither invalidates it
+     * nor moves new money (spec §3.5).
      *
      * @throws LogicException when $request is replay-only (ReceiveRequest::forLegacyReplay())
      *
@@ -287,10 +299,13 @@ class PaymentService
      * and a concurrent CreditMovement::linkAdvanceInvoice() either landed
      * before or waits for this call. Every sum is read after the locks.
      * Must be the OUTERMOST transaction (see process()): inside a caller's
-     * transaction that has already read, what is left of each entry is still
-     * computed from the caller's snapshot — the entry lock does not change
-     * that contract.
+     * transaction that has already read, what is left of each entry would
+     * still be computed from the caller's snapshot — the entry lock does not
+     * change that (measured: 140,00 of exits on an entry of 100,00,
+     * AID-1884). Guarded: above `larabill.payments.base_transaction_level`
+     * (default 0; 1 under RefreshDatabase) it throws before reading anything.
      *
+     * @throws PaymentOutsideTransactionRequiredException when called inside a caller's transaction
      * @throws AllocationExceedsPaymentException when the payment is not POSTED (a reversed payment has no credit) or its entries that can fund a payment cannot cover the amount
      * @throws GroupedPaymentValidationException when the invoice does not exist or is not payable (§5.1.3)
      * @throws AllocationExceedsInvoiceException when the amount exceeds the invoice outstanding
@@ -298,6 +313,8 @@ class PaymentService
      */
     public function allocate(GroupedPayment $payment, Allocation $allocation, ?string $recordedBy = null, ?DateTimeInterface $appliedAt = null): PaymentAllocation
     {
+        OutermostTransaction::assert(__METHOD__); // AID-1884: before any read
+
         $appliedAt ??= now();
         $amount    = $allocation->amount->toScale(2); // exact: Allocation rejects sub-cent amounts
 

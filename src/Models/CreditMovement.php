@@ -250,8 +250,7 @@ class CreditMovement extends Model
      * check), so MySQL's same-target-table refusal (ERROR 1093) cannot arise
      * and the SQL is identical on MySQL 8.4 and MariaDB 11.4.
      *
-     * Caller contract (NOT enforced, same snapshot rule as
-     * `PaymentService::receive()`/`allocate()`): call this as the OUTERMOST
+     * Caller contract (NOT enforced): call this as the OUTERMOST
      * transaction, or inside a wrapper that has made NO prior read. Under
      * REPEATABLE READ a plain read made earlier by the caller fixes the
      * snapshot, and the conflict read of step (3) would see stale rows even
