@@ -10,13 +10,16 @@ use LogicException;
  * A payment write that must run as the OUTERMOST transaction was called
  * inside a caller's transaction (AID-962, spec §13.10 rows 41 and 45).
  *
- * PaymentService::reverse(), reverseAllocation(), CustomerCredit::apply()
- * and refund() read the ids to lock BEFORE opening their own transaction.
- * Inside a wrapper that read becomes the wrapper's first consistent read and,
- * under REPEATABLE READ, pins the snapshot before the locks: the
- * recomputation (or the credit plan) would read stale rows, and apply()/
- * refund() could consume the same remainder twice. The guard refuses before
- * reading anything.
+ * Under REPEATABLE READ a plain read made earlier in the caller's transaction
+ * pins the snapshot that the method's sums would read: the row locks return
+ * current rows, but the outstanding of an invoice, what is left of a credit
+ * entry or the credit plan would be summed from stale ones, and the call
+ * could allocate or consume past what exists (some of these methods also
+ * read the ids to lock before opening their own transaction, which pins the
+ * snapshot by itself). The guard refuses before reading anything. Guarded:
+ * PaymentService::receive(), allocate(), reverse(), reverseAllocation();
+ * GroupedPaymentService::register(); CustomerCredit::apply(), refund();
+ * VoucherSaleService::sellVoucher(), consumeVoucher().
  *
  * The allowed level is `config('larabill.payments.base_transaction_level')`
  * (default 0). A test suite that wraps every test in a transaction
@@ -30,7 +33,7 @@ final class PaymentOutsideTransactionRequiredException extends LogicException
     {
         return new self(
             "{$method} must not run inside a caller's transaction: transaction level is {$level}, the allowed base level is {$baseLevel}. "
-            .'It reads the ids to lock before opening its own transaction, and inside a wrapper that read would pin the REPEATABLE READ snapshot before the locks. '
+            .'A plain read made earlier in the caller\'s transaction pins the REPEATABLE READ snapshot that its sums would read, so it could allocate or consume past what exists. '
             .'Call it outside your transaction, or raise config larabill.payments.base_transaction_level only if your harness itself opens that level (e.g. RefreshDatabase → 1).'
         );
     }

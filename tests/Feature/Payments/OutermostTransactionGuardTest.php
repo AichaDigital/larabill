@@ -90,11 +90,19 @@ it('proceeds at the base level itself (the outermost transaction of the harness)
     expect(aid962GuardState($payment))->not->toBe($before);
 })->with('guarded payment writes');
 
-it('leaves receive() and allocate() unguarded inside a wrapper with no prior read', function () {
-    $inv = PaymentFixtures::sentInvoice(12100);
+// Until 9.4.0 this pinned the opposite: receive() and allocate() ran inside a
+// wrapper with no prior read. Since 9.5.0 (AID-1884) the empty wrapper is
+// refused too, before anything is read (CallerSnapshotGuardTest has the rest).
+it('refuses receive() and allocate() even inside a wrapper with no prior read (AID-1884)', function () {
+    $inv     = PaymentFixtures::sentInvoice(12100);
+    $payment = app(PaymentService::class)->receive(TestCase::USER_UUID_2, cents(12100), 'EUR', now()->subDay()->startOfSecond(), PaymentMethod::BankTransfer, 'TRF-W', null, [], CreditMovementKind::TOP_UP);
 
-    $payment = DB::transaction(fn () => app(PaymentService::class)->receive(TestCase::USER_UUID_2, cents(12100), 'EUR', now()->subDay()->startOfSecond(), PaymentMethod::BankTransfer, 'TRF-W', null, [], CreditMovementKind::TOP_UP));
-    DB::transaction(fn () => app(PaymentService::class)->allocate($payment, new Allocation($inv->id, cents(12100))));
+    expect(fn () => DB::transaction(fn () => app(PaymentService::class)->receive(TestCase::USER_UUID_2, cents(12100), 'EUR', now()->subDay()->startOfSecond(), PaymentMethod::BankTransfer, 'TRF-W2', null, [], CreditMovementKind::TOP_UP)))
+        ->toThrow(PaymentOutsideTransactionRequiredException::class, PaymentService::class.'::receive must not run');
+    expect(fn () => DB::transaction(fn () => app(PaymentService::class)->allocate($payment, new Allocation($inv->id, cents(12100)))))
+        ->toThrow(PaymentOutsideTransactionRequiredException::class, PaymentService::class.'::allocate must not run');
 
-    expect($inv->fresh()->status)->toBe(InvoiceStatus::PAID);
+    expect($inv->fresh()->status)->toBe(InvoiceStatus::SENT)
+        ->and(GroupedPayment::query()->count())->toBe(1)
+        ->and(PaymentAllocation::query()->count())->toBe(0);
 });
