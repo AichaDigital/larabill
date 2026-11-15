@@ -133,17 +133,29 @@ function aid1856LinkOnSecondConnection(string $entryId, string $advanceId): stri
 }
 
 /** An id that sorts immediately before or after $id: the same string with its last hex digit moved by one. */
+/**
+ * The hex neighbour of a uuid, with FULL carry: a single-digit carry broke on
+ * ids whose previous digit also carries (dechex(16) = '10' — a 37-char id —
+ * measured as MySQL 1406 data-too-long on ~1/256 random uuids, AID-1997 tag
+ * train). Walk the digits; a uuid never runs out.
+ */
 function aid1856NeighbourId(string $id, bool $before): string
 {
-    $last = hexdec(substr($id, -1));
+    $chars = str_split($id);
 
-    if ($before ? $last > 0 : $last < 15) {
-        return substr($id, 0, -1).dechex($before ? $last - 1 : $last + 1);
+    for ($i = count($chars) - 1; $i >= 0; $i--) {
+        $value = hexdec($chars[$i]);
+
+        if ($before ? $value > 0 : $value < 15) {
+            $chars[$i] = dechex($before ? $value - 1 : $value + 1);
+
+            return implode('', $chars);
+        }
+
+        $chars[$i] = $before ? 'f' : '0';
     }
 
-    $previous = hexdec(substr($id, -2, 1)); // carry on the previous digit
-
-    return substr($id, 0, -2).dechex($before ? $previous - 1 : $previous + 1).($before ? 'f' : '0');
+    throw new RuntimeException('unreachable: a uuid has a non-boundary digit');
 }
 
 /**
