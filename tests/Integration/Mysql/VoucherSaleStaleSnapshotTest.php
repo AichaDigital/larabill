@@ -43,6 +43,14 @@ beforeEach(function () {
 });
 
 afterEach(function () {
+    // A skipped run never bootstraps the app (the env gate fires in
+    // beforeEach): the facades have no root and the purge would throw before
+    // the skip completes - order-flaky when this file runs first (measured:
+    // pipeline 9883, seed 1794745198).
+    if (! MysqlIntegrationTestCase::mysqlEnvAvailable()) {
+        return;
+    }
+
     try {
         DB::connection(LARABILL_AID1825_STALE)->rollBack();
     } catch (Throwable) {
