@@ -558,13 +558,25 @@ class InvoiceService
                 $invoice->fiscal_submission_status = $this->resolveFiscalSubmissionStatus();
                 $invoice->issuer_snapshot          = $invoice->generateIssuerSnapshot($companyConfig);
                 if ($customerProfile !== null) {
-                    // AID-1649 (CI phpstan): billableUser is a nullable
-                    // relation — resolve the issuer model explicitly and fail
-                    // loud (the coherence check guarantees the row's context
-                    // resolves).
-                    $issuerModel = $invoice->billableUser ?? $invoice->user;
-                    $issuerModel ??= $customerProfile->owner()->firstOrFail();
-                    $invoice->customer_snapshot = $invoice->generateBillableUserSnapshot($issuerModel, $customerProfile);
+                    // R3-8 (AID-1997 spec §D8): a SUPPLIED frozen recipient is
+                    // preserved verbatim — a rectificative corrects the SAME
+                    // operation with the original's recipient, and the refund's
+                    // pre-number check compares it byte for byte (a
+                    // regeneration embeds snapshot_at, making byte equality
+                    // impossible and failing every profile-carrying refund
+                    // with payer_drift — measured RED by the ADE-1260 consumer
+                    // suite). Ordinary issuance: unchanged regeneration.
+                    $supplied = $invoice->getRawOriginal('customer_snapshot');
+
+                    if ($supplied === null || $invoice->rectifies_invoice_id === null) {
+                        // AID-1649 (CI phpstan): billableUser is a nullable
+                        // relation — resolve the issuer model explicitly and
+                        // fail loud (the coherence check guarantees the row's
+                        // context resolves).
+                        $issuerModel = $invoice->billableUser ?? $invoice->user;
+                        $issuerModel ??= $customerProfile->owner()->firstOrFail();
+                        $invoice->customer_snapshot = $invoice->generateBillableUserSnapshot($issuerModel, $customerProfile);
+                    }
                 }
                 $invoice->fiscal_snapshot = $invoice->generateFiscalContextSnapshot($companyConfig, $customerProfile);
                 // A vetoed save must not commit the consumed number (gate round 2).
