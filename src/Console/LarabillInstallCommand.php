@@ -107,6 +107,9 @@ class LarabillInstallCommand extends Command
         // credit_movements.sale_invoice_id/credit_operation_id/service_*,
         // invoices.sale_claim_id. Additive; no backfill.
         '055' => 'add_voucher_sales',
+        // AID-1997 (9.6): one-off sales — sale_reservations, sale_refunds,
+        // invoices.sale_reservation_id/sale_refund_id. Additive; no backfill.
+        '056' => 'add_one_off_sales',
     ];
 
     public function handle(): int

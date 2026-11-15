@@ -145,6 +145,17 @@
                     "default": null
                 }
             ]
+        },
+        "openForCollection": {
+            "returnType": "AichaDigital\\Larabill\\Models\\Invoice",
+            "static": false,
+            "parameters": [
+                {
+                    "name": "$invoice",
+                    "type": "AichaDigital\\Larabill\\Models\\Invoice",
+                    "default": null
+                }
+            ]
         }
     }
 }

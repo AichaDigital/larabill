@@ -74,6 +74,30 @@ final readonly class ReceiveRequest
     }
 
     /**
+     * AID-1997 S1 (spec §4.3): the one-off sale's charge — no allocations
+     * (the sale allocates at S4), no remainder entry (the money belongs to
+     * the sale, never to credit), TOP_UP classification (spec §3).
+     */
+    public static function forOneOffSale(
+        string $billableUserId,
+        FixedDecimal $amount,
+        string $currency,
+        DateTimeInterface $receivedAt,
+        PaymentMethod $method,
+        ?string $reference,
+        ?string $recordedBy,
+        string $idempotencyKey,
+    ): self {
+        $request = self::fromReceive($billableUserId, $amount, $currency, $receivedAt, $method, $reference, $recordedBy, [], CreditMovementKind::TOP_UP, $idempotencyKey);
+
+        return new self(
+            $request->billableUserId, $request->amount, $request->currency, $request->receivedAt, $request->method,
+            $request->reference, $request->recordedBy, [], $request->creditKind, $request->idempotencyKey,
+            replayOnly: false, remainderEntry: false,
+        );
+    }
+
+    /**
      * Validate the receive() input (spec §5.1.2) and derive the key when none
      * is given: sha256 of
      * `billable|currency|amountCents|receivedAt (Y-m-d\TH:i:s\Z, UTC)|method|reference|creditKind|invoiceId:cents,…`

@@ -72,6 +72,13 @@ function aid962CollectionWriterCalls(): array
  * A NEW write site anywhere, or a second one in that file, changes a count and
  * goes red.
  *
+ * AID-1997 pins two more receiver-ambiguous sites (both non-invoice rows): the
+ * SaleReservation's own paid_at — Models/SaleReservation.php (1, the
+ * `'paid_at' => 'datetime'` cast of the RESERVATION's timestamp) and
+ * Services/OneOffSaleService.php (1, the S1 `$locked->paid_at = now()` write of
+ * the reservation's Paid transition). The invoice-side refund close is
+ * Invoice::markRefundClosed(), inside the excluded Models/Invoice.php (G17).
+ *
  * Blind spots: dynamic property names ($i->{$col} = ...), fill()/forceFill()
  * or update() with a variable array, a status chosen via ternary/variable
  * (`'status' => $cond ? InvoiceStatus::PAID : ...` is not preceded by `=>`).
@@ -147,7 +154,12 @@ test('invoice collection state has one in-package writer', function () {
     // One assertion over both rules so a failure names every offending site.
     expect($writes)->toBe([
         'status'  => [],
-        'paid_at' => ['Models/GroupedPayment.php' => 1, 'Services/PaymentService.php' => 1],
+        'paid_at' => [
+            'Models/GroupedPayment.php'      => 1,
+            'Models/SaleReservation.php'     => 1,
+            'Services/OneOffSaleService.php' => 1,
+            'Services/PaymentService.php'    => 1,
+        ],
     ]);
 });
 

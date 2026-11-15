@@ -18,6 +18,7 @@ use AichaDigital\Larabill\Exceptions\FiscalConfigChangedException;
 use AichaDigital\Larabill\Exceptions\InvalidInvoiceStatusException;
 use AichaDigital\Larabill\Exceptions\InvoiceNotCancellableException;
 use AichaDigital\Larabill\Exceptions\InvoiceNotIssuableException;
+use AichaDigital\Larabill\Exceptions\InvoiceNotOpenableForCollectionException;
 use AichaDigital\Larabill\Exceptions\ReverseChargeWithTaxException;
 use AichaDigital\Larabill\Exceptions\SaleClaimedException;
 use AichaDigital\Larabill\Exceptions\SaleIntegrityException;
@@ -25,12 +26,15 @@ use AichaDigital\Larabill\Models\CompanyFiscalConfig;
 use AichaDigital\Larabill\Models\GroupedPayment;
 use AichaDigital\Larabill\Models\Invoice;
 use AichaDigital\Larabill\Models\InvoiceItem;
+use AichaDigital\Larabill\Models\SaleReservation;
 use AichaDigital\Larabill\Models\UserTaxProfile;
 use AichaDigital\Larabill\Models\VoucherSaleClaim;
 use AichaDigital\Larabill\Support\CheckedWrite;
+use AichaDigital\Larabill\Support\ReservedProforma;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Invoice Service
@@ -329,6 +333,81 @@ class InvoiceService
      * @throws InvoiceNotIssuableException On a document that can never be issued
      * @throws FiscalConfigChangedException When a conversion-born document's identity no longer holds
      */
+    /**
+     * C1 — the named public transition that opens an ISSUED document for
+     * settlement allocation (AID-1997 spec §3, D5, S2).
+     *
+     * An ISSUED fiscal invoice is born with its collection axis at DRAFT
+     * (ADR-016 §5.2): no allocation writer accepts it (Ledger::payableStatuses()
+     * excludes DRAFT), so an ordinary consumer can never allocate against a
+     * freshly issued document. This transition — and ONLY this transition —
+     * moves the collection axis DRAFT → PENDING, making the invoice payable.
+     *
+     * Idempotent: an ISSUED invoice whose collection axis has already moved
+     * past DRAFT is returned unchanged (no exception, no write). Refused
+     * loud, zero writes, on: a non-ISSUED document (issue() it first); a
+     * proforma (convert first); an invoice carrying an open voucher sale
+     * claim (AID-1825: the sale's own settlement is the only writer of its
+     * collection axis); an invoice carrying a one-off reservation (AID-1997
+     * G13: settle() S4 is the only writer).
+     *
+     * The write is a checked save under the invoice lock, re-read with
+     * lockForUpdate inside one transaction. It writes the collection axis
+     * only — the same deliberate save() bypass of the fiscal-immutability
+     * guard as SettlementService::annul(): collection state is not fiscal
+     * content.
+     *
+     * @api New surface (AID-1997, spec §3).
+     *
+     * @throws InvoiceNotOpenableForCollectionException on every refusal, zero writes
+     */
+    public function openForCollection(Invoice $invoice): Invoice
+    {
+        return DB::transaction(function () use ($invoice): Invoice {
+            $locked = Invoice::query()->whereKey($invoice->getKey())->lockForUpdate()->firstOrFail();
+
+            if ($locked->serie === InvoiceSerieType::PROFORMA) {
+                throw InvoiceNotOpenableForCollectionException::forProforma($locked);
+            }
+
+            if ($locked->invoice_document_status !== InvoiceDocumentStatus::ISSUED) {
+                throw InvoiceNotOpenableForCollectionException::forNonIssued($locked);
+            }
+
+            // AID-1825: a voucher sale's own settlement is the only writer.
+            // The refusal list applies to EVERY collection state: an already
+            // opened (or settled) claimed invoice is NOT idempotently
+            // returned — its writer was never this transition.
+            $saleClaimId = $locked->getAttribute('sale_claim_id');
+            if ($saleClaimId !== null) {
+                throw InvoiceNotOpenableForCollectionException::forVoucherSale($locked, (string) $saleClaimId);
+            }
+
+            // G13 (AID-1997 §5): a one-off reservation's settle() S4 is the
+            // only writer. The column appears with migration 056; before it
+            // lands there is no reservation to refuse on. S4 itself runs
+            // inside the reservation's authorization (§4.1) — the authorized
+            // settle is the writer, an outside caller is refused.
+            if (Schema::hasColumn($locked->getTable(), 'sale_reservation_id')) {
+                $reservationId = $locked->getAttribute('sale_reservation_id');
+                if ($reservationId !== null && ! SaleReservation::isAuthorizedFor((string) $reservationId)) {
+                    throw InvoiceNotOpenableForCollectionException::forReservation($locked, (string) $reservationId);
+                }
+            }
+
+            // Idempotent past DRAFT: the caller already opened it (or a
+            // settlement moved it further) — the locked row, unchanged.
+            if ($locked->status !== InvoiceStatus::DRAFT) {
+                return $locked;
+            }
+
+            $locked->status = InvoiceStatus::PENDING;
+            CheckedWrite::orFail($locked->save(), 'the PENDING collection transition');
+
+            return $locked;
+        });
+    }
+
     public function issue(Invoice $invoice): Invoice
     {
         return DB::transaction(function () use ($invoice): Invoice {
@@ -686,6 +765,10 @@ class InvoiceService
             if ($claimId !== null && ! VoucherSaleClaim::isAuthorizedFor((string) $claimId)) {
                 throw SaleClaimedException::proforma((string) $proforma->id, (string) $claimId, 'convertProformaToInvoice()');
             }
+
+            // AID-1997 G5: a reserved proforma is converted by its
+            // reservation's settle() S2 only.
+            ReservedProforma::assertNotReserved($proforma, 'convertProformaToInvoice()');
 
             // Idempotency check (§3.2, unchanged): return the already-converted
             // document (PREPARED, or ISSUED when the caller went on to issue).

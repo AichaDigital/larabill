@@ -71,6 +71,8 @@ use Illuminate\Support\Facades\DB;
  * @property int|null $user_tax_profile_id FK to user_tax_profiles (ADR-003)
  * @property string|null $proforma_id UUID if converted from proforma
  * @property string|null $sale_claim_id Voucher-sale claim this invoice was born of (AID-1825); written by the sale only, never fillable
+ * @property string|null $sale_reservation_id One-off sale reservation this invoice was born of (AID-1997); written by settle() S2 only
+ * @property string|null $sale_refund_id Refund intent that owns this rectificative draft from creation (AID-1997 R3-3)
  * @property string|null $rectifies_invoice_id UUID if rectificative
  * @property string|null $settlement_operation_key Deterministic settlement operation key (ADR-015 §3.4, guarantee): `guarantee_ops:{registry_row_uuid}`. UNIQUE on this table — the serialisation point of idempotent settlement issuance: a second issuance for the same claim collides on this index and ADOPTS the existing artifact instead of issuing a duplicate fiscal correction. NULL for every document minted outside a guarantee settlement.
  * @property string|null $issuer_snapshot Encrypted issuer data (v0.4.0)
@@ -889,6 +891,25 @@ class Invoice extends Model implements LegallyRetainable
         $this->status  = InvoiceStatus::PAID;
         $this->paid_at = Carbon::instance($paidAt);
         $this->save();
+    }
+
+    /**
+     * Close a refund rectificative's collection axis (AID-1997 spec §4.5 R3,
+     * D8 rev11, G17): the rectificative is never payable by allocation
+     * (§5.1.3 — a negative amountOutstanding() can never be allocated), so
+     * `recomputeCollectionState()` cannot close it; the refund's own close
+     * is the single named writer of this state. Lifecycle/collection state
+     * is NOT fiscal content — the deliberate save() bypass of the
+     * fiscal-immutability guard, the markAsPaidViaGroupedPayment() precedent.
+     *
+     * @api Supported public surface (AID-1997 spec §3; see docs/api-surface.md).
+     */
+    public function markRefundClosed(DateTimeInterface $paidAt): bool
+    {
+        $this->status  = InvoiceStatus::PAID;
+        $this->paid_at = Carbon::instance($paidAt);
+
+        return $this->save();
     }
 
     /**
