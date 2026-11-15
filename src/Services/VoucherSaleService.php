@@ -35,6 +35,7 @@ use AichaDigital\Larabill\Services\Payments\ReceiveRequest;
 use AichaDigital\Larabill\Services\Payments\ReplayPolicy;
 use AichaDigital\Larabill\Support\CheckedWrite;
 use AichaDigital\Larabill\Support\DocumentCurrency;
+use AichaDigital\Larabill\Support\ReservedProforma;
 use AichaDigital\Larabill\ValueObjects\SaleRecoveryRow;
 use AichaDigital\Larabill\ValueObjects\VoucherConsumptionRequest;
 use AichaDigital\Larabill\ValueObjects\VoucherConsumptionResult;
@@ -118,6 +119,10 @@ final class VoucherSaleService
             if ($proforma === null || $proforma->serie !== InvoiceSerieType::PROFORMA) {
                 throw new InvalidArgumentException("Voucher sale: [{$request->proformaId}] is not a proforma.");
             }
+
+            // AID-1997 G14: a reserved proforma is claimed by its own
+            // reservation — a voucher claim refuses while a LIVE one exists.
+            ReservedProforma::assertNotReserved($proforma, 'sellVoucher()');
 
             $existing = VoucherSaleClaim::query()->where('proforma_id', $proforma->id)->first();
             if ($existing !== null) {
@@ -698,6 +703,10 @@ final class VoucherSaleService
             if ($claimId !== null) {
                 throw SaleClaimedException::proforma((string) $locked->getKey(), (string) $claimId, 'cancelProforma() by '.$actor);
             }
+
+            // AID-1997 G15: a reserved proforma is cancelled by its
+            // reservation's release() only.
+            ReservedProforma::assertNotReserved($locked, 'cancelProforma()');
 
             $locked->status = InvoiceStatus::CANCELLED;
             self::persistOrFail($locked->save(), 'the proforma cancellation');

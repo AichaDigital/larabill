@@ -14,16 +14,19 @@ namespace AichaDigital\Larabill\Enums;
  */
 enum SaleIntegrityReason: string
 {
-    case PaymentNotPosted          = 'payment_not_posted';
-    case AmountDrift               = 'amount_drift';
-    case CurrencyDrift             = 'currency_drift';
-    case PayerDrift                = 'payer_drift';
-    case ContentDrift              = 'content_drift';
-    case CompetingAllocation       = 'competing_allocation';
-    case CollectionStateUnexpected = 'collection_state_unexpected';
-    case ClaimMissing              = 'claim_missing';
-    case DocumentAxisIncoherent    = 'document_axis_incoherent';
-    case MarkMissing               = 'mark_missing';
+    case PaymentNotPosted           = 'payment_not_posted';
+    case AmountDrift                = 'amount_drift';
+    case CurrencyDrift              = 'currency_drift';
+    case PayerDrift                 = 'payer_drift';
+    case ContentDrift               = 'content_drift';
+    case CompetingAllocation        = 'competing_allocation';
+    case CollectionStateUnexpected  = 'collection_state_unexpected';
+    case ClaimMissing               = 'claim_missing';
+    case DocumentAxisIncoherent     = 'document_axis_incoherent';
+    case MarkMissing                = 'mark_missing';
+    case ReservationStageUnexpected = 'reservation_stage_unexpected';
+    case PaymentReversed            = 'payment_reversed';
+    case InvoiceNotIssued           = 'invoice_not_issued';
     /** A consumption's persisted exits do not add up to, or are not, what the operation declared. */
     case ConsumptionIncoherent = 'consumption_incoherent';
 }

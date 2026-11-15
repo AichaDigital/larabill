@@ -582,6 +582,19 @@
             "returnType": "void",
             "static": false
         },
+        "markRefundClosed": {
+            "api": true,
+            "deprecated": false,
+            "parameters": [
+                {
+                    "name": "paidAt",
+                    "type": "DateTimeInterface",
+                    "variadic": false
+                }
+            ],
+            "returnType": "bool",
+            "static": false
+        },
         "openSaleClaim": {
             "api": false,
             "deprecated": false,

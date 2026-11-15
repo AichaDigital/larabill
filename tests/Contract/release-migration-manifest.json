@@ -261,6 +261,11 @@
             "name": "2026_11_01_000001_add_voucher_sales.php",
             "sha256": "44f7ff1cafa4d31f6419a3b914010fc8dc3c41d68412050c54c63121d3e4c9a4",
             "in_base": true
+        },
+        {
+            "name": "2026_11_15_000001_add_one_off_sales.php",
+            "sha256": "dd4bf6e7769a1f11e2bff5cb0c0aa7df0f0bbba7fc9cb554ed10f26bdc3591bb",
+            "in_base": false
         }
     ]
 }

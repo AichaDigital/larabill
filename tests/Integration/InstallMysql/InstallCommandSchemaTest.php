@@ -93,8 +93,11 @@ describe('larabill:install — production install path on MySQL (AID-287)', func
         // schema + backfill trio; AID-1527 adds the money-column widening
         // (int → signed bigint) with the AEAT domain CHECKs; AID-962 adds the
         // payment allocations + customer credit migration (pivot relaxation,
-        // credit_movements, invoice_items.deducts_invoice_id).
-        expect($this->appliedMigrationCount())->toBe(52);
+        // credit_movements, invoice_items.deducts_invoice_id); AID-1825 adds
+        // the voucher sales; AID-1997 adds the one-off sales
+        // (sale_reservations, sale_refunds, invoices.sale_reservation_id/
+        // sale_refund_id).
+        expect($this->appliedMigrationCount())->toBe(53);
 
         // AID-1778: the exit-band column ships inside the install order (054).
         expect(Schema::hasColumn('credit_movements', 'band_start'))->toBeTrue();
