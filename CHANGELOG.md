@@ -4,6 +4,8 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+## [9.6.0] - 2026-11-15
+
 > **Ships migrations: 056 (`add_one_off_sales`).** Upgrade: `composer update aichadigital/larabill` then `php artisan migrate` — or re-run `larabill:install` (additive: it skips the migrations already published and publishes only the new one), then `php artisan migrate`. No backfill: a 9.5 database has no reservation, no refund; every DDL step is guarded and resumable.
 
 ### Added
