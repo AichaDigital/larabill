@@ -4,6 +4,12 @@ All notable changes to `larabill` will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **The VeriFactu breakdown no longer drops or repeats a line base (AID-2065).** Two defects in `VerifactuAdapter::toVerifactuBreakdowns()` (behind `InvoiceVerifactuService::registerInvoice()`):
+  - **A net negative untaxed base was dropped.** Lines without tax entries are one exempt row, but the row was emitted only for a positive net, so an untaxed discount or credit line vanished from the breakdown (header base 90,00 €, breakdown 100,00 €). **New:** the exempt row carries the net untaxed base whatever its sign; a net of exactly zero still emits no row. Note: the exempt row still has no exemption cause, which lara-verifactu 1.x refuses at XML build — so an invoice whose untaxed lines net to a non-zero amount is now refused loudly by lara-verifactu instead of being declared wrong (AID-2068). A line with a single 0 % tax entry is not untaxed and is not affected.
+  - **A line with several tax entries declared its base once per entry.** A `TaxGroup` with two rates (e.g. VAT + recargo de equivalencia), or a frozen line carrying two entries, doubled its base in the breakdown. **New: such a line is refused** — a new refusal on an existing path — with a `ValidationException` (key `verifactu`) before anything is persisted, like the other adapter guards. Surcharge support is a separate feature. This also refuses a multi-entry line with zero base and zero tax, which used to yield coherent zero rows. Issuance, PDF and settlement of these lines are unchanged. The breakdown still trusts frozen tax entries as given (a frozen entry without `amount` counts as zero).
+
 ## [9.6.0] - 2026-11-15
 
 > **Ships migrations: 056 (`add_one_off_sales`).** Upgrade: `composer update aichadigital/larabill` then `php artisan migrate` — or re-run `larabill:install` (additive: it skips the migrations already published and publishes only the new one), then `php artisan migrate`. No backfill: a 9.5 database has no reservation, no refund; every DDL step is guarded and resumable.

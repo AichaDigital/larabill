@@ -250,12 +250,22 @@ class VerifactuAdapter
                 continue;
             }
 
-            foreach ($taxes as $tax) {
-                $rate = (int) $tax['rate'];
-
-                $groups[$rate]['base'] = ($groups[$rate]['base'] ?? 0) + $item->taxable_amount->unscaledValue();
-                $groups[$rate]['tax']  = ($groups[$rate]['tax'] ?? 0)  + (int) ($tax['amount'] ?? 0);
+            // AID-2065 D2: one base, one row. A second entry (e.g. recargo de
+            // equivalencia) shares the VAT base and belongs in the SAME row as
+            // a surcharge, but the frozen snapshot carries no tax kind to tell
+            // them apart. Repeating the base per entry declares a base that
+            // does not exist, so refuse instead.
+            if (count($taxes) > 1) {
+                throw ValidationException::withMessages([
+                    'verifactu' => 'An invoice line carries more than one tax entry; the VeriFactu breakdown cannot tell VAT from a surcharge in the frozen snapshot, so it refuses instead of declaring the line base once per entry.',
+                ]);
             }
+
+            $tax  = reset($taxes);
+            $rate = (int) $tax['rate'];
+
+            $groups[$rate]['base'] = ($groups[$rate]['base'] ?? 0) + $item->taxable_amount->unscaledValue();
+            $groups[$rate]['tax']  = ($groups[$rate]['tax'] ?? 0)  + (int) ($tax['amount'] ?? 0);
         }
 
         $breakdowns = [];
@@ -271,14 +281,18 @@ class VerifactuAdapter
             ];
         }
 
-        if ($exemptBase > 0) {
+        // AID-2065 D1: the untaxed base is kept whatever its sign — the header
+        // includes it, so the breakdown must too. A net zero adds nothing.
+        if ($exemptBase !== 0) {
             $breakdowns[] = [
                 'tax_type'         => self::TAX_TYPE_VAT,
                 'tax_rate'         => 0.0,
                 'base_amount'      => self::base100ToDecimal($exemptBase),
                 'tax_amount'       => 0.0,
                 'exempt'           => true,
-                'exemption_reason' => null, // XmlBuilder defaults to E1; refine per-invoice when needed
+                // No cause is known here; lara-verifactu ≥1.x requires one and
+                // refuses a null reason at XML build (AID-2065 spec §4, follow-up).
+                'exemption_reason' => null,
             ];
         }
 
