@@ -32,6 +32,7 @@ use AichaDigital\Larabill\Services\Payments\OutermostTransaction;
 use AichaDigital\Larabill\Services\Payments\ReceiveRequest;
 use AichaDigital\Larabill\Services\Payments\ReplayPolicy;
 use AichaDigital\Larabill\Support\CheckedWrite;
+use AichaDigital\Larabill\Support\DocumentCurrency;
 use AichaDigital\Larabill\Support\RawDocumentRead;
 use AichaDigital\Larabill\ValueObjects\SaleRefundRequest;
 use AichaDigital\Larabill\ValueObjects\SaleSettlementRequest;
@@ -236,6 +237,12 @@ class OneOffSaleService
      * PaymentService::process() — no allocations, no remainder entry —
      * under ReplayPolicy::Full; a lost race on the key UNIQUE is a
      * conflict, never an adoption.
+     *
+     * Resume (AID-2063): at Paid or Issuing the same request re-runs the
+     * same checks and the same process() call, which replays the recorded
+     * payment without writing (or refuses a different payload under the
+     * key); settle() then goes on to S2-S4. Only a Released reservation
+     * cannot resume.
      */
     protected function recordCharge(SaleReservation $reservation, SaleSettlementRequest $request): GroupedPayment
     {
@@ -247,8 +254,8 @@ class OneOffSaleService
                 return $locked->payment()->firstOrFail(); // a concurrent settle finished S1-S4
             }
 
-            if ($locked->stage !== SaleReservationStage::Reserved) {
-                throw SaleStageException::forRelease($locked->stage, $request->operationKey);
+            if ($locked->stage === SaleReservationStage::Released) {
+                throw SaleReservationNotFoundException::forKey($request->operationKey); // released concurrently
             }
 
             // The frozen expectation (D3/D4): payer, currency, amount —
@@ -270,10 +277,6 @@ class OneOffSaleService
                 throw SaleChargeMismatchException::proformaDrift($locked, 'the locked proforma no longer matches the charge');
             }
 
-            if ($locked->grouped_payment_id !== null) {
-                return $locked->payment()->firstOrFail(); // replay of S1
-            }
-
             $payment = $this->payments->process(
                 ReceiveRequest::forOneOffSale(
                     $request->billableUserId,
@@ -287,6 +290,21 @@ class OneOffSaleService
                 ),
                 ReplayPolicy::Full,
             );
+
+            if ($locked->grouped_payment_id !== null) {
+                // Replay of S1 (resume at Paid/Issuing): process() matched the
+                // recorded payment under the key and wrote nothing.
+                if ((string) $locked->grouped_payment_id !== (string) $payment->id) {
+                    throw SaleIntegrityException::because(
+                        SaleIntegrityReason::ReservationStageUnexpected,
+                        (string) $locked->id,
+                        (string) $proforma->id,
+                        'the key names a payment other than the sale\'s recorded one at S1'
+                    );
+                }
+
+                return $payment;
+            }
 
             $locked->grouped_payment_id = (string) $payment->id;
             $locked->stage              = SaleReservationStage::Paid;
@@ -376,7 +394,7 @@ class OneOffSaleService
      */
     protected function collect(SaleReservation $reservation, GroupedPayment $payment, Invoice $invoice, SaleSettlementRequest $request): OneOffSaleResult
     {
-        return DB::transaction(function () use ($reservation, $payment, $invoice, $request): OneOffSaleResult {
+        return DB::transaction(function () use ($reservation, $payment, $invoice): OneOffSaleResult {
             $locked   = SaleReservation::query()->whereKey($reservation->id)->lockForUpdate()->firstOrFail();
             $payment  = GroupedPayment::query()->whereKey($locked->grouped_payment_id ?? $payment->id)->lockForUpdate()->firstOrFail();
             $invoice  = Invoice::query()->whereKey($invoice->id)->lockForUpdate()->firstOrFail();
@@ -394,6 +412,28 @@ class OneOffSaleService
                 );
             }
 
+            // AID-2063 (gate round 1, P1-2): the funding is re-checked under
+            // S4's own locks — a payment reversed (or altered) after S2 must
+            // not be allocated to the sale invoice.
+            if ($payment->status !== GroupedPaymentStatus::POSTED) {
+                throw SaleIntegrityException::because(
+                    SaleIntegrityReason::PaymentReversed,
+                    (string) $locked->id,
+                    (string) $invoice->id,
+                    'the funding payment is not POSTED at S4'
+                );
+            }
+
+            $documentCurrency = DocumentCurrency::of($invoice);
+            if ($documentCurrency !== null && $documentCurrency !== $payment->currency) {
+                throw SaleIntegrityException::because(
+                    SaleIntegrityReason::CurrencyDrift,
+                    (string) $locked->id,
+                    (string) $invoice->id,
+                    "the payment currency ({$payment->currency}) differs from the issued document's {$documentCurrency} at S4"
+                );
+            }
+
             // The C1 transition under the reservation's authorization:
             // G13 refuses every other caller (spec section 4.3 S4).
             SaleReservation::withReservationAuthorization((string) $locked->id, fn () => $this->invoices->openForCollection($invoice));
@@ -405,7 +445,7 @@ class OneOffSaleService
 
             $allocation = $locked->allocation_id !== null
                 ? PaymentAllocation::query()->whereKey($locked->allocation_id)->firstOrFail()
-                : Ledger::createAllocation((string) $payment->id, $invoice, $payment->amount, $request->receivedAtUtc());
+                : Ledger::createAllocation((string) $payment->id, $invoice, $payment->amount, $payment->paid_at); // the locked payment instant, as VoucherSaleService does (gate round 4)
 
             $invoice->recomputeCollectionState();
 
