@@ -510,6 +510,20 @@ class InvoiceService
                 }
             }
 
+            // AID-2063 (gate round 1, P1-1): a one-off sale invoice is issued
+            // in the reservation's frozen currency or not at all — checked on
+            // the LOCKED config BEFORE the correlative is consumed, so a config
+            // changed while the sale waited at Issuing is refused instead of
+            // being frozen into a numbered document.
+            $saleReservationId = $invoice->getAttribute('sale_reservation_id');
+            if ($saleReservationId !== null) {
+                $saleReservation = SaleReservation::query()->whereKey((string) $saleReservationId)->first();
+                $saleConfig      = CompanyFiscalConfig::withTrashed()->whereKey((int) $invoice->company_fiscal_config_id)->lockForUpdate()->first();
+                if ($saleReservation === null || $saleConfig?->currency !== $saleReservation->expected_currency) {
+                    throw SaleIntegrityException::because(SaleIntegrityReason::CurrencyDrift, (string) $saleReservationId, (string) $invoice->id, 'the fiscal config currency ('.($saleConfig?->currency ?? 'none').") differs from the sale reservation's ".($saleReservation?->expected_currency ?? 'none').' at issuance');
+                }
+            }
+
             $instant = now();
             $number  = $this->invoiceNumbering->generateNumberInTransaction(
                 $invoice->prefix,
